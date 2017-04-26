@@ -1,0 +1,28 @@
+Package: EdSurvey
+Version: 1.0.5
+Date: 2017-04-25
+Title: Education Survey
+Author: Paul Bailey [aut, cre], Ren C'deBaca [ctb], Ahmad Emad [aut],
+        Huade Huo [ctb],  Michael Lee [aut], Qingshu Xie [aut], Jiao Yu [aut],
+        Ting Zhang [aut]
+Maintainer: Paul Bailey <pbailey@air.org>
+Depends: R (>= 3.2.0), lfactors (>= 1.0.1)
+Imports: LaF, methods, Matrix, NAEPprimer, wCorr, data.table
+Description: Read in and analysis functions for education surveys and
+             assessments data from the National Center for Education Statistics
+             (NCES) <https://nces.ed.gov/>, including the National Assessment
+             of Educational Progress (NAEP)
+             data <https://nces.ed.gov/nationsreportcard/>.
+License: GPL-2
+VignetteBuilder: knitr
+Suggests: knitr, testthat, rmarkdown
+LazyData: true
+RoxygenNote: 6.0.1
+Note: This publication was prepared for NCES under Contract No.
+        ED-IES-12-D-0002 with American Institutes for Research. Mention
+        of trade names, commercial products, or organizations does not
+        imply endorsement by the U.S. Government.
+NeedsCompilation: no
+Packaged: 2017-04-26 12:48:11 UTC; pbailey
+Repository: CRAN
+Date/Publication: 2017-04-26 17:19:59 UTC

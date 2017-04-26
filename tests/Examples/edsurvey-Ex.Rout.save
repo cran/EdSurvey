@@ -1,0 +1,990 @@
+
+R version 3.4.0 (2017-04-21) -- "You Stupid Darkness"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> pkgname <- "EdSurvey"
+> source(file.path(R.home("share"), "R", "examples-header.R"))
+> options(warn = 1)
+> options(pager = "console")
+> library('EdSurvey')
+Loading required package: lfactors
+lfactors v1.0.1
+
+EdSurvey v1.0.5
+
+> 
+> base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
+> cleanEx()
+> nameEx("achievementLevels")
+> ### * achievementLevels
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: achievementLevels
+> ### Title: Return achievement levels for an edsurvey.data.frame.
+> ### Aliases: achievementLevels
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D   # read in the example data (generated, not real student data)
+> ##D   sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> ##D 
+> ##D   # Discrete achievement Levels
+> ##D   achievementLevels(c("composite"), aggregateBy = NULL, sdf) 
+> ##D 
+> ##D   # Cumulative achievement Levels
+> ##D   achievementLevels(c("composite"), aggregateBy = NULL, sdf, 
+> ##D                              returnCumulative = TRUE) 
+> ##D 
+> ##D   # Achievement levels as independent variables, by sex aggregated by composite
+> ##D   achievementLevels(c("composite", "dsex"), aggregateBy = "composite",
+> ##D                              sdf, returnCumulative = TRUE) 
+> ##D 
+> ##D   # Achievement levels as independent variables, by sex aggregated by sex
+> ##D   achievementLevels(c("composite", "dsex"), aggregateBy = "dsex", 
+> ##D                              sdf, returnCumulative = TRUE) 
+> ##D 
+> ##D   # Achievement levels as independent variables, by race aggregated by race
+> ##D   achievementLevels(c("composite", "sdracem"),
+> ##D                              aggregateBy = "sdracem", sdf, returnCumulative = TRUE) 
+> ##D 
+> ##D   # Use recode to change values for specified variables:
+> ##D   achievementLevels(c("composite","dsex", "b017451"),
+> ##D                              aggregateBy = "dsex", sdf,
+> ##D                              recode=list(
+> ##D                                b017451=list(
+> ##D                                  from=c("Never or hardly ever",
+> ##D                                         "Once every few weeks","About once a week"),
+> ##D                                  to=c("Infrequently")),
+> ##D                                b017451=list(
+> ##D                                  from=c("2 or 3 times a week","Every day"),
+> ##D                                  to=c("Frequently"))))
+> ##D 
+> ##D   # use just one achievement level
+> ##D   sdfA <- sdf
+> ##D   sdfA$achievementLevels <- sdfA$achievementLevels["Proficient"]
+> ##D   achievementLevels(c("composite"), aggregateBy = NULL, sdfA) 
+> ##D 
+> ## End(Not run)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("cor.sdf")
+> ### * cor.sdf
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: cor.sdf
+> ### Title: Run a bivariate correlation on an edsurvey.data.frame.
+> ### Aliases: cor.sdf
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # read in the example data (generated, not real student data)
+> ##D sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> ##D 
+> ##D # for two categorical variables any of the following work
+> ##D c1_pears <- cor.sdf("b017451", "b003501", sdf,
+> ##D   method="Pearson",
+> ##D   weightVar="origwt")
+> ##D c1_spear <- cor.sdf("b017451", "b003501", sdf,
+> ##D   method="Spearman",
+> ##D   weightVar="origwt")
+> ##D c1_polyc <- cor.sdf("b017451", "b003501", sdf,
+> ##D   method="Polychoric",
+> ##D   weightVar="origwt")
+> ##D 
+> ##D c1_pears
+> ##D c1_spear
+> ##D c1_polyc
+> ##D 
+> ##D # these take awhile to calculate for large datasets, so limit to a subset
+> ##D sdf_dnf <- subset(sdf, b003601 == 1)
+> ##D 
+> ##D # for a categorical variable and a scale score any of the following work
+> ##D c2_pears <- cor.sdf("composite", "b017451", sdf_dnf,
+> ##D 	method="Pearson",
+> ##D 	weightVar="origwt")
+> ##D c2_spear <- cor.sdf("composite", "b017451", sdf_dnf,
+> ##D 	method="Spearman",
+> ##D 	weightVar="origwt")
+> ##D c2_polys <- cor.sdf("composite", "b017451", sdf_dnf,
+> ##D 	method="Polyserial",
+> ##D 	weightVar="origwt")
+> ##D 
+> ##D c2_pears
+> ##D c2_spear
+> ##D c2_polys
+> ##D 
+> ##D # recode two variables
+> ##D cor.sdf("c046501","c044006",sdf, method="Spearman", weightVar = "origwt",
+> ##D 	recode=list(
+> ##D 		c046501=list(from='0%',to='None'),
+> ##D 		c046501=list(
+> ##D 			from=c('1-5%','6-10%',"11-25%",'26-50%','51-75%','76-90%','Over 90%'),
+> ##D 			to='Between 0% and 100%'),
+> ##D 		c044006=list(
+> ##D 			from=c('1-5%','6-10%',"11-25%",'26-50%','51-75%','76-90%','Over 90%'),
+> ##D 			to='Between 0% and 100%')))
+> ##D 
+> ##D # reorder two variables
+> ##D cor.sdf("b017451","sdracem", sdf, method="Spearman", weightVar="origwt", 
+> ##D 	reorder=list(
+> ##D 		sdracem=c("White","Hispanic","Black","Asian/Pacific Island",
+> ##D 			"Amer Ind/Alaska Natv","Other"),
+> ##D 	  b017451=c("Every day","2 or 3 times a week","About once a week",
+> ##D 			"Once every few weeks","Never or hardly ever")))
+> ##D 
+> ##D # recode two variables and reorder
+> ##D cor.sdf("pared","b013801",sdf,method="Spearman", weightVar = "origwt",
+> ##D 	recode=list(
+> ##D 		pared=list(from='Some ed after H.S.',to='Graduated H.S.'), 
+> ##D 		pared=list(from='Some ed after H.S.',to='Graduated H.S.'),
+> ##D 		pared=list(from='Graduated college',to='Graduated H.S.'),
+> ##D 		b013801=list(from='0-10',to='Less than 100'), 
+> ##D 		b013801=list(from='11-25',to='Less than 100'),
+> ##D 		b013801=list(from='26-100',to='Less than 100')),
+> ##D 	reorder=list(
+> ##D 		b013801=c('Less than 100','>100')))
+> ## End(Not run)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("edsurveyTable")
+> ### * edsurveyTable
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: edsurveyTable
+> ### Title: Make a table with a edsurvey.data.frame.
+> ### Aliases: edsurveyTable
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # read in the example data (generated, not real student data)
+> ##D 
+> ##D sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> ##D 
+> ##D # create a table that shows only the break down of dsex
+> ##D edsurveyTable( ~ dsex, sdf, returnMeans=FALSE, returnSepct=FALSE)
+> ##D 
+> ##D # create a table with composite scores by dsex
+> ##D edsurveyTable(composite ~ dsex, sdf)
+> ##D 
+> ##D # add a second variable
+> ##D edsurveyTable(composite ~ dsex + b017451, sdf)
+> ##D 
+> ##D # add a second variable, do not omit any levels
+> ##D edsurveyTable( ~ dsex + b017451 + b003501, sdf, omittedLevels=FALSE)
+> ##D 
+> ##D # add a second variable, do not omit any levels, change aggregation level
+> ##D edsurveyTable( ~ dsex + b017451 + b003501, sdf,
+> ##D                       omittedLevels=FALSE, pctAggregationLevel=0)
+> ##D 
+> ##D edsurveyTable( ~ dsex + b017451 + b003501, sdf,
+> ##D                       omittedLevels=FALSE, pctAggregationLevel=1)
+> ##D 
+> ##D edsurveyTable( ~ dsex + b017451 + b003501, sdf,
+> ##D                       omittedLevels=FALSE, pctAggregationLevel=2)
+> ##D 
+> ##D # variance estimation using the Taylor series 
+> ##D edsurveyTable( ~ dsex + b017451 + b003501, sdf,
+> ##D                      varMethod="Taylor")
+> ## End(Not run)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("getData")
+> ### * getData
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: getData
+> ### Title: Gets data from an edsurvey.data.frame.
+> ### Aliases: getData
+> 
+> ### ** Examples
+> 
+> # read in the example data (generated, not real student data)
+> sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> 
+> # get two variables, without weights
+> df <- getData(sdf, c("dsex", "b017451"))
+> table(df)
+        b017451
+dsex     Never or hardly ever Once every few weeks About once a week
+  Male                   2350                 1603              1384
+  Female                 1487                 1544              1469
+        b017451
+dsex     2 or 3 times a week Every day
+  Male                  1535      1291
+  Female                1827      1841
+> 
+> # example of using recode
+> df2 <- getData(sdf, c("dsex", "t088301"),
++   recode=list(
++     t088301=list(
++       from=c("Yes, available","Yes, I have access"),
++       to=c("Yes")),
++     t088301=list(
++       from=c("No, have no access"),
++       to=c("No"))))
+> table(df2)
+        t088301
+dsex      Yes   No
+  Male   7362  151
+  Female 7321  172
+> 
+> # When readNAEP is called on a data file it appends a default 
+> # condition to the edsurvey.data.frame. You can see these conditions
+> # by printing the sdf
+> sdf
+edsurvey.data.frame with 17606 rows and 302 columns.
+
+There are 1 full sample weight(s) in this edsurvey.data.frame
+  'origwt' with 62 JK replicate weights (the default).
+
+There are 6 subject scale(s) or subscale(s) in this edsurvey.data.frame
+  'num_oper' subject scale or subscale with 5 plausible values.
+
+  'measurement' subject scale or subscale with 5 plausible values.
+
+  'geometry' subject scale or subscale with 5 plausible values.
+
+  'data_anal_prob' subject scale or subscale with 5 plausible values.
+
+  'algebra' subject scale or subscale with 5 plausible values.
+
+  'composite' subject scale or subscale with 5 plausible values (the default).
+
+Omitted Levels: 'Multiple', 'NA', 'Omitted'
+
+
+Default Conditions:
+  tolower(rptsamp) == "reporting sample"
+Achievement Levels:
+  Basic:      262
+  Proficient: 299
+  Advanced:   333
+
+Survey: NAEP
+> 
+> # As per the default condition specified, getData restricts the data to only
+> # Reporting Sample. This behavior can be changed as follows:
+> df2 <- getData(sdf, c("dsex", "b017451"),
++   defaultConditions = FALSE)
+> table(df2)
+        b017451
+dsex     Never or hardly ever Once every few weeks About once a week
+  Male                   2350                 1603              1384
+  Female                 1487                 1544              1469
+        b017451
+dsex     2 or 3 times a week Every day
+  Male                  1535      1291
+  Female                1827      1841
+> 
+> # Similarly, the default behavior of omitting certain levels specified
+> # in the edsurvey.data.frame can be changed
+> df2 <- getData(sdf, c("dsex", "b017451"),
++   omittedLevels = FALSE)
+> table(df2)
+        b017451
+dsex     Never or hardly ever Once every few weeks About once a week
+  Male                   2350                 1603              1384
+  Female                 1487                 1544              1469
+        b017451
+dsex     2 or 3 times a week Every day Omitted Multiple
+  Male                  1535      1291     316        7
+  Female                1827      1841     259        2
+> 
+> # Merge a school data file by passing a common variable through the arguments 
+> # `schoolMergeVarStudent` and `schoolMergeVarSchool`. In this example, 
+> # the variable "c052601" is from the school data file, merging on "scrpsu" and
+> # "sscrspu":
+> gddat <- getData(sdf, c("composite", "dsex", "b017451","c052601"),
++   schoolMergeVarStudent='scrpsu',
++   schoolMergeVarSchool="sscrpsu",
++   addAttributes = TRUE)
+> # look at the first few lines
+> head(gddat)
+    dsex              b017451         c052601 mrpcm1 mrpcm2 mrpcm3 mrpcm4
+2   Male            Every day 6 to 10 percent 318.01 303.68 296.61 328.97
+3 Female    About once a week 6 to 10 percent 288.43 283.93 280.45 290.03
+4 Female            Every day 6 to 10 percent 342.72 338.03 329.48 352.46
+5   Male            Every day 6 to 10 percent 348.76 321.79 327.87 333.35
+7 Female Once every few weeks 6 to 10 percent 278.44 245.08 263.00 277.50
+8   Male  2 or 3 times a week 6 to 10 percent 327.95 338.59 328.07 334.07
+  mrpcm5
+2 315.70
+3 286.23
+4 342.26
+5 327.32
+7 285.04
+8 320.02
+> 
+> 
+> 
+> cleanEx()
+> nameEx("getPlausibleValue")
+> ### * getPlausibleValue
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: getPlausibleValue
+> ### Title: Get plausible values from a given subject or subscale.
+> ### Aliases: getPlausibleValue
+> 
+> ### ** Examples
+> 
+> # read in the example data (generated, not real student data)
+> sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> 
+> getPlausibleValue("composite", sdf)
+[1] "mrpcm1" "mrpcm2" "mrpcm3" "mrpcm4" "mrpcm5"
+> 
+> 
+> 
+> cleanEx()
+> nameEx("getWeightJkReplicates")
+> ### * getWeightJkReplicates
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: getWeightJkReplicates
+> ### Title: Return the jackknife replicate weights associated with a weight
+> ###   variable.
+> ### Aliases: getWeightJkReplicates
+> 
+> ### ** Examples
+> 
+> # read in the example data (generated, not real student data)
+> sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> 
+> getWeightJkReplicates("origwt", sdf)
+ [1] "srwt01" "srwt02" "srwt03" "srwt04" "srwt05" "srwt06" "srwt07" "srwt08"
+ [9] "srwt09" "srwt10" "srwt11" "srwt12" "srwt13" "srwt14" "srwt15" "srwt16"
+[17] "srwt17" "srwt18" "srwt19" "srwt20" "srwt21" "srwt22" "srwt23" "srwt24"
+[25] "srwt25" "srwt26" "srwt27" "srwt28" "srwt29" "srwt30" "srwt31" "srwt32"
+[33] "srwt33" "srwt34" "srwt35" "srwt36" "srwt37" "srwt38" "srwt39" "srwt40"
+[41] "srwt41" "srwt42" "srwt43" "srwt44" "srwt45" "srwt46" "srwt47" "srwt48"
+[49] "srwt49" "srwt50" "srwt51" "srwt52" "srwt53" "srwt54" "srwt55" "srwt56"
+[57] "srwt57" "srwt58" "srwt59" "srwt60" "srwt61" "srwt62"
+> 
+> 
+> 
+> cleanEx()
+> nameEx("hasPlausibleValue")
+> ### * hasPlausibleValue
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: hasPlausibleValue
+> ### Title: Return a value indicating whether this variable has associated
+> ###   plausible values.
+> ### Aliases: hasPlausibleValue
+> 
+> ### ** Examples
+> 
+> # read in the example data (generated, not real student data)
+> sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> 
+> # True
+> hasPlausibleValue("composite", sdf)
+[1] TRUE
+> 
+> # False
+> hasPlausibleValue("dsex", sdf)
+[1] FALSE
+> 
+> 
+> 
+> cleanEx()
+> nameEx("isWeight")
+> ### * isWeight
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: isWeight
+> ### Title: Return a value indicating whether a variable is a weight on an
+> ###   edsurvey.data.frame or light.edsurvey.data.frame.
+> ### Aliases: isWeight
+> 
+> ### ** Examples
+> 
+> # read in the example data (generated, not real student data)
+> sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> 
+> # True
+> isWeight("origwt", sdf)
+[1] TRUE
+> 
+> # False
+> isWeight("dsex", sdf)
+[1] FALSE
+> 
+> 
+> 
+> cleanEx()
+> nameEx("levelsSDF")
+> ### * levelsSDF
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: levelsSDF
+> ### Title: Get the levels and labels of a variable in an
+> ###   edsurvey.data.frame or light.edsurvey.data.frame.
+> ### Aliases: levelsSDF
+> 
+> ### ** Examples
+> 
+> # read in the example data (generated, not real student data)
+> sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> 
+> # search variables in the sdf
+> levelsSDF("pared",sdf)
+Levels for Variable 'pared' (Lowest level first):
+    1. Did not finish H.S.
+    2. Graduated H.S.
+    3. Some ed after H.S.
+    4. Graduated college
+    7. I Don't Know
+    8. Omitted
+    0. Multiple
+> 
+> # search multiple variables
+> levelsSDF(c("pared","ell3"),sdf)
+Levels for Variable 'pared' (Lowest level first):
+    1. Did not finish H.S.
+    2. Graduated H.S.
+    3. Some ed after H.S.
+    4. Graduated college
+    7. I Don't Know
+    8. Omitted
+    0. Multiple
+Levels for Variable 'ell3' (Lowest level first):
+    1. Yes
+    2. No
+    3. Formerly ELL
+> 
+> # search multiple variables in a light.edsurvey.data.frame with recodes
+> df2 <- getData(sdf, c("dsex", "t088301"),
++ 	recode=list(
++ 		t088301=list(
++ 			from=c("Yes, available","Yes, I have access"),
++ 			to=c("Yes")),
++ 		t088301=list(from=c("No, have no access"),
++ 			to=c("No"))),
++ 	addAttributes=TRUE)
+> levelsSDF(c("dsex","t088301"),df2)
+Levels for Variable 'dsex' (Lowest level first):
+    1. Male
+    2. Female
+Levels for Variable 't088301' (Lowest level first):
+    4. Yes
+    5. No
+> 
+> 
+> 
+> cleanEx()
+> nameEx("lm.sdf")
+> ### * lm.sdf
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: lm.sdf
+> ### Title: Run a linear model on an edsurvey.data.frame.
+> ### Aliases: lm.sdf
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # read in the example data (generated, not real student data)
+> ##D sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> ##D 
+> ##D # By default uses jacknife variance method using replicate weights
+> ##D lm1 <- lm.sdf(composite ~ dsex + b017451, sdf)
+> ##D lm1
+> ##D 
+> ##D # for more detailed results use summary:
+> ##D summary(lm1)
+> ##D 
+> ##D # to specify a variance method use varMethod:
+> ##D lm2 <- lm.sdf(composite ~ dsex + b017451, sdf,
+> ##D 	varMethod="Taylor")
+> ##D lm2
+> ##D summary(lm2)
+> ##D 
+> ##D # Use relevel to set a new omitted category.
+> ##D lm3 <- lm.sdf(composite ~ dsex + b017451, sdf,
+> ##D 	relevels=list(
+> ##D 	dsex="Female"))
+> ##D summary(lm3)
+> ##D 
+> ##D # Use recode to change values for specified variables:
+> ##D lm4 <- lm.sdf(composite ~ dsex + b017451, sdf,
+> ##D 	recode=list(
+> ##D 		b017451=list(
+> ##D 			from=c("Never or hardly ever",
+> ##D 				"Once every few weeks","About once a week"),
+> ##D 			to=c("Infrequently")),
+> ##D 		b017451=list(
+> ##D 			from=c("2 or 3 times a week","Every day"),
+> ##D 			to=c("Frequently"))))
+> ##D # Note: "Infrequently" is the dropped level for the recoded b017451
+> ##D summary(lm4)
+> ##D 
+> ## End(Not run)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("readNAEP")
+> ### * readNAEP
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: readNAEP
+> ### Title: Creates an edsurvey.data.frame.
+> ### Aliases: readNAEP
+> 
+> ### ** Examples
+> 
+> # read in the example data (generated, not real student data)
+> sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> sdf
+edsurvey.data.frame with 17606 rows and 302 columns.
+
+There are 1 full sample weight(s) in this edsurvey.data.frame
+  'origwt' with 62 JK replicate weights (the default).
+
+There are 6 subject scale(s) or subscale(s) in this edsurvey.data.frame
+  'num_oper' subject scale or subscale with 5 plausible values.
+
+  'measurement' subject scale or subscale with 5 plausible values.
+
+  'geometry' subject scale or subscale with 5 plausible values.
+
+  'data_anal_prob' subject scale or subscale with 5 plausible values.
+
+  'algebra' subject scale or subscale with 5 plausible values.
+
+  'composite' subject scale or subscale with 5 plausible values (the default).
+
+Omitted Levels: 'Multiple', 'NA', 'Omitted'
+
+
+Default Conditions:
+  tolower(rptsamp) == "reporting sample"
+Achievement Levels:
+  Basic:      262
+  Proficient: 299
+  Advanced:   333
+
+Survey: NAEP
+> 
+> ## Not run: 
+> ##D # To read in an NCES file first set the directory to the ~/Data subfolder,
+> ##D # then read in the appropriate .dat file:
+> ##D setwd("location/of/Data")
+> ##D sdf <- readNAEP('M36NT2PM.dat')
+> ##D 
+> ##D # Or read in the .dat file directly through the folder pathway:
+> ##D sdf <- readNAEP('location/of/DataM36NT2PM.dat')
+> ## End(Not run)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("searchSDF")
+> ### * searchSDF
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: searchSDF
+> ### Title: Search and print out a summary of variable information on an
+> ###   edsurvey.data.frame or light.edsurvey.data.frame.
+> ### Aliases: searchSDF
+> 
+> ### ** Examples
+> 
+> # read in the example data (generated, not real student data)
+> sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> 
+> # search both the student and school files by a character string
+> searchSDF("book",sdf)
+  variableName                                       Labels
+1      b013801                                Books in home
+2      t088804 Computer activities: Use a gradebook program
+3      t091503     G8Math:How often use Geometry sketchbook
+> 
+> # search only the student files by a character string
+> searchSDF("algebra",sdf, fileFormat="student")
+  variableName                                           Labels
+1      t090803  Teaching intro to algebra/pre-algebra this year
+2      t090804                       Teaching algebra this year
+3      c052802 Percent enrolled in intro to algebra/pre-algebra
+4      c052804      Percent enrolled in algebra I (year 1 of 2)
+5      c052805      Percent enrolled in algebra I (year 2 of 2)
+6      c052807                   Percent enrolled in algebra II
+> 
+> # search both the student and school files and return a glimpse of levels
+> searchSDF("value",sdf, levels=TRUE)
+Variable: m086101
+Label: Read value from graph
+Levels (Lowest level first):
+     1. A
+     2. B
+     3. C *
+     4. D
+     5. E
+     8. Omitted
+     9. Not Reached
+     0. Multiple
+Variable: m020001
+Label: Apply place value                            (R1)
+Levels (Lowest level first):
+     1. Incorrect
+     2. Correct*
+     5. Illegible
+     6. Off Task
+     7. Non-Rateable
+     8. Omitted
+     9. Not Reached
+Variable: m143601
+Label: Solve for x given value of n
+Levels (Lowest level first):
+     1. A
+     2. B
+     3. C
+     4. D *
+     5. E
+     8. Omitted
+     9. Not Reached
+     0. Multiple
+Variable: m142301
+Label: Identify place value
+Levels (Lowest level first):
+     1. A
+     2. B
+     3. C
+     4. D
+     5. E *
+     8. Omitted
+     9. Not Reached
+     0. Multiple
+> 
+> # save the search as an object to return a full data.frame of search
+> ddf <- searchSDF("value",sdf, levels=TRUE)
+> ddf
+Variable: m086101
+Label: Read value from graph
+Levels (Lowest level first):
+     1. A
+     2. B
+     3. C *
+     4. D
+     5. E
+     8. Omitted
+     9. Not Reached
+     0. Multiple
+Variable: m020001
+Label: Apply place value                            (R1)
+Levels (Lowest level first):
+     1. Incorrect
+     2. Correct*
+     5. Illegible
+     6. Off Task
+     7. Non-Rateable
+     8. Omitted
+     9. Not Reached
+Variable: m143601
+Label: Solve for x given value of n
+Levels (Lowest level first):
+     1. A
+     2. B
+     3. C
+     4. D *
+     5. E
+     8. Omitted
+     9. Not Reached
+     0. Multiple
+Variable: m142301
+Label: Identify place value
+Levels (Lowest level first):
+     1. A
+     2. B
+     3. C
+     4. D
+     5. E *
+     8. Omitted
+     9. Not Reached
+     0. Multiple
+> 
+> 
+> 
+> cleanEx()
+> nameEx("showCutPoints")
+> ### * showCutPoints
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: showCutPoints
+> ### Title: Print a summary of achievement-level cut points.
+> ### Aliases: showCutPoints
+> 
+> ### ** Examples
+> 
+> # read in the example data (generated, not real student data)
+> sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> 
+> # show the weights
+> showCutPoints(sdf)
+Achievement Levels:
+  Basic:  262
+  Proficient:  299
+  Advanced:  333
+> 
+> 
+> 
+> cleanEx()
+> nameEx("showPlausibleValues")
+> ### * showPlausibleValues
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: showPlausibleValues
+> ### Title: Print a summary of the subject scale or subscale and the
+> ###   associated variables for their plausible values.
+> ### Aliases: showPlausibleValues
+> 
+> ### ** Examples
+> 
+> # read in the example data (generated, not real student data)
+> sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> 
+> # show the plasusible values
+> showPlausibleValues(sdf, TRUE)
+There are 6 subject scale(s) or subscale(s) in this edsurvey.data.frame
+  'num_oper' subject scale or subscale with 5 plausible values. They are:
+    'mrps11' 'mrps12' 'mrps13' 'mrps14' 'mrps15'
+
+  'measurement' subject scale or subscale with 5 plausible values. They are:
+    'mrps21' 'mrps22' 'mrps23' 'mrps24' 'mrps25'
+
+  'geometry' subject scale or subscale with 5 plausible values. They are:
+    'mrps31' 'mrps32' 'mrps33' 'mrps34' 'mrps35'
+
+  'data_anal_prob' subject scale or subscale with 5 plausible values. They are:
+    'mrps41' 'mrps42' 'mrps43' 'mrps44' 'mrps45'
+
+  'algebra' subject scale or subscale with 5 plausible values. They are:
+    'mrps51' 'mrps52' 'mrps53' 'mrps54' 'mrps55'
+
+  'composite' subject scale or subscale with 5 plausible values (the default). They are:
+    'mrpcm1' 'mrpcm2' 'mrpcm3' 'mrpcm4' 'mrpcm5'
+
+> 
+> 
+> 
+> cleanEx()
+> nameEx("showWeights")
+> ### * showWeights
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: showWeights
+> ### Title: Print out a summary of weights.
+> ### Aliases: showWeights
+> 
+> ### ** Examples
+> 
+> # read in the example data (generated, not real student data)
+> sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> 
+> # show the weights
+> showWeights(sdf, TRUE)
+There are 1 full sample weight(s) in this edsurvey.data.frame
+  'origwt' with 62 JK replicate weights (the default). Jackknife replicate weight variables:
+ [1] "srwt01" "srwt02" "srwt03" "srwt04" "srwt05" "srwt06" "srwt07" "srwt08"
+ [9] "srwt09" "srwt10" "srwt11" "srwt12" "srwt13" "srwt14" "srwt15" "srwt16"
+[17] "srwt17" "srwt18" "srwt19" "srwt20" "srwt21" "srwt22" "srwt23" "srwt24"
+[25] "srwt25" "srwt26" "srwt27" "srwt28" "srwt29" "srwt30" "srwt31" "srwt32"
+[33] "srwt33" "srwt34" "srwt35" "srwt36" "srwt37" "srwt38" "srwt39" "srwt40"
+[41] "srwt41" "srwt42" "srwt43" "srwt44" "srwt45" "srwt46" "srwt47" "srwt48"
+[49] "srwt49" "srwt50" "srwt51" "srwt52" "srwt53" "srwt54" "srwt55" "srwt56"
+[57] "srwt57" "srwt58" "srwt59" "srwt60" "srwt61" "srwt62"
+
+
+> 
+> 
+> 
+> cleanEx()
+> nameEx("sub-.light.edsurvey.data.frame")
+> ### * sub-.light.edsurvey.data.frame
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: [.light.edsurvey.data.frame
+> ### Title: Subset the rows of a 'light.edsurvey.data.frame'.
+> ### Aliases: [.light.edsurvey.data.frame
+> 
+> ### ** Examples
+> 
+> # read in the example data (generated, not real student data)
+> sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> gddat <- getData(sdf, c("composite", "dsex"), addAttributes = TRUE)
+> table(gddat[gddat$dsex=="Male","dsex"])
+
+  Male Female 
+  8486      0 
+> 
+> 
+> 
+> 
+> cleanEx()
+> nameEx("subset.edsurvey.data.frame")
+> ### * subset.edsurvey.data.frame
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: subset.edsurvey.data.frame
+> ### Title: Subset the rows of an 'edsurvey.data.frame'.
+> ### Aliases: subset.edsurvey.data.frame subset,edsurvey.data.frame-method
+> ###   subset,light.edsurvey.data.frame-method
+> 
+> ### ** Examples
+> 
+> # read in the example data (generated, not real student data)
+> sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> 
+> # table to compare to subsequent tables with subsets:
+> edsurveyTable(~ dsex, sdf, returnMeans=FALSE, returnSepct=FALSE)
+
+Formula: composite ~ dsex 
+
+jrrIMax: 1
+Weight variable: 'origwt'
+Variance method: Jackknife
+JK replicates: 62
+full data n: 17606
+n used: 16915
+
+
+Summary Table:
+   dsex    N    WTD_N      PCT
+   Male 8486 8511.974 50.27015
+ Female 8429 8420.489 49.72985
+> 
+> # subset to just males
+> newsdf <-  subset(sdf, dsex == "Male") 
+> # table of dsex after subset
+> edsurveyTable(~ dsex, newsdf, returnMeans=FALSE, returnSepct=FALSE)
+
+Formula: composite ~ dsex 
+
+jrrIMax: 1
+Weight variable: 'origwt'
+Variance method: Jackknife
+JK replicates: 62
+full data n: 17606
+n used: 8486
+
+
+Summary Table:
+ dsex    N    WTD_N PCT
+ Male 8486 8511.974 100
+> 
+> # Variable names that are not in the sdf get resolved in the parent frame.
+> # Practically, that means that the following two subset 
+> # calls sdfM1 and sdfM2 do the same thing:
+> male_var <- "Male"
+> sdfM1 <- subset(sdf,dsex == male_var)
+> sdfM2 <- subset(sdf,dsex == "Male")
+> table(getData(sdfM1, "dsex"))
+
+Male 
+8486 
+> table(getData(sdfM2, "dsex"))
+
+Male 
+8486 
+> 
+> # variable can also be resolved as members of lists
+> genders <- c("Male", "Female","not a sex level")
+> sdfn <- subset(sdf,dsex == genders[2]) 
+> table(getData(sdfn, "dsex"))
+
+Female 
+  8429 
+> 
+> # variables can also be subset using %in%
+> sdfM3 <- subset(sdf,dsex %in% c("Male", "not a sex level")) 
+> table(getData(sdfM3, "dsex"))
+
+Male 
+8486 
+> 
+> # if you need to call a name on the sdf dynamically, you can use as.name
+> dsex_standin <- as.name("dsex")
+> sdfM4 <- subset(sdf,dsex_standin == "Male")
+> table(getData(sdfM4, "dsex"))
+
+Male 
+8486 
+> 
+> 
+> # Here is an example of how one might want to call
+> # subset from within a function or loop.
+> # First,define a few variables to use dynamically
+> rhs_vars <- c("dsex", "b017451")
+> lvls <- c("Male", "Female")
+> 
+> # create a parsed condition
+> cond <- parse(text=paste0(rhs_vars[1], " == \"",lvls[1],"\""))[[1]]
+> 
+> # when inside=TRUE a parsed condition can be passed to subset
+> dsdf <- subset(sdf, cond, inside=TRUE)
+> 
+> # check the result
+> table(getData(dsdf, "dsex"))
+
+Male 
+8486 
+> 
+> 
+> 
+> ### * <FOOTER>
+> ###
+> options(digits = 7L)
+> base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
+Time elapsed:  11.09 0.44 11.81 NA NA 
+> grDevices::dev.off()
+null device 
+          1 
+> ###
+> ### Local variables: ***
+> ### mode: outline-minor ***
+> ### outline-regexp: "\\(> \\)?### [*]+" ***
+> ### End: ***
+> quit('no')

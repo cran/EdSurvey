@@ -1,0 +1,9 @@
+%\VignetteIndexEntry{3. Achievement Levels}
+%\VignetteDepends{EdSurvey}
+%\VignetteEngine{knitr::knitr}
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{pdfpages}
+\begin{document}
+\includepdf[fitpaper=true,pages=-]{../vignettes/img/AnalysesUsingAchievementLevelsBasedonPlausibleValues.pdf}
+\end{document}
