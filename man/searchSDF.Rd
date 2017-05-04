@@ -37,16 +37,16 @@ and school data sets for a matching character string in embedded file format.
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
 # search both the student and school files by a character string
-searchSDF("book",sdf)
+searchSDF(string="book", data=sdf)
 
 # search only the student files by a character string
-searchSDF("algebra",sdf, fileFormat="student")
+searchSDF(string="algebra", data=sdf, fileFormat="student")
 
 # search both the student and school files and return a glimpse of levels
-searchSDF("value",sdf, levels=TRUE)
+searchSDF(string="value", data=sdf, levels=TRUE)
 
 # save the search as an object to return a full data.frame of search
-ddf <- searchSDF("value",sdf, levels=TRUE)
+ddf <- searchSDF(string="value", data=sdf, levels=TRUE)
 ddf
 }
 \author{

@@ -23,5 +23,5 @@ Print a summary of the achievement-level cut points on an
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
 # show the weights
-showCutPoints(sdf)
+showCutPoints(data=sdf)
 }

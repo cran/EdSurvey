@@ -2,4 +2,4 @@
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
 # show the plasusible values
-showPlausibleValues(sdf, TRUE)
+showPlausibleValues(data=sdf, verbose=TRUE)

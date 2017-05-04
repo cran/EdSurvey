@@ -4,13 +4,13 @@
 \alias{getWeightJkReplicates}
 \title{Return the jackknife replicate weights associated with a weight variable.}
 \usage{
-getWeightJkReplicates(var, sdf)
+getWeightJkReplicates(var, data)
 }
 \arguments{
 \item{var}{character indicating the name of the variable for which the
 jackknife replicate weights are desired.}
 
-\item{sdf}{an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.}
+\item{data}{an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.}
 }
 \value{
 A character vector of the jackknife replicate weights.
@@ -22,7 +22,7 @@ Return the jackknife replicate weights on an \code{edsurvey.data.frame} or \code
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
-getWeightJkReplicates("origwt", sdf)
+getWeightJkReplicates(var="origwt", data=sdf)
 }
 \author{
 Michael Lee and Paul Bailey

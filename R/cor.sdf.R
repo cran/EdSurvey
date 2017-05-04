@@ -301,10 +301,13 @@ cor.sdf <- function(x,
 print.edsurveyCor <- function(x, digits = getOption("digits"), ...) {
   class(x) <- "list"
   cat(paste0("Method: ", x$method, "\n"))
+  if(x$npv > 1) {
+    cat(paste0("Plausible values: ", x$npv, "\n"))
+  }
   cat(paste0("full data n: ", x$n0, "\n"))
   cat(paste0("n used: ", x$nUsed, "\n"))
   cat("\n")
-  cat(paste0(paste0("Correlation: ", signif(x$correlation, digits=digits), collapse=""), "\n\n"))
+  cat(paste0(paste0("Correlation: ", signif(x$correlation, digits=digits), collapse=""), "\n"))
   if(length(x$order)>0) {
     cat("\nCorrelation Levels:\n")
     for(var in 1:length(x$order)) {

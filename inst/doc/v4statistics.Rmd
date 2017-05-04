@@ -12,7 +12,7 @@ output:
     number_sections: no
 vignette: >
   %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteIndexEntry{5. Statistical Methods}
+  %\VignetteIndexEntry{4. Statistical Methods}
   \usepackage[utf8]{inputenc}
 ---
 This document describes estimation procedures for the `EdSurvey` package. It includes estimation of means (including regression analysis) and percentages; estimation of correlation coefficients is covered in a vignette in the `wCorr` package.[^wCorr]
@@ -26,6 +26,10 @@ This document uses many symbols; a table of symbols is shown here as a reference
 --------------------------------
  Symbol               Meaning
 --------              --------------------------------------------------------------------
+$A$                   A random variable
+
+$B$                   Another random variable
+
 $i$                   An index used for observations
 
 $j$                   An index used for jackknife replicates
@@ -119,7 +123,7 @@ $$\bm{V}_{jrr,p} =\sum_{j=1}^{J} (\bm{\beta}_{jp} - \bm{\beta}_{0p})^2$$
 [^jrrI]: This option is included because any value for $m^*$ gives an estimate of $\bm{V}_{jrr}$ with the same properties as a larger values of $m^*$ (they are unbiased under the same conditions), but larger values of $m^*$ can take substantially longer to compute. The value of $m^*$ is set with the `jrrIMax` argument; note that `jrrIMax` affects the estimation of $V_{jrr}$ only.
 
 The imputation variance is estimated according to Rubin (1987):
-$$\bm{V}_{imp} = \frac{m+1}{m} \sum_{p=1}^m (\bm{\beta}_p - \bm{\beta})^2$$
+$$\bm{V}_{imp} = \frac{m+1}{m(m-1)} \sum_{p=1}^m (\bm{\beta}_p - \bm{\beta})^2$$
 where $m$ is the number of plausible values, $\bm{\beta}_p$ is the vector of coefficients calculated with the $p$th set of plausible values, and $\bm{\beta}$ is the estimated coefficient vector averaged over all plausible values.
 
 ## Estimation of standard errors of weighted means when plausible values are not present, using the Taylor series method
@@ -157,6 +161,15 @@ where $\bm{V}_{Taylor}(\bm{\beta}_p)$ is calculated as in the previous section, 
 $$\bm{e}=\bm{y}_p - \bm{X\beta}_p$$
 and the remainder of the calculation of $U_{ik}$ and $z_{ujk}$ are otherwise identical.
 
+## Estimation of standard errors of differences of means
+
+In some cases two means ($\mu_1$ and $\mu_2$) are calculated for potentially overlapping groups. When this is done 
+The difference ($\Delta = \mu_1 - \mu_2$) may be of interest. The variance of this difference is then
+estimated using the formula
+$$\sigma_{\Delta}^2 = \sigma_1^2 + \sigma_2^2 - 2 *  p * \sigma_m^2$$
+where a subscript of $m$ is used to indicate the subset that has more observations, $p$ is the ratio of the number of observations used in calculating both $\mu_1$ and $\mu_2$ divided by the $n$-size of the larger of the two samples.
+
+When one group is a subset of the other, this is a part-whole comparison. The part-whole comparisons in the context of NAEP applies to comparisons between jurisdictions. Please use with caution when implementing this method to other types of gap comparisons. 
 
 # Estimation of weighted percentages
 
@@ -202,9 +215,9 @@ $$\bm{V}_{jrr,f,P}=\frac{1}{m^*} \sum_{p=1}^{m^*} \sum_{j=1}^J \left( \frac{\sum
 where the subscript $j$ is used to indicate that the weights for the $j$th jackknife replicates are being used, weights that do not contain a second subscript are the student full sample weights, and the subscript $p$ indicates the plausible values being used. Note that in some situations, the $\mathcal{A}_p$ will be identical to each other across all plausible values and the $\mathcal{U}_p$ will be identical to each other in a broader set of situations.
 
 The value of $V_{imp,f}$ is given by
-$$V_{imp,f}=\frac{m+1}{m}\sum_{p=1}^m \left( \frac{\sum_{i \in \mathcal{A}_p} w_i }{\sum_{i \in \mathcal{U}_p} w_i } - \sum_{p'=1}^m \frac{\sum_{i \in \mathcal{A}_{p'}} w_i }{\sum_{i \in \mathcal{U}_{p'}} w_i } \right)^2$$
+$$V_{imp,f}=\frac{m+1}{m(m-1)}\sum_{p=1}^m \left( \frac{\sum_{i \in \mathcal{A}_p} w_i }{\sum_{i \in \mathcal{U}_p} w_i } - \sum_{p'=1}^m \frac{\sum_{i \in \mathcal{A}_{p'}} w_i }{\sum_{i \in \mathcal{U}_{p'}} w_i } \right)^2$$
 so that the second sum is simply the average over all plausible values and represents the estimate itself $\pi$ and the expression could be rewritten slightly more compactly as
-$$V_{imp,f}=\frac{m+1}{m}\sum_{p=1}^m \left( \frac{\sum_{i \in \mathcal{A}_p} w_i }{\sum_{i \in \mathcal{U}_p} w_i } - \frac{\pi}{100} \right)^2 \ .$$
+$$V_{imp,f}=\frac{m+1}{m(m-1)}\sum_{p=1}^m \left( \frac{\sum_{i \in \mathcal{A}_p} w_i }{\sum_{i \in \mathcal{U}_p} w_i } - \frac{\pi}{100} \right)^2 \ .$$
 
 ## Estimation of the standard error of weighted percentages when plausible values are not present, using the Taylor series method
 
@@ -249,6 +262,24 @@ Two heuristic arguments are offered for this. First, the variance terms are all 
 
 The second heuristic argument is that the values of $\pi_h$ already meet the requirement of summing up to one when the score vector is set equal to zero and solved. This means that the constraint does not need to be imposed a second time.
 
+# Estimation of covariances
+
+When a value does has plausible values, the jackknife covariance  ($\bm{C}(A,B)_J$) of two statistics $A$ and $B$ is estimated as 
+$$\bm{C}(A,B)_J=\bm{C}_{jrr}(A,B) + \bm{C}_{imp}(A,B)$$
+
+The sampling covariance is
+$$\bm{C}_{jrr}(A,B) = \frac{1}{m^*} \sum_{i=1}^{m^*}  \sum_{j=1}^{J} (A_{jp} - A_{0p}) (B_{jp} - B_{0p}) \ . $$
+where $A_jp$ is the estimate of $A$ using the $j$th jackknife replicate value and the $p$th plausible value, $A_{0p}$ is the estimate of $A$ using the full sample weights and the $p$th plausible value. This equation is the covariance analog to the variance equations presented above. 
+
+The imputation variance is estimated according to the covariance analog to the
+Rubin (1987) variance estimate:
+$$\bm{C}_{imp}(A,B) = \frac{m+1}{m(m-1)} \sum_{p=1}^m (A_p - A_0)(B_p - B_0)$$
+where $A_p$ is the estimate of $A$ using the $p$th set of plausible values and $A_0$ is the average of $A_p$ acorss the plausible values.
+
+When the variable does not have plausible values $\bm{C}_{imp}(A,B)$ is zero.
+
+Note that there is no Taylor series analog to this.
+
 # References
 Binder, D. A. (1983). On the Variances of Asymptotically Normal Estimators From Complex Surveys. *International Statistical Review*, *51*(**3**): 279--92.
 
@@ -257,3 +288,5 @@ Cohen, J. (2002). *AM Manual*. Washington, DC: American Institutes for Research.
 Rubin, D. B. (1987). *Multiple Imputation for Nonresponse in Surveys*. New York, NY: Wiley.
 
 Weisberg, S. (1985). *Applied Linear Regression*. New York, NY: Wiley.
+
+National Center for Education Statistics (2009). t *Test for Partly Overlapping Groups*. National Center for Education Statistics, online at [https://nces.ed.gov/nationsreportcard/tdw/analysis/2004_2005/infer_compare2_overlap.aspx](https://nces.ed.gov/nationsreportcard/tdw/analysis/2004_2005/infer_compare2_overlap.aspx).

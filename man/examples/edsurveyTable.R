@@ -4,28 +4,27 @@
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
 # create a table that shows only the break down of dsex
-edsurveyTable( ~ dsex, sdf, returnMeans=FALSE, returnSepct=FALSE)
+edsurveyTable(composite ~ dsex, data=sdf, returnMeans=FALSE, returnSepct=FALSE)
 
 # create a table with composite scores by dsex
-edsurveyTable(composite ~ dsex, sdf)
+edsurveyTable(composite ~ dsex, data=sdf)
 
 # add a second variable
-edsurveyTable(composite ~ dsex + b017451, sdf)
+edsurveyTable(composite ~ dsex + b017451, data=sdf)
 
 # add a second variable, do not omit any levels
-edsurveyTable( ~ dsex + b017451 + b003501, sdf, omittedLevels=FALSE)
+edsurveyTable(composite ~ dsex + b017451 + b003501, data=sdf, omittedLevels=FALSE)
 
 # add a second variable, do not omit any levels, change aggregation level
-edsurveyTable( ~ dsex + b017451 + b003501, sdf,
-                      omittedLevels=FALSE, pctAggregationLevel=0)
+edsurveyTable(composite ~ dsex + b017451 + b003501, data=sdf, omittedLevels=FALSE,
+	            pctAggregationLevel=0)
 
-edsurveyTable( ~ dsex + b017451 + b003501, sdf,
-                      omittedLevels=FALSE, pctAggregationLevel=1)
+edsurveyTable(composite ~ dsex + b017451 + b003501, data=sdf, omittedLevels=FALSE,
+	            pctAggregationLevel=1)
 
-edsurveyTable( ~ dsex + b017451 + b003501, sdf,
-                      omittedLevels=FALSE, pctAggregationLevel=2)
+edsurveyTable(composite ~ dsex + b017451 + b003501, data=sdf, omittedLevels=FALSE,
+	            pctAggregationLevel=2)
 
 # variance estimation using the Taylor series 
-edsurveyTable( ~ dsex + b017451 + b003501, sdf,
-                     varMethod="Taylor")
+edsurveyTable(composite ~ dsex + b017451 + b003501, data=sdf, varMethod="Taylor")
 }

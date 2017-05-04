@@ -2,7 +2,7 @@
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
 # True
-hasPlausibleValue("composite", sdf)
+hasPlausibleValue(var="composite", data=sdf)
 
 # False
-hasPlausibleValue("dsex", sdf)
+hasPlausibleValue(var="dsex", data=sdf)

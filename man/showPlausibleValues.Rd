@@ -4,10 +4,10 @@
 \alias{showPlausibleValues}
 \title{Print a summary of the subject scale or subscale and the associated variables for their plausible values.}
 \usage{
-showPlausibleValues(sdf, verbose = FALSE)
+showPlausibleValues(data, verbose = FALSE)
 }
 \arguments{
-\item{sdf}{an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.}
+\item{data}{an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.}
 
 \item{verbose}{logical. Set to \code{TRUE} to get the variable names for plausible values.}
 }
@@ -23,7 +23,7 @@ Print out a summary of the subject scale or subscale and the associated variable
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
 # show the plasusible values
-showPlausibleValues(sdf, TRUE)
+showPlausibleValues(data=sdf, verbose=TRUE)
 }
 \author{
 Michael Lee and Paul Bailey

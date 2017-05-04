@@ -2,35 +2,35 @@
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
 # table to compare to subsequent tables with subsets:
-edsurveyTable(~ dsex, sdf, returnMeans=FALSE, returnSepct=FALSE)
+edsurveyTable(composite ~ dsex, data=sdf, returnMeans=FALSE, returnSepct=FALSE)
 
 # subset to just males
-newsdf <-  subset(sdf, dsex == "Male") 
+newsdf <-  subset(x=sdf, subset= dsex == "Male") 
 # table of dsex after subset
-edsurveyTable(~ dsex, newsdf, returnMeans=FALSE, returnSepct=FALSE)
+edsurveyTable(composite ~ dsex, data=newsdf, returnMeans=FALSE, returnSepct=FALSE)
 
 # Variable names that are not in the sdf get resolved in the parent frame.
 # Practically, that means that the following two subset 
 # calls sdfM1 and sdfM2 do the same thing:
 male_var <- "Male"
-sdfM1 <- subset(sdf,dsex == male_var)
-sdfM2 <- subset(sdf,dsex == "Male")
-table(getData(sdfM1, "dsex"))
-table(getData(sdfM2, "dsex"))
+sdfM1 <- subset(x=sdf, subset= dsex == male_var)
+sdfM2 <- subset(x=sdf, subset= dsex == "Male")
+table(getData(data=sdfM1, varnames="dsex"))
+table(getData(data=sdfM2, varnames="dsex"))
 
 # variable can also be resolved as members of lists
 genders <- c("Male", "Female","not a sex level")
-sdfn <- subset(sdf,dsex == genders[2]) 
-table(getData(sdfn, "dsex"))
+sdfn <- subset(x=sdf, subset= dsex == genders[2]) 
+table(getData(data=sdfn, varnames="dsex"))
 
 # variables can also be subset using %in%
-sdfM3 <- subset(sdf,dsex %in% c("Male", "not a sex level")) 
-table(getData(sdfM3, "dsex"))
+sdfM3 <- subset(x=sdf, subset= dsex %in% c("Male", "not a sex level")) 
+table(getData(data=sdfM3, varnames="dsex"))
 
 # if you need to call a name on the sdf dynamically, you can use as.name
 dsex_standin <- as.name("dsex")
-sdfM4 <- subset(sdf,dsex_standin == "Male")
-table(getData(sdfM4, "dsex"))
+sdfM4 <- subset(x=sdf, subset= dsex_standin == "Male")
+table(getData(data=sdfM4, varnames="dsex"))
 
 
 # Here is an example of how one might want to call
@@ -43,7 +43,7 @@ lvls <- c("Male", "Female")
 cond <- parse(text=paste0(rhs_vars[1], " == \"",lvls[1],"\""))[[1]]
 
 # when inside=TRUE a parsed condition can be passed to subset
-dsdf <- subset(sdf, cond, inside=TRUE)
+dsdf <- subset(x=sdf, subset=cond, inside=TRUE)
 
 # check the result
-table(getData(dsdf, "dsex"))
+table(getData(data=dsdf, varnames="dsex"))

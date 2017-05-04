@@ -41,7 +41,6 @@ test_that("showPlausibleValues and showWeights verbose output agrees",{
 "  'origwt' with 62 JK replicate weights (the default). Jackknife replicate weight variables:", 
 " [1] \"srwt01\" \"srwt02\" \"srwt03\" \"srwt04\" \"srwt05\" \"srwt06\" \"srwt07\" \"srwt08\" \"srwt09\" \"srwt10\" \"srwt11\" \"srwt12\" \"srwt13\" \"srwt14\" \"srwt15\" \"srwt16\" \"srwt17\" \"srwt18\" \"srwt19\" \"srwt20\" \"srwt21\" \"srwt22\" \"srwt23\" \"srwt24\" \"srwt25\" \"srwt26\" \"srwt27\" \"srwt28\" \"srwt29\" \"srwt30\" \"srwt31\" \"srwt32\" \"srwt33\" \"srwt34\" \"srwt35\" \"srwt36\" \"srwt37\" \"srwt38\" \"srwt39\" \"srwt40\" \"srwt41\" \"srwt42\" \"srwt43\" \"srwt44\" \"srwt45\" \"srwt46\" \"srwt47\" \"srwt48\" \"srwt49\" \"srwt50\" \"srwt51\" \"srwt52\" \"srwt53\" \"srwt54\" \"srwt55\"",
 "[56] \"srwt56\" \"srwt57\" \"srwt58\" \"srwt59\" \"srwt60\" \"srwt61\" \"srwt62\"",
-"",
 "")
   co <- capture.output(showWeights(sdf,verbose=TRUE))
   expect_equal(co, sw)
@@ -284,7 +283,6 @@ test_that("achievementLevels, aggregated by non PV variables", {
   expect_equal_to_reference(test3 <- achievementLevels(aggregateBy = "sdracem",returnCumulative = TRUE, data=sdf), file="aLevels_test3.rds")
 })
 
-
 test_that("achievementLevels, aggregated by composite", {
   skip_on_cran()
   expect_equal_to_reference(test4 <- achievementLevels("sdracem",aggregateBy = c("composite"),data=sdf, returnCumulative = TRUE), file="aLevels_test4.rds")
@@ -303,4 +301,4 @@ test_that("achievementLevels, aggregated by composite", {
 test_that("achievementLevels complex", {
   skip_on_cran()
   expect_equal_to_reference(test7 <- achievementLevels(c("composite", "ell3", "lep", "pared", "b017451"), data=sdf, returnCumulative = TRUE), file="aLevels_test7.rds")
- })
+})

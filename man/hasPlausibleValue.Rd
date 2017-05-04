@@ -4,12 +4,12 @@
 \alias{hasPlausibleValue}
 \title{Return a value indicating whether this variable has associated plausible values.}
 \usage{
-hasPlausibleValue(var, sdf)
+hasPlausibleValue(var, data)
 }
 \arguments{
 \item{var}{character indicating the variable in question.}
 
-\item{sdf}{an \code{edsurvey.data.frame} or a \code{light.edsurvey.data.frame}.}
+\item{data}{an \code{edsurvey.data.frame} or a \code{light.edsurvey.data.frame}.}
 }
 \value{
 A boolean (or vector when \code{var} is a vector) indicating if each element of \code{var} has
@@ -29,10 +29,10 @@ Note that this function returns \code{TRUE} only when the variable passed to it 
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
 # True
-hasPlausibleValue("composite", sdf)
+hasPlausibleValue(var="composite", data=sdf)
 
 # False
-hasPlausibleValue("dsex", sdf)
+hasPlausibleValue(var="dsex", data=sdf)
 }
 \author{
 Michael Lee and Paul Bailey

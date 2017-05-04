@@ -2,7 +2,7 @@
 #'
 #' @description Return a value indicating if this variable has associated plausible values in an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.
 #'
-#' @param sdf an \code{edsurvey.data.frame} or a \code{light.edsurvey.data.frame}.
+#' @param data an \code{edsurvey.data.frame} or a \code{light.edsurvey.data.frame}.
 #' @param var character indicating the variable in question.
 #'
 #' @return A boolean (or vector when \code{var} is a vector) indicating if each element of \code{var} has
@@ -16,7 +16,8 @@
 #' @author Michael Lee and Paul Bailey
 #' @example \man\examples\hasPlausibleValue.R
 #' @export
-hasPlausibleValue <- function(var, sdf) {
+hasPlausibleValue <- function(var, data) {
+  sdf <- data
   if (!inherits(sdf, c("edsurvey.data.frame", "light.edsurvey.data.frame"))) 
     stop(paste0("The argument ", sQuote("sdf"), " must be an edsurvey.data.frame or a light.edsurvey.data.frame. See the 'Using the ", 
       dQuote("EdSurvey"), " Package's getData Function to Manipulate the NAEP Primer Data vignette' for how to work with data in a light.edsurvey.data.frame."))

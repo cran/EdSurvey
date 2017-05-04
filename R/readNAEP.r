@@ -31,41 +31,51 @@
 #' @example \man\examples\readNAEP.R
 #' @export
 readNAEP <- function(filepath, defaultWeight = "origwt", defaultPvs = "composite", omittedLevels = c('Multiple',NA,'Omitted'), frPath = NULL) {
-  #RFE: we should make sure filepath is a length 1 character, ends with .dat
-  filepath = gsub("\\","/", filepath, fixed=TRUE)
-  
-  splits <- strsplit(filepath, "/")[[1]]
-  filename <- splits[length(splits)]
-  filename <- tolower(filename)
-  filename <- gsub('.dat','', filename) 
+  if(length(filepath) != 1) {
+    stop(paste0("The argument ", sQuote("filepath"), " must specify exactly one file."))
+  }
+  # the directory for the file
+  filedir <- dirname(filepath)
+  # the file name (less a trailing .dat, if included)
+  filename <- gsub('.dat$','', basename(filepath))
 
-  # we want to get rid of the last instance of a folder named data, so reverse
-  revFilePath <- paste(rev(strsplit(filepath, NULL)[[1]]), collapse="")
-  # then fine the first instance of "data" reversed.
+  # find the school path, if this is a student file
   schPath <- NULL 
-  if(tolower(substr(revFilePath,8,8)) == "t") {
-    revSchPath <- revFilePath
-    substr(revSchPath,8,8) <- "C"
-    schPath <-  paste(rev(strsplit(revSchPath, NULL)[[1]]), collapse="")
+  if(tolower(substr(filename, nchar(filename) - 3, nchar(filename) - 3)) %in% "t") {
+    schFilename <- filename
+    substr(schFilename, nchar(filename) - 3, nchar(filename) - 3) <- "C"
+    schPath <-  paste0(filedir, "/", schFilename,".dat" )
+    # fix case on paths
+    schPath <- ignoreCaseFileName(schPath)
     if(!file.exists(schPath)) {
       schPath <- NULL
     }
   }
-  revfrName <- sub("atad", "smraP/tceleS", tolower(revFilePath), fixed=TRUE) 
-  frName <- paste(rev(strsplit(revfrName, NULL)[[1]]), collapse="")
-  frName <- gsub(".dat", ".fr2", frName, fixed=TRUE)
+  # grab the subfolder select/parms in an case insensitive way 
+  if (is.null(frPath)) {
+    frName <- grep(paste0("^",dirname(filedir),"/select/parms$"), list.dirs(dirname(filedir)), value=TRUE, ignore.case=TRUE)
+    if(length(frName) == 0) {
+      stop(paste0("Could not find folder ", dQuote(paste0(dirname(filedir),"/select/parms/")), "." ))
+    }
+    if(length(frName) > 1) {
+      stop(paste0("Folder ",
+                  dQuote(paste0(dirname(filedir),"/select/parms/")),
+                  " is not unique when searched in a case insensitive way. Please limit the subfolders of ",
+                  dQuote(dirname(filedir)), " so that only one is ",
+                  dQuote("/select/parms/"), "." ))
+    }
+    frName <- paste0(frName, "/", filename, ".fr2")
+    # fix case on path, only if not user specified
+    frName <- ignoreCaseFileName(frName)
+  } else {
+    frName <- frPath
+  }
   
   if(!is.null(schPath)) {
-    revSchfrName <- revfrName
-    substr(revSchfrName,8,8) <- "C"
-    frSchName <- paste(rev(strsplit(revSchfrName, NULL)[[1]]), collapse="")
-    frSchName <- gsub(".dat", ".fr2", frSchName, fixed=TRUE)
-
-  }
-
-  if (!is.null(frPath)) {
-    frName <- frPath
-    # RFE: deal with school path here too!
+    frSchName <- frName
+    substr(frSchName, nchar(frSchName) -7, nchar(frSchName) - 7) <- "C"
+    # fix case on path
+    frSchName <- ignoreCaseFileName(frSchName)
   }
 
   labelsFile <- readMRC(frName)
@@ -305,3 +315,24 @@ applyPV <- function(pv, Labels, pvWt, oLabels, Type) {
   Type[Labels == "PV2"] <- paste0(Type[Labels == "PV2"], "_ap")
   return(list(Labels=Labels, Type=Type, pvWt=pvWt))
 }
+
+# for a case-sensitive file system this will change the path to resolve
+# correctly when the name is known up to the case. 
+# Assumes that there is not another file with the same name in the directory 
+# when ignoring the case. Essentially, this makes a case-sensitive file
+# system work as if case-insensitive (when file names would not be overloaded)
+# Note that for the NAEP data this is a safe assumption.
+# @author Paul Bailey
+ignoreCaseFileName <- function(f) {
+  bn <- basename(f) # the name of the file in the folder
+  dr <- dirname(f) # the name of the directory
+  ff <- list.files(dr, pattern=bn, ignore.case=TRUE, full.names=TRUE)
+  if(length(ff) == 0) {
+    stop(paste0("Could not find file ", dQuote(f),"."))
+  }
+  if(length(ff) > 1) {
+    stop(paste0("File name ", dQuote(f)," is ambigious with respect to capitalization. Please remove one of the following files and try again.", paste(dQuote(ff), collapse=", ")))
+  }
+  ff
+}
+

@@ -31,12 +31,12 @@ library(EdSurvey)
 
 ```{r readNAEP vignette, eval=FALSE}
 library(EdSurvey)
-sdf <- readNAEP('//.../Data/file.dat')
+sdf <- readNAEP(filepath='//.../Data/file.dat')
 ```
 To follow along with this vignette, load the NAEP Primer data set `M36NT2PM`, assigned to `sdf`, from the package directory using `system.file`:
 
 ```{r readNAEP source package}
-sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 ```
 
 This allows access to the NAEP Primer data to demonstrate `EdSurvey` functions.
@@ -48,9 +48,8 @@ Data can be retrieved from the selected file using the `getData` function, which
 ### 1. Provide variable names to getData() function.
 First, get the names of the weight and other variables that will be used.[^qgetData] For details on specifying and searching for particular arguments from a database, consult the **Getting to know the data format** section in the *Using EdSurvey `r packageVersion("EdSurvey")` to Analyse NAEP Data: An Illustration of Analyzing NAEP Primer* vignette.[^searchSDF] Then you can select the variables and weight(s) you wish to call:
 ```{r read in the data}
-gddat <- getData(sdf,
-                c('composite', 'dsex', 'b017451', 'origwt'),
-                addAttributes = TRUE, omittedLevels = FALSE)
+gddat <- getData(data=sdf, varnames=c('composite', 'dsex', 'b017451', 'origwt'),
+                addAttributes=TRUE, omittedLevels=FALSE)
 ```
 [^qgetData]: Consult `?getData` or the appendix of the *Using EdSurvey `r packageVersion("EdSurvey")` to Analyse NAEP Data: An Illustration of Analyzing NAEP Primer* vignette  for details on default `getData` arguments.
 [^searchSDF]: View documentation on `searchSDF()`, `showPlausibleValues()`, `showWeights()`, and `names()` in particular.
@@ -66,23 +65,23 @@ A few important things to note:
 
   1. `addAttributes` is set to `TRUE` so that the object (`gddat`) returned by this call to `getData` can be passed to the `EdSurvey` package functions. This argument is `FALSE` by default.
   2. All of the jackknife replicate weights are returned automatically (`srwt01` to `srwt62`)
-  3. `omittedLevels` is set to `FALSE` so that variables with special values (such as multiple entries or NA's) can still be returned by `getData` and manipulated by the user. The default setting (i.e. `omittedLevels = TRUE`) removes these values from factors that are not typically included in regression analysis and cross-tabulation.
+  3. `omittedLevels` is set to `FALSE` so that variables with special values (such as multiple entries or NA's) can still be returned by `getData` and manipulated by the user. The default setting (i.e. `omittedLevels=TRUE`) removes these values from factors that are not typically included in regression analysis and cross-tabulation.
 
 ### 2. Extract the variables from a formula.
 
-The `getData` function can extract variable names embedded in a formula. The arguments `formula = composite ~ dsex + b017451`, and `varnames = "origwt"` tell `getData` to extract the necessary subject scale, outcome variables used in the formula, and the default weight. The `addAttributes` argument is important for use in further functions; setting it to `TRUE` passes the resulting `light.edsurvey.data.frame` to all functions that require an `edsurvey.data.frame`. Setting `defaultConditions = TRUE` uses the default conditions stored in the `edsurvey.data.frame` to subset the data, in this case subsetting the `edsurvey.data.frame` on the reporting sample.[^print]
+The `getData` function can extract variable names embedded in a formula. The arguments `formula=composite ~ dsex + b017451`, and `varnames="origwt"` tell `getData` to extract the necessary subject scale, outcome variables used in the formula, and the default weight. The `addAttributes` argument is important for use in further functions; setting it to `TRUE` passes the resulting `light.edsurvey.data.frame` to all functions that require an `edsurvey.data.frame`. Setting `defaultConditions=TRUE` uses the default conditions stored in the `edsurvey.data.frame` to subset the data, in this case subsetting the `edsurvey.data.frame` on the reporting sample.[^print]
 
 [^print]: Use `print` to view the default conditions in an `edsurvey.data.frame`.
 
 ```{r getData}
-gddat <- getData(sdf, formula = composite ~ dsex + b017451, varnames = "origwt", 
-                 addAttributes = TRUE, defaultConditions = TRUE)
+gddat <- getData(data=sdf, formula=composite ~ dsex + b017451, varnames="origwt", 
+                 addAttributes=TRUE, defaultConditions=TRUE)
 ```
 
 Note that in the following code, the `head` function is used, focusing on columns 1 through 7. This reveals that we have retrieved the requested variables by viewing the first few rows of the resulting data:
 
 ```{r head(gddat)}
-head(gddat[,1:7])
+head(x=gddat[,1:7])
 ```
 
 ### 3. Select a variable to merge the school data.
@@ -92,15 +91,15 @@ Both student and school data from a NCES data set can be analyzed and merged aft
 The `getData` function can merge a school data file by passing a common variable through the arguments `schoolMergeVarStudent` and `schoolMergeVarSchool`. In this example, the student file is merged with the school file on the common variable `scrpsu` and `sscrpsu`, which contain school identifiers, as well as the five plausible values associated with `composite`, two variables from the student file (`dsex` and `b017451`), and a school variable (`c052601`):
 
 ```{r schoolmerge}
-gddat <- getData(sdf, c("composite", "dsex", "b017451","c052601","origwt"),
-                schoolMergeVarStudent='scrpsu', schoolMergeVarSchool="sscrpsu",
-                addAttributes = TRUE)
+gddat <- getData(data=sdf, varnames=c("composite", "dsex", "b017451","c052601","origwt"),
+                 schoolMergeVarStudent='scrpsu', schoolMergeVarSchool="sscrpsu",
+                 addAttributes=TRUE)
 ```
 
 The returned `light.edsurvey.data.frame` contains variables from both the student and school files.
 
 ```{r head(gddat) schoolmerge}
-head(gddat[,1:7])
+head(x=gddat[,1:7])
 ```
 
 # Manipulate the Data
@@ -115,8 +114,8 @@ The base R function `gsub` allows users to substitute one string for another.[^q
 ```{r Base Recode Column}
 # 1. Recode a Column Based on a String
 
-gddat$b017451 <- gsub("Every day","Seven days a week",gddat$b017451)
-head(gddat$b017451)
+gddat$b017451 <- gsub(pattern="Every day",replacement="Seven days a week",x=gddat$b017451)
+head(x=gddat$b017451)
 ```
 
 The base R function `subset` allows users to subset vectors, matrices, or data frames which meet conditions. In the following example, users create a subsample of students who talk about studies at home (variable `b017451`) "2 or 3 times a week" or "About once a week," assigned to the object `df`:
@@ -124,19 +123,19 @@ The base R function `subset` allows users to subset vectors, matrices, or data f
 ```{r Base Subset Data with Labels}
 # 2. Subset the Data Based on a String
 
-df <- subset(gddat,b017451=="2 or 3 times a week" | b017451=="About once a week")
-head(df[,1:7])
+df <- subset(gddat,b017451 == "2 or 3 times a week" | b017451 == "About once a week")
+head(x=df[,1:7])
 ```
 
 Since the `EdSurvey` package functions accept both value levels and labels, the same subset can be made using value levels:
 ```{r Base Subset Data with Levels}
 # 2. Subset the Data Based on a String
-gddat <- getData(sdf, c("composite", "dsex", "b017451","c052601","origwt"),
+gddat <- getData(data=sdf, varnames=c("composite", "dsex", "b017451", "c052601", "origwt"),
                 schoolMergeVarStudent='scrpsu', schoolMergeVarSchool="sscrpsu",
-                addAttributes = TRUE)
+                addAttributes=TRUE)
 
-df <- subset(gddat,b017451==4 | b017451==3)
-head(df[,1:7])
+df <- subset(gddat, b017451 == 4 | b017451 == 3)
+head(x=df[,1:7])
 ```
 
 # Use `EdSurvey` Functions on Unique `light.edsurvey.data.frames`
@@ -150,11 +149,11 @@ The following example creates an `edsurveyTable` using the manipulated `light.ed
 
 
 ```{r edsurveyTable gddat}
-es2 <- edsurveyTable(composite ~ dsex + b017451, weightVar = "origwt", gddat)
+es2 <- edsurveyTable(composite ~ dsex + b017451, weightVar="origwt", data=gddat)
 ```
 
 ```{r knitr edsurveyTable gddat, echo=FALSE}
-knitr::kable(es2$data, digits=5, row.names=FALSE, caption="Table es2")
+knitr::kable(x=es2$data, digits=7, row.names=FALSE, caption="Table es2")
 ```
 
 ## lm.sdf
@@ -164,14 +163,14 @@ To generate a linear model using `light.edsurvey.data.frame`, the included argum
 
 
 ```{r lm.sdf gddat}
-lm2 <- lm.sdf(composite ~ dsex + b017451, weightVar = "origwt", gddat)
+lm2 <- lm.sdf(composite ~ dsex + b017451, weightVar="origwt", data=gddat)
 summary(lm2)
 ```
 
 Contrasts from treatment groups also can be omitted from a linear model by stating the variable name in the `relevels` argument. In this example, values with `dsex="Female"` are withheld from the regression. Use the base R function `summary` to view details about the linear model.
 
 ```{r lm.sdf3 gddat}
-lm3 <- lm.sdf(composite ~ dsex + b017451, gddat, relevels=list(dsex="Female"))
+lm3 <- lm.sdf(composite ~ dsex + b017451, data=gddat, relevels=list(dsex="Female"))
 summary(lm3)
 ```
 
@@ -181,11 +180,11 @@ Users might generate a correlation to exlore a manipulated `light.edsurvey.data.
 [^corsdf]: Consult `?cor.sdf` or the appendix of the *Using EdSurvey `r packageVersion("EdSurvey")` to Analyse NAEP Data: An Illustration of Analyzing NAEP Primer* vignette for details on default `cor.sdf` arguments.
 
 ```{r cor.sdf gddat}
-eddat <- getData(sdf,
-                c("num_oper","algebra","dsex", 'origwt'),
-                addAttributes = TRUE, omittedLevels = FALSE)
-eddat <- subset(eddat,dsex=="Female")
-cor2 <- cor.sdf("num_oper","algebra", weightVar = "origwt", eddat, method = "Pearson")
+eddat <- getData(data=sdf, varnames=c("num_oper","algebra","dsex", 'origwt'),
+                addAttributes=TRUE, omittedLevels=FALSE)
+
+eddat <- subset(eddat,dsex == "Female")
+cor2 <- cor.sdf(x="num_oper",y="algebra", weightVar="origwt", data=eddat, method="Pearson")
 cor2
 ```
 
@@ -196,36 +195,35 @@ The following are two sequences in which the `EdSurvey` package can be implement
 A possible workflow might consist of analyzing student's mathematics performance by major racial/ethnic groups and a student's Individualized Education Program (IEP) status. A sample data manipulation might include recoding the variable for race/ethnicity:
 
 ```{r sample getData}
-rsdf <- getData(sdf, c(all.vars(composite ~ sdracem + iep),"origwt"), 
-                addAttributes = TRUE)
+rsdf <- getData(data=sdf, varnames=c(all.vars(composite ~ sdracem + iep),"origwt"), 
+                addAttributes=TRUE)
 ```
 
-Note that `addAttributes = TRUE` so that the object (`rsdf`) returned by this call to `getData` can be passed to the `EdSurvey` package functions. Since the focus of interest is on the performance of major racial groups, some smaller racial groups need to be combined. The variable `sdracem` then is recoded to keeps White, Black, Hispanic, and Asian/Pacific Islander values unchanged and combines the remaining students of other racial groups as one group: "Other." Use the base R function `unique` to view details about the recoded variable `sdracem`.
+Note that `addAttributes=TRUE` so that the object (`rsdf`) returned by this call to `getData` can be passed to the `EdSurvey` package functions. Since the focus of interest is on the performance of major racial groups, some smaller racial groups need to be combined. The variable `sdracem` then is recoded to keeps White, Black, Hispanic, and Asian/Pacific Islander values unchanged and combines the remaining students of other racial groups as one group: "Other." Use the base R function `unique` to view details about the recoded variable `sdracem`.
 
 ```{r sample recode}
-rsdf$sdracem <-gsub("Amer Ind/Alaska Natv|Other","Other",rsdf$sdracem)
-unique(rsdf$sdracem)
+rsdf$sdracem <-gsub(pattern="Amer Ind/Alaska Natv|Other",replacement="Other",x=rsdf$sdracem)
+unique(x=rsdf$sdracem)
 ```
 
 Now run a regression using the `composite`, the default weight `origwt`, as well as the variables `iep` and the recoded `sdracem`:
 ```{r sample regression}
-lm4 <- lm.sdf(composite ~ iep + sdracem, weightVar = "origwt", rsdf)
+lm4 <- lm.sdf(composite ~ iep + sdracem, weightVar="origwt", data=rsdf)
 summary(lm4)
 ```
 
 Alternatively, this also could be completed within one `getData` call. The `sdracem` variables changed are passed through the `recode` argument `from` their current values `to` their new recoded value.
 ```{r sample getData full}
-eddat <- getData(rsdf,
-                 c(all.vars(composite ~ sdracem + iep),"origwt"),
+eddat <- getData(data=rsdf, varnames=c(all.vars(composite ~ sdracem + iep),"origwt"),
                  recode=list(sdracem=list(from=c("Amer Ind/Alaska Natv|Other"),
                                           to=c("Other"))),
-                 addAttributes = TRUE)
+                 addAttributes=TRUE)
 ```
 
 This produces the same linear model:
 
 ```{r sample regression2}
-lm5 <- lm.sdf(composite ~ iep + sdracem, weightVar = "origwt", eddat)
+lm5 <- lm.sdf(composite ~ iep + sdracem, weightVar="origwt", data=eddat)
 summary(lm5)
 ```
 
@@ -234,14 +232,14 @@ summary(lm5)
 Another example involves subsetting multiple variables with special values. Let's look at the values for English language learners, gender, students with IEPs, and their composite mathematics performance.
 
 ```{r sample2 getData}
-gddat <- getData(sdf, c(all.vars(composite ~ lep + dsex + iep),"origwt"), 
-                 addAttributes = TRUE, omittedLevels = FALSE)
+gddat <- getData(data=sdf, varnames=c(all.vars(composite ~ lep + dsex + iep),"origwt"), 
+                 addAttributes=TRUE, omittedLevels=FALSE)
 ```
 
-As a result of setting `omittedLevels = FALSE`, special values are included in the `light.edsurvey.data.frame`. Users can view the unique instances of the variables `lep`, `dsex`, and `iep` by using the base R function `unique`:
+As a result of setting `omittedLevels=FALSE`, special values are included in the `light.edsurvey.data.frame`. Users can view the unique instances of the variables `lep`, `dsex`, and `iep` by using the base R function `unique`:
 
 ```{r sample2 unique subset}
-unique(gddat[,c("lep","dsex","iep")])
+unique(x=gddat[,c("lep","dsex","iep")])
 ```
 
 It's easy to notice that omitted values have been included in the `lep` and `iep` columns. Let's start by recoding the values.
@@ -249,13 +247,13 @@ It's easy to notice that omitted values have been included in the `lep` and `iep
 ```{r sample2 unique subset2}
 gddat=subset(gddat,iep %in% c("No", "Yes"))
 gddat=subset(gddat,lep %in% c("No", "Yes"))
-unique(gddat[,c("lep","dsex","iep")])
+unique(x=gddat[,c("lep","dsex","iep")])
 ```
 
 Now that we've finished subsetting the variables, we can run the regression:
 
 ```{r sample2 recode}
-lm6 <- lm.sdf(composite ~ lep + dsex + iep, weightVar = "origwt", gddat)
+lm6 <- lm.sdf(composite ~ lep + dsex + iep, weightVar="origwt", gddat)
 summary(lm6)
 ```
 
@@ -263,15 +261,15 @@ summary(lm6)
 
 Users can add their own variables to a `light.edsurvey.data.frame` and analyze them with `EdSurvey` functions. In this example, a researcher plans to create a new variable "t08880a" labeled "computer activities" by summing computer-use variables in the Primer data. First, the researcher retrieves the four variables for computer use, the five plausible values for `composite`, and the default weight `origwt` to create a `light.edsurvey.data.frame`:
 ```{r sample3 getData}
-comp <- getData(sdf, c("composite", "t088801", "t088803", "t088804", "t088805","origwt"), 
-                 addAttributes = TRUE)
+comp <- getData(data=sdf, varnames=c("composite", "t088801", "t088803", "t088804", "t088805","origwt"), 
+                 addAttributes=TRUE)
 ```
 
 Then, add the new variable (which we'll call `t08880a`) to the object `comp`. The base function `sapply` applies a function over a vector--in this case coercing our vector of four variables for computer use to numeric values using `as.numeric`. This capability is necessary, since the `EdSurvey` package stores variables as `lfactors`, where both levels and labels are stored for each value.
 
 ```{r sample3 recode}
 comp_vars <- c("t088801", "t088803", "t088804", "t088805")
-comp[,comp_vars] <- sapply(comp[,comp_vars],as.numeric)
+comp[,comp_vars] <- sapply(X=comp[,comp_vars], FUN=as.numeric)
 comp$t08880a <- comp$t088801 + comp$t088803 + comp$t088804 + comp$t088805
 names(comp)
 ```
@@ -279,7 +277,7 @@ names(comp)
 Now that the computer use variable has been created, we can run the regression:
 
 ```{r sample3 lm}
-comp_lm <- lm.sdf(composite ~ t08880a, weightVar = "origwt", comp)
+comp_lm <- lm.sdf(composite ~ t08880a, weightVar="origwt", data=comp)
 summary(comp_lm)
 ```
 
@@ -289,11 +287,12 @@ summary(comp_lm)
 Since many NCES databases have hundreds of columns and millions of rows, the `EdSurvey` package allows users to analyze data *without* storing it in the global environment. Alternatively, the `getData` function retrieves `light.edsurvey.data.frames` into the global environment, which can be costly to memory usage. The base R function `object.size` provides an estimate of the memory that is being used to store an R object. Computations using objects stored in the global environment are markedly more costly to memory than those made directly from the `EdSurvey` database:
 
 ```{r mem_usage gddat}
-object.size(gddat <- getData(sdf,
-                 c('composite', 'dsex', 'b017451', 'origwt'),
-                 addAttributes = TRUE, omittedLevels = FALSE))
-object.size(lm7 <- lm.sdf(composite ~ dsex + b017451,weightVar='origwt', gddat))
-object.size(lm8 <- lm.sdf(composite ~ dsex + b017451,weightVar='origwt', sdf))
+object.size(gddat <- getData(data=sdf, varnames=c('composite', 'dsex', 'b017451', 'origwt'),
+                             addAttributes=TRUE, omittedLevels=FALSE))
+object.size(lm7 <- lm.sdf(composite ~ dsex + b017451,
+                          weightVar='origwt', data=gddat))
+object.size(lm8 <- lm.sdf(composite ~ dsex + b017451,
+                          weightVar='origwt', data=sdf))
 ```
 
 Although a manipulated `light.edsurvey.data.frame` requires nearly 10 MB of working memory to store both the `light.edsurvey.data.frame` and regression model object (`lm7`), the resulting object of the same computation made directly from the `EdSurvey` database (`lm8`) holds only 5-7 kB. It's a good practice to remove unnecessary values saved in the global environment; since we've stored many large data objects, let's remove these before moving on.
@@ -304,21 +303,21 @@ rm(df,gddat,eddat,rsdf)
 
 Some operating systems continue to hold the memory usage even after removing an object. R will clean up your global environment automatically, but a forced garbage clean up  can also be employed:
 
-```{r eval = FALSE}
+```{r eval=FALSE}
 gc()
 ```
 
 ##### Forgetting to include a column variable
 
 The `EdSurvey` package will give a warning when a column is missing when creating a summary table or when running regression:
-```{r eval = FALSE}
-gddat <- getData(sdf, c(all.vars(composite ~ lep + dsex + iep),"origwt"), 
-                 addAttributes = TRUE, omittedLevels = FALSE)
-lm9 <- lm.sdf(composite ~ lep + dsex + iep + b017451, gddat)
+```{r eval=FALSE}
+gddat <- getData(data=sdf, varnames=c(all.vars(composite ~ lep + dsex + iep),"origwt"), 
+                 addAttributes=TRUE, omittedLevels=FALSE)
+lm9 <- lm.sdf(composite ~ lep + dsex + iep + b017451, data=gddat)
 
 ## Using default weight variable 'origwt'
 
-## Error in getData(sdf, c(all.vars(formula), wgt), ..., includeNaLabel = TRUE)
+## Error in getData(sdf, c(all.vars(formula), wgt), ..., includeNaLabel=TRUE)
   ## The following variable names are required for this call 
   ## and are not on the incoming data 'b017451'.
 ```
@@ -326,8 +325,8 @@ lm9 <- lm.sdf(composite ~ lep + dsex + iep + b017451, gddat)
 The solution is simple: Edit the call to `getData` to include the variable and re-run the linear model.
 
 ```{r lm forgot column}
-gddat <- getData(sdf, c(all.vars(composite ~ lep + dsex + iep + b017451),"origwt"), 
-                 addAttributes = TRUE, omittedLevels = FALSE)
-lm9 <- lm.sdf(composite ~ lep + dsex + iep + b017451, gddat)
+gddat <- getData(data=sdf, varnames=c(all.vars(composite ~ lep + dsex + iep + b017451),"origwt"), 
+                 addAttributes=TRUE, omittedLevels=FALSE)
+lm9 <- lm.sdf(composite ~ lep + dsex + iep + b017451, data=gddat)
 lm9
 ```

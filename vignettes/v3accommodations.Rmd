@@ -9,7 +9,7 @@ output:
 # bibliography: edsurvey.bib
 vignette: >
   %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteIndexEntry{4. Accommodations in NAEP}
+  %\VignetteIndexEntry{3. Accommodations in NAEP}
   \usepackage[utf8]{inputenc}
 ---
 
@@ -55,7 +55,7 @@ For these years with both samples, `RPTSAMP=1` indicates the sample for the asse
 To use the sample with accommodations permitted with `EdSurvey` functions (e.g., `lm.sdf`, `cor.sdf`, `achievementLevels`), you may want to follow these steps:
 
 1. `Subset` the data with condition `ARPTSMP==1` before conducting your analysis.
-2. Please make sure to set `defaultConditions = FALSE`, as `defaultConditions` subsets data to `RPTSMP==1` by default.
+2. Please make sure to set `defaultConditions=FALSE`, as `defaultConditions` subsets data to `RPTSMP==1` by default.
 3. Specify the weight for accommodations-permitted data: `weightVar="aorigwt"`.
 4. Use "composite_ap" for analysis with plausible values. The "composite_ap" argument represent the variables for the composite plausible values for the accommodation-permitted assessment reporting sample.
 
@@ -64,13 +64,13 @@ In the example below, the data set `math4` is subset where `ARPTSMP==1`. This ne
 ```{r read accommodation permitted, eval=FALSE}
 
 # read in the example data
-math4 <- readNAEP('//.../2000 NAEP Mathematics/Grade 4/data/M31NT2AT.dat')
+math4 <- readNAEP(filepath='//.../2000 NAEP Mathematics/Grade 4/data/M31NT2AT.dat')
 math4a  <- subset(math4, arptsmp == 1)
 
 # Cumulative achievement Levels
-achievementLevels(achievementVars = "composite_ap", aggregateBy = NULL, data=math4a,
-                  defaultConditions = FALSE, weightVar = "aorigwt",
-                  returnCumulative = TRUE)
+achievementLevels(achievementVars="composite_ap", aggregateBy=NULL, data=math4a,
+                  defaultConditions=FALSE, weightVar="aorigwt",
+                  returnCumulative=TRUE)
 ```
 
 # References

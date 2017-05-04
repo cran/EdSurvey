@@ -60,8 +60,8 @@ Unless you already have R version 3.2.0 or later,  install the latest R version-
 
 Inside R, run the following command to install `EdSurvey` as well as its package dependencies:
 
-```{r code options, echo = FALSE}
-options(width = 85)
+```{r code options, echo=FALSE}
+options(width=85)
 ```
 
 ```{r source package, eval=FALSE}
@@ -81,7 +81,7 @@ The first step to running an analysis is reading in the data. This is done using
 To follow along with this vignette, load the NAEP Primer data set `M36NT2PM` and assign it the name  `sdf` with this call:
   
 ```{r readNAEP, source package}
-sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 ```
 
 Note that this command uses a somewhat unusual way of identifying a file path (the `system.file` function). Because the Primer data is bundled with the NAEPprimer package, the `system.file` function finds it regardless of where the package was installed on the machine. All other data sets will have to be referred to by their system path.
@@ -90,7 +90,7 @@ Note that this command uses a somewhat unusual way of identifying a file path (t
 
 To load a unique NCES data set for analysis, select the pathway to the DAT file in the NAEP assessment folder, which needs to be in the NCES standard folder directory titled `/Data`:
 ```{r readNAEPvig, eval=FALSE}
-sdf2 <- readNAEP('//.../Data/file.dat')
+sdf2 <- readNAEP(filepath='//.../Data/file.dat')
 ```
 
 Note that the function recognizes the naming convention used by NCES for NAEP file names to determine which sample design and assessment information is attached to the resulting `edsurvey.data.frame`. The `readNAEP` function transparently accesses the necessary sample information and silently attaches it to the data.[^noteEDS]
@@ -112,45 +112,45 @@ Some of the basic functions that work on a `data.frame`, such as `dim`, `nrow` a
 
 
 ```{r data.frame like, warning=FALSE}
-dim(sdf)
-nrow(sdf)
-ncol(sdf)
+dim(x=sdf)
+nrow(x=sdf)
+ncol(x=sdf)
 ```
 
 The `names` function can be used to list all variable names in the data:
 
 ```{r names}
-names(sdf)
+names(x=sdf)
 ```
 
 To conduct a more powerful search of NAEP data variables, use the `searchSDF` function, which returns variable names and labels from an `edsurvey.data.frame` based on a character string. The user can specify which data source (either "student" or "school") the user would like to search. For example, this call to `searchSDF` searches for the character string `"book"` in the `edsurvey.data.frame` and specifies the `fileformat` to search the student data file:
 
 ```{r searchSDF}
-searchSDF("book", sdf, fileFormat="student")
+searchSDF(string="book", data=sdf, fileFormat="student")
 ```
 
-The levels and labels for each variables search via `searchSDF()` can also be returned by setting `levels = TRUE`:
+The levels and labels for each variables search via `searchSDF()` can also be returned by setting `levels=TRUE`:
 
 ```{r searchSDF levels}
-searchSDF("book", sdf, fileFormat="student", levels = TRUE)
+searchSDF(string="book", data=sdf, fileFormat="student", levels=TRUE)
 ```
 
 To return the levels and labels for a particular variable use `levelsSDF()`:
 
 ```{r levelsSDF levels}
-levelsSDF("b017451", sdf)
+levelsSDF(varnames="b017451", data=sdf)
 ```
 
 Basic information about plausible values and weights in an `edsurvey.data.frame` can be seen in the `print` function. The variables associated with plausible values and weights can be seen from the `showPlausibleValues` and `showWeights` functions, respectively, when the `verbose` argument is set to `TRUE`.
 
 ```{r pv and weights}
-showPlausibleValues(sdf, verbose=TRUE)
-showWeights(sdf, verbose=TRUE)
+showPlausibleValues(data=sdf, verbose=TRUE)
+showWeights(data=sdf, verbose=TRUE)
 ```
 
 ### Removing Special Values
 
-The EdSurvey package uses listwise deletion to remove special values in all of it's analyses by default. For example, in the NAEP primer data the omitted levels are returned when `print(sdf)` is called: `Omitted Levels: 'Multiple', 'NA', 'Omitted'`. By default these levels are excluded via listwise deletion. To use a different method, such as pairwise deletion, set `defaultConditions = FALSE` when running your analysis.
+The EdSurvey package uses listwise deletion to remove special values in all of it's analyses by default. For example, in the NAEP primer data the omitted levels are returned when `print(sdf)` is called: `Omitted Levels: 'Multiple', 'NA', 'Omitted'`. By default these levels are excluded via listwise deletion. To use a different method, such as pairwise deletion, set `defaultConditions=FALSE` when running your analysis.
 
 # Making a Table
 
@@ -159,7 +159,7 @@ Summary tables can be created in the `EdSurvey` package using the `edsurveyTable
 [^helpedsurveyTable]: Consult the appendix or `?edsurveyTable` for details on default `edsurveyTable` arguments.
 
 ```{r edsurveyTable, cache=FALSE, warning=FALSE}
-es1 <- edsurveyTable(composite ~ dsex + b017451, sdf, 
+es1 <- edsurveyTable(composite ~ dsex + b017451, data=sdf, 
                      jrrIMax=1, varMethod="jackknife")
 ```
 
@@ -169,7 +169,7 @@ The `edsurveyTable` created above is saved as the object `es1`, and the resultin
 es1$data
 ```
 ```{r edsurveyTable kable, results='asis', echo=FALSE}
-knitr::kable(es1$data, digits=7, row.names=FALSE, caption="es1")
+knitr::kable(x=es1$data, digits=7, row.names=FALSE, caption="es1")
 ```
 
 Note that we used the argument `jrrIMax` to indicate the maximum number of plausible values to be included when calculating sampling variance in the computation of standard error of estimates, such as
@@ -180,17 +180,17 @@ Note that we used the argument `jrrIMax` to indicate the maximum number of plaus
 
 The default estimation option, `jrrIMax=1`, uses the sampling variance from the first plausible value as the component for sampling variance in the computation of the standard errors of estimates involving plausible values with the jackknife variance estimation method, as seen in the next example. The argument `jrrIMax` can be omitted to select the default. Higher values of `jrrIMax` leads to longer computing times but more accurate error estimates.[^helplmsdf] An alternative is to set `jrrIMax=Inf` to obtain the ideal estimation with jackknife method.
 
-The function also features variance estimation using the Taylor series method. By setting `varMethod="Taylor"`, the same `edsurveyTable` call used in the previous example can return results using Taylor series variance estimation:
+The function also features variance estimation using the Taylor series method. By setting `varmethod="Taylor"`, the same `edsurveyTable` call used in the previous example can return results using Taylor series variance estimation:
 
 ```{r edsurveyTable taylor, cache=FALSE, warning=FALSE}
-es1t <- edsurveyTable(composite ~ dsex + b017451, sdf, 
-                     jrrIMax=1, varMethod="Taylor")
+es1t <- edsurveyTable(composite ~ dsex + b017451, data=sdf, 
+                      jrrIMax=1, varMethod="Taylor")
 ```
 ```{r, eval=FALSE}
 es1t$data
 ```
 ```{r edsurveyTable Taylor kable, results='asis', echo=FALSE}
-knitr::kable(es1t$data, digits=7, row.names=FALSE, caption="es1t")
+knitr::kable(x=es1t$data, digits=7, row.names=FALSE, caption="es1t")
 ```
 
 [^helplmsdf]: See the documentation for `lm.sdf` for details on the variance calculation.
@@ -200,7 +200,7 @@ If the percentages do not add to up to 100 at the desired level, an adjustment c
 Calculation of means and standard errors require computation time that the user may not want to wait for. If you wish to simply see a table of the levels and the *N* sizes, you can set the `returnMeans` and `returnSepct` arguments to `FALSE` to omit those columns as follows:
 
 ```{r edsurveyTable1b, cache=FALSE, warning=FALSE}
-es1b <- edsurveyTable(composite ~ dsex + b017451, sdf, jrrIMax=1,
+es1b <- edsurveyTable(composite ~ dsex + b017451, data=sdf, jrrIMax=1,
                       returnMeans=FALSE, returnSepct=FALSE)
 ```
 
@@ -210,7 +210,7 @@ In the `edsurveyTable` created above, the resulting table can be displayed by pr
 es1b
 ```
 ```{r edsurveyTable1b kable, results='asis', echo=FALSE}
-knitr::kable(es1b$data, digits=7, row.names=FALSE, caption="es1b")
+knitr::kable(x=es1b$data, digits=7, row.names=FALSE, caption="es1b")
 ```
 
 For more details on the arguments in the `edsurveyTable` function, look at the examples using
@@ -226,7 +226,7 @@ The `achievementLevels` function[^helpAL] computes the percentages of students b
 [^helpAL]: Consult the appendix or `?achievementLevels` for details on default `achievementLevels` arguments.
 
 ```{r showCutPoints}
-showCutPoints(sdf)
+showCutPoints(data=sdf)
 ```
 
 The `achievementLevels` function applies appropriate weights and variance estimation method for each `edsurvey.data.frame`, with several arguments for customizing the aggregation and output of the analysis results. Namely, by using these optional arguments, users can choose  to generate the percentage of students performing at each achievement level (*discrete*), at or above each achievement level (*cumulative*), calculate the percentage distribution of students by achievement levels (discrete or cumulative) and selected characteristics (specified in `aggregateBy`), and compute the percentage distribution of students by selected characteristics *within* a specific achievement level.
@@ -243,20 +243,20 @@ aLev0 <- achievementLevels(achievementVars=c("composite"),
 aLev0$discrete
 ```
 ```{r aL0 kable, results='asis', echo=FALSE}
-knitr::kable(aLev0$discrete, digits=7, row.names=FALSE, caption="aLev0$discrete")
+knitr::kable(x=aLev0$discrete, digits=7, row.names=FALSE, caption="aLev0$discrete")
 ```
 
 In the next example, the plausible values for `composite` and the variable `dsex` are used to calculate the achievement levels, which are aggregated by the variable `dsex` using `aggregateBy`.
 
 ```{r achievementLevels dsex}
-aLev1 <- achievementLevels(c("composite", "dsex"), aggregateBy="dsex",
-                  data=sdf, returnCumulative=TRUE)
+aLev1 <- achievementLevels(achievementVars=c("composite", "dsex"), aggregateBy="dsex",
+                           data=sdf, returnCumulative=TRUE)
 ```
 ```{r, eval=FALSE}
 aLev1$discrete
 ```
 ```{r aL1 kable, results='asis', echo=FALSE}
-knitr::kable(aLev1$discrete, digits=7, row.names=FALSE, caption="aLev1$discrete")
+knitr::kable(x=aLev1$discrete, digits=7, row.names=FALSE, caption="aLev1$discrete")
 ```
 
 Note that each level of the `dsex` variable aggregates to 100 for the results by discrete achievement levels. The object `aLev1` created in this call to `achievementLevels` is a `list` with two `data.frame`s: one for the discrete results and the other cumulative. In the previously described code, only the discrete levels are shown using `aLev1$discrete`. To show the cumulative results, change the specified `data.frame`. For example:
@@ -265,15 +265,15 @@ Note that each level of the `dsex` variable aggregates to 100 for the results by
 aLev1$cumulative
 ```
 ```{r aL1 kable 2, results='asis', echo=FALSE}
-knitr::kable(aLev1$cumulative, digits=7, row.names=FALSE, caption="aLev1$cumulative")
+knitr::kable(x=aLev1$cumulative, digits=7, row.names=FALSE, caption="aLev1$cumulative")
 ```
 
-The `aggregateBy` argument sums the percentage of students by discrete achievement level up to 100 at the most disaggregated level specified by the analytical variables, as well as determining the order of aggregation. For example, when `dsex` and `iep` are used for analysis, `aggregateBy = c("dsex", "iep")` and `aggregateBy = c("iep", "dsex")` produce the same percentages, but arrange the results in different ways, depending on order in the argument. When using `aggregateBy = c("dsex", "iep")`, the percentages add up to 100 within each category of `iep` for each category of `dsex`, respectively; when using `aggregateBy = c("iep", "dsex")`, the percentages add up to 100 within each category of `dsex` for each category of `iep`, respectively.
+The `aggregateBy` argument sums the percentage of students by discrete achievement level up to 100 at the most disaggregated level specified by the analytical variables, as well as determining the order of aggregation. For example, when `dsex` and `iep` are used for analysis, `aggregateBy=c("dsex", "iep")` and `aggregateBy=c("iep", "dsex")` produce the same percentages, but arrange the results in different ways, depending on order in the argument. When using `aggregateBy=c("dsex", "iep")`, the percentages add up to 100 within each category of `iep` for each category of `dsex`, respectively; when using `aggregateBy=c("iep", "dsex")`, the percentages add up to 100 within each category of `dsex` for each category of `iep`, respectively.
 
 ```{r achievementLevels2}
-achievementLevels(c("composite", "dsex", "iep"), aggregateBy=c("dsex", "iep"),
+achievementLevels(achievementVars=c("composite", "dsex", "iep"), aggregateBy=c("dsex", "iep"),
                   data=sdf)
-achievementLevels(c("composite", "dsex", "iep"), aggregateBy=c("iep", "dsex"),
+achievementLevels(achievementVars=c("composite", "dsex", "iep"), aggregateBy=c("iep", "dsex"),
                   data=sdf)
 ```
 
@@ -284,7 +284,7 @@ Notice that each unique value pair of the two variables (i.e., Yes + Male or No 
 The `achievementLevels` function can also compute the percentage of students by selected characteristics within a specific achievement level. The object `aLev2` presents the percentage of students by sex within each achievement level (i.e., within each discrete and cumulative levels).
 
 ```{r aLev2 characteristics, cache=FALSE, warning=FALSE}
-aLev2 <- achievementLevels(c("composite", "dsex"), aggregateBy="composite",
+aLev2 <- achievementLevels(achievementVars=c("composite", "dsex"), aggregateBy="composite",
                            data=sdf, returnCumulative=TRUE)
 aLev2$discrete
 aLev2$cumulative
@@ -293,7 +293,7 @@ aLev2$cumulative
 The percentage of students within a specific achievement level can be aggregated by one or more variables. For example, the percentage of students classified as ELL (`lep`) is aggregated by `dsex` within each achievement level:
 
 ```{r aLev3 three-way, cache=FALSE, warning=FALSE}
-aLev3 <- achievementLevels(c("composite", "dsex", "lep"),
+aLev3 <- achievementLevels(achievementVars=c("composite", "dsex", "lep"),
                            aggregateBy=c("dsex", "composite"),
                            data=sdf,
                            returnCumulative=TRUE)
@@ -301,10 +301,10 @@ aLev3$discrete
 aLev3$cumulative
 ```
 
-Finally, users can set unique cut points that override the standard values in the `EdSurvey` package using the `cutpoints` argument. In the example to follow, `aLev1` uses the standard cut points of `c(262,299,333)` as shown in `showCutPoints` earlier, while `aLev4` uses `cutpoints = c(267,299,333)`, resulting in a higher threshold to reach the ***Basic*** category but leaving ***Proficient*** and ***Advanced*** unchanged:
+Finally, users can set unique cut points that override the standard values in the `EdSurvey` package using the `cutpoints` argument. In the example to follow, `aLev1` uses the standard cut points of `c(262,299,333)` as shown in `showCutPoints` earlier, while `aLev4` uses `cutpoints=c(267,299,333)`, resulting in a higher threshold to reach the ***Basic*** category but leaving ***Proficient*** and ***Advanced*** unchanged:
 
 ```{r aLev4 cutpoints, cache=FALSE, warning=FALSE}
-aLev4 <- achievementLevels(c("composite", "dsex"),
+aLev4 <- achievementLevels(achievementVars=c("composite", "dsex"),
                            aggregateBy="dsex",
                            data=sdf,
                            cutpoints=c(267, 299, 333),
@@ -327,14 +327,14 @@ The data is read in and analyzed by the `lm.sdf` function--in this case, `dsex`,
 [^helplmsdf2]: Consult the appendix or `?lm.sdf` for details on default `lm.sdf` arguments.
 
 ```{r lm, cache=FALSE, warning=FALSE}
-lm1 <- lm.sdf(composite ~ dsex + b017451, sdf)
+lm1 <- lm.sdf(composite ~ dsex + b017451, data=sdf)
 summary(lm1)
 ```
 
 After the regression is run, the data is automatically removed from memory. By default, `lm.sdf` uses "treatment contrasts," where one level is dropped from the regression. This cannot be changed, but the omitted and comparison group can be changed with the `relevels` argument. In the following example, "Female" is omitted from the analysis for the variable `dsex`:
 
 ```{r lmf, cache=FALSE, warning=FALSE}
-lm1f <- lm.sdf(composite ~ dsex + b017451, sdf,
+lm1f <- lm.sdf(composite ~ dsex + b017451, data=sdf,
                relevels=list(dsex="Female"))
 summary(lm1f)
 ```
@@ -358,8 +358,8 @@ The `EdSurvey` package features multiple correlation methods for data exploratio
 In the following example, `b013801`, `t088001`, and the full sample weight `origwt` are read in to calculate the correlation using the Pearson method. Similar to other `EdSurvey` functions, the data is removed automatically from memory after the correlation is run.
 
 ```{r cor pearson, cache=FALSE, warning=FALSE}
-cor_pearson <- cor.sdf("b013801", "t088001", sdf, 
-                    method="Pearson", weightVar="origwt")
+cor_pearson <- cor.sdf(x="b013801", y="t088001", data=sdf, 
+                       method="Pearson", weightVar="origwt")
 ```
 
 It's important to take note of the order of levels to ensure that correlations are functioning as intended. Printing a correlation object will provide a condensed summary of correlation details and the order of levels for each variable:
@@ -371,9 +371,10 @@ cor_pearson
 Variables in `cor.sdf` can be recoded and reordered. Variable levels and values can be redefined given desired specifications. For example, `b017451` and `t088001` are correlated using the Pearson method, with the levels `"2 or 3 times a week"` and `"Every day"` of the variable `b017451` being *recoded* to `"Frequently"` within a list of lists in the `recode` argument:
 
 ```{r cor recode, cache=FALSE, warning=FALSE}
-cor_recode <- cor.sdf("b017451","t088001", sdf, 
+cor_recode <- cor.sdf(x="b017451",y="t088001", data=sdf, 
                       method="Pearson", weightVar="origwt",
-                      recode=list(b017451=list(from=c("2 or 3 times a week", "Every day"),
+                      recode=list(b017451=list(from=c("2 or 3 times a week",
+                                                      "Every day"),
                                                to=c("Frequently"))))
 cor_recode
 ```
@@ -383,7 +384,7 @@ Recoding can be useful when a level is very thinly populated (so that it might m
 The variables `b017451` and `t088001` are correlated using the Pearson method in the following example, with the variable `t088001`'s values `"Less than 3 hours","3-4.9 hours","5-6.9 hours","7 hours or more"` being *reordered* to `"7 hours or more","5-6.9 hours","3-4.9 hours","Less than 3 hours"` within a list:
 
 ```{r cor reorder, cache=FALSE, warning=FALSE}
-cor_reorder <- cor.sdf("b017451","t088001", sdf, 
+cor_reorder <- cor.sdf(x="b017451",y="t088001", data=sdf, 
                        method="Pearson", weightVar="origwt",
                        reorder=list(t088001=c("7 hours or more","5-6.9 hours",
                                               "3-4.9 hours","Less than 3 hours")))
@@ -397,7 +398,7 @@ Changing the order of levels might be useful to modify a variable that is out of
 The **Marginal Correlation Coefficient** among plausible values of the subject scales and subscales can be calculated using the `cor.sdf` function and the Pearson method. The subject subscales `num_oper` and `algebra` are correlated in this example:
 
 ```{r cor marginal, cache=FALSE, warning=FALSE}
-cor3_mcc <- cor.sdf("num_oper", "algebra", sdf, method="Pearson")
+cor3_mcc <- cor.sdf(x="num_oper", y="algebra", data=sdf, method="Pearson")
 cor3_mcc
 ```
 
@@ -410,12 +411,12 @@ The `cor.sdf` function features multiple methods for data exploration and analys
 
 ```{r cor continuous, cache=FALSE, warning=FALSE}
 sdf_dnf <- subset(sdf, dsex == 1)
-cor_pearson <- cor.sdf("b017451", "pared", sdf_dnf, 
-                    method="Pearson", weightVar="origwt")
-cor_spearman <- cor.sdf("b017451", "pared", sdf_dnf, 
-                    method="Spearman", weightVar="origwt")
-cor_polychoric <- cor.sdf("b017451", "pared", sdf_dnf, 
-                    method="Polychoric", weightVar="origwt")
+cor_pearson <- cor.sdf(x="b017451", y="pared", data=sdf_dnf, 
+                       method="Pearson", weightVar="origwt")
+cor_spearman <- cor.sdf(x="b017451", y="pared", data=sdf_dnf, 
+                        method="Spearman", weightVar="origwt")
+cor_polychoric <- cor.sdf(x="b017451", y="pared", data=sdf_dnf, 
+                          method="Polychoric", weightVar="origwt")
 ```
 
 ```{r cor comparison, warning=FALSE}
@@ -427,12 +428,12 @@ cbind(Correlation=c(Pearson=cor_pearson$correlation,
 Plausible values for subject scales and subscales also can be correlated with variables using the `cor.sdf` function. In this case, the five plausible values for `composite`, the variable `b017451`, and the full sample weight `origwt` are read in to calculate the correlation coefficients using the Pearson, Spearman, and Polyserial methods:
 
 ```{r cor categorical, cache=FALSE, warning=FALSE}
-cor_pearson2 <- cor.sdf("composite", "b017451", sdf_dnf, 
-                    method="Pearson", weightVar="origwt")
-cor_spearman2 <- cor.sdf("composite", "b017451", sdf_dnf, 
-                    method="Spearman", weightVar="origwt")
-cor_polyserial2 <- cor.sdf("composite", "b017451", sdf_dnf, 
-                    method="Polyserial", weightVar="origwt")
+cor_pearson2 <- cor.sdf(x="composite", y="b017451", data=sdf_dnf, 
+                        method="Pearson", weightVar="origwt")
+cor_spearman2 <- cor.sdf(x="composite", y="b017451", data=sdf_dnf, 
+                         method="Spearman", weightVar="origwt")
+cor_polyserial2 <- cor.sdf(x="composite", y="b017451", data=sdf_dnf, 
+                           method="Polyserial", weightVar="origwt")
 ```
 
 ```{r cor comparison2, warning=FALSE}
@@ -446,11 +447,11 @@ cbind(Correlation=c(Pearson=cor_pearson2$correlation,
 The `cor.sdf` function also features the ability to perform correlations without accounting for weights. The `cor.sdf` function automatically accounts for the default sample weights of the NCES data set read for analysis in `weightVar="default"`, but can be modified by setting `weightVar=NULL`. The following example shows the correlation coefficients of the Pearson and Spearman methods of the variables `pared` and `b017451` while excluding weights:
 
 ```{r correlation unweighted, cache=FALSE, warning=FALSE}
-cor_pearson_unweighted <- cor.sdf("b017451", "pared", sdf, 
-                    method="Pearson", weightVar=NULL)
+cor_pearson_unweighted <- cor.sdf(x="b017451", y="pared", data=sdf,
+                                  method="Pearson", weightVar=NULL)
 cor_pearson_unweighted
-cor_spearman_unweighted <- cor.sdf("b017451", "pared", sdf, 
-                    method="Spearman", weightVar=NULL)
+cor_spearman_unweighted <- cor.sdf(x="b017451", y="pared", data=sdf,
+                                   method="Spearman", weightVar=NULL)
 cor_spearman_unweighted
 ```
 
@@ -459,14 +460,14 @@ cor_spearman_unweighted
 A subset of a data set can be used with `EdSurvey` package functions. In this example, a summary table is created with `edsurveyTable` after filtering the sample to include only those students whose value in the `dsex` variable is Male and race (as variable `sdracem`) is either values 1 or 3 (White or Hispanic). Both value levels and labels can be used in `EdSurvey` package functions.
 
 ```{r subset, cache=FALSE, warning=FALSE}
-sdfm <- subset(sdf, dsex=="Male" & (sdracem==3 | sdracem==1))
-es2 <- edsurveyTable(composite ~ dsex + sdracem, sdfm)
+sdfm <- subset(sdf, dsex == "Male" & (sdracem == 3 | sdracem == 1))
+es2 <- edsurveyTable(composite ~ dsex + sdracem, data=sdfm)
 ```
 ```{r, eval=FALSE}
 es2
 ```
 ```{r subset table, cache=FALSE, results='asis', echo=FALSE}
-knitr::kable(es2$data, digits=7, row.names=FALSE, caption="es2")
+knitr::kable(x=es2$data, digits=7, row.names=FALSE, caption="es2")
 ```
 
 # Getting a data.frame for Further Manipulation
@@ -479,7 +480,7 @@ Data can be extracted and manipulated using the function `getData`. The function
 To access and manipulate all data for `dsex` and `b017451` variables in `sdf` can be returned by calling `getData`. Note that in the following code, the `head` function is used. This reveals only the first few rows of the resulting data:
 
 ```{r getData, cache=FALSE, warning=FALSE}
-gddat <- getData(sdf, varnames=c("dsex","b017451"), omittedLevels=TRUE)
+gddat <- getData(data=sdf, varnames=c("dsex","b017451"), omittedLevels=TRUE)
 head(gddat)
 ```
 
@@ -490,7 +491,7 @@ By default, setting `omittedLevels` to `TRUE` removes special values such as mul
 After loading the `edsurvey.data.frame` object into the R working environment, both student and school data from a NCES data set can be analyzed and merged using `getData`. To retrieve school variables, include them in the vector of variable names in the `getData` call and specify the key linking variables in the student and school data sets within the arguments `schoolMergeVarStudent` and `schoolMergeVarSchool`. In this example, `getData` calls the variables `dsex` and `b017451` from the student data file, as well as the variable `c052601` from the school data file, merging the student variable key `scrpsu` on the school variable key `sscrpsu`:
 
 ```{r getData school merge, cache=FALSE, warning=FALSE}
-gddat2 <- getData(sdf, varnames=c("dsex","b017451","c052601"), 
+gddat2 <- getData(data=sdf, varnames=c("dsex","b017451","c052601"), 
                   schoolMergeVarStudent="scrpsu", schoolMergeVarSchool="sscrpsu")
 head(gddat2)
 ```
@@ -500,7 +501,7 @@ head(gddat2)
 To extract *all* of the data in an `edsurvey.data.frame`, define the `varnames` argument as `names(sdf)`, which will query all variables. Setting the arguments `omittedLevels` and `defaultConditions` to `FALSE` ensures that values that would normally be removed are included:
 
 ```{r get all data, warning=FALSE}
-lsdf0 <- getData(sdf, varnames=names(sdf), addAttributes=TRUE,
+lsdf0 <- getData(data=sdf, varnames=names(sdf), addAttributes=TRUE,
                  omittedLevels=FALSE, defaultConditions=FALSE)
 dim(lsdf0) # excludes the one school variable in the sdf
 dim(sdf)
@@ -548,24 +549,24 @@ help(package="EdSurvey")
 - **schoolMergeVarSchool:** A character variable name from the school file used to merge student and school data files. Set to `NULL` by default.
 - **omittedLevels:** A logical value set to `TRUE` indicating that drops those levels of all factor variables that are specified in `edsurvey.data.frame`. Use `print` on an `edsurvey.data.frame` to see the omitted levels.
 - **defaultConditions:** A logical value set to `TRUE` that uses the default conditions stored in `edsurvey.data.frame` to subset the data. Use `print` on an `edsurvey.data.frame` to see the default conditions.
-- **recode:** A list of lists to recode variables. Defaults to `NULL`. Can be set as `recode = list(var1= list(from=c("a","b","c"), to ="d"))`. See examples using `?cor.sdf`.
+- **recode:** A list of lists to recode variables. Defaults to `NULL`. Can be set as `recode=list(var1= list(from=c("a","b","c"), to ="d"))`. See examples using `?cor.sdf`.
 
 ## 2. cor.sdf
 - **x:** A character variable name from the `data` to be correlated with `y`.
 - **y:** A character variable name from the `data` to be correlated with `x`.
-- **data:** Object of class `edsurvey.data.frame`.
+- **data****:** Object of class `edsurvey.data.frame`.
 - **method:** Character string indicating which correlation coefficient (or covariance) is to be computed. One of "Pearson" (default), "Spearman," "Polychoric," or "Polyserial."
 - **weightVar:** Character indicating the weight variable to use.
-- **reorder:** A list to reorder variables. Defaults to `NULL`. Can be set as r`eorder = list(var1=c("a","b","c"), var2=c("4","3","2","1"))`. See examples using `?cor.sdf`.
+- **reorder:** A list to reorder variables. Defaults to `NULL`. Can be set as r`eorder=list(var1=c("a","b","c"), var2=c("4","3","2","1"))`. See examples using `?cor.sdf`.
 - **schoolMergeVarStudent:** A character variable name from the student file used to merge student and school data files. Set to `NULL` by default.
 - **schoolMergeVarSchool:** A character variable name from the school file used to merge student and school data files. Set to `NULL` by default.
 - **omittedLevels:** A logical value set to `TRUE` indicating that drops those levels of all factor variables that are specified in `edsurvey.data.frame`. Use `print` on an `edsurvey.data.frame` to see the omitted levels.
 - **defaultConditions:** A logical value set to `TRUE` that uses the default conditions stored in `edsurvey.data.frame` to subset the data. Use `print` on an `edsurvey.data.frame` to see the default conditions.
-- **recode:** A list of lists to recode variables. Defaults to `NULL`. Can be set as `recode = list(var1= list(from=c("a","b","c"), to ="d"))`. See examples using `?cor.sdf`.
+- **recode:** A list of lists to recode variables. Defaults to `NULL`. Can be set as `recode=list(var1= list(from=c("a","b","c"), to ="d"))`. See examples using `?cor.sdf`.
 
 ## 3. edsurveyTable
 - **formula:** Object of class `formula`, potentially with a subject scale or subscale on the left hand side, and variable(s) for tabulation on the right hand side.
-- **data:** Object of class `edsurvey.data.frame`.
+- **data****:** Object of class `edsurvey.data.frame`.
 - **weightVar:** Character string indicating the weight variable to use, defaults to `NULL`.
 - **jrrIMax:** Integer indicating the maximum number of plausible values to include when calculating the variance term. Defaults to 1.
 - **pctAggregationLevel:** The percentage variable sums up to 100 for the first `pctAggregationLevel` columns. Defaults to `NULL`.
@@ -576,10 +577,10 @@ help(package="EdSurvey")
 - **schoolMergeVarSchool:** A character variable name from the school file used to merge student and school data files. Set to `NULL` by default.
 - **omittedLevels:** A logical value set to `TRUE` indicating that drops those levels of all factor variables that are specified in `edsurvey.data.frame`. Use `print` on an `edsurvey.data.frame` to see the omitted levels.
 - **defaultConditions:** A logical value set to `TRUE` that uses the default conditions stored in `edsurvey.data.frame` to subset the data. Use `print` on an `edsurvey.data.frame` to see the default conditions.
-- **recode:** A list of lists to recode variables. Defaults to `NULL`. Can be set as `recode = list(var1= list(from=c("a","b","c"), to ="d"))`. See examples using `?getData`.
+- **recode:** A list of lists to recode variables. Defaults to `NULL`. Can be set as `recode=list(var1= list(from=c("a","b","c"), to ="d"))`. See examples using `?getData`.
 
 ## 4. getData
-- **data:** Object of class `edsurvey.data.frame`.
+- **data****:** Object of class `edsurvey.data.frame`.
 - **varnames:** A character vector of variable names that will be returned. When both `varnames` and a `formula` are specified, variables associated with both are returned. Set to `NULL` by default.
 - **drop:** A logical value set to `FALSE` indicating that when a single column is returned, it is still represented as a `data.frame` and is not converted to a vector.
 - **schoolMergeVarStudent:** A character variable name from the student file used to merge student and school data files. Set to `NULL` by default.
@@ -588,7 +589,7 @@ help(package="EdSurvey")
 - **omittedLevels:** A logical value set to `TRUE` indicating that drops those levels of all factor variables that are specified in `edsurvey.data.frame`. Use `print` on an `edsurvey.data.frame` to see the omitted levels.
 - **defaultConditions:** A logical value set to `TRUE` that uses the default conditions stored in `edsurvey.data.frame` to subset the data. Use `print` on an `edsurvey.data.frame` to see the default conditions.
 - **formula:** A `formula`. When included, `getData` returns data associated with all variables of the `formula`. When both `varname` and a `formula` are specified, the variables associated with both are returned. Set to `NULL` by default.
-- **recode:** A list of lists to recode variables. Defaults to `NULL`. Can be set as `recode = list(var1= list(from=c("a","b","c"), to ="d"))`. See examples using `?getData`.
+- **recode:** A list of lists to recode variables. Defaults to `NULL`. Can be set as `recode=list(var1= list(from=c("a","b","c"), to ="d"))`. See examples using `?getData`.
 - **includeNaLabel:** A logical value that when set to `TRUE` returns literal `NA` values. When set to `FALSE` (the default), it returns factor levels coded as `NA`.
 - **addAttributes:** A logical value set to `TRUE` that returns a `light.edsurvey.data.frame` for use in calls to other functions that usually would require an `edsurvey.data.frame`.
 - **returnJKreplicates:** A logical value indicating if jackknife replicate weights be returned. Defaults to `TRUE`.
@@ -604,5 +605,4 @@ help(package="EdSurvey")
 - **schoolMergeVarSchool:** A character variable name from the school file used to merge student and school data files. Set to `NULL` by default.
 - **omittedLevels:** A logical value set to `TRUE` indicating that drops those levels of all factor variables that are specified in `edsurvey.data.frame`. Use `print` on an `edsurvey.data.frame` to see the omitted levels.
 - **defaultConditions:** A logical value set to `TRUE` that uses the default conditions stored in `edsurvey.data.frame` to subset the data. Use `print` on an `edsurvey.data.frame` to see the default conditions.
-- **recode:** A list of lists to recode variables. Defaults to `NULL`. Can be set as `recode = list(var1= list(from=c("a","b","c"), to ="d"))`. See examples using `?getData`.
-
+- **recode:** A list of lists to recode variables. Defaults to `NULL`. Can be set as `recode=list(var1= list(from=c("a","b","c"), to ="d"))`. See examples using `?getData`.

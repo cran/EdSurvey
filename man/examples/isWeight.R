@@ -2,7 +2,7 @@
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
 # True
-isWeight("origwt", sdf)
+isWeight(var="origwt", data=sdf)
 
 # False
-isWeight("dsex", sdf)
+isWeight(var="dsex", data=sdf)

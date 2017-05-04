@@ -278,7 +278,7 @@ calcAchievement <- function(achievementVars=NULL,
                    cutpoints=sort(unique(nCutpoints)),
                    weightVar=wgt,
                    jrrIMax=min(length(pvs), jrrIMax),
-                   npvs=length(pvs),
+                   npv=length(pvs),
                    varMethod=vm,
                    njk=length(jkWeights))
   
@@ -320,7 +320,7 @@ calcAchievement <- function(achievementVars=NULL,
 
 
 
-discreteFunc <- function(pvs, edf, formula, aggregateBy, weight, jrrIMax, jkWeights, varMethod, nPvs) {
+discreteFunc <- function(pvs, edf, formula, aggregateBy, weight, jrrIMax, jkWeights, varMethod, nPv) {
   #discreteFunc returns a  data.frame containing the discrete achievement levels
   rhsVars <- labels(terms(formula))
   # Run the attachLevels function for each of the plausible value variables
@@ -334,7 +334,7 @@ discreteFunc <- function(pvs, edf, formula, aggregateBy, weight, jrrIMax, jkWeig
   discrete <- aggregate(aggFormula, data=discrete, FUN=sum)
   tempVars <- names(discrete)[!names(discrete) %in% labels(terms(formula))]
   tempVars <- tempVars[tempVars!="Level"]
-  discrete[, tempVars] <- discrete[, tempVars]/nPvs
+  discrete[, tempVars] <- discrete[, tempVars]/nPv
   
   # Calculate the two variances, and add them together.
   if(varMethod == "j") {
@@ -358,7 +358,7 @@ discreteFunc <- function(pvs, edf, formula, aggregateBy, weight, jrrIMax, jkWeig
   return(result)
 }
 
-cumulativeFunc <- function(pvs, edf, formula, aggregateBy, weight, jrrIMax, jkWeights, varMethod, nPvs) {
+cumulativeFunc <- function(pvs, edf, formula, aggregateBy, weight, jrrIMax, jkWeights, varMethod, nPv) {
   #cumulativeFunc returns a data.frame containing cumulative achievement levels.
   if(varMethod == "t") {
     stop("Only jackknife variance estimation implemented for cumulative.")
@@ -378,7 +378,7 @@ cumulativeFunc <- function(pvs, edf, formula, aggregateBy, weight, jrrIMax, jkWe
   cumulative <- aggregate(aggFormula, data=cumulative, FUN=sum)
   tempVars <- names(cumulative)[!names(cumulative) %in% labels(terms(formula))]
   tempVars <- tempVars[tempVars!="Level"]
-  cumulative[, tempVars] <- cumulative[, tempVars]/nPvs
+  cumulative[, tempVars] <- cumulative[, tempVars]/nPv
   # Calculate the two variances, and add them together.
   
   varMeasurementCumulative <- varianceMeasurement(pvs, formula, cumulative, piem, "cumulative")
@@ -862,6 +862,7 @@ print.achievementLevels <- function(x, printCall=TRUE, printDiscrete=TRUE, print
       }
       cat(paste0("Achievement Level Cutpoints:\n"))
       cat(cv$cutpoints, "\n\n")
+      cat(paste0("Plausible values: ", cv$npv, "\n"))
       cat(paste0("jrrIMax: ", cv$jrrIMax, "\n"))
       cat(paste0("Weight variable: ", sQuote(cv$weight), "\n"))
       cat(paste0("Variance method: ",cv$varMethod,"\n"))

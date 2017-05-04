@@ -4,12 +4,12 @@
 \alias{isWeight}
 \title{Return a value indicating whether a variable is a weight on an edsurvey.data.frame or light.edsurvey.data.frame.}
 \usage{
-isWeight(var, sdf)
+isWeight(var, data)
 }
 \arguments{
 \item{var}{character indicating the variable in question.}
 
-\item{sdf}{an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.}
+\item{data}{an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.}
 }
 \value{
 A boolean (or vector when \code{var} is a vector) indicating if each element of \code{var}
@@ -27,10 +27,10 @@ Note that this function returns TRUE only when \code{var} is the name of the wei
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
 # True
-isWeight("origwt", sdf)
+isWeight(var="origwt", data=sdf)
 
 # False
-isWeight("dsex", sdf)
+isWeight(var="dsex", data=sdf)
 }
 \author{
 Michael Lee and Paul Bailey

@@ -431,7 +431,7 @@ calcEdsurveyTable <- function(formula,
     njk <- NA
   }
   rownames(res) <- NULL
-  varmeth <- ifelse(varMethod=="t", "Taylor series", "Jackknife")
+  varmeth <- ifelse(varMethod=="t", "Taylor series", "jackknife")
   
   # Add variable labels as an attribute
   if (inherits(data, c("edsurvey.data.frame", "light.edsurvey.data.frame"))){
@@ -462,11 +462,14 @@ calcEdsurveyTable <- function(formula,
 #' @author Paul Bailey and Howard Huo
 #' @export 
 print.edsurveyTable <- function(x, digits=getOption("digits"), ...) {
-  cat(paste0("\nFormula: ", paste(deparse(x$formula), "\n",collapse="")))
+  cat(paste0("\nFormula: ", paste(deparse(x$formula), "\n",collapse=""), "\n"))
     
-  if(x$npv != 1) {
+  if(x$npv > 1) {
     # only print if it could be larger than one.
-    cat(paste0("\njrrIMax: ", x$jrrIMax, "\n"))
+    cat(paste0("Plausible values: ", x$npv, "\n"))
+    if(tolower(x$varMethod) %in% "jackknife") {
+      cat(paste0("jrrIMax: ", x$jrrIMax, "\n"))
+    }
   }
   cat(paste0("Weight variable: ", sQuote(x$weight), "\n"))
   cat(paste0("Variance method: ",x$varMethod,"\n"))

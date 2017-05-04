@@ -565,8 +565,11 @@ summary.edsurveyLmList <- function(object, ...) {
 #' @export
 print.summary.edsurveyLm <- function(x, ...) {
   cat(paste0("\nFormula: ", paste(deparse(x$formula), collapse=""),"\n\n"))
-  if(x$npv %in% 1) {
-    cat(paste0("jrrIMax: ", x$jrrIMax, "\n"))
+  if(x$npv > 1) {
+    cat(paste0("Plausible values: ", x$npv, "\n"))
+    if(x$varMethod %in% "jackknife") {
+      cat(paste0("jrrIMax: ", x$jrrIMax, "\n"))
+    }
   }
   cat(paste0("Weight variable: ", sQuote(x$weight), "\n"))
   cat(paste0("Variance method: ",x$varMethod,"\n"))

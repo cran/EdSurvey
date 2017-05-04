@@ -4,10 +4,10 @@
 \alias{showWeights}
 \title{Print out a summary of weights.}
 \usage{
-showWeights(sdf, verbose = FALSE)
+showWeights(data, verbose = FALSE)
 }
 \arguments{
-\item{sdf}{an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.}
+\item{data}{an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.}
 
 \item{verbose}{logical. Set to TRUE to get jackknife replicate weights.}
 }
@@ -19,7 +19,7 @@ Print out a summary of the weights in an \code{edsurvey.data.frame} or \code{lig
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
 # show the weights
-showWeights(sdf, TRUE)
+showWeights(data=sdf, verbose=TRUE)
 }
 \author{
 Michael Lee and Paul Bailey

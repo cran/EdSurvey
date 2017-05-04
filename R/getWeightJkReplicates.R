@@ -2,7 +2,7 @@
 #'
 #' @description Return the jackknife replicate weights on an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame} associated with a weight variable.
 #'
-#' @param sdf an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.
+#' @param data an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.
 #' @param var character indicating the name of the variable for which the
 #'            jackknife replicate weights are desired.
 #'
@@ -11,7 +11,8 @@
 #' @example \man\examples\getWeightJkReplicates.R
 #' @author Michael Lee and Paul Bailey
 #' @export
-getWeightJkReplicates <- function(var, sdf) {
+getWeightJkReplicates <- function(var, data) {
+  sdf <- data
   if (!inherits(sdf, c("edsurvey.data.frame", "light.edsurvey.data.frame"))) 
     stop(paste0("The argument ", sQuote("sdf"), " must be an edsurvey.data.frame or a light.edsurvey.data.frame. See the 'Using the ", 
       dQuote("EdSurvey"), " Package's getData Function to Manipulate the NAEP Primer Data vignette' for how to work with data in a light.edsurvey.data.frame."))
