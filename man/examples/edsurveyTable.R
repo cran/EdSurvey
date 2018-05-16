@@ -3,7 +3,7 @@
 
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
-# create a table that shows only the break down of dsex
+# create a table that shows only the breakdown of dsex
 edsurveyTable(composite ~ dsex, data=sdf, returnMeans=FALSE, returnSepct=FALSE)
 
 # create a table with composite scores by dsex

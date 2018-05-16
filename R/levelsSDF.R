@@ -1,29 +1,53 @@
-#' @title Get the levels and labels of a variable in an edsurvey.data.frame or light.edsurvey.data.frame.
+#' @title Print Levels and Labels
 #'
-#' @description \code{levelsSDF} returns a \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}} that shows the levels and
-#' labels of a variable from an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}..
+#' @description Retrieve the levels and labels of a variable from an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 #'
-#' @param varnames a vector of character strings to search for in the database connection object (\code{data}).
-#' @param data object of class \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame} (see \code{\link{readNAEP}}
-#'            for how to generate an \code{edsurvey.data.frame}).
-#' @return A pasted statement that shows the levels and labels of a variable (or vector of variables)
-#'         from an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.
+#' @param varnames a vector of character strings to search for in the database connection object (\code{data})
+#' @param data an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
+#'         an \code{edsurvey.data.frame.list}
 #' 
 #' @author Michael Lee and Paul Bailey
 #' @example  man/examples/levelsSDF.R
 #' @export
 levelsSDF <- function(varnames, data) {
+  if (inherits(data, c("edsurvey.data.frame.list"))) {
+    return(itterateESDFL(match.call(),data))
+  }
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
+
+  # check recode attribute
+  userConditions <- getAttributes(data, "userConditions")
+  recode <- userConditions[which(names(userConditions) %in% "recode")]
+  # if a variable level has been recoded, need to remove the label used to identify it when printing the updated result
+  if (length(recode) > 0) {
+    recode <- unlist(recode, recursive = FALSE)
+    names(recode) <- tolower(gsub("^recode.","",names(recode)))
+  }
 
   if (inherits(data, c("edsurvey.data.frame"))) {
     # data is an edsurvey.data.frame, so levels are found using a subset of data$fileFormat
     varnames <- toupper(varnames)
-    labelsFile <- rbind(data$fileFormat, data$fileFormatSchool)
+    labelsFile <- rbind(data$fileFormat, data$fileFormatSchool, data$fileFormatTeacher)
     vars = subset(labelsFile, labelsFile$variableName %in% varnames)
     levelsData <- list()
     for (i in unique(varnames)) {
       varDF <- vars[vars$variableName == i, ]
       varLevels = unlist(strsplit(varDF["labelValues"][[1]], "^", fixed = TRUE))
+      # if variable is in the list of recode, need to change the level result
+      if (length(recode) > 0) {
+        recodeVar <- recode[which(names(recode) == tolower(i))]
+        if (length(recodeVar) > 0) {
+          for (ni in 1:length(recodeVar)) {
+            from <- recodeVar[[ni]]$from
+            to <- recodeVar[[ni]]$to
+            if (length(to) > 1) {
+              stop(paste0("More than one 'To' value found in the ", sQuote(tolower(i)) ," element of the 'recode' argument."))
+            }
+            varLevels <- gsub(paste(paste0("=",from,"$"), collapse = "|"),paste0("=",to),varLevels)
+          }
+        } 
+      }
+      
       levelsData[[i]] <- c(varLevels)
     }
   } else { # If data does not inherit from edusrvey.dataframe
@@ -35,6 +59,20 @@ levelsSDF <- function(varnames, data) {
       lev <- levels(data[[i]])
       lab <- attr(data[[i]], "llevels")
       varLevels <- paste(lab, lev, sep = "=")  # for each unique variable paste the levels and labels separated by '=', matching data$fileFormat
+      if (!is.null(recode)) {
+        recodeVar <- recode[which(names(recode) == tolower(i))]
+        if (length(recodeVar) > 0) {
+          for (ni in 1:length(recodeVar)) {
+            from <- recodeVar[[ni]]$from
+            to <- recodeVar[[ni]]$to
+            if (length(to) > 1) {
+              stop(paste0("More than one 'To' value found in the ", sQuote(tolower(i)) ," element of the 'recode' argument."))
+            }
+            varLevels <- gsub(paste(paste0("=",from,"$"), collapse = "|"),paste0("=",to),varLevels)
+          }
+        } 
+      }
+      
       levelsData[[i]] <- c(varLevels)
     } # End of if statment: i in unique(varnames)
   } # End of if/else statement: if inherits(data, c("edsurvey.data.frame"))
@@ -48,6 +86,7 @@ levelsSDF <- function(varnames, data) {
   levelsData
 }
 
+# @author Michael Lee
 #' @method print levelsSDF
 #' @export
 print.levelsSDF <- function(x, ...) {

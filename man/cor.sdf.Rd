@@ -2,36 +2,31 @@
 % Please edit documentation in R/cor.sdf.R
 \name{cor.sdf}
 \alias{cor.sdf}
-\title{Run a bivariate correlation on an edsurvey.data.frame.}
+\title{Bivariate Correlation}
 \usage{
 cor.sdf(x, y, data, method = c("Pearson", "Spearman", "Polychoric",
   "Polyserial"), weightVar = "default", reorder = NULL,
-  schoolMergeVarStudent = NULL, schoolMergeVarSchool = NULL,
   omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL)
 }
 \arguments{
-\item{x}{a character variable name of class factor from the \code{data} to be correlated with y.}
+\item{x}{a character variable name from the \code{data} to be correlated with \code{y}}
 
-\item{y}{a character variable name of class factor from the \code{data} to be correlated with x.}
+\item{y}{a character variable name from the \code{data} to be correlated with \code{x}}
 
-\item{data}{an \code{edsurvey.data.frame}.}
+\item{data}{an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.}
 
 \item{method}{a character string indicating which correlation coefficient (or covariance) is to be computed.
-One of \dQuote{Pearson} (default), \dQuote{Spearman}, \dQuote{Polychoric}, or \dQuote{Polyserial}.}
+One of \code{Pearson} (default), \code{Spearman}, \code{Polychoric}, or \code{Polyserial}.}
 
-\item{weightVar}{character indicating the weight variable to use; see Details.}
+\item{weightVar}{character indicating the weight variable to use. See Details.}
 
-\item{reorder}{a list to reorder variables. Defaults to \code{NULL}. Can be set as 
+\item{reorder}{a list of variables to reorder. Defaults to \code{NULL} (no variables are reordered). Can be set as 
 \code{reorder} \code{=} \code{list(var1} \code{=} \code{c("a","b","c"),} \code{var2} \code{=} \code{c("4", "3", "2", "1"))}. See Examples.}
 
-\item{schoolMergeVarStudent}{a character variable name from the student file used to merge student and school data files. Set to \code{NULL} by default.}
-
-\item{schoolMergeVarSchool}{a character variable name name from the school file used to merge student and school data files. Set to \code{NULL} by default.}
-
 \item{omittedLevels}{a logical value. When set to the default value of \code{TRUE}, drops those levels of all factor variables that are specified
-in \code{edsurvey.data.frame}. Use \code{print} on an \code{edsurvey.data.frame} to see the omitted levels.}
+in an \code{edsurvey.data.frame}. Use \code{print} on an \code{edsurvey.data.frame} to see the omitted levels.}
 
-\item{defaultConditions}{a logical value. When set to the default value of \code{TRUE}, uses the default conditions stored in \code{edsurvey.data.frame}
+\item{defaultConditions}{a logical value. When set to the default value of \code{TRUE}, uses the default conditions stored in an \code{edsurvey.data.frame}
 to subset the data. Use \code{print} on an \code{edsurvey.data.frame} to see the default conditions.}
 
 \item{recode}{a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
@@ -41,24 +36,26 @@ to subset the data. Use \code{print} on an \code{edsurvey.data.frame} to see the
 An \code{edsurvey.cor} that has print and summary methods.
 
 The class includes the following elements:
-\item{\code{correlation}}{The estimated correlation coefficient.}
-\item{\code{Zse}}{Square root of the variance (\code{Vimp} + \code{Vjrr}).}
-\item{\code{correlates}}{A vector of length two showing the columns for which the correlation coefficient was calculated.}
-\item{\code{variables}}{\code{correlates} that are discrete.}
-\item{\code{order}}{A list that shows the order of each variable.}
-\item{\code{method}}{The type of correlation estimated.}
-\item{\code{Vjrr}}{The jackknife component of variance estimate.}
-\item{\code{Vimp}}{The imputation component of the variance estimate.}
-\item{\code{weight}}{The weight variable used.}
-\item{\code{npv}}{The number of plausible values used.}
-\item{\code{njk}}{The number of jackknife replicates used.}
+\item{\code{correlation}}{numeric estimated correlation coefficient}
+\item{\code{Zse}}{standard error of the correlation (\code{Vimp} + \code{Vjrr}). In the case of Pearson, this is calculated in the linear atanh space and so is not a standard error in the usual sense.}
+\item{\code{correlates}}{a vector of length two showing the columns for which the correlation coefficient was calculated}
+\item{\code{variables}}{\code{correlates} that are discrete}
+\item{\code{order}}{a list that shows the order of each variable}
+\item{\code{method}}{the type of correlation estimated}
+\item{\code{Vjrr}}{the jackknife component of the variance estimate. For Pearson, in the atanh space.}
+\item{\code{Vimp}}{the imputation component of the variance estimate. For Pearson, in the atanh space.}
+\item{\code{weight}}{the weight variable used}
+\item{\code{npv}}{the number of plausible values used}
+\item{\code{njk}}{the number of jackknife replicates used}
 }
 \description{
-Computes the variance of x and correlation of x and y if these are vectors using an \code{edsurvey.data.frame}.
+Computes the correlation of two variables on an \code{edsurvey.data.frame},
+             a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
+             The correlation accounts for plausible values and the survey design.
 }
 \details{
-Note that the \code{\link{getData}} arguments and \code{recode} may be useful. (See examples.)
-The correlation methods are calculated as described in seperate documentation.
+Note that the \code{\link{getData}} arguments and \code{\link{recode.sdf}} may be useful. (See Examples.)
+The correlation methods are calculated as described in the documentation for the \code{wCorr} package---see \code{browseVignettes(package="wCorr")}.
 }
 \examples{
 \dontrun{
@@ -110,9 +107,9 @@ cor.sdf(x="b017451", y="sdracem", data=sdf, method="Spearman", weightVar="origwt
                                "Once every few weeks", "Never or hardly ever")))
 
 # recode two variables and reorder
-cor.sdf(x="pared", y="b013801", data=sdf, method="Spearman", weightVar = "origwt",
+cor.sdf(x="pared", y="b013801", data=subset(sdf, !pared \%in\% "I Don\\'t Know"),
+        method="Spearman", weightVar = "origwt",
         recode=list(pared=list(from="Some ed after H.S.", to="Graduated H.S."), 
-                    pared=list(from="Some ed after H.S.", to="Graduated H.S."),
                     pared=list(from="Graduated college", to="Graduated H.S."),
                     b013801=list(from="0-10", to="Less than 100"), 
                     b013801=list(from="11-25", to="Less than 100"),
@@ -124,5 +121,5 @@ cor.sdf(x="pared", y="b013801", data=sdf, method="Spearman", weightVar = "origwt
 \ifelse{latex}{\code{cor}}{\code{\link[stats]{cor}}} and \ifelse{latex}{\code{weightedCorr}}{\code{\link[wCorr]{weightedCorr}}}
 }
 \author{
-Paul Bailey. Relies heavily on the \code{wCorr} package, written by Ahmad Emad and Paul Bailey.
+Paul Bailey; relies heavily on the \code{wCorr} package, written by Ahmad Emad and Paul Bailey
 }

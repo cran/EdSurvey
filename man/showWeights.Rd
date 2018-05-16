@@ -2,24 +2,27 @@
 % Please edit documentation in R/showWeights.R
 \name{showWeights}
 \alias{showWeights}
-\title{Print out a summary of weights.}
+\title{Retrieve Weight Variables}
 \usage{
 showWeights(data, verbose = FALSE)
 }
 \arguments{
-\item{data}{an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.}
+\item{data}{an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
+an \code{edsurvey.data.frame.list}}
 
-\item{verbose}{logical. Set to TRUE to get jackknife replicate weights.}
+\item{verbose}{a logical value; set to TRUE to print the complete list of jackknife
+replicate weights associated with each full sample weight;
+otherwise, prints only the full sample weights}
 }
 \description{
-Print out a summary of the weights in an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.
+Prints a summary of the weights in an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
 }
 \examples{
 # read in the example data (generated, not real student data)
-sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
 # show the weights
-showWeights(data=sdf, verbose=TRUE)
+showWeights(sdf, TRUE)
 }
 \author{
 Michael Lee and Paul Bailey

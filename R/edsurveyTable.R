@@ -1,20 +1,24 @@
-#' @title Make a table with a edsurvey.data.frame.
+#' @title EdSurvey Tables With Conditional Means
 #'
-#' @description \code{edsurveyTable} returns a summary table (as a \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}}) that shows the number
-#' of students, the percentage of students, and the mean value of the outcome (or left hand side) variable by the
-#' predictor (or right hand side) variable(s).
+#' @description Returns a summary table (as a \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}})
+#' that shows the number of students, the percentage of students, and the mean
+#' value of the outcome (or left-hand side) variable by the
+#' predictor (or right-hand side) variable(s).
 #'
-#' @param formula object of class \ifelse{latex}{\code{formula}}{\code{\link[stats]{formula}}}, potentially with
+#' @param formula object of class \ifelse{latex}{\code{formula}}{\code{\link[stats]{formula}}},
+#'                potentially with
 #'                a subject scale or subscale
-#'                on the left hand side, and \dQuote{by variable(s)} for tabulation
-#'                on the right hand side. When the left hand side of the
+#'                on the left-hand side and
+#'                variables to tabulate
+#'                on the right-hand side.
+#'                When the left-hand side of the
 #'                formula is omitted and \code{returnMeans} is \code{TRUE},
 #'                then the default subject scale or subscale is used.
 #'                You can find the default composite scale and all subscales
 #'                using the function \code{\link{showPlausibleValues}}.
-#'                Note that the order of the right hand side variables affects the output.
-#' @param data object of class \code{edsurvey.data.frame} (see \code{\link{readNAEP}}
-#'       for how to generate an \code{edsurvey.data.frame}).
+#'                Note that the order of the right-hand side variables affects the output.
+#' @param data object of class \code{edsurvey.data.frame}. See \code{\link{readNAEP}}
+#'       for how to generate an \code{edsurvey.data.frame}.
 #' @param weightVar character string indicating the weight variable to use.
 #'                   Note that only the name of the
 #'                   weight variable needs to be included here, and any
@@ -24,76 +28,93 @@
 #' @param jrrIMax integer indicating the maximum number of plausible values to
 #'                 include when calculating
 #'                 the variance term \eqn{V_{jrr}} (see the Details section of
-#'                 \code{\link{lm.sdf}} to see the definition of \eqn{V_{jrr}}), the default is \code{Inf} and results in
+#'                 \code{\link{lm.sdf}} to see the definition of \eqn{V_{jrr}}). The default is \code{Inf} and results in
 #'                 all available plausible values being used in generating \eqn{V_{jrr}}.
 #'                 Setting this to 1 will make code execution faster but less accurate.
 #' @param pctAggregationLevel the percentage variable sums up to 100 for the first
 #'                              \code{pctAggregationLevel} columns.
-#'                              So, when set to 0, the \code{PCT} column adds up to one
+#'                              So when set to \code{0}, the \code{PCT} column adds up to one
 #'                              across the entire sample.
-#'                              When set to 1, the \code{PCT} column adds up to one
+#'                              When set to \code{1}, the \code{PCT} column adds up to one
 #'                              within each level of the first variable on the
-#'                              right hand side of the formula, when set to two,
+#'                              right-hand side of the formula; when set to \code{2},
 #'                              then the percentage
 #'                              adds up to 100 within the interaction of the
 #'                              first and second variable, and so on.
-#'                              See Examples section.
-#' @param returnMeans a logical value. Set to \code{TRUE} (the default) to get the \code{MEAN} and
+#'                              Default is \code{NULL}, which will result in the
+#'                              lowest feasible aggregation level. 
+#'                              See Examples section. 
+#' @param returnMeans a logical value; set to \code{TRUE} (the default) to get the \code{MEAN} and
 #'                     \code{SE(MEAN)} columns in the returned table described in the Value section.
 #' @param returnSepct set to \code{TRUE} (the default) to get the \code{SEPCT} column in the returned table described in the Value section.
 #' @param varMethod  a character set to \dQuote{jackknife} or \dQuote{Taylor} that indicates the variance estimation method
-#'                   to be used. Note that \dQuote{Taylor} is supported only for the column \code{SE(MEAN)} and \dQuote{jackknife} is
-#'                   always used for the column \code{SE(PCT)}.
+#'                   to be used.
 #' @param drop a logical value. When set to the default value of \code{FALSE}, when a single column is returned, it is still represented as a \code{data.frame} and is
 #'             not converted to a vector.
-#' @param schoolMergeVarStudent a character variable name from the student file used to merge student and school data files. Set to \code{NULL} by default.
-#' @param schoolMergeVarSchool a character variable name name from the school file used to merge student and school data files. Set to \code{NULL} by default.
 #' @param omittedLevels a logical value. When set to the default value of \code{TRUE}, drops those levels of all factor variables that are specified
-#'                        in \code{edsurvey.data.frame}. Use \code{print} on an \code{edsurvey.data.frame} to see the omitted levels.
-#' @param defaultConditions A logical value. When set to the default value of \code{TRUE}, uses the default conditions stored in \code{edsurvey.data.frame}
+#'                        in an \code{edsurvey.data.frame}. Use \code{print} on an \code{edsurvey.data.frame} to see the omitted levels.
+#' @param defaultConditions a logical value. When set to the default value of \code{TRUE}, uses the default conditions stored in an \code{edsurvey.data.frame}
 #'                           to subset the data. Use \code{print} on an \code{edsurvey.data.frame} to see the default conditions.
 #' @param recode a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
 #'                  \code{recode} \code{=} \code{list(var1} \code{=} \code{list(from} \code{=} \code{c("a", "b", "c"),} \code{to} \code{=} \code{"c"))}. See Examples.
+#' @param returnVarEstInputs a logical value set to \code{TRUE} to return the
+#'                           inputs to the jackknife and imputation variance
+#'                           estimates. This is intended to allow for
+#'                           the computation
+#'                           of covariances between estimates.
 #'
-#' @details This method can be used to generate a simple one to \emph{n}-way
+#' @details This method can be used to generate a simple one-way, two-way, or
+#' \emph{n}-way
 #' table with unweighted and weighted \emph{n} values and percentages. It also
 #' can calculate the average of the subject scale or subscale for students at
 #' each level of the cross-tabulation table. 
 #'       
-#' A detailed description of all statistics is given in the \dQuote{Statistics}
-#' vignette, which you can find by entering
-#' \code{vignette("statistics",} \code{package} \code{=} \code{"EdSurvey")} at
-#' the R command prompt.
+#' A detailed description of all statistics is given in the
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}.
 #' 
 #' @return A table with the following columns:
-#'    \item{RHS levels}{One column for each right hand side variable. Each row regards students who are at the levels shown in that row.}
-#'    \item{\code{N}}{ count of the number of students in the survey in the \code{RHS levels}.}
-#'    \item{\code{WTD_N}}{the weighted \emph{N} count of students in the survey in \code{RHS levels}.}
+#'    \item{RHS levels}{one column for each right-hand side variable. Each row
+#'                      regards students who are at the levels shown in that row.}
+#'    \item{\code{N}}{count of the number of students in the survey in the \code{RHS levels}}
+#'    \item{\code{WTD_N}}{the weighted \emph{N} count of students in the survey in \code{RHS levels}}
 #'    \item{\code{PCT}}{the percentage of students at the aggregation level specified by \code{pctAggregationLevel} (see Arguments).
-#'                      See the \dQuote{Statistics} vignette section
-#' \dQuote{Estimation of weighted percentages} and its first subsection
-#' \dQuote{Estimation of weighted percentages when plausible values are not present.}}
-#'    \item{\code{SE(PCT)}}{the standard error of the percentage, accounting for the survey sampling methodology. When \code{varMethod}
-#'                       is set to \dQuote{jackknife,} the calculation of this column is described in the \dQuote{Statistics} vignette section
-#' \dQuote{Estimation of the standard error of weighted percentages when plausible values are not present, using the jackknife method.}
-#'
-#'                       When \code{varMethod} is set to \dQuote{Taylor,} then the calculation of this column is described in
-#' \dQuote{Estimation of the standard error of weighted percentages when plausible values are not present, using the Taylor series method.}
+#'                      See the
+#'         \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
+#'             section
+#' \dQuote{Estimation of Weighted Percentages} and its first subsection
+#' \dQuote{Estimation of Weighted Percentages When Plausible Values Are Not Present.}}
+#'    \item{\code{SE(PCT)}}{the standard  error of the percentage, accounting
+#'                          for the survey sampling methodology. When \code{varMethod}
+#'                          is \code{jackknife}, the calculation of this column is
+#'                          described in the
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
+#'  section
+#' \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Jackknife Method.}
+#'                       When \code{varMethod} is set to \code{Taylor}, then the calculation of this column is described in
+#' \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Taylor Series Method.}
 #' }
-#'    \item{\code{MEAN}}{The mean assessment score for units in the \code{RHS levels}, calculated according to the 
-#'                       \dQuote{Statistics} vignette section
-#' \dQuote{Estimation of weighted means when plausible values are present.}}
-#'    \item{\code{SE(MEAN)}}{The standard error of the \code{MEAN} column (the mean assessment score for units in the \code{RHS levels}), calculated according to the 
-#'                       \dQuote{Statistics} vignette sections
-#' \dQuote{Estimation of standard errors of weighted means when plausible values are present, using the jackknife method}
+#'    \item{\code{MEAN}}{the mean assessment score for units in the \code{RHS levels}, calculated according to the 
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
+#' section
+#' \dQuote{Estimation of Weighted Means When Plausible Values Are Present.}}
+#'    \item{\code{SE(MEAN)}}{the standard error of the \code{MEAN} column (the mean assessment score for units in the \code{RHS levels}), calculated according to the 
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}                      
+#' sections
+#' \dQuote{Estimation of Standard Errors of Weighted Means When Plausible Values Are Present, Using the Jackknife Method}
 #' or 
-#' \dQuote{Estimation of standard errors of weighted means when plausible values are present, using the Taylor series method,}
+#' \dQuote{Estimation of Standard Errors of Weighted Means When Plausible Values Are Present, Using the Taylor Series Method,}
 #' depending on the value of \code{varMethod}.}
 #'
-#' @references
-#' Binder, D. A. (1983). On the Variances of Asymptotically Normal Estimators From Complex Surveys. \emph{International Statistical Review}, 51(3): 279--92. 
+#'  When \code{returnVarEstInputs} is \code{TRUE}, two additional elements are
+#'  returned. These are \code{meanVarEstInputs} and \code{pctVarEstInputs} and
+#'  regard the \code{MEAN} and \code{PCT} columns, respectively. These two 
+#'  objects can be used for calculating covariances with
+#'  \code{\link{varEstToCov}}.
 #'
-#' Rubin, D. B. (1987). \emph{Multiple Imputation for Nonresponse in Surveys}. New York, NY: Wiley.
+#' @references
+#' Binder, D. A. (1983). On the variances of asymptotically normal estimators from complex surveys. \emph{International Statistical Review}, \emph{51}(3), 279--292. 
+#'
+#' Rubin, D. B. (1987). \emph{Multiple imputation for nonresponse in surveys}. New York, NY: Wiley.
 #'
 #' @example man/examples/edsurveyTable.R
 #' @author Paul Bailey and Ahmad Emad
@@ -102,6 +123,7 @@
 #' @importFrom stats ftable
 #' @importFrom stats aggregate
 #' @importFrom stats ave
+#' @importFrom data.table setDT copy
 #' @export
 edsurveyTable <- function(formula,
                           data,
@@ -112,20 +134,87 @@ edsurveyTable <- function(formula,
                           returnSepct=TRUE,
                           varMethod=c("jackknife", "Taylor"),
                           drop=FALSE,
-                          schoolMergeVarStudent=NULL,
-                          schoolMergeVarSchool=NULL,
                           omittedLevels=TRUE, 
                           defaultConditions=TRUE,
-                          recode=NULL) {
-  # Test incoming data 
+                          recode=NULL,
+                          returnVarEstInputs=FALSE) {
+
+  # Test class of incoming data 
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
   
-  result <- calcEdsurveyTable(formula, data, weightVar, jrrIMax, pctAggregationLevel,
-                              returnMeans, returnSepct, varMethod, drop, 
-                              schoolMergeVarStudent, schoolMergeVarSchool, omittedLevels,
-                              defaultConditions, recode,
-                              defaultConditionsMissing=missing(defaultConditions))
-  result
+  if(inherits(data, "edsurvey.data.frame.list")) {
+    #res2 is a temporary variable that holds the list of results
+    res2 <- list()
+    ll <- length(data$datalist)
+    
+    labels <- as.character(c(1:ll))
+
+    for(i in 1:ll) {
+      sdf <- data$datalist[[i]]
+      temp <- tryCatch(result <-calcEdsurveyTable(formula, sdf, weightVar, jrrIMax, pctAggregationLevel,
+                                                  returnMeans, returnSepct, varMethod, drop, 
+                                                  omittedLevels,
+                                                  defaultConditions=defaultConditions, recode,
+                                                  defaultConditionsMissing=missing(defaultConditions),
+                                                  returnVarEstInputs=returnVarEstInputs),
+                       error=function(cond) {
+                         message(paste("Error on dataset ", labels[i], ": ", cond, sep=""))
+                       }
+      ) 
+      
+      if(class(temp) == "edsurveyTable") {
+        res2[[labels[i]]] <- result
+      }
+    } #end of for(i in 1:ll)
+    cmbRes <- NULL
+    listi <- 0
+    while(is.null(cmbRes)) {
+      listi <- listi + 1
+      cmbRes <- res2[[labels[listi]]]
+      if(listi > ll) {
+        stop("No valid output.")
+      }
+    }
+    # get the data from cmbRes
+    cmbD <- cmbRes$data
+    # grab the column names
+    cnames <- colnames(cmbD)
+    for(i in 1:ncol(data$covs)) {
+      # copy over this column from covs
+      cmbD[,colnames(data$covs)[i]] <- rep(data$covs[listi,i], nrow(cmbD))
+      cnames <- c(colnames(data$covs)[i], cnames)
+    }
+    # reorder columns so covs come first
+    cmbD0 <- cmbD <- cmbD[,cnames]
+    while(listi < length(labels)) {
+      listi <- listi + 1
+      if(!is.null(res2[[labels[listi]]])) {
+        cmbDi <- (res2[[labels[listi]]])$data
+        for(i in 1:ncol(data$covs)) {
+          cmbDi[,colnames(data$covs)[i]] <- rep(data$covs[listi,i], nrow(cmbDi))
+        }
+        cmbD <- rbind(cmbD, cmbDi[,cnames]) 
+      }
+    }
+    # add column labels back
+    for(i in 1:ncol(cmbD)) {
+      mostattributes(cmbD[,i]) <- attributes(cmbD0[,i])
+    }
+    cmbRes$data <- cmbD
+    cmbRes$n0 <- NA
+    cmbRes$nUsed <- NA
+    class(cmbRes) <- "edsurveyTableList"
+    return(cmbRes)
+  } #closes if(inherits(data, "edsurvey.data.frame.list"))
+  else {
+    result <- calcEdsurveyTable(formula, data, weightVar, jrrIMax, pctAggregationLevel,
+                                returnMeans, returnSepct, varMethod, drop, 
+                                omittedLevels,
+                                defaultConditions, recode,
+                                defaultConditionsMissing=missing(defaultConditions),
+                                returnVarEstInputs=returnVarEstInputs)
+    return(result)
+  }
 }
 
 calcEdsurveyTable <- function(formula,
@@ -137,27 +226,34 @@ calcEdsurveyTable <- function(formula,
                               returnSepct=TRUE,
                               varMethod=c("jackknife", "Taylor"),
                               drop=FALSE,
-                              schoolMergeVarStudent=NULL,
-                              schoolMergeVarSchool=NULL,
                               omittedLevels=TRUE, 
                               defaultConditions=TRUE,
                               recode=NULL,
-                              defaultConditionsMissing=TRUE
+                              defaultConditionsMissing=TRUE,
+                              returnVarEstInputs=FALSE,
+                              dropUnusedLevels = TRUE
 ) {
-  # test incoming data
+
+  ## outline: ###################
+  ## 1) check and format inputs           
+  ## 2) get the data
+  ## 3) build the output table
+  ###############################
+  # in section 3, the table is built column by column
+
+
+  ## 1) check and format inputs           
+  # test class of incoming data
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
-  
+
   if(is.null(weightVar)) {
     wgt <- attributes(getAttributes(data, "weights"))$default
   } else {
     wgt <- weightVar
   }
   
-  varMethod <- tolower(varMethod[[1]])
-  if(!varMethod %in% substr(c("jackknife", "taylor"),0,nchar(varMethod)) ) {
-    stop(paste0("The argument ",sQuote("varMethod"), " must be one of ", dQuote("jackknife"), " or ", dQuote("Taylor"), "."))
-  }
-  varMethod <- substr(varMethod, 0,1)
+  # use just the first character, j or t
+  varMethod <- substr(tolower(varMethod0 <- match.arg(varMethod)), 0, 1)
   
   # fill in default subject scale / sub scale
   zeroLengthLHS <- attr(terms(formula), "response") == 0
@@ -165,6 +261,10 @@ calcEdsurveyTable <- function(formula,
   # get y variables
   if( zeroLengthLHS ) {
     yvar <- attributes(getAttributes(data, "pvvars"))$default
+    if(is.null(yvar)) { # in TALIS, there is no PV 
+      yvar = colnames(data)[1]
+      returnMeans = FALSE
+    } 
     formula <- formula(paste0(yvar, " ", paste(as.character(formula), collapse="")))
   } else{
     yvar <- all.vars(formula[[2]])
@@ -183,78 +283,101 @@ calcEdsurveyTable <- function(formula,
   }
   
   if(length(yvar) > 1  & returnMeans) {
-    stop("There must be exactly one left hand side variable in the ", sQuote("formula")," argument.")
+    stop("There must be exactly one left-hand side variable in the ", sQuote("formula")," argument.")
   }
   
-  # get PVs
+  # get plausible values 
   pvy <- hasPlausibleValue(yvar, data)
+
+  # when we use plausible values there are multiple y variables. When we do not there is only one
+  # this code sets it up correctly
   yvars <- yvar
   if(pvy) {
     yvars <- getPlausibleValue(yvar, data)
   } else {
-    if(!yvar %in% names(data)) {
+    if(!yvar %in% colnames(data)) {
       stop(paste0("Cannot find ", sQuote(yvars), " in the edsurvey.data.frame."))
     }
   }
-  
+
   if(returnMeans) {
     yvar0 <- yvars[1]
   }
   
-  #We need to get all the weights as well
+  ## 2) get the data                            
+  #We need to get all the weights
   wgtl <- data$weights[[wgt]]
-  wgtall <- c()
-  for(jki in 1:length(wgtl$jksuffixes)) {
-    wgti <- paste0(wgtl$jkbase, wgtl$jksuffixes[jki])
-    wgtall <- c(wgtall, wgti)
-  }
+  # build the replicate weight vector
+  wgtall <- paste0(wgtl$jkbase, wgtl$jksuffixes)
+
   reqvar <- c(all.vars(formula), wgt)
   if(returnMeans) {
     reqvar <- c(reqvar, wgtall)
   }
-  # this is necessary because the LHS variable was always missing when the RHS variables was NA
+  # when not returning means, get NAs as NA.
   includeNaLabel <- !returnMeans
-  # add Taylor variables
+  # add Taylor variables, when needed
   if(varMethod=="t") {
     reqvar <- c(reqvar, getAttributes(data, "psuVar"), getAttributes(data, "stratumVar"))
   }
   # only call with defaultConditions if it was in the call to edsurveyTable
   if(defaultConditionsMissing) {
     edf  <- getData(data, reqvar, includeNaLabel=includeNaLabel,
-                    returnJKreplicates=(varMethod=="j" & (returnMeans | returnSepct)), dropUnusedLevels=TRUE, 
-                    drop= drop, schoolMergeVarStudent=schoolMergeVarStudent, schoolMergeVarSchool=schoolMergeVarSchool,
+                    returnJKreplicates=(varMethod=="j" & (returnMeans | returnSepct)), dropUnusedLevels=dropUnusedLevels, 
+                    drop= drop,
                     omittedLevels=omittedLevels, recode=recode, addAttributes=TRUE)
   } else {
     edf  <- getData(data, reqvar, includeNaLabel=includeNaLabel,
-                    returnJKreplicates=(varMethod=="j" & (returnMeans | returnSepct)), dropUnusedLevels=TRUE, 
-                    drop= drop, schoolMergeVarStudent=schoolMergeVarStudent, schoolMergeVarSchool=schoolMergeVarSchool,
+                    returnJKreplicates=(varMethod=="j" & (returnMeans | returnSepct)), dropUnusedLevels=dropUnusedLevels, 
+                    drop= drop,
                     omittedLevels=omittedLevels, defaultConditions=defaultConditions, recode=recode, addAttributes=TRUE)
   }
+  if (nrow(edf) == 0) {
+    stop("The requested data has 0 row so crosstab analysis cannot be done.")
+  }
+  ## 3) build the output
+  # this makes the n sizes and RHS variables in a table
   n <- ftable(edf[,rhs_vars, drop=FALSE])
   res <- data.frame(n)
-  wtdn <- fastAgg(formula(paste0(wgt, " ~ ", paste(rhs_vars, collapse=" + "))), data=edf,  FUN=sumna)
-  
+  #if length(rhs_vars) is 1, then the names do not get assigned correctly. Fix that.
   names(res) <- c(rhs_vars, "N") # does nothing unless length(rhs_vars)==1
+  # fastAgg is similar to aggregate, but fast.
+  # add the weighted Ns
+  wtdn <- fastAgg(formula(paste0(wgt, " ~ ", paste(rhs_vars, collapse=" + "))), data=edf, FUN=sumna)
+  
+  # rename the last column to WTD_N
   last_column <- names(wtdn)[length(names(wtdn))]
   wtdn$WTD_N <- wtdn[,last_column]
   wtdn[,last_column] <- NULL
-  res <- merge(res, wtdn, sort=FALSE)
+  # add the column WTD_N to the result table by merging it on
+  res <- merge(res, wtdn, by=rhs_vars, sort=FALSE, all.x = TRUE)
+  res$WTD_N[res$N %in% 0] <- 0
   if(pctAggregationLevel == 0) {
-    res$twt <- sum(res$WTD_N)
+    # percent aggregation is over all units
+    res$twt <- sum(res$WTD_N, na.rm = TRUE)
     res$group <- 1 # used in Taylor series sePct
   } else {
-    twt <- fastAgg(formula(paste0('WTD_N' , " ~ ", paste(rhs_vars[1:pctAggregationLevel], collapse=" + "))), data=res,  FUN=sum)
-    names(twt) <- c(rhs_vars[1:pctAggregationLevel],'twt')
+    # percent aggregation is over subsets of units
+    twt <- fastAgg(formula(paste0('WTD_N' , " ~ ", paste(rhs_vars[1:pctAggregationLevel], collapse=" + "))), data=res,  FUN=sumna)
+    names(twt) <- c(rhs_vars[1:pctAggregationLevel], 'twt')
     twt$group <- 1:nrow(twt) # used in Taylor series sePct
-    res <- merge(res, twt, by=rhs_vars[1:pctAggregationLevel])
+    res <- merge(res, twt, by=rhs_vars[1:pctAggregationLevel], all.x = TRUE)
   }
+  # calculate the percent
   res['PCT'] <- res[,'WTD_N']/res[,'twt']*100
-  # get SE on weighted n
+  # make containers for these variables
+  pctVarEstInputs <- NULL
+  pctVarEstInputsJK <- NULL
+  
+  res_no0 <- res[res$N > 0,]
+  # add the column "SE(PCT)", the SE on WTD_N. Only when requested
   if(returnSepct) {
-    wtdnvar <- rep(0, nrow(res))
+    wtdnvar <- rep(0, nrow(res_no0))
     wgtl <- getAttributes(data, "weights")[[wgt]]
     if(varMethod == "j") {
+      # see statistics vignette for the formulas used here
       for(jki in 1:length(wgtl$jksuffixes)) {
+        # recalculate the percent with every JK replicate weight
         wgti <- paste0(wgtl$jkbase, wgtl$jksuffixes[jki])
         wtdn <- fastAgg(formula(paste0(wgti, " ~ ", paste(rhs_vars, collapse=" + "))), data=edf,  FUN=sumna)
         if(pctAggregationLevel==0) {
@@ -265,7 +388,7 @@ calcEdsurveyTable <- function(formula,
         names(wtdt)[ncol(wtdt)] <- "twti"
         # last_column is the name of the column with the wgti sum in it
         last_column <- names(wtdn)[length(names(wtdn))] 
-        wtdn <- merge(wtdn, res, by=rhs_vars)
+        wtdn <- merge(wtdn, res_no0, by=rhs_vars)
         if(pctAggregationLevel==0) {
           wtdn$one__ <- 1
           wtdt$one__ <- 1
@@ -273,27 +396,53 @@ calcEdsurveyTable <- function(formula,
         } else {
           wtdn <- merge(wtdn, wtdt, by=rhs_vars[1:pctAggregationLevel])
         }
+        # store the JK replicate results
+        if(returnVarEstInputs) {
+          if(jki == 1) {
+            wtdn_ <- wtdn
+            for(ii in 1:length(rhs_vars)) {
+              wtdn_[,rhs_vars[ii]] <- as.character(wtdn[,rhs_vars[ii]])
+            }
+            level_ <- c()
+            for(i in 1:nrow(wtdn)) {
+              level_ <- c(level_, paste(rhs_vars, wtdn_[i,rhs_vars], sep="=", collapse=":"))
+            }
+          }
+          for(i in 1:nrow(wtdn)) {
+            level <- paste(rhs_vars, wtdn_[i,rhs_vars], sep="=", collapse=":")
+            pctVarEstInputsJKi <- data.frame(PV=0,
+                                             JKreplicate=jki,
+                                             variable=level_[i],
+                                             value=(wtdn[i,last_column]/wtdn[i,'twti'] - wtdn[i,"PCT"]/100)
+            )
+            pctVarEstInputsJK <- rbind(pctVarEstInputsJK, pctVarEstInputsJKi)
+          }
+          
+        }
+        # sum up to get the vector of variances between the full sample weight results and the JK results
         wtdnvar <- wtdnvar + (wtdn[last_column]/wtdn['twti'] - wtdn["PCT"]/100)^2
       }
+      # finally, add the 
       wtdndf <- data.frame(stringsAsFactors=FALSE,
-                           100*sqrt(wtdnvar))
+                           100*sqrt(getAttributes(data, "jkSumMultiplier") * wtdnvar))
       names(wtdndf)[1] <- "SE(PCT)"
       wtdndf[,rhs_vars] <- wtdn[,rhs_vars]
-      res <- merge(res, wtdndf, by=rhs_vars, sort=FALSE)
+      res <- merge(res, wtdndf, by=rhs_vars, sort=FALSE, all.x = TRUE)
     } else { # Taylor series based method
-      res[,"SE(PCT)"] <- NA
-      sapply(unique(res$group), function(z) { # for each grouping
-        
-        resi <- res[res$group == z,]# subset(res, group == z)
-        n <- nrow(resi)
-        resi$groupsubset <- 1:n
+      res_no0[,"SE(PCT)"] <- NA
+      #for every group (row of the table)
+      sapply(unique(res_no0$group), function(z) {
+        # get the Taylor series SE for this row of the table
+        res_no0i <- res_no0[res_no0$group == z,]# subset(res_no0, group == z)
+        n <- nrow(res_no0i)
+        res_no0i$groupsubset <- 1:n
         if(n!=1) { # if n>1 then the percent is not 100 and we need to find SE(PCT)
-          pr <- res[res$group==z,"PCT"]/100
+          pr <- res_no0[res_no0$group==z,"PCT"]/100
           datai <- edf
           if(pctAggregationLevel>0) {
             for(i in 1:pctAggregationLevel) {
               datai$rhsi <- datai[,rhs_vars[i]]
-              vvv <- as.character(resi[1,rhs_vars[i]])
+              vvv <- as.character(res_no0i[1,rhs_vars[i]])
               datai <- datai[datai$rhsi == vvv,]
             }
           }
@@ -303,7 +452,7 @@ calcEdsurveyTable <- function(formula,
             datai$gss <- 1 
             # set gss to 1 for just rows in this group
             for(j in (pctAggregationLevel+1):length(rhs_vars)) {
-              vvv <- as.character(resi[i,rhs_vars[j]])
+              vvv <- as.character(res_no0i[i,rhs_vars[j]])
               datai$gss[datai[,rhs_vars[j]] != vvv] <- 0
             }
             if(sum(datai$gss) >= 1) { # allow for units with no obs that have that
@@ -313,7 +462,6 @@ calcEdsurveyTable <- function(formula,
           # make W where i,jth entry is weight of unit i iff it is in j
           # make \tilde{W} where i,jth entry is weight of unit i
           wtilde <- w <- matrix(0, ncol=n, nrow=nrow(datai))
-          # this can be optimized by looping from 1:n instead
           units <- sort(unique(datai$unit))
           for(j in 1:length(units)) { # this could be 1:n but this way it is robust to levels with 0 units in them
             ss <- datai$unit %in% units[j]
@@ -323,8 +471,10 @@ calcEdsurveyTable <- function(formula,
             wtilde[,j] <- datai[,wgt] * pr[j]
           }
           # again using notation from AM documentation, including multiplicaiton by w
+          # in TeX, u_{hij} * w, is called uhijw here
           uhijw <- w -  wtilde # in uhijw[i,j] j= percent value, i=obs
           colnames(uhijw) <- paste0("v",1:n)
+          # use these as a convenience
           sumna <- function(x) { sum(x, na.rm=TRUE)}
           meanna <- function(x) { mean(x, na.rm=TRUE)}
           uhijw <- data.frame(uhijw,
@@ -332,6 +482,7 @@ calcEdsurveyTable <- function(formula,
                               stratV=datai[,getAttributes(data, "stratumVar")],
                               psuV=datai[,getAttributes(data, "psuVar")])
           for(vi in 1:n) {
+            # build uhijw, see AM documentation
             uhijw$v <- uhijw[,paste0("v",vi)]
             uhiw <- aggregate(v ~ psuV + stratV, data=uhijw, FUN=sum)
             uhiw$vv <- ave(uhiw$v, uhiw$stratV, FUN=meanna)
@@ -346,10 +497,11 @@ calcEdsurveyTable <- function(formula,
             } else {
               uhiw_ <- merge(uhiw_, uhiw, by=c("stratV", "psuV"))
             }
-          }
+          } 
           repu <- unique(uhiw_$stratV)
-          S <- matrix(0, nrow=nrow(resi), ncol=nrow(resi))
+          S <- matrix(0, nrow=nrow(res_no0i), ncol=nrow(res_no0i))
           for(repi in 1:length(repu)) {
+            # see AM documentaiton
             dataii <- uhiw_[uhiw_$stratV == repu[repi],]
             jku <- unique(dataii$psuV)
             ni <- length(jku)
@@ -360,84 +512,138 @@ calcEdsurveyTable <- function(formula,
               }
             }
           }
-          D <- diag(rep(1/resi$twt[1],nrow(resi)))# * (diag(resi$twt) - cb)
+          # from AM documentaiton
+          D <- diag(rep(1/res_no0i$twt[1],nrow(res_no0i)))
           var <- D %*% S %*% t(D)
-          # this is a check mentioned in the statistics vignette, saved for posterity
-          #np <- nrow(D)-1
-          #Dp <- D[1:np, 1:np]
-          #Sp <- S[1:np, 1:np]
-          #varp11 <- Dp %*% Sp %*% t(Dp)
-          #onep <- rep(1, np)
-          #varp12 <- -1* varp11 %*% onep
-          #varp21 <- t(varp12)
-          #varp22 <- sum(-1*varp12)
-          #varp <- rbind(cbind(varp11,varp12), c(varp21,varp22))
-          # varp now equals var
-          #
-          res[res$group==z,"SE(PCT)"] <<- 100 * sqrt(diag(var)) # fit to percentage
+          res_no0[res_no0$group==z,"SE(PCT)"] <<- 100 * sqrt(diag(var)) # fit to percentage
         } else { # end if(n!=1) { 
           # there is only one thing in this aggregation level
           # so the percent will be 100. The frequentist SE on this will be zero.
-          res[res$group==z,"SE(PCT)"] <<- 0
+          res_no0[res_no0$group==z,"SE(PCT)"] <<- 0
         } # end else for if(n!=1) { 
-      }) # end sapply(unique(res$group), function(z) {
+      }) # end sapply(unique(res_no0$group), function(z) {
+    res <- merge(res, res_no0[,c(rhs_vars,"SE(PCT)")], by = rhs_vars, sort=FALSE, all.x=TRUE)
     } # end else for if(varMethod == "j") {
   } # end if(returnSepct) {
   
-  
+  # delete intermediates from results
   res['group'] <- NULL
   res['twt'] <- NULL
-  res <- res[order(res[,rhs_vars[1]]),]
+  # order correctly
+  for(i in length(rhs_vars):1) {
+    res <- res[order(res[,rhs_vars[i]]),]
+  }
   
-  # added in 0.6.0 unclear why it is needed
-  res <- res[res$N>0,]#subset(res, N > 0)
+  #res <- res[res$N>0,] #subset(res, N > 0)
+  # for returnVarEstInputs
+  meanVarEstInputs <- NULL
+  meanVarEstInputsJK <- NULL
+  meanVarEstInputsPV <- NULL
+  
+  njk <- length(wgtl$jksuffixes)
+  npv <- length(yvars)
+  # add mean PV score to res
   if(returnMeans) {
-    # if lm.sdf had a model.frame method, it could be used here thusly:
-    # data <- lm.sdf(formula(paste0(yvar, " ~ 0 + ", paste(rev(rhs_vars)), collapse=":", method="model.frame")), dsdf)
-    
-    lvls <- levels(edf[,rhs_vars[1]]) # get the levels in the order they came in
-    lvls <- lvls[lvls %in% edf[,rhs_vars[1]]] # keep just occupied levels
-    ilen <- nrow(res)/length(lvls) # number of values per level of rhs_vars[1]
-    for(i in length(rhs_vars):1) {
-      res <- res[order(res[,rhs_vars[i]]),]
-    }
     # for each row of the table, get the mean and SE from lm
+    # by subsetting the data to just the units relevant to that row
+    # and then using lm.sdf to find the mean and SE for that row
     for(i in 1:nrow(res)) {
       dsdf <- edf
+      # for this row, subset it on each dimenstion
       for(j in 1:length(rhs_vars)) {
+        if(returnVarEstInputs) {
+          if(j==1) {
+            label <- paste0(rhs_vars[j], "=", res[i,rhs_vars[j]])
+          } else{
+            label <- paste0(label, ":", rhs_vars[j], "=", res[i,rhs_vars[j]])
+          }
+        }
         cond <- parse(text=paste0(rhs_vars[j], " == \"", res[i,rhs_vars[j]],"\""))[[1]]
         if(inherits(dsdf, "edsurvey.data.frame")) {
           dsdf <- subset.edsurvey.data.frame(dsdf, cond, inside=TRUE) # subset to just those values at level i of the first X variable
         } else {
           dsdf <- dsdf[dsdf[,rhs_vars[j]] %in% res[i,rhs_vars[j]],] # subset to just those values at level i of the first X variable
         }
-      }
-      fi <- formula(paste0(yvar, " ~ 1"))
-      lst <- list(fi, dsdf,
-                  weightVar=wgt, jrrIMax=jrrIMax,
-                  varMethod=varMethod,
-                  omittedLevels=FALSE) # taken care of above
-      lmi <- do.call(lm.sdf, lst)
-      cf <- summary(lmi)$coefmat
-      if(!is.na(cf$coef)) {
-        res[i,"MEAN"] <- cf$coef
-        res[i,"SE(MEAN)"] <- cf$se
-        lmi <- NULL
-      }
+      } #ends for(j in 1:length(rhs_vars)) 
+      if (nrow(dsdf) > 1) {
+        # fit an lm to get a mean and SE estimate and add those to the res
+        # also keep track of var est inputs
+        fi <- formula(paste0(yvar, " ~ 1"))
+        lst <- list(fi, dsdf,
+                    weightVar=wgt, jrrIMax=jrrIMax,
+                    varMethod=varMethod0,
+                    omittedLevels=FALSE, # taken care of above
+                    returnVarEstInputs=returnVarEstInputs)
+        lmi <- tryCatch(do.call(lm.sdf, lst),
+                        error = function(cond) {
+                          message(paste0("Encountered an issue when calculating a row, ", dQuote(cond$message), " Some mean estimates will be NA in the table."))
+                          return(NULL)
+                        })
+        if (!is.null(lmi)) {
+          cf <- summary(lmi)$coefmat
+          if(!is.na(cf$coef)) {
+            res[i,"MEAN"] <- cf$coef
+            res[i,"SE(MEAN)"] <- cf$se
+            if(returnVarEstInputs) {
+              meanVarEstInputsJKi <- lmi$varEstInputs$JK
+              meanVarEstInputsJKi$variable <- label
+              meanVarEstInputsJK <- rbind(meanVarEstInputsJK, meanVarEstInputsJKi)
+              meanVarEstInputsPVi <- lmi$varEstInputs$PV
+              meanVarEstInputsPVi$variable <- label
+              meanVarEstInputsPV <- rbind(meanVarEstInputsPV, meanVarEstInputsPVi)
+            }
+          } # end if (!is.na(cf$coef))
+          else {
+            lmi <- NULL
+          }
+        }
+        if (is.null(lmi)) {
+          res[i,"MEAN"] <- NA
+          res[i,"SE(MEAN)"] <- NA
+          if(returnVarEstInputs) {
+            meanVarEstInputsJKi <- data.frame(PV = NA, JKreplicate = NA, variable = "label",value = NA)
+            meanVarEstInputsJK <- rbind(meanVarEstInputsJK, meanVarEstInputsJKi)
+            meanVarEstInputsPVi <- data.frame(PV = NA, variable = "label",value = NA)
+            meanVarEstInputsPV <- rbind(meanVarEstInputsPV, meanVarEstInputsPVi)
+          }
+        }
+      } else { #for when nrow(dsdf) = 1
+        res[i,"MEAN"] <- NA
+        res[i,"SE(MEAN)"] <- NA
+        if(returnVarEstInputs) {
+          meanVarEstInputsJKi <- data.frame(PV = 1, JKreplicate = 1:njk, variable = "label", value = NA)
+          meanVarEstInputsJKi$variable <- label
+          meanVarEstInputsJK <- rbind(meanVarEstInputsJK, meanVarEstInputsJKi)
+          meanVarEstInputsPVi <- data.frame(PV = 1:npv, variable = "label", value = NA)
+          meanVarEstInputsPVi$variable <- label
+          meanVarEstInputsPV <- rbind(meanVarEstInputsPV, meanVarEstInputsPVi)
+        }
+      } # end if (nrow(dsdf) > 1)
+      
     } # end for(i in 1:nrow(res)) {
   } # if(returnMeans)
-  njk <- length(wgtl$jksuffixes)
+
   if(varMethod== "t") {
     njk <- NA
   }
   rownames(res) <- NULL
   varmeth <- ifelse(varMethod=="t", "Taylor series", "jackknife")
   
+
+  # order the output by the "by" variables
+  vnames <- intersect(names(res), all.vars(formula))
+  
   # Add variable labels as an attribute
   if (inherits(data, c("edsurvey.data.frame", "light.edsurvey.data.frame"))){
     for (i in 1:length(names(res))) {
       if (names(res)[i] %in% all.vars(formula)) {
-        suppressWarnings(attr(res[[names(res)[i]]], "label") <- searchSDF(names(res)[i], data)$Labels)
+        # not every variable on a light.edsurvey.data.frame will return here.
+        # some will return a NULL
+        suppressWarnings(searchRes <- searchSDF(names(res)[i], data))
+        if(!is.null(searchRes)) {
+          attr(res[[names(res)[i]]], "label") <- searchRes$Labels
+        }
+        vnames <- c(vnames, names(res)[i])
       }
     }
   }
@@ -445,21 +651,41 @@ calcEdsurveyTable <- function(formula,
   res2 <- list(formula=formula, npv=length(yvars),
                jrrIMax=min(jrrIMax, length(yvars)), weight=wgt,
                njk=njk, varMethod=varmeth, data=res)
+  if(returnVarEstInputs) {
+    meanVarEstInputs <- list(JK=meanVarEstInputsJK,
+                             PV=meanVarEstInputsPV)
+    
+    pctVarEstInputs <- list(JK=pctVarEstInputsJK,
+                            PV=NULL)
+    res2 <- c(res2, list(meanVarEstInputs=meanVarEstInputs,
+                         pctVarEstInputs=pctVarEstInputs))
+  }
   res2 <- c(res2, list(n0=nrow2.edsurvey.data.frame(data), nUsed=nrow(edf)))
   class(res2) <- "edsurveyTable" 
-  res2
+  return(res2)
 }
 
+fastAgg <- function(formula, data, FUN) {
+  y <- all.vars(formula[[2]])
+  x <- all.vars(formula[[3]])
+  # get the function name properly
+  fun <- substitute(FUN)
+  # DataTable is used here for faster evaluation, this is entirely based on performance testing
+  # a lot of what makes it faster is that we do not sort the results at the end.
+  pp <- paste0("as.data.frame(setDT(copy(data))[,list(",y,"=",fun,"(",y,")),by=list(",paste(x,collapse=","),")])")
+  eval(parse(text=pp))
+}
 
-#' @title Prints summary details of a summary table from an edsurvey.data.frame.
-#'
-#' @description Prints summary details of a summary table
-#' estimates appropriate for the \code{edsurvey.data.frame}.
-#' @param x an R object representing a summary table of an \code{edsurvey.data.frame}.
-#' @param digits number of significant figures to print.
-#' @param ... these arguments are not passed anywhere and are included only for compatibility.
+#' @method print edsurveyTableList
+# @author Paul Bailey and Howard Huo
+# @aliases print.edsurveyTable
+#' @export 
+print.edsurveyTableList <- function(x, digits=getOption("digits"), ...) {
+  print.edsurveyTable(x, digits=digits, ...)
+}
+
 #' @method print edsurveyTable
-#' @author Paul Bailey and Howard Huo
+# @author Paul Bailey and Howard Huo
 #' @export 
 print.edsurveyTable <- function(x, digits=getOption("digits"), ...) {
   cat(paste0("\nFormula: ", paste(deparse(x$formula), "\n",collapse=""), "\n"))

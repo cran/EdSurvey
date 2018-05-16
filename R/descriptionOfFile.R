@@ -83,76 +83,78 @@ descriptionOfFile <- function(filename) {
   return(attributes)  
 }
 
+# @author Ahmad Emad
 achievementLevelsHelp <- function(grade, year, subject) {
   # return achievement levels
-  temp <- "Mathematics	1990-present	Grade 4	214	249	282
-  Mathematics	1990-present	Grade 8	262	299	333
-  Mathematics	1990-2003	Grade 12	288	336	367
-  Mathematics	2005-present	Grade 12	141	176	216
-  Reading	1992-2007	Grade 4	208	238	268
-  Reading	2009-present	Grade 4	208	238	268
-  Reading	1992-2007	Grade 8	243	281	323
-  Reading	2009-present	Grade 8	243	281	323
-  Reading	1992-2007	Grade 12	265	302	346
-  Reading	2009-present	Grade 12	265	302	346
-  Science	1990-2005	Grade 4	138	170	205
-  Science	2009-2011	Grade 4	131	167	224
-  Science	1990-2005	Grade 8	143	170	208
-  Science	2009-2011	Grade 8	141	170	215
-  Science	1990-2005	Grade 12	146	178	210
-  Science	2009-2011	Grade 12	142	179	222
-  Writing	1998-2007	Grade 4	115	176	225
-  Writing	2011	Grade 4	115	176	225
-  Writing	1998-2007	Grade 8	114	173	224
-  Writing	2011	Grade 8	120	173	211
-  Writing	1998-2007	Grade 12	122	178	230
-  Writing	2011	Grade 12	122	173	210
-  Civics	all	Grade 4	136	177	215
-  Civics	all	Grade 8	134	178	213
-  Civics	all	Grade 12	139	174	204
-  Geography	all	Grade 4	187	240	276
-  Geography	all	Grade 8	242	282	315
-  Geography	all	Grade 12	270	305	339
-  History	all	Grade 4	195	243	276
-  History	all	Grade 8	252	294	327
-  History	all	Grade 12	294	325	355
-  Economics	all	Grade 12	123	160	208
-  "
+  temp <- "Mathematics\t1990-present\tGrade 4\t214\t249\t282
+Mathematics\t1990-present\tGrade 8\t262\t299\t333
+Mathematics\t1990-2003\tGrade 12\t288\t336\t367
+Mathematics\t2005-present\tGrade 12\t141\t176\t216
+Reading\t1992-2007\tGrade 4\t208\t238\t268
+Reading\t2009-present\tGrade 4\t208\t238\t268
+Reading\t1992-2007\tGrade 8\t243\t281\t323
+Reading\t2009-present\tGrade 8\t243\t281\t323
+Reading\t1992-2007\tGrade 12\t265\t302\t346
+Reading\t2009-present\tGrade 12\t265\t302\t346
+Science\t1990-2005\tGrade 4\t138\t170\t205
+Science\t2009-2011\tGrade 4\t131\t167\t224
+Science\t1990-2005\tGrade 8\t143\t170\t208
+Science\t2009-2011\tGrade 8\t141\t170\t215
+Science\t1990-2005\tGrade 12\t146\t178\t210
+Science\t2009-2011\tGrade 12\t142\t179\t222
+Writing\t1998-2007\tGrade 4\t115\t176\t225
+Writing\t2011\tGrade 4\t115\t176\t225
+Writing\t1998-2007\tGrade 8\t114\t173\t224
+Writing\t2011\tGrade 8\t120\t173\t211
+Writing\t1998-2007\tGrade 12\t122\t178\t230
+Writing\t2011\tGrade 12\t122\t173\t210
+Civics\tall\tGrade 4\t136\t177\t215
+Civics\tall\tGrade 8\t134\t178\t213
+Civics\tall\tGrade 12\t139\t174\t204
+Geography\tall\tGrade 4\t187\t240\t276
+Geography\tall\tGrade 8\t242\t282\t315
+Geography\tall\tGrade 12\t270\t305\t339
+History\tall\tGrade 4\t195\t243\t276
+History\tall\tGrade 8\t252\t294\t327
+History\tall\tGrade 12\t294\t325\t355
+Economics\tall\tGrade 12\t123\t160\t208
+"
   temp2 <- unlist(strsplit(temp,"\n"))
   temp2 <- temp2[1:32]
   temp2 <- sapply(temp2, function(x) unlist(strsplit(x,"\t")),
                   USE.NAMES = FALSE)
   temp2 <- data.frame(matrix(unlist(temp2), nrow = 32, byrow = TRUE))
-  names(temp2) <- c("Subject",	"Year",	"Grade",	"Basic",	"Proficient",	"Advanced")
+  names(temp2) <- c("Subject",  "Year",  "Grade",  "Basic",  "Proficient",  "Advanced")
   temp2[,"Subject"] <- gsub(" ","",temp2$Subject)
-  #subject <- tolower(subject)
-  #grade <- tolower(grade)
   
+  # filter to just this grade and subject
   levels <- temp2[temp2$Subject == subject & temp2$Grade == grade,]
   if(nrow(levels) > 1) {
-    for (i in seq(1,nrow(levels))) {
+    for(i in seq(1,nrow(levels))) {
       y <- as.character(levels$Year[i])
+      # if there is only one year (not a range)
       if(length(strsplit(y, "-")[[1]]) == 1) {
-        
-        if(y == year) 
-          return (c(as.character(levels$Basic)[i], 
-                    as.character(levels$Proficient)[i], as.character(levels$Advanced)[i]))
+        if(y == year) {
+          return(c(as.character(levels$Basic)[i], 
+                   as.character(levels$Proficient)[i], as.character(levels$Advanced)[i]))
+        }
         next
       }
       
+      # there is a range, so find out if we are in it
       lower <- as.integer(strsplit(y, "-")[[1]][1])
       upper <- strsplit(y, "-")[[1]][2]
       
-      if(upper == "present") 
+      if(upper == "present") {
         upper <- substr(Sys.Date(),1,4)
+      }
       upper <- as.integer(upper)
       if(year >= lower & year <= upper) {
-        return (c(as.character(levels$Basic)[i], 
-                  as.character(levels$Proficient)[i], as.character(levels$Advanced)[i]))
+        return(c(as.character(levels$Basic)[i], 
+                 as.character(levels$Proficient)[i], as.character(levels$Advanced)[i]))
       }
-      
-    }
-  }
+    } # end for(i in seq(1, nrow(levels)))
+  } # end if(nrow(levels) > 1) {
   if(nrow(levels) == 1) {
     return (c(as.character(levels$Basic), 
               as.character(levels$Proficient), as.character(levels$Advanced)))

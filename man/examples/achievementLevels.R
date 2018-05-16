@@ -2,11 +2,18 @@
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
-# Discrete achievement Levels
-achievementLevels(achievementVars=c("composite"), aggregateBy=NULL, data=sdf) 
+# Discrete achievement levels
+achievementLevels(achievementVars=c("composite"), aggregateBy=NULL, data=sdf)
 
-# Cumulative achievement Levels
+# Discrete achievement levels with a different subscale
+achievementLevels(achievementVars=c("num_oper"), aggregateBy=NULL, data=sdf)
+
+# Cumulative achievement levels
 achievementLevels(achievementVars=c("composite"), aggregateBy=NULL, data=sdf, 
+                  returnCumulative=TRUE) 
+
+# Cumulative achievement levels with a different subscale
+achievementLevels(achievementVars=c("num_oper"), aggregateBy=NULL, data=sdf, 
                   returnCumulative=TRUE) 
 
 # Achievement levels as independent variables, by sex aggregated by composite
@@ -21,8 +28,14 @@ achievementLevels(achievementVars=c("composite", "dsex"), aggregateBy="dsex",
 achievementLevels(achievementVars=c("composite", "sdracem"),
                   aggregateBy="sdracem", data=sdf, returnCumulative=TRUE) 
 
+# Use customized cutpoints
+achievementLevels(achievementVars=c("composite"), aggregateBy=NULL, data=sdf, 
+                  cutpoints = c("Customized Basic" = 200, 
+                                "Customized Proficient" = 300, 
+                                "Customized Advanced" = 400))
+
 # Use recode to change values for specified variables:
-achievementLevels(achievementVars=c("composite","dsex", "b017451"),
+achievementLevels(achievementVars=c("composite", "dsex", "b017451"),
                   aggregateBy = "dsex", sdf,
                   recode=list(b017451=list(from=c("Never or hardly ever",
                                                   "Once every few weeks",

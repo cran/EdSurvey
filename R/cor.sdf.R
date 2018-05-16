@@ -1,44 +1,45 @@
-#' @title Run a bivariate correlation on an edsurvey.data.frame.
+#' @title Bivariate Correlation
 #'
-#' @description Computes the variance of x and correlation of x and y if these are vectors using an \code{edsurvey.data.frame}.
+#' @description Computes the correlation of two variables on an \code{edsurvey.data.frame},
+#'              a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
+#'              The correlation accounts for plausible values and the survey design.
 #'
-#' @param x          a character variable name of class factor from the \code{data} to be correlated with y.
-#' @param y          a character variable name of class factor from the \code{data} to be correlated with x.
-#' @param data        an \code{edsurvey.data.frame}.
+#' @param x          a character variable name from the \code{data} to be correlated with \code{y}
+#' @param y          a character variable name from the \code{data} to be correlated with \code{x}
+#' @param data       an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 #' @param method     a character string indicating which correlation coefficient (or covariance) is to be computed.
-#'                   One of \dQuote{Pearson} (default), \dQuote{Spearman}, \dQuote{Polychoric}, or \dQuote{Polyserial}.
-#' @param weightVar  character indicating the weight variable to use; see Details.
-#' @param reorder    a list to reorder variables. Defaults to \code{NULL}. Can be set as 
+#'                   One of \code{Pearson} (default), \code{Spearman}, \code{Polychoric}, or \code{Polyserial}.
+#' @param weightVar  character indicating the weight variable to use. See Details.
+#' @param reorder    a list of variables to reorder. Defaults to \code{NULL} (no variables are reordered). Can be set as 
 #'                   \code{reorder} \code{=} \code{list(var1} \code{=} \code{c("a","b","c"),} \code{var2} \code{=} \code{c("4", "3", "2", "1"))}. See Examples.
-#' @param schoolMergeVarStudent a character variable name from the student file used to merge student and school data files. Set to \code{NULL} by default.
-#' @param schoolMergeVarSchool a character variable name name from the school file used to merge student and school data files. Set to \code{NULL} by default.
 #' @param omittedLevels a logical value. When set to the default value of \code{TRUE}, drops those levels of all factor variables that are specified
-#'                        in \code{edsurvey.data.frame}. Use \code{print} on an \code{edsurvey.data.frame} to see the omitted levels.
-#' @param defaultConditions a logical value. When set to the default value of \code{TRUE}, uses the default conditions stored in \code{edsurvey.data.frame}
+#'                        in an \code{edsurvey.data.frame}. Use \code{print} on an \code{edsurvey.data.frame} to see the omitted levels.
+#' @param defaultConditions a logical value. When set to the default value of \code{TRUE}, uses the default conditions stored in an \code{edsurvey.data.frame}
 #'                           to subset the data. Use \code{print} on an \code{edsurvey.data.frame} to see the default conditions.
 #' @param recode       a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
 #'                    \code{recode} \code{=} \code{list(var1} \code{=} \code{list(from} \code{=} \code{c("a","b","c"), to} \code{=} \code{"d"))}. See Examples.
 #' @details 
-#' Note that the \code{\link{getData}} arguments and \code{recode} may be useful. (See examples.)
-#' The correlation methods are calculated as described in seperate documentation.
+#' Note that the \code{\link{getData}} arguments and \code{\link{recode.sdf}} may be useful. (See Examples.)
+#' The correlation methods are calculated as described in the documentation for the \code{wCorr} package---see \code{browseVignettes(package="wCorr")}.
+#'
 #' @return
 #' An \code{edsurvey.cor} that has print and summary methods.
 #'
 #' The class includes the following elements:
-#' \item{\code{correlation}}{The estimated correlation coefficient.}
-#' \item{\code{Zse}}{Square root of the variance (\code{Vimp} + \code{Vjrr}).}
-#' \item{\code{correlates}}{A vector of length two showing the columns for which the correlation coefficient was calculated.}
-#' \item{\code{variables}}{\code{correlates} that are discrete.}
-#' \item{\code{order}}{A list that shows the order of each variable.}
-#' \item{\code{method}}{The type of correlation estimated.}
-#' \item{\code{Vjrr}}{The jackknife component of variance estimate.}
-#' \item{\code{Vimp}}{The imputation component of the variance estimate.}
-#' \item{\code{weight}}{The weight variable used.}
-#' \item{\code{npv}}{The number of plausible values used.}
-#' \item{\code{njk}}{The number of jackknife replicates used.}
+#' \item{\code{correlation}}{numeric estimated correlation coefficient}
+#' \item{\code{Zse}}{standard error of the correlation (\code{Vimp} + \code{Vjrr}). In the case of Pearson, this is calculated in the linear atanh space and so is not a standard error in the usual sense.}
+#' \item{\code{correlates}}{a vector of length two showing the columns for which the correlation coefficient was calculated}
+#' \item{\code{variables}}{\code{correlates} that are discrete}
+#' \item{\code{order}}{a list that shows the order of each variable}
+#' \item{\code{method}}{the type of correlation estimated}
+#' \item{\code{Vjrr}}{the jackknife component of the variance estimate. For Pearson, in the atanh space.}
+#' \item{\code{Vimp}}{the imputation component of the variance estimate. For Pearson, in the atanh space.}
+#' \item{\code{weight}}{the weight variable used}
+#' \item{\code{npv}}{the number of plausible values used}
+#' \item{\code{njk}}{the number of jackknife replicates used}
 #' 
 #' @seealso \ifelse{latex}{\code{cor}}{\code{\link[stats]{cor}}} and \ifelse{latex}{\code{weightedCorr}}{\code{\link[wCorr]{weightedCorr}}}
-#' @author Paul Bailey. Relies heavily on the \code{wCorr} package, written by Ahmad Emad and Paul Bailey.
+#' @author Paul Bailey; relies heavily on the \code{wCorr} package, written by Ahmad Emad and Paul Bailey
 #'
 #' @example man/examples/cor.sdf.R
 #' @importFrom wCorr weightedCorr
@@ -51,11 +52,13 @@ cor.sdf <- function(x,
                     method = c("Pearson", "Spearman", "Polychoric", "Polyserial"),
                     weightVar = "default",
                     reorder = NULL,
-                    schoolMergeVarStudent=NULL,
-                    schoolMergeVarSchool=NULL,
                     omittedLevels=TRUE, 
                     defaultConditions=TRUE,
                     recode = NULL) {
+  if (inherits(data, c("edsurvey.data.frame.list"))) {
+    # use itterateESDFL to do this call to every element of the edsurvey.data.frame.list
+    return(itterateESDFL(match.call(),data))
+  }
   call <- match.call()
   vars <- c(x,y)
   # test input
@@ -66,12 +69,13 @@ cor.sdf <- function(x,
   }
   if(inherits(data[[y]],"character")) {
     stop(paste0("The argument ",sQuote("y"), " must be of a class numeric, factor, or lfactor."))
-  }
+  } 
+
   if(nrow(data) <= 0) {
     stop(paste0(sQuote("data"), " must have more than 0 rows."))
   } 
 
-  # test if x and y return TRUE for hasPlausibleValues
+  # test if x and y are plausible value variables (multiply imputed values)
   hpvx <- hasPlausibleValue(x, data)
   hpvy <- hasPlausibleValue(y, data)
 
@@ -87,7 +91,7 @@ cor.sdf <- function(x,
     } # End of nested if statment: if weightVar is defalt
   } # End of if statment: if weightVar is null
   
-  # setup JK replicate weight variables
+  # setup Jack Knife replicate weight variables
   if(weightVar=="one") {
     wgtl <- list(jkbase="one",jksuffixes="")
   } else { # if weightVar is not "one"
@@ -100,43 +104,34 @@ cor.sdf <- function(x,
   } else { # if weightVar is not "one"
     getV <- c(vars, wgt)
   } # end of if statment: if weightVar is "one"
-  # we should figure out if default conditions was set and pass the warning if it was
 
-  if(missing(defaultConditions)) {
-    # do not pass defaultConditions if it was not in the function call
-    suppressWarnings(lsdf <- getData(data,
-                                     getV,
-                                     includeNaLabel=TRUE,
-                                     addAttributes=TRUE,
-                                     returnJKreplicates=TRUE,
-                                     drop=FALSE,
-                                     schoolMergeVarStudent=schoolMergeVarStudent,
-                                     schoolMergeVarSchool=schoolMergeVarSchool,
-                                     omittedLevels=omittedLevels,
-                                     recode = recode,
-                                     dropUnusedLevels=TRUE))
-  } else {
-    # pass defaultConditions if it was in the function call
-    suppressWarnings(lsdf <- getData(data,
-                                     getV,
-                                     includeNaLabel=TRUE,
-                                     addAttributes=TRUE,
-                                     returnJKreplicates=TRUE,
-                                     drop=FALSE,
-                                     schoolMergeVarStudent=schoolMergeVarStudent,
-                                     schoolMergeVarSchool=schoolMergeVarSchool,
-                                     omittedLevels=omittedLevels,
-                                     defaultConditions=defaultConditions,
-                                     recode = recode,
-                                     dropUnusedLevels=TRUE))
-  } # End of if statment: if defalutConditions were not passed. 
+  # setup the getData call
+  getDataArgs <- list(data=data,
+                      varnames=getV,
+                      includeNaLabel=TRUE,
+                      addAttributes=TRUE,
+                      returnJKreplicates=TRUE,
+                      drop=FALSE,
+                      omittedLevels=omittedLevels,
+                      recode = recode,
+                      dropUnusedLevels=TRUE)
+
+  # Default conditions should be included only if the user set it. This adds the argument only if needed
+  if(!missing(defaultConditions)) {
+    getDataArgs <- c(getDataArgs, list(defaultConditions=defaultConditions))
+  } 
+  # edf is the actual data
+  lsdf <- do.call(getData, getDataArgs)
 
   # if the weight variable is "one" then that will need to be a valid column
   if(weightVar=="one") {
+    if("one" %in% colnames(lsdf)) {
+      stop("a column named one cannot be included in the input when weights of one are implicitly used. You can add your own weight one column as a work around.")
+    }
     lsdf$one <- 1
-  } 
+  }
   
-  # do reordering of variables
+  # do reordering of variables when the user requets a reorder
   if(!is.null(reorder[[x]])) {
     llx <- unique(lsdf[,x])
     if(is.factor(lsdf[,x])) {
@@ -144,7 +139,7 @@ cor.sdf <- function(x,
     } # End if statment: if lsdf is a factor
     if( sum(!reorder[[x]] %in% llx) > 0 ) {
       bad <- reorder[[x]][!reorder[[x]] %in% llx]
-      stop(paste0("Could not find reorder level(s) {", paste(sQuote(bad), collapse=", "), "} when reordering ", sQuote("x"))) 
+      stop(paste0("Could not find reorder level(s) {", paste(sQuote(bad), collapse=", "), "} when reordering ", sQuote("x"), "."))
     } # End if Statment: if sum(!reorder[[x]] %in% llx) > 0
     lsdf[,x] <- factor(lsdf[,x], levels = c(reorder[[x]]))
   } # End if statment: if reorder x is not null 
@@ -157,12 +152,14 @@ cor.sdf <- function(x,
     } # End if statment: if lsdf[,y] is a factor 
     if( sum(!reorder[[y]] %in% lly) > 0 ) {
       bad <- reorder[[y]][!reorder[[y]] %in% lly]
-      stop(paste0("Could not find reorder level(s) {", paste(sQuote(bad), collapse=", "), "} when reordering ", sQuote("y"))) 
+      stop(paste0("Could not find reorder level(s) {", paste(sQuote(bad), collapse=", "), "} when reordering ", sQuote("y"), "."))
     } # End if statment sum(!reorder[[y]] %in% lly) > 0 
     lsdf[,y] <- factor(lsdf[,y], levels = c(reorder[[y]]))
   } # End if statment: if reorder[[y]] is null
 
-  # start levels for variables
+  # Generate levels output for variables
+  # this output shows the user what levels were used in the correlation calculation
+  # when it is not obvious.
   varOrder <- list()
   variables <- c()
   if(length(levels(lsdf[[x]])) || length(levels(lsdf[[y]])) > 0) {
@@ -189,6 +186,7 @@ cor.sdf <- function(x,
   # end reorder variables
 
   # extract plausible values
+  # TODO: why
   if(hpvx) {
     xvarlsdf <- lsdf[,pvx <- getPlausibleValue(x, lsdf), drop=FALSE] #lsdf
   } else {
@@ -204,11 +202,13 @@ cor.sdf <- function(x,
   lsdf <- lsdf[!is.na(xvarlsdf[,1]),]
   lsdf <- lsdf[!is.na(yvarlsdf[,1]),]
 
+
   # get method
+  # TODO: method is per the documentation a single string so why are we taking the first item? 
   method <- method[[1]]
   # correlation method (pm)
   pm <- pmatch(tolower(method), tolower(c("Pearson", "Spearman", "Polychoric", "Polyserial")))
-  # number of PVs
+  # number of plausible values 
   npv <- max(npvx <- length(xvarlsdf), npvy <- length(yvarlsdf))
   # the results, across the PVs
   diagVar <- vector(length=npv)
@@ -249,8 +249,8 @@ cor.sdf <- function(x,
   # the rest of the code estimates the variance
 
   # for each jackknife replicate
+  #TODO: first and second line have same comment- how are they differnt? 
   jkwgtdf <- lsdf[,paste0(wgtl$jkbase, wgtl$jksuffixes), drop=FALSE] #dataframe of jk replicate weights
-  wgtdf <- lsdf[,wgts, drop=FALSE] #dataframe of jk replicate weights
   diagVarWgt <- matrix(NA,ncol=length(xvarlsdf),nrow=length(wgts))
   
   # rerun with JK replicate weights
@@ -267,20 +267,19 @@ cor.sdf <- function(x,
       }
     } # End of for statment i in 1:npv
   } # End of for statment jki in 1:length(wgts)
-  # end levels for variables
 
-  # one Vjrr per PV
+  # see documentation for defintion of Vjrr, Vimp, M
+  # one Vjrr per plausible value (PB)
   preVjrr = apply(diagVarWgt, 2, sum)
   Vjrr = mean(preVjrr)
   # then Vimp = ((M+1)/M) * [variance of main estimate (mcc) across the PVs.]
   # M= number of plausible values
   M <- length(diagVar)
   Vimp <- ifelse( M>1, (M+1)/M * var(ft), 0)
-  # then get V
+  # then get total variance
   V <- Vimp + Vjrr
-  # but now all of this is in Z-scale, so we have to transform it back.
+  # se is root variance
   Zse <- sqrt(V)
-  # do CIs
 
   if(weightVar=="one") {
     cor <- list(correlation=mcc, Zse=NA, correlates=vars, variables=variables, order=varOrder, method=method,
@@ -292,7 +291,7 @@ cor.sdf <- function(x,
   cor <- c(cor, list(n0=nrow2.edsurvey.data.frame(data), nUsed=nrow(lsdf)))
 
   class(cor) <- "edsurveyCor"
-  cor
+  return(cor)
 }
 
 
@@ -301,13 +300,10 @@ cor.sdf <- function(x,
 print.edsurveyCor <- function(x, digits = getOption("digits"), ...) {
   class(x) <- "list"
   cat(paste0("Method: ", x$method, "\n"))
-  if(x$npv > 1) {
-    cat(paste0("Plausible values: ", x$npv, "\n"))
-  }
   cat(paste0("full data n: ", x$n0, "\n"))
   cat(paste0("n used: ", x$nUsed, "\n"))
   cat("\n")
-  cat(paste0(paste0("Correlation: ", signif(x$correlation, digits=digits), collapse=""), "\n"))
+  cat(paste0("Correlation: ", signif(x$correlation, digits=digits), collapse=""))
   if(length(x$order)>0) {
     cat("\nCorrelation Levels:\n")
     for(var in 1:length(x$order)) {

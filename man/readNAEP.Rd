@@ -2,48 +2,53 @@
 % Please edit documentation in R/readNAEP.r
 \name{readNAEP}
 \alias{readNAEP}
-\title{Creates an edsurvey.data.frame.}
+\title{Connect to NAEP Data}
 \usage{
-readNAEP(filepath, defaultWeight = "origwt", defaultPvs = "composite",
+readNAEP(path, defaultWeight = "origwt", defaultPvs = "composite",
   omittedLevels = c("Multiple", NA, "Omitted"), frPath = NULL)
 }
 \arguments{
-\item{filepath}{character indicating the location and name of the file.}
+\item{path}{a character value indicating the full filepath location and name of the (.dat) data file}
 
-\item{defaultWeight}{character that indicates the default weight.}
+\item{defaultWeight}{a character value that indicates the default weight specified in the resulting \code{edsurvey.data.frame}.
+Default value is \code{origwt} if not specified.}
 
-\item{defaultPvs}{character that indicates the default plausible value.}
+\item{defaultPvs}{a character value that indicates the default plausible value specified in the resulting \code{edsurvey.data.frame}.
+Default value is \code{composite} if not specified.}
 
-\item{omittedLevels}{character vector indicating which factor levels (really, labels)
-should be excluded. When set to the default value of c('Multiple',NA,'Omitted'), adds the vector to the \code{edsurvey.data.frame}.}
+\item{omittedLevels}{a character vector indicating which factor levels/labels
+should be excluded. When set to the default value of \code{c('Multiple',NA,'Omitted')}, adds the vector to the \code{edsurvey.data.frame}.}
 
-\item{frPath}{character indicating the location of the fr2 parameter file included with the data companion.}
+\item{frPath}{a character value indicating the location of the \code{fr2} parameter layout file included with the data companion to parse the specified \code{filepath} data file.}
 }
 \value{
 An \code{edsurvey.data.frame} containing the following elements:
-   \item{userConditions}{A list containing all user conditions set using the \code{subset.edsurvey.data.frame} method.}
-   \item{defaultConditions}{The default conditions to be applied to the \code{edsurvey.data.frame}.}
-   \item{data}{An \code{LaF} object containing a connection the student data set on disk.}
-   \item{dataSch}{An \code{LaF} object containing a connection the school data set on disk.}
-   \item{weights}{A list containing the weights found on the \code{edsurvey.data.frame}.}
-   \item{pvvar}{A list containing the plausible values found on the \code{edsurvey.data.frame}.}
-   \item{subject}{The subject of the data set contained in the \code{edsurvey.data.frame}.}
-   \item{year}{The year of assessment of the data set contained in the \code{edsurvey.data.frame}.}
-   \item{assessmentCode}{The code of the data set contained in the \code{edsurvey.data.frame}.}
-   \item{dataType}{The type of data (whether student or school) contained in the \code{edsurvey.data.frame}.}
-   \item{gradeLevel}{The grade of the data set contained in the \code{edsurvey.data.frame}.}
-   \item{achievementLevels}{Default NAEP achievement cutoff scores.}
-   \item{omittedLevels}{The levels of the factor variables that will be omitted from the \code{edsurvey.data.frame}.}
-   \item{fileFormat}{A \code{data.frame} containing the parsed information from the student .fr2 file associated with the data.}
-   \item{fileFormatSchool}{A \code{data.frame} containing the parsed information from the school .fr2 file associated with the data.}
-   \item{survey}{The type of survey data contained in the \code{edsurvey.data.frame}.}
+   \item{userConditions}{a list containing all user conditions set using the \code{subset.edsurvey.data.frame} method}
+   \item{defaultConditions}{the default conditions to be applied to the \code{edsurvey.data.frame}}
+   \item{data}{an \code{LaF} object containing a connection to the student dataset on disk}
+   \item{dataSch}{an \code{LaF} object containing a connection to the school dataset on disk}
+   \item{dataTch}{not applicable for NAEP data; returns \code{NULL}}
+   \item{weights}{a list containing the weights found on the \code{edsurvey.data.frame}}
+   \item{pvvar}{a list containing the plausible values found on the \code{edsurvey.data.frame}}
+   \item{subject}{the subject of the dataset contained in the \code{edsurvey.data.frame}}
+   \item{year}{the year of assessment of the dataset contained in the \code{edsurvey.data.frame}}
+   \item{assessmentCode}{the code of the dataset contained in the \code{edsurvey.data.frame}}
+   \item{dataType}{the type of data (whether student or school) contained in the \code{edsurvey.data.frame}}
+   \item{gradeLevel}{the grade of the dataset contained in the \code{edsurvey.data.frame}}
+   \item{achievementLevels}{default NAEP achievement cutoff scores}
+   \item{omittedLevels}{the levels of the factor variables that will be omitted from the \code{edsurvey.data.frame}}
+   \item{fileFormat}{a \code{data.frame} containing the parsed information from the student .fr2 file associated with the data}
+   \item{fileFormatSchool}{a \code{data.frame} containing the parsed information from the school .fr2 file associated with the data}
+   \item{fileFormatTeacher}{not applicable for NAEP data; returns \code{NULL}}
+   \item{survey}{the type of survey data contained in the \code{edsurvey.data.frame}}
 }
 \description{
-Opens a connection to the data file residing on the disk and returns information about the file and data.
+Opens a connection to an NAEP data file residing
+             on the disk and returns an \code{edsurvey.data.frame} with 
+             information about the file and data.
 }
 \details{
-The function uses precompiled label information for data to read in a fixed-width format file, and uses prestored data
-         to get information about the file.
+The function uses the \code{frPath} file layout (.fr2) data to read in the fixed-width data file (.dat), and builds the \code{edsurvey.data.frame}.
 }
 \examples{
 # read in the example data (generated, not real student data)
@@ -54,12 +59,12 @@ sdf
 # To read in an NCES file first set the directory to the ~/Data subfolder,
 # then read in the appropriate .dat file:
 setwd("location/of/Data")
-sdf <- readNAEP(filepath="M36NT2PM.dat")
+sdf <- readNAEP(path="M36NT2PM.dat")
 
 # Or read in the .dat file directly through the folder pathway:
-sdf <- readNAEP(filepath="location/of/Data/M36NT2PM.dat")
+sdf <- readNAEP(path="location/of/Data/M36NT2PM.dat")
 }
 }
 \author{
-Ahmad Emad
+Tom Fink and Ahmad Emad
 }

@@ -2,22 +2,21 @@
 % Please edit documentation in R/print.edsurvey.data.frame.R
 \name{print.edsurvey.data.frame}
 \alias{print.edsurvey.data.frame}
-\title{Print out a summary of the edsurvey.data.frame.}
+\alias{print.edsurvey.data.frame.list}
+\title{EdSurvey Metadata Summary}
 \usage{
 \method{print}{edsurvey.data.frame}(x, printColnames = FALSE, ...)
 }
 \arguments{
-\item{x}{an \code{edsurvey.data.frame}.}
+\item{x}{an \code{edsurvey.data.frame} or an \code{edsurvey.data.frame.list}}
 
-\item{printColnames}{logical. Set to \code{TRUE} to see all column names.}
+\item{printColnames}{a logical value; set to \code{TRUE} to see all column names in the \code{edsurvey.data.frame}
+or the \code{edsurvey.data.frame.list}}
 
-\item{...}{these arguments are not passed anywhere and are included only for compatibility.}
-}
-\value{
-A pasted statement vector that shows the details of an \code{edsurvey.data.frame}
+\item{...}{these arguments are not passed anywhere and are included only for compatibility}
 }
 \description{
-Prints details of an \code{edsurvey.data.frame}.
+Prints metadata regarding an \code{edsurvey.data.frame} or an \code{edsurvey.data.frame.list}
 }
 \author{
 Michael Lee and Paul Bailey

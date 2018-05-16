@@ -2,26 +2,27 @@
 % Please edit documentation in R/showCutPoints.R
 \name{showCutPoints}
 \alias{showCutPoints}
-\title{Print a summary of achievement-level cut points.}
+\title{Retrieve Achievement Level Cutpoints}
 \usage{
 showCutPoints(data)
 }
 \arguments{
-\item{data}{an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.}
-}
-\value{
-A pasted statement that shows the achievement-level cut points
-        associated with an \code{edsurvey.data.frame}
-        or \code{light.edsurvey.data.frame}.
+\item{data}{an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
+an \code{edsurvey.data.frame.list}}
 }
 \description{
-Print a summary of the achievement-level cut points on an
-             \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.
+Retrieves a summary of the achievement level cutpoints for a
+             selected study represented in an
+             \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame},
+             or an \code{edsurvey.data.frame.list}
 }
 \examples{
 # read in the example data (generated, not real student data)
-sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
-# show the weights
+# show the cut points
 showCutPoints(data=sdf)
+}
+\author{
+Michael Lee and Paul Bailey
 }

@@ -1,6 +1,11 @@
+# @importFrom data.table setDTthreads
 # @author Paul Bailey
 .onAttach <- function(libname, pkgname) {
-	packageStartupMessage(paste0("EdSurvey v", utils::packageDescription("EdSurvey")$Version, "\n"))
+  packageStartupMessage(paste0("EdSurvey v", utils::packageDescription("EdSurvey")$Version, "\n"))
+  data.table::setDTthreads(1)
 }
 
-globalVariables(c("variable", "w"))
+globalVariables(c("variable", "w", "c2", "dofNum", "dofDenom", "lengthY",
+                  "sumY", "Percent", "wtdN", "N", "pcti", "value", "Vjrr",
+                  "Vimp", "Level", "JKreplicate", "PV", "V1", "cnt_index",
+                  "w_lmi", "StandardError"))

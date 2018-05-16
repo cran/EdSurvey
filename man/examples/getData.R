@@ -13,7 +13,7 @@ df2 <- getData(data=sdf, varnames=c("dsex", "t088301"),
                                         to=c("No"))))
 table(df2)
 
-# When readNAEP is called on a data file it appends a default 
+# When readNAEP is called on a data file, it appends a default 
 # condition to the edsurvey.data.frame. You can see these conditions
 # by printing the sdf
 sdf
@@ -24,15 +24,15 @@ df2 <- getData(data=sdf, varnames=c("dsex", "b017451"), defaultConditions = FALS
 table(df2)
 
 # Similarly, the default behavior of omitting certain levels specified
-# in the edsurvey.data.frame can be changed
+# in the edsurvey.data.frame can be changed as follows:
 df2 <- getData(data=sdf, varnames=c("dsex", "b017451"), omittedLevels = FALSE)
 table(df2)
 
-# Merge a school data file by passing a common variable through the arguments 
-# `schoolMergeVarStudent` and `schoolMergeVarSchool`. In this example, 
-# the variable "c052601" is from the school data file, merging on "scrpsu" and
-# "sscrspu":
-gddat <- getData(data=sdf, varnames=c("composite", "dsex", "b017451","c052601"),
-  schoolMergeVarStudent='scrpsu', schoolMergeVarSchool="sscrpsu", addAttributes = TRUE)
+# the variable "c052601" is from the school-level data file; merging is handled automatically
+# returns a light.edsurvey.data.frame using addAttributes=TRUE argument
+gddat <- getData(data=sdf, 
+                 varnames=c("composite", "dsex", "b017451","c052601"),
+                 addAttributes = TRUE)
+class(gddat)
 # look at the first few lines
 head(gddat)

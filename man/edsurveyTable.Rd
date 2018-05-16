@@ -2,27 +2,30 @@
 % Please edit documentation in R/edsurveyTable.R
 \name{edsurveyTable}
 \alias{edsurveyTable}
-\title{Make a table with a edsurvey.data.frame.}
+\title{EdSurvey Tables With Conditional Means}
 \usage{
 edsurveyTable(formula, data, weightVar = NULL, jrrIMax = 1,
   pctAggregationLevel = NULL, returnMeans = TRUE, returnSepct = TRUE,
   varMethod = c("jackknife", "Taylor"), drop = FALSE,
-  schoolMergeVarStudent = NULL, schoolMergeVarSchool = NULL,
-  omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL)
+  omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
+  returnVarEstInputs = FALSE)
 }
 \arguments{
-\item{formula}{object of class \ifelse{latex}{\code{formula}}{\code{\link[stats]{formula}}}, potentially with
+\item{formula}{object of class \ifelse{latex}{\code{formula}}{\code{\link[stats]{formula}}},
+potentially with
 a subject scale or subscale
-on the left hand side, and \dQuote{by variable(s)} for tabulation
-on the right hand side. When the left hand side of the
+on the left-hand side and
+variables to tabulate
+on the right-hand side.
+When the left-hand side of the
 formula is omitted and \code{returnMeans} is \code{TRUE},
 then the default subject scale or subscale is used.
 You can find the default composite scale and all subscales
 using the function \code{\link{showPlausibleValues}}.
-Note that the order of the right hand side variables affects the output.}
+Note that the order of the right-hand side variables affects the output.}
 
-\item{data}{object of class \code{edsurvey.data.frame} (see \code{\link{readNAEP}}
-for how to generate an \code{edsurvey.data.frame}).}
+\item{data}{object of class \code{edsurvey.data.frame}. See \code{\link{readNAEP}}
+for how to generate an \code{edsurvey.data.frame}.}
 
 \item{weightVar}{character string indicating the weight variable to use.
 Note that only the name of the
@@ -34,88 +37,105 @@ Use \code{\link{showWeights}} to find the default.}
 \item{jrrIMax}{integer indicating the maximum number of plausible values to
 include when calculating
 the variance term \eqn{V_{jrr}} (see the Details section of
-\code{\link{lm.sdf}} to see the definition of \eqn{V_{jrr}}), the default is \code{Inf} and results in
+\code{\link{lm.sdf}} to see the definition of \eqn{V_{jrr}}). The default is \code{Inf} and results in
 all available plausible values being used in generating \eqn{V_{jrr}}.
 Setting this to 1 will make code execution faster but less accurate.}
 
 \item{pctAggregationLevel}{the percentage variable sums up to 100 for the first
 \code{pctAggregationLevel} columns.
-So, when set to 0, the \code{PCT} column adds up to one
+So when set to \code{0}, the \code{PCT} column adds up to one
 across the entire sample.
-When set to 1, the \code{PCT} column adds up to one
+When set to \code{1}, the \code{PCT} column adds up to one
 within each level of the first variable on the
-right hand side of the formula, when set to two,
+right-hand side of the formula; when set to \code{2},
 then the percentage
 adds up to 100 within the interaction of the
 first and second variable, and so on.
+Default is \code{NULL}, which will result in the
+lowest feasible aggregation level. 
 See Examples section.}
 
-\item{returnMeans}{a logical value. Set to \code{TRUE} (the default) to get the \code{MEAN} and
+\item{returnMeans}{a logical value; set to \code{TRUE} (the default) to get the \code{MEAN} and
 \code{SE(MEAN)} columns in the returned table described in the Value section.}
 
 \item{returnSepct}{set to \code{TRUE} (the default) to get the \code{SEPCT} column in the returned table described in the Value section.}
 
 \item{varMethod}{a character set to \dQuote{jackknife} or \dQuote{Taylor} that indicates the variance estimation method
-to be used. Note that \dQuote{Taylor} is supported only for the column \code{SE(MEAN)} and \dQuote{jackknife} is
-always used for the column \code{SE(PCT)}.}
+to be used.}
 
 \item{drop}{a logical value. When set to the default value of \code{FALSE}, when a single column is returned, it is still represented as a \code{data.frame} and is
 not converted to a vector.}
 
-\item{schoolMergeVarStudent}{a character variable name from the student file used to merge student and school data files. Set to \code{NULL} by default.}
-
-\item{schoolMergeVarSchool}{a character variable name name from the school file used to merge student and school data files. Set to \code{NULL} by default.}
-
 \item{omittedLevels}{a logical value. When set to the default value of \code{TRUE}, drops those levels of all factor variables that are specified
-in \code{edsurvey.data.frame}. Use \code{print} on an \code{edsurvey.data.frame} to see the omitted levels.}
+in an \code{edsurvey.data.frame}. Use \code{print} on an \code{edsurvey.data.frame} to see the omitted levels.}
 
-\item{defaultConditions}{A logical value. When set to the default value of \code{TRUE}, uses the default conditions stored in \code{edsurvey.data.frame}
+\item{defaultConditions}{a logical value. When set to the default value of \code{TRUE}, uses the default conditions stored in an \code{edsurvey.data.frame}
 to subset the data. Use \code{print} on an \code{edsurvey.data.frame} to see the default conditions.}
 
 \item{recode}{a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
 \code{recode} \code{=} \code{list(var1} \code{=} \code{list(from} \code{=} \code{c("a", "b", "c"),} \code{to} \code{=} \code{"c"))}. See Examples.}
+
+\item{returnVarEstInputs}{a logical value set to \code{TRUE} to return the
+inputs to the jackknife and imputation variance
+estimates. This is intended to allow for
+the computation
+of covariances between estimates.}
 }
 \value{
 A table with the following columns:
-   \item{RHS levels}{One column for each right hand side variable. Each row regards students who are at the levels shown in that row.}
-   \item{\code{N}}{ count of the number of students in the survey in the \code{RHS levels}.}
-   \item{\code{WTD_N}}{the weighted \emph{N} count of students in the survey in \code{RHS levels}.}
+   \item{RHS levels}{one column for each right-hand side variable. Each row
+                     regards students who are at the levels shown in that row.}
+   \item{\code{N}}{count of the number of students in the survey in the \code{RHS levels}}
+   \item{\code{WTD_N}}{the weighted \emph{N} count of students in the survey in \code{RHS levels}}
    \item{\code{PCT}}{the percentage of students at the aggregation level specified by \code{pctAggregationLevel} (see Arguments).
-                     See the \dQuote{Statistics} vignette section
-\dQuote{Estimation of weighted percentages} and its first subsection
-\dQuote{Estimation of weighted percentages when plausible values are not present.}}
-   \item{\code{SE(PCT)}}{the standard error of the percentage, accounting for the survey sampling methodology. When \code{varMethod}
-                      is set to \dQuote{jackknife,} the calculation of this column is described in the \dQuote{Statistics} vignette section
-\dQuote{Estimation of the standard error of weighted percentages when plausible values are not present, using the jackknife method.}
-
-                      When \code{varMethod} is set to \dQuote{Taylor,} then the calculation of this column is described in
-\dQuote{Estimation of the standard error of weighted percentages when plausible values are not present, using the Taylor series method.}
+                     See the
+        \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
+            section
+\dQuote{Estimation of Weighted Percentages} and its first subsection
+\dQuote{Estimation of Weighted Percentages When Plausible Values Are Not Present.}}
+   \item{\code{SE(PCT)}}{the standard  error of the percentage, accounting
+                         for the survey sampling methodology. When \code{varMethod}
+                         is \code{jackknife}, the calculation of this column is
+                         described in the
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
+ section
+\dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Jackknife Method.}
+                      When \code{varMethod} is set to \code{Taylor}, then the calculation of this column is described in
+\dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Taylor Series Method.}
 }
-   \item{\code{MEAN}}{The mean assessment score for units in the \code{RHS levels}, calculated according to the 
-                      \dQuote{Statistics} vignette section
-\dQuote{Estimation of weighted means when plausible values are present.}}
-   \item{\code{SE(MEAN)}}{The standard error of the \code{MEAN} column (the mean assessment score for units in the \code{RHS levels}), calculated according to the 
-                      \dQuote{Statistics} vignette sections
-\dQuote{Estimation of standard errors of weighted means when plausible values are present, using the jackknife method}
+   \item{\code{MEAN}}{the mean assessment score for units in the \code{RHS levels}, calculated according to the 
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
+section
+\dQuote{Estimation of Weighted Means When Plausible Values Are Present.}}
+   \item{\code{SE(MEAN)}}{the standard error of the \code{MEAN} column (the mean assessment score for units in the \code{RHS levels}), calculated according to the 
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}                      
+sections
+\dQuote{Estimation of Standard Errors of Weighted Means When Plausible Values Are Present, Using the Jackknife Method}
 or 
-\dQuote{Estimation of standard errors of weighted means when plausible values are present, using the Taylor series method,}
+\dQuote{Estimation of Standard Errors of Weighted Means When Plausible Values Are Present, Using the Taylor Series Method,}
 depending on the value of \code{varMethod}.}
+
+ When \code{returnVarEstInputs} is \code{TRUE}, two additional elements are
+ returned. These are \code{meanVarEstInputs} and \code{pctVarEstInputs} and
+ regard the \code{MEAN} and \code{PCT} columns, respectively. These two 
+ objects can be used for calculating covariances with
+ \code{\link{varEstToCov}}.
 }
 \description{
-\code{edsurveyTable} returns a summary table (as a \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}}) that shows the number
-of students, the percentage of students, and the mean value of the outcome (or left hand side) variable by the
-predictor (or right hand side) variable(s).
+Returns a summary table (as a \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}})
+that shows the number of students, the percentage of students, and the mean
+value of the outcome (or left-hand side) variable by the
+predictor (or right-hand side) variable(s).
 }
 \details{
-This method can be used to generate a simple one to \emph{n}-way
+This method can be used to generate a simple one-way, two-way, or
+\emph{n}-way
 table with unweighted and weighted \emph{n} values and percentages. It also
 can calculate the average of the subject scale or subscale for students at
 each level of the cross-tabulation table. 
       
-A detailed description of all statistics is given in the \dQuote{Statistics}
-vignette, which you can find by entering
-\code{vignette("statistics",} \code{package} \code{=} \code{"EdSurvey")} at
-the R command prompt.
+A detailed description of all statistics is given in the
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}.
 }
 \examples{
 \dontrun{
@@ -123,7 +143,7 @@ the R command prompt.
 
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
-# create a table that shows only the break down of dsex
+# create a table that shows only the breakdown of dsex
 edsurveyTable(composite ~ dsex, data=sdf, returnMeans=FALSE, returnSepct=FALSE)
 
 # create a table with composite scores by dsex
@@ -150,9 +170,9 @@ edsurveyTable(composite ~ dsex + b017451 + b003501, data=sdf, varMethod="Taylor"
 }
 }
 \references{
-Binder, D. A. (1983). On the Variances of Asymptotically Normal Estimators From Complex Surveys. \emph{International Statistical Review}, 51(3): 279--92. 
+Binder, D. A. (1983). On the variances of asymptotically normal estimators from complex surveys. \emph{International Statistical Review}, \emph{51}(3), 279--292. 
 
-Rubin, D. B. (1987). \emph{Multiple Imputation for Nonresponse in Surveys}. New York, NY: Wiley.
+Rubin, D. B. (1987). \emph{Multiple imputation for nonresponse in surveys}. New York, NY: Wiley.
 }
 \author{
 Paul Bailey and Ahmad Emad

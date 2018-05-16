@@ -6,8 +6,8 @@ sdf
 # To read in an NCES file first set the directory to the ~/Data subfolder,
 # then read in the appropriate .dat file:
 setwd("location/of/Data")
-sdf <- readNAEP(filepath="M36NT2PM.dat")
+sdf <- readNAEP(path="M36NT2PM.dat")
 
 # Or read in the .dat file directly through the folder pathway:
-sdf <- readNAEP(filepath="location/of/Data/M36NT2PM.dat")
+sdf <- readNAEP(path="location/of/Data/M36NT2PM.dat")
 }

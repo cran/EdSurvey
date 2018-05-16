@@ -2,23 +2,18 @@
 % Please edit documentation in R/levelsSDF.R
 \name{levelsSDF}
 \alias{levelsSDF}
-\title{Get the levels and labels of a variable in an edsurvey.data.frame or light.edsurvey.data.frame.}
+\title{Print Levels and Labels}
 \usage{
 levelsSDF(varnames, data)
 }
 \arguments{
-\item{varnames}{a vector of character strings to search for in the database connection object (\code{data}).}
+\item{varnames}{a vector of character strings to search for in the database connection object (\code{data})}
 
-\item{data}{object of class \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame} (see \code{\link{readNAEP}}
-for how to generate an \code{edsurvey.data.frame}).}
-}
-\value{
-A pasted statement that shows the levels and labels of a variable (or vector of variables)
-        from an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}.
+\item{data}{an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
+an \code{edsurvey.data.frame.list}}
 }
 \description{
-\code{levelsSDF} returns a \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}} that shows the levels and
-labels of a variable from an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}..
+Retrieve the levels and labels of a variable from an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 }
 \examples{
 # read in the example data (generated, not real student data)

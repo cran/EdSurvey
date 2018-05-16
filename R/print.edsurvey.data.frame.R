@@ -1,21 +1,22 @@
-#' @title Print out a summary of the edsurvey.data.frame.
+#' @title EdSurvey Metadata Summary
 #'
-#' @description Prints details of an \code{edsurvey.data.frame}.
+#' @description Prints metadata regarding an \code{edsurvey.data.frame} or an \code{edsurvey.data.frame.list}
 #' 
-#' @param x             an \code{edsurvey.data.frame}.
-#' @param printColnames logical. Set to \code{TRUE} to see all column names.
-#' @param ... these arguments are not passed anywhere and are included only for compatibility.
-#' @return              A pasted statement vector that shows the details of an \code{edsurvey.data.frame} 
+#' @param x             an \code{edsurvey.data.frame} or an \code{edsurvey.data.frame.list}
+#' @param printColnames a logical value; set to \code{TRUE} to see all column names in the \code{edsurvey.data.frame}
+#'                      or the \code{edsurvey.data.frame.list}
+#' @param ... these arguments are not passed anywhere and are included only for compatibility
 #' 
 #' @author Michael Lee and Paul Bailey
 #' @method print edsurvey.data.frame
+#' @aliases print.edsurvey.data.frame.list
 #' @export
 print.edsurvey.data.frame <- function(x, printColnames = FALSE, ...) {
-  if (!class(x) %in% "edsurvey.data.frame") {
-    stop(paste0(sQuote("x"), "must be an edsurvey.data.frame"))
-    }
-  stopifnot(class(x) == "edsurvey.data.frame")
-  cat(paste0("edsurvey.data.frame with ", nrow(x), " rows and ", ncol(x), " columns.\n"))
+  if (!inherits(x, "edsurvey.data.frame")) {
+    stop(paste0(sQuote("x"), " must be an edsurvey.data.frame"))
+  }
+  dm <- dim(x)
+  cat(paste0("edsurvey.data.frame with ", dm[1], " rows and ", dm[2], " columns.\n"))
 
   if (printColnames) {
     cat("Column names:\n")
@@ -29,6 +30,7 @@ print.edsurvey.data.frame <- function(x, printColnames = FALSE, ...) {
   
   
   if (length(x$pvvars) > 0) {
+    cat("\n")
     showPlausibleValues(x, verbose = FALSE)
   }
   
@@ -45,32 +47,71 @@ print.edsurvey.data.frame <- function(x, printColnames = FALSE, ...) {
   # Describe omitted.levels pastes each omitted level, collapsing by ', ' (ex: 'Multiple',
   # 'NA', 'Omitted')
   if (length(x$omittedLevels) > 0) {
-    cat(paste0("Omitted Levels: '", paste(x$omittedLevels[[1]], collapse = "', '"), "'\n"))
+    cat("\n")
+    cat(paste0("Omitted Levels: '", paste(unlist(x$omittedLevels), collapse = "', '"), "'\n"))
   }
-  cat("\n")
   
-  # Describe conditions
+  # Describe user in put conditions
   if (length(x$userConditions) > 0) {
-    cat("User Conditionss:\n")
+    cat("\n")
+    cat("User Conditions:\n")
     description <- x$userConditions
     cat(paste0("  ", description, collapse = "\n"), "\n")
   }
-  cat("\n")
   
   if (length(x$defaultConditions) > 0) {
+    cat("\n")
     cat("Default Conditions:\n")
     description <- x$defaultConditions
     cat(paste0("  ", description, "\n"))
   }
   
+  if (length(x$recodes) > 0) {
+    cat("\n")
+    cat("Recodes:\n")
+    description <- x$recodes
+    cat(paste0("  ", description, "\n"))
+  }
+
   al <- getAttributes(x, "achievementLevels")
-  if(length(al) > 0) {
-    noms <- names(al)
-    cat("Achievement Levels:\n")
-    for(i in 1:length(al)) {  
-      post <- paste(rep(" ",1+max(nchar(noms)) - nchar(noms[i])), collapse="")
-      cat(paste0("  ",noms[i],":",post, al[i], "\n"))
+  ### Handle more than 1 achievement level scales
+  if(is.list(al)) { 
+    for (ali in 1:length(al)) {
+      cat("\nAchievement Levels:\n")
+      cat(paste0(names(al)[ali],": \n"))
+      if(length(al[[ali]]) == 0) {
+        cat("  Achievement levels for this subject is not defined this year. \n") 
+      } else {
+        noms <- names(al[[ali]])
+        for(i in 1:length(al[[ali]])) {  
+          post <- paste(rep(" ",1+max(nchar(noms)) - nchar(noms[i])), collapse="")
+          cat(paste0("  ",noms[i],":",post, sprintf("%.2f",al[[ali]][i]), "\n"))
+        }  
+      }
+    }
+  } else {
+    if(length(al) > 0) {
+      noms <- names(al)
+      cat("\nAchievement Levels:\n")
+      for(i in 1:length(al)) {  
+        post <- paste(rep(" ",1+max(nchar(noms)) - nchar(noms[i])), collapse="")
+        cat(paste0("  ",noms[i],":",post, al[i], "\n"))
+      }
     }
   }
-  cat(paste0("\n", "Survey: ", x$survey, "\n"))
+
+  cat(paste0("\nSurvey: ", x$survey, "\n"))
+}
+
+#' @export
+#' @method print edsurvey.data.frame.list
+print.edsurvey.data.frame.list <- function(x, printColnames = FALSE, ...) {
+  li <- length(x$data)
+  cat(paste0("an edsurvey.data.frame.list with ", li, " elements\n"))
+  cat("covs:\n")
+  print(x$covs)
+  for(i in 1:li) {
+    cat(paste0("\n\nElement ",i,"\n\n"))
+    print(x$data[[i]])
+  }
 }

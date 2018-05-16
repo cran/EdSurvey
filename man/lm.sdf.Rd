@@ -2,12 +2,12 @@
 % Please edit documentation in R/lm.sdf.R
 \name{lm.sdf}
 \alias{lm.sdf}
-\title{Run a linear model on an edsurvey.data.frame.}
+\alias{lm}
+\title{EdSurvey Linear Models}
 \usage{
 lm.sdf(formula, data, weightVar = NULL, relevels = list(),
-  varMethod = c("jackknife", "Taylor"), jrrIMax = 1,
-  schoolMergeVarStudent = NULL, schoolMergeVarSchool = NULL,
-  omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL)
+              varMethod = c("jackknife", "Taylor"), jrrIMax = 1, omittedLevels = TRUE,
+              defaultConditions = TRUE, recode = NULL, returnVarEstInputs = FALSE)
 }
 \arguments{
 \item{formula}{a \ifelse{latex}{\code{formula}}{\code{\link[stats]{formula}}} for the
@@ -19,126 +19,125 @@ If \emph{y} is a variable for a subject scale or subscale (one of the
 names shown by \code{\link{showPlausibleValues}}),
 then that subject scale or subscale is used.}
 
-\item{data}{an \code{edsurvey.data.frame}.}
+\item{data}{an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame},
+or an \code{edsurvey.data.frame.list}}
 
-\item{weightVar}{character indicating the weight variable to use (see Details).
+\item{weightVar}{a character indicating the weight variable to use (see Details).
 The \code{weightVar} must be one of the weights for the
-\code{edsurvey.data.frame}. If \code{NULL}, uses the default
+\code{edsurvey.data.frame}. If \code{NULL}, it  uses the default
 for the \code{edsurvey.data.frame}.}
 
-\item{relevels}{a list. Used when the user wants to change the contrasts from the
-default treatment contrasts to treatment contrasts with a chosen omitted
-group.
-To do this, the user puts an element on the list named the same name as
-a variable
-to change contrasts on
-and then makes the value for that list element equal to the value
-that should
-be the omitted group. (See Examples.)}
+\item{relevels}{a list; used when the user wants to change the contrasts from the
+default treatment contrasts to the treatment contrasts with a chosen omitted
+group. The name of each element should be the variable name, and the value 
+should be the group to be omitted.}
 
-\item{varMethod}{A character set to \dQuote{jackknife} or \dQuote{Taylor} that indicates the variance
-estimation method to be used. (See Details.)}
+\item{varMethod}{a character set to \dQuote{jackknife} or \dQuote{Taylor} that indicates the variance
+estimation method to be used. See Details.}
 
 \item{jrrIMax}{when using the jackknife variance estimation method, the \eqn{V_{jrr}} term
 (see Details) can be estimated with
-any positive number of plausible values and is estimated on the first of
+any positive number of plausible values and is estimated on 
 the lower
 of the number of available plausible values and \code{jrrIMax}. When
-\code{jrrIMax} is set to \code{Inf}, all of the plausible values will be used.
+\code{jrrIMax} is set to \code{Inf}, all plausible values will be used.
 Higher values of \code{jrrIMax} lead to longer computing times and more
 accurate variance estimates.}
 
-\item{schoolMergeVarStudent}{a character variable name from the student file used to
-merge student and school data files. Set to \code{NULL} by default.}
-
-\item{schoolMergeVarSchool}{a character variable name name from the school file used
-to merge student and school data files. Set to \code{NULL}
-by default.}
-
 \item{omittedLevels}{a logical value. When set to the default value of \code{TRUE}, drops
 those levels of all factor variables that are specified
-in \code{edsurvey.data.frame}. Use \code{print} on an
+in an \code{edsurvey.data.frame}. Use \code{print} on an
 \code{edsurvey.data.frame} to see the omitted levels.}
 
 \item{defaultConditions}{a logical value. When set to the default value of \code{TRUE}, uses
-the default conditions stored in \code{edsurvey.data.frame}
+the default conditions stored in an \code{edsurvey.data.frame}
 to subset the data. Use \code{print} on an
 \code{edsurvey.data.frame} to see the default conditions.}
 
 \item{recode}{a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
-recode = list(var1= list(from=c("a,"b","c"), to ="d")). (See examples.)}
+\code{recode=}\code{list(}\code{var1} \code{=} \code{list(}\code{from=} \code{c("a",} \code{"b",} \code{"c"),} \code{to=} \code{"d"))}. See Examples.}
+
+\item{returnVarEstInputs}{a logical value set to \code{TRUE} to return the
+inputs to the jackknife and imputation variance
+estimates. This is intended to allow for
+the computation
+of covariances between estimates.}
 }
 \value{
-An \code{edsurvey.lm} with elements:
-   \item{call}{The function call.}
-   \item{formula}{The formula used to fit the model.}
-   \item{coef}{The estimates of the coefficients.}
-   \item{se}{The standard error estimates of the coefficients.}
-   \item{Vimp}{The estimated variance due to uncertainty in the scores (plausible values variables).}
-   \item{Vjrr}{The estimated variance due to sampling.}
-   \item{M}{The number of plausible values.}
-   \item{varm}{The variance estimates under the various plausible values.}
-   \item{coefm}{The values of the coefficients under the various plausible values.}
-   \item{coefmat}{The coefficient matrix (typically produced by the summary of a model).}
-   \item{r.squared}{The coefficient of determination.}
-   \item{weight}{The name of the weight variable.}
-   \item{npv}{Number of plausible values.}
-   \item{njk}{The number of jackknife replicates used. Set to NA when Taylor series variance estimtes are used.}
-   \item{varMethod}{One of \dQuote{Taylor series} or \dQuote{jackknife.}}
+An \code{edsurvey.lm} with the following elements:
+   \item{call}{the function call}
+   \item{formula}{the formula used to fit the model}
+   \item{coef}{the estimates of the coefficients}
+   \item{se}{the standard error estimates of the coefficients}
+   \item{Vimp}{the estimated variance from uncertainty in the scores (plausible value variables)}
+   \item{Vjrr}{the estimated variance from sampling}
+   \item{M}{the number of plausible values}
+   \item{varm}{the variance estimates under the various plausible values}
+   \item{coefm}{the values of the coefficients under the various plausible values}
+   \item{coefmat}{the coefficient matrix (typically produced by the summary of a model)}
+   \item{r.squared}{the coefficient of determination}
+   \item{weight}{the name of the weight variable}
+   \item{npv}{the number of plausible values}
+   \item{njk}{the number of jackknife replicates used; set to \code{NA} when Taylor series variance estimates are used}
+   \item{varMethod}{one of \code{Taylor series} or \code{jackknife}}
+   \item{varEstInputs}{when \code{returnVarEstInputs} is \code{TRUE},
+                       this element is returned. These are
+                       used for calculating covariances with
+                       \code{\link{varEstToCov}}.}
 }
 \description{
-Fits a linear model that uses weights and variance estimates appropriate for the \code{edsurvey.data.frame}.
+Fits a linear model that uses weights and variance estimates appropriate for the data.
 }
 \details{
-This function implements an estimator that correctly handles left hand
-side variables that are either numeric or plausible values, allows for survey 
+This function implements an estimator that correctly handles left-hand
+side variables that are either numeric or plausible values and allows for survey 
 sampling weights and estimates variances using the jackknife replication method.
-The Statistics vignette describes estimation of the reported statistics. 
-(Run \code{vignette("statistics", package="EdSurvey")} at the R prompt to see the vignette.)
+The
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
+ describes estimation of the reported statistics. 
 
-Regardless of the variance estimation, the \bold{coefficients} are estimated
-using the sample weights according to the section titled
-\dQuote{estimation of weighted means when plausible values are not present.}
-or the section titled
-\dQuote{estimation of weighted means when plausible values are present.}
+Regardless of the variance estimation, the coefficients are estimated
+using the sample weights according to the sections
+\dQuote{Estimation of Weighted Means When Plausible Values Are Not Present}
+or
+\dQuote{Estimation of Weighted Means When Plausible Values Are Present,}
 depending on if there are assessment variables or variables with plausible values
 in them.
 
 How the standard errors of the coefficients are estimated depends on the
 value of \code{varMethod} and the presence of plausible values (assessment variables),
-But, once it is obtained the \emph{t} statistic
+But once it is obtained, the \emph{t} statistic
 is given by \deqn{t=\frac{\hat{\beta}}{\sqrt{\mathrm{var}(\hat{\beta})}}} where
 \eqn{ \hat{\beta} } is the estimated coefficient and \eqn{\mathrm{var}(\hat{\beta})} is
-its variance of that estimate. The \emph{p}-value associated with the coefficient
-is then calculated using the number of jackknife replicates as the degrees of freedom.
+the variance of that estimate.
 
-The \bold{coefficient of determination (R-squared value)} is similarly estimated by finding
-the average R-squared using the sample weights for each set of plausible values.
+The \bold{coefficient of determination (\emph{R}-squared value)} is similarly estimated by finding
+the average \emph{R}-squared using the average across the plausible values.
 
 
 \subsection{Variance estimation of coefficients}{
-  All variance estimation methods are shown in the \dQuote{Statistics} vignette.
-
-  When \code{varMethod} is set to \dQuote{jackknife} and the predicted
+  All variance estimation methods are shown in the
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}.
+  When \code{varMethod} is set to \code{jackknife} and the predicted
   value does not have plausible values, the variance of the coefficients
-  is estimated according to the section,
-\dQuote{Estimation of standard errors of weighted means when
-        plausible values are not present, using the jackknife method.}
+  is estimated according to the section
+\dQuote{Estimation of Standard Errors of Weighted Means When
+        Plausible Values Are Not Present, Using the Jackknife Method.}
 
-  When plausible values are present and \code{varMethod} is \dQuote{jackknife,} the
-  the variance of the coefficients is estimated according to the section
-\dQuote{Estimation of standard errors of weighted means when
-        plausible values are present, using the jackknife method.}
+  When plausible values are present and \code{varMethod} is \code{jackknife}, the
+  variance of the coefficients is estimated according to the section
+\dQuote{Estimation of Standard Errors of Weighted Means When
+        Plausible Values Are Present, Using the Jackknife Method.}
 
-  When plausible values are not present and \code{varMethod} is \dQuote{Taylor,} the
-  the variance of the coefficients is estimated according to the section
-\dQuote{Estimation of standard errors of weighted means when plausible
-        values are not present, using the Taylor series method.}
+  When plausible values are not present and \code{varMethod} is \code{Taylor}, the
+  variance of the coefficients is estimated according to the section
+\dQuote{Estimation of Standard Errors of Weighted Means When Plausible
+        Values Are Not Present, Using the Taylor Series Method.}
 
   When plausible values are present and \code{varMethod} is \dQuote{Taylor,} the
-  the variance of the coefficients is estimated according to the section
-\dQuote{Estimation of standard errors of weighted means when plausible
-        values are present, using the Taylor series method.}
+  variance of the coefficients is estimated according to the section
+\dQuote{Estimation of Standard Errors of Weighted Means When Plausible
+        Values Are Present, Using the Taylor Series Method.}
 }
 }
 \examples{
@@ -146,23 +145,23 @@ the average R-squared using the sample weights for each set of plausible values.
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
-# By default uses jacknife variance method using replicate weights
+# By default uses jackknife variance method using replicate weights
 lm1 <- lm.sdf(composite ~ dsex + b017451, data=sdf)
 lm1
 
-# for more detailed results use summary:
+# for more detailed results use summary
 summary(lm1)
 
-# to specify a variance method use varMethod:
+# to specify a variance method, use varMethod
 lm2 <- lm.sdf(composite ~ dsex + b017451, data=sdf, varMethod="Taylor")
 lm2
 summary(lm2)
 
-# Use relevel to set a new omitted category.
+# Use relevel to set a new omitted category
 lm3 <- lm.sdf(composite ~ dsex + b017451, data=sdf, relevels=list(dsex="Female"))
 summary(lm3)
 
-# Use recode to change values for specified variables:
+# Use recode to change values for specified variables
 lm4 <- lm.sdf(composite ~ dsex + b017451, data=sdf,
               recode=list(b017451=list(from=c("Never or hardly ever",
                                               "Once every few weeks",
@@ -172,15 +171,14 @@ lm4 <- lm.sdf(composite ~ dsex + b017451, data=sdf,
                                        to=c("Frequently"))))
 # Note: "Infrequently" is the dropped level for the recoded b017451
 summary(lm4)
-
 }
 }
 \references{
-Binder, D. A. (1983). On the Variances of Asymptotically Normal Estimators From Complex Surveys. \emph{International Statistical Review}, 51(3): 279--92. 
+Binder, D. A. (1983). On the variances of asymptotically normal estimators from complex surveys. \emph{International Statistical Review}, \emph{51}(3), 279--292. 
 
-Rubin, D. B. (1987). \emph{Multiple Imputation for Nonresponse in Surveys}. New York, NY: Wiley.
+Rubin, D. B. (1987). \emph{Multiple imputation for nonresponse in surveys}. New York, NY: Wiley.
 
-Weisberg, S. (1985). \emph{Applied Linear Regression} (2nd ed.). New York, NY: Wiley.
+Weisberg, S. (1985). \emph{Applied linear regression} (2nd ed.). New York, NY: Wiley.
 }
 \seealso{
 \ifelse{latex}{\code{lm}}{\code{\link[stats]{lm}}}

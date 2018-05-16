@@ -1,0 +1,76 @@
+---
+title: 'Introduction to Analyzing NCES Data Using EdSurvey'
+author: Developed by Paul Bailey, Nancy Collins, Ahmad Emad, Thomas Fink, Huade Huo, Julian Gerez, Michael Lee, Yuqi Liao, Trang Nguyen, Qingshu Xie, Jiao Yu, and Ting Zhang\footnote{This publication was prepared for NCES under Contract No. ED-IES-12-D-0002 with the American Institutes for Research. Mention of trade names, commercial products, or organizations does not imply endorsement by the U.S. Government.} \footnote{The authors would like to thank Young Yee Kim and Dan Sherman for reviewing this document, as well as Jiayi Li and Fei Liu for conducting quality control tests to verify the functions in this document.}
+date: 'May 3, 2018'
+output:
+  pdf_document:
+    fig_caption: yes
+    number_sections: no
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{EdSurvey}
+  \usepackage[utf8]{inputenc}
+---
+  
+# Overview of the EdSurvey Package
+  
+The `EdSurvey` package is designed to help users analyze data from the National Center for Education Statistics (NCES), including the National Assessment of Educational Progress (NAEP) datasets. Because of their scope and complexity, these datasets require special statistical methods to analyze. The `EdSurvey` package gives users functions to perform analyses that account for both complex sample survey designs and the use of plausible values.
+
+The `EdSurvey` package also seamlessly takes advantage of the `LaF` package to read in data only when it is required for an analysis. Users with computers that have insufficient memory to read in the entire NAEP datasets can still do analyses without having to write special code to read in just the appropriate variables. This is all addressed directly in the `EdSurvey` package---behind the scenes and without additional work by the user.
+
+## Resources
+
+Several vignettes are available to assist in analyzing NCES data:
+
+* [*Using EdSurvey to Analyze NCES Data: An Illustration of Analyzing NAEP Primer*](https://www.air.org/sites/default/files/EdSurvey.pdf) is an introduction to the basics of using the `EdSurvey` package for analyzing NCES data, using the NAEP Primer as an example. The vignette covers topics such as preparing the R environment for processing, creating summary tables, running linear regression models, and correlating variables.
+
+* [*Exploratory Data Analysis on NCES Data*](https://www.air.org/sites/default/files/EdSurvey-EDA.pdf) provides examples of conducting exploratory data analysis on NAEP data.
+
+* [*Calculating Adjusted* p*-Values From EdSurvey Results*](https://www.air.org/sites/default/files/EdSurvey-pvalues.pdf) describes the basics of adjusting *p*-values to account for multiple comparisons.
+
+* [*Using the `getData` Function in EdSurvey*](https://www.air.org/sites/default/files/EdSurvey-getData.pdf) describes  the use of the `EdSurvey` package when extensive data manipulation is required before analysis.
+
+* [*Using EdSurvey to Analyze NAEP Data With and Without Accommodations*](https://www.air.org/sites/default/files/EdSurvey-Accommodations.pdf) provides an overview of the use of NAEP data with accommodations and describes methods used to analyze this data.
+
+* [*Using EdSurvey to Analyze TIMSS Data*](https://www.air.org/sites/default/files/EdSurvey-TIMSS.pdf) is an introduction to the methods used in analysis of  large-scale educational assessment programs such as Trends in International Mathematics and Science Study (TIMSS) using the `EdSurvey` package. The vignette covers topics such as preparing the R environment for processing, creating summary tables, running linear regression models, and correlating variables.
+
+* [*Using EdSurvey for Trend Analysis*](https://www.air.org/sites/default/files/EdSurvey-Trend.pdf) describes the methods used in the `EdSurvey` package to conduct analyses of statistics that change over time in large-scale educational studies.
+
+* [*Producing \LaTeX \ Tables From edsurveyTable Results With edsurveyTable2pdf*](https://www.air.org/sites/default/files/EdSurvey-LaTeXtables.pdf) details the creation of pdf summary tables from summary results using the `edsurveyTable2pdf` function.
+
+## Methodology Resources
+
+Documents that describe the statistical methodology used in the `EdSurvey` package include the following:
+
+* [*Statistical Methods Used in EdSurvey*](https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf) details the estimation of the statistics in the `lm.sdf`, `achievementLevel`, and `edsurveyTable` functions.
+
+* [*Analyses Using Achievement Levels Based on Plausible Values*](https://www.air.org/resource/analyses-using-achievement-levels-based-plausible-values) describes the methodological approaches for analyses using NAEP achievement levels.
+
+* [*Methods Used for Gap Analysis in EdSurvey*](https://www.air.org/sites/default/files/EdSurvey-Gap.pdf) covers the methods comparing the gap analysis results of the `EdSurvey` package to the NAEP Data Explorer.
+
+* [*Methods Used for Estimating Percentiles in EdSurvey*](https://www.air.org/sites/default/files/EdSurvey-Percentiles.pdf) describes the methods used to estimate percentiles.
+
+***
+
+## Software Requirements
+
+Unless you already have R version 3.2.0 or later,  install the latest R version---which is available online at [https://cran.r-project.org/](https://cran.r-project.org/). Users also may want to install RStudio desktop, which has an interface that many find easier to follow. RStudio is available online at  [https://www.rstudio.com/products/rstudio/download/](https://www.rstudio.com/products/rstudio/download/).
+
+# Setting Up the Environment for Analyzing NCES Data
+
+## Installing and Loading `EdSurvey`
+
+Inside R, run the following command to install `EdSurvey` as well as its package dependencies:
+
+```{r code options, echo = FALSE}
+options(width = 85)
+```
+
+```{r source package, eval=FALSE}
+install.packages("EdSurvey")
+```
+Once the package is successfully installed, `EdSurvey` can be loaded with the following command:
+
+```{r load package, results="hide", message=FALSE}
+library(EdSurvey)
+```

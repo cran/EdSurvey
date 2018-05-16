@@ -1,36 +1,43 @@
-#' @title Creates an edsurvey.data.frame.
+#' @title Connect to NAEP Data
+#'
+#' @description Opens a connection to an NAEP data file residing
+#'              on the disk and returns an \code{edsurvey.data.frame} with 
+#'              information about the file and data.
 #' 
-#' @description Opens a connection to the data file residing on the disk and returns information about the file and data.
-#' 
-#' @param filepath character indicating the location and name of the file.
-#' @param defaultWeight character that indicates the default weight.
-#' @param defaultPvs character that indicates the default plausible value.
-#' @param omittedLevels character vector indicating which factor levels (really, labels)
-#'                       should be excluded. When set to the default value of c('Multiple',NA,'Omitted'), adds the vector to the \code{edsurvey.data.frame}.
-#' @param frPath character indicating the location of the fr2 parameter file included with the data companion.
-#' @details The function uses precompiled label information for data to read in a fixed-width format file, and uses prestored data
-#'          to get information about the file. 
+#' @param path a character value indicating the full filepath location and name of the (.dat) data file
+#' @param defaultWeight a character value that indicates the default weight specified in the resulting \code{edsurvey.data.frame}.  
+#'                      Default value is \code{origwt} if not specified.
+#' @param defaultPvs a character value that indicates the default plausible value specified in the resulting \code{edsurvey.data.frame}.
+#'                    Default value is \code{composite} if not specified.
+#' @param omittedLevels a character vector indicating which factor levels/labels
+#'                       should be excluded. When set to the default value of \code{c('Multiple',NA,'Omitted')}, adds the vector to the \code{edsurvey.data.frame}.
+#' @param frPath a character value indicating the location of the \code{fr2} parameter layout file included with the data companion to parse the specified \code{filepath} data file.
+#' @details The function uses the \code{frPath} file layout (.fr2) data to read in the fixed-width data file (.dat), and builds the \code{edsurvey.data.frame}.
+#'           
 #' @return An \code{edsurvey.data.frame} containing the following elements:
-#'    \item{userConditions}{A list containing all user conditions set using the \code{subset.edsurvey.data.frame} method.}
-#'    \item{defaultConditions}{The default conditions to be applied to the \code{edsurvey.data.frame}.}
-#'    \item{data}{An \code{LaF} object containing a connection the student data set on disk.}
-#'    \item{dataSch}{An \code{LaF} object containing a connection the school data set on disk.}
-#'    \item{weights}{A list containing the weights found on the \code{edsurvey.data.frame}.}
-#'    \item{pvvar}{A list containing the plausible values found on the \code{edsurvey.data.frame}.}
-#'    \item{subject}{The subject of the data set contained in the \code{edsurvey.data.frame}.}
-#'    \item{year}{The year of assessment of the data set contained in the \code{edsurvey.data.frame}.}
-#'    \item{assessmentCode}{The code of the data set contained in the \code{edsurvey.data.frame}.}
-#'    \item{dataType}{The type of data (whether student or school) contained in the \code{edsurvey.data.frame}.}
-#'    \item{gradeLevel}{The grade of the data set contained in the \code{edsurvey.data.frame}.}
-#'    \item{achievementLevels}{Default NAEP achievement cutoff scores.}
-#'    \item{omittedLevels}{The levels of the factor variables that will be omitted from the \code{edsurvey.data.frame}.}
-#'    \item{fileFormat}{A \code{data.frame} containing the parsed information from the student .fr2 file associated with the data.}
-#'    \item{fileFormatSchool}{A \code{data.frame} containing the parsed information from the school .fr2 file associated with the data.}
-#'    \item{survey}{The type of survey data contained in the \code{edsurvey.data.frame}.}
-#' @author Ahmad Emad
+#'    \item{userConditions}{a list containing all user conditions set using the \code{subset.edsurvey.data.frame} method}
+#'    \item{defaultConditions}{the default conditions to be applied to the \code{edsurvey.data.frame}}
+#'    \item{data}{an \code{LaF} object containing a connection to the student dataset on disk}
+#'    \item{dataSch}{an \code{LaF} object containing a connection to the school dataset on disk}
+#'    \item{dataTch}{not applicable for NAEP data; returns \code{NULL}}
+#'    \item{weights}{a list containing the weights found on the \code{edsurvey.data.frame}}
+#'    \item{pvvar}{a list containing the plausible values found on the \code{edsurvey.data.frame}}
+#'    \item{subject}{the subject of the dataset contained in the \code{edsurvey.data.frame}}
+#'    \item{year}{the year of assessment of the dataset contained in the \code{edsurvey.data.frame}}
+#'    \item{assessmentCode}{the code of the dataset contained in the \code{edsurvey.data.frame}}
+#'    \item{dataType}{the type of data (whether student or school) contained in the \code{edsurvey.data.frame}}
+#'    \item{gradeLevel}{the grade of the dataset contained in the \code{edsurvey.data.frame}}
+#'    \item{achievementLevels}{default NAEP achievement cutoff scores}
+#'    \item{omittedLevels}{the levels of the factor variables that will be omitted from the \code{edsurvey.data.frame}}
+#'    \item{fileFormat}{a \code{data.frame} containing the parsed information from the student .fr2 file associated with the data}
+#'    \item{fileFormatSchool}{a \code{data.frame} containing the parsed information from the school .fr2 file associated with the data}
+#'    \item{fileFormatTeacher}{not applicable for NAEP data; returns \code{NULL}}
+#'    \item{survey}{the type of survey data contained in the \code{edsurvey.data.frame}}
+#' @author Tom Fink and Ahmad Emad
 #' @example \man\examples\readNAEP.R
 #' @export
-readNAEP <- function(filepath, defaultWeight = "origwt", defaultPvs = "composite", omittedLevels = c('Multiple',NA,'Omitted'), frPath = NULL) {
+readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", omittedLevels = c('Multiple',NA,'Omitted'), frPath = NULL) {
+  filepath <- normalizePath(unique(path), winslash = "/")
   if(length(filepath) != 1) {
     stop(paste0("The argument ", sQuote("filepath"), " must specify exactly one file."))
   }
@@ -46,14 +53,22 @@ readNAEP <- function(filepath, defaultWeight = "origwt", defaultPvs = "composite
     substr(schFilename, nchar(filename) - 3, nchar(filename) - 3) <- "C"
     schPath <-  paste0(filedir, "/", schFilename,".dat" )
     # fix case on paths
-    schPath <- ignoreCaseFileName(schPath)
-    if(!file.exists(schPath)) {
+    success <- tryCatch({schPath <- ignoreCaseFileName(schPath)
+                          TRUE
+                        }, error = function(e){
+                          FALSE
+                        }, warning = function(w){
+                          FALSE 
+                        })
+    
+    if(!file.exists(schPath) || !success) {
       schPath <- NULL
     }
   }
+  
   # grab the subfolder select/parms in an case insensitive way 
   if (is.null(frPath)) {
-    frName <- grep(paste0("^",dirname(filedir),"/select/parms$"), list.dirs(dirname(filedir)), value=TRUE, ignore.case=TRUE)
+    frName <- grep(paste0(dirname(filedir),"/select/parms$"), list.dirs(dirname(filedir)), value=TRUE, ignore.case=TRUE)
     if(length(frName) == 0) {
       stop(paste0("Could not find folder ", dQuote(paste0(dirname(filedir),"/select/parms/")), "." ))
     }
@@ -159,13 +174,24 @@ readNAEP <- function(filepath, defaultWeight = "origwt", defaultPvs = "composite
   else {
     defaultConditions <- NULL
   }
+  
+  #build the linking criteria so the user doesn't need to provide it::only if we have school level data
+  if(!is.null(dataSchLaf)){
+    dataListMeta <- list(student = list(school = "scrpsu^sscrpsu"), school = list())
+  }else{
+    dataListMeta <- NULL
+  }
+  
+  
   # build the result list and return
   edsurvey.data.frame(userConditions = list(),
                       defaultConditions = list(defaultConditions),
                       data = dataLaf,
                       dataSch = dataSchLaf,
-                      weights=weights,
-                      pvvars=pvs,
+                      dataTch = NULL,
+                      dataListMeta = dataListMeta,
+                      weights = weights,
+                      pvvars = pvs,
                       subject = f[["Subject"]],
                       year = f[["Year"]],
                       assessmentCode = f[["Assessment_Code"]],
@@ -175,11 +201,12 @@ readNAEP <- function(filepath, defaultWeight = "origwt", defaultPvs = "composite
                       omittedLevels = list(omittedLevels),
                       fileFormat = labelsFile,
                       fileFormatSchool = schLabelsFile,
+                      fileFormatTeacher = NULL,
                       survey = "NAEP",
-                      country= "USA",
-                      psuVar="jkunit",
-                      stratumVar="repgrp1",
-                      jkSumMultiplier=1)
+                      country = "USA",
+                      psuVar = "jkunit",
+                      stratumVar = "repgrp1",
+                      jkSumMultiplier = 1)
 }
 
 # @author Paul Bailey & Ahmad Emad
@@ -256,7 +283,7 @@ readMRC <- function(filename) {
   
   # identify weights
   labels <- tolower(Labels)
-  weights <- ifelse(grepl("wgt",variableName) + grepl("student", labels) + grepl("weight", labels) + grepl("unadjusted", labels) + grepl("overall", labels) + grepl("unpoststratified", labels) - 5 * grepl("replicate", labels) >= 4, TRUE, FALSE)
+  weights <- ifelse(4*grepl("origwt", variableName,ignore.case=TRUE) + grepl("wgt",variableName) + grepl("student", labels) + grepl("weight", labels) + grepl("unadjusted", labels) + grepl("overall", labels) + grepl("unpoststratified", labels) - 5 * grepl("replicate", labels) >= 4, TRUE, FALSE)
   # For now, assume all variables are characters.
   dataType <- rep("character", length(mrcFile))
   # Create appropriate data type for variables.
@@ -316,6 +343,7 @@ applyPV <- function(pv, Labels, pvWt, oLabels, Type) {
   return(list(Labels=Labels, Type=Type, pvWt=pvWt))
 }
 
+
 # for a case-sensitive file system this will change the path to resolve
 # correctly when the name is known up to the case. 
 # Assumes that there is not another file with the same name in the directory 
@@ -335,4 +363,3 @@ ignoreCaseFileName <- function(f) {
   }
   ff
 }
-

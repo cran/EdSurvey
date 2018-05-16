@@ -47,9 +47,9 @@ cor.sdf(x="b017451", y="sdracem", data=sdf, method="Spearman", weightVar="origwt
                                "Once every few weeks", "Never or hardly ever")))
 
 # recode two variables and reorder
-cor.sdf(x="pared", y="b013801", data=sdf, method="Spearman", weightVar = "origwt",
+cor.sdf(x="pared", y="b013801", data=subset(sdf, !pared %in% "I Don\'t Know"),
+        method="Spearman", weightVar = "origwt",
         recode=list(pared=list(from="Some ed after H.S.", to="Graduated H.S."), 
-                    pared=list(from="Some ed after H.S.", to="Graduated H.S."),
                     pared=list(from="Graduated college", to="Graduated H.S."),
                     b013801=list(from="0-10", to="Less than 100"), 
                     b013801=list(from="11-25", to="Less than 100"),

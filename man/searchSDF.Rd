@@ -2,39 +2,36 @@
 % Please edit documentation in R/searchSDF.R
 \name{searchSDF}
 \alias{searchSDF}
-\title{Search and print out a summary of variable information on an edsurvey.data.frame or light.edsurvey.data.frame.}
+\title{EdSurvey Codebook Search}
 \usage{
 searchSDF(string, data, fileFormat = NULL, levels = FALSE)
 }
 \arguments{
-\item{string}{character string to search for in the database connection object (\code{data}).
-Note that the function will search both the student
-and school datasets for a matching character string in embedded 
-file format.}
+\item{string}{a character string to search for in the database connection object (\code{data}).
+Note that the function will search the student, school,
+and teacher datasets (if applicable) for a matching character string in the codebook.}
 
-\item{data}{object of class \code{edsurvey.data.frame} (see \code{\link{readNAEP}}
-for how to generate an \code{edsurvey.data.frame}).}
+\item{data}{an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
+an \code{edsurvey.data.frame.list}}
 
-\item{fileFormat}{character string indicating the file type to search for variables.
-The default \code{NULL} argument searches both the student and school files.
-If the string value isn't \dQuote{school} or \dQuote{student}, the
-function will return an error message indicating an empty match.}
+\item{fileFormat}{a character string indicating the data source to search for variables.
+The default \code{NULL} argument searches the student, school, and teacher codebooks.}
 
-\item{levels}{logical. Set to \code{TRUE} to return a snapshot of the levels in
-an \code{edsurvey.data.frame}.}
+\item{levels}{a logical value; set to \code{TRUE} to return a snapshot of the levels in
+an \code{edsurvey.data.frame}}
 }
 \value{
-A \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}} that shows the variable names, labels,
-                  and levels (if applicable) from an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame} based on a matching character string.
+a \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}} that shows the variable names, labels,
+                  and levels (if applicable) from an \code{edsurvey.data.frame} or a \code{light.edsurvey.data.frame} based on a matching character string.
 }
 \description{
-\code{searchSDF} returns a \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}} that shows the variable names and
-labels from an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}. The function will search both student
-and school data sets for a matching character string in embedded file format.
+Retrieve variable names and labels for an \code{edsurvey.data.frame},
+a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
+using character string matching
 }
 \examples{
 # read in the example data (generated, not real student data)
-sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
 # search both the student and school files by a character string
 searchSDF(string="book", data=sdf)

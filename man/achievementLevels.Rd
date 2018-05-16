@@ -2,13 +2,12 @@
 % Please edit documentation in R/achievementLevels.R
 \name{achievementLevels}
 \alias{achievementLevels}
-\title{Return achievement levels for an edsurvey.data.frame.}
+\title{Achievement Levels}
 \usage{
 achievementLevels(achievementVars = NULL, aggregateBy = NULL, data,
   cutpoints = NULL, returnDiscrete = TRUE, returnCumulative = FALSE,
-  weightVar = NULL, jrrIMax = 1, schoolMergeVarStudent = NULL,
-  schoolMergeVarSchool = NULL, omittedLevels = TRUE,
-  defaultConditions = TRUE, recode = NULL)
+  weightVar = NULL, jrrIMax = 1, omittedLevels = TRUE,
+  defaultConditions = TRUE, recode = NULL, returnVarEstInputs = FALSE)
 }
 \arguments{
 \item{achievementVars}{character vector indicating variables to be included in the achievement 
@@ -17,60 +16,68 @@ scale or subscale is omitted, then the default subject scale or subscale is
 used. You can find the default composite scale and all subscales using the 
 function \code{\link{showPlausibleValues}}.}
 
-\item{aggregateBy}{character vector specifying variables to aggregate achievement levels by. The percent
+\item{aggregateBy}{character vector specifying variables to aggregate achievement levels by. The percentage
 column sums up to 100 for all levels of all variables specified here. When set to 
-default of \code{NULL}, the percent column sums up to 100 for all levels of all variables specified in 
-in \code{achievementVars}.}
+default of \code{NULL}, the percentage column sums up to 100 for all 
+levels of all variables specified in \code{achievementVars}.}
 
-\item{data}{an edsurvey.data.frame.}
+\item{data}{an \code{edsurvey.data.frame}}
 
-\item{cutpoints}{numeric vector indicating cut points. Set to standard NAEP cut points for 
-Basic, Proficient, Advanced by default.}
+\item{cutpoints}{numeric vector indicating cutpoints. Set to standard NAEP cutpoints for 
+Basic, Proficient, and Advanced by default.}
 
 \item{returnDiscrete}{logical indicating if discrete achievement levels should be returned. Defaults 
 to \code{TRUE}.}
 
 \item{returnCumulative}{logical indicating if cumulative achievement levels should be returned. Defaults
-to \code{FALSE}.}
+to \code{FALSE}. The first and last categories are the same as defined for discrete levels.}
 
-\item{weightVar}{character indicating the weight variable to use; see Details.}
+\item{weightVar}{character string indicating the weight variable to use.
+Note that only the name of the
+weight variable needs to be included here, and any
+replicate weights will be automatically included.
+When this argument is \code{NULL}, the function uses the default.
+Use \code{\link{showWeights}} to find the default.}
 
-\item{jrrIMax}{numeric value. When using jackknife variance estimation method, the \eqn{V_{jrr}} term
+\item{jrrIMax}{numeric value. When using the jackknife variance estimation method, the \eqn{V_{jrr}} term
 (see Details) can be estimated with any positive number of plausible values and is 
 estimated on the first of the lower of the number of available plausible values and 
-\code{jrrIMax}. When \code{jrrIMax} is set to Inf, all of the plausible values will 
+\code{jrrIMax}. When \code{jrrIMax} is set to \code{Inf}, all plausible values will 
 be used. Higher values of \code{jrrIMax} lead to longer computing times and more
 accurate variance estimates.}
 
-\item{schoolMergeVarStudent}{a character variable name from the student file used to merge student 
-and school data files. Set to \code{NULL} by default.}
-
-\item{schoolMergeVarSchool}{a character variable name from the school file used to merge student 
-and school data files. Set to \code{NULL} by default.}
-
-\item{omittedLevels}{a logical value. When set to the default value of \code{TRUE}, drops those levels of 
-all factor variables that are specified in \code{achievementVars} and \code{aggregateBy}. 
-Use \code{print} on an \code{edsurvey.data.frame} to see the omitted levels.}
+\item{omittedLevels}{a logical value. When set to the default value (\code{TRUE}), 
+it drops those levels in all factor variables that are specified in \code{achievementVars} 
+and \code{aggregateBy}. Use \code{print} on an \code{edsurvey.data.frame} 
+to see the omitted levels.}
 
 \item{defaultConditions}{a logical value. When set to the default value of \code{TRUE}, uses the default 
-conditions stored in \code{edsurvey.data.frame} to subset the data. 
+conditions stored in an \code{edsurvey.data.frame} to subset the data. 
 Use \code{print} on an \code{edsurvey.data.frame} to see the default
 conditions.}
 
 \item{recode}{a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
-recode = list(var1= list(from=c("a,"b","c"), to ="d")). See Examples.}
+\code{recode = list(var1= list(from=c("a", "b", "c"), to ="d"))}. See Examples.}
+
+\item{returnVarEstInputs}{a logical value set to \code{TRUE} to return the
+inputs to the jackknife and imputation variance
+estimates. This is intended to allow for
+the computation
+of covariances between estimates.}
 }
 \value{
-A \code{list} containing up to two \code{data.frame} (s), one for each of the discrete and cumulative achievement levels
+A \code{list} containing up to two data frames, one for each of the discrete and cumulative achievement levels
 as determined by \code{returnDiscrete} and \code{returnCumulative}. The \code{data.frame} contains the following columns:
-\item{\code{Level}}{One row for each level of the specified achievement cut points.}
-\item{Variables in achievementVars}{One column for each variable in \code{achievementVars}, and one row for each level of each variable in \code{achievementVars}.}
-\item{\code{Percent}}{Percentage of students at or above each achievement level aggregated as specified by \code{aggregateBy}.}
-\item{\code{StandardError}}{The standard error of the percentage, accounting for the survey sampling methodology. See the statistics vignette.}
-\item{\code{n0}}{The number of observations in the incomding data (the
+\item{\code{Level}}{one row for each level of the specified achievement cutpoints.}
+\item{Variables in achievementVars}{one column for each variable in \code{achievementVars} 
+and one row for each level of each variable in \code{achievementVars}}
+\item{\code{Percent}}{the percentage of students at or above each achievement level aggregated as specified by \code{aggregateBy}}
+\item{\code{StandardError}}{the standard error of the percentage, accounting for the survey sampling methodology. 
+                            See the \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}.}
+\item{\code{n0}}{the number of observations in the incoming data (the
                  number of rows when \code{omittedLevels} and
                  \code{defaultConditions} are set to \code{FALSE}.}
-\item{\code{nUsed}}{The number of observations in the data after applying all
+\item{\code{nUsed}}{the number of observations in the data after applying all
                     filters (see \code{omittedLevels} and
                     \code{defaultConditions}).}
 }
@@ -78,41 +85,43 @@ as determined by \code{returnDiscrete} and \code{returnCumulative}. The \code{da
 Returns achievement levels using weights and variance estimates appropriate for the \code{edsurvey.data.frame}.
 }
 \details{
-The \code{achievementLevels} function applies appropriate weights and variance estimation method for each
+The \code{achievementLevels} function applies appropriate weights and the variance estimation method for each
          \code{edsurvey.data.frame}, with several arguments for customizing the aggregation and output of the analysis 
          results. Namely, by using these optional arguments, users can choose to generate the percentage of students 
-         performing at each achievement level (discrete), at or above each achievement level (cumulative), 
-         calculating the percentage distribution of students by achievement levels (discrete or cumulative) and 
-         selected characteristics (specified in \code{aggregateBy}), and computing the percentage distribution of students 
+         performing at each achievement level (discrete), generate the percentage of students performing at or above each achievement level (cumulative), 
+         calculate the percentage distribution of students by achievement levels (discrete or cumulative) and 
+         selected characteristics (specified in \code{aggregateBy}), and compute the percentage distribution of students 
          by selected characteristics within a specific achievement level.
 
 \subsection{Calculation of percentages}{
-         The details of the methods are shown in the statistics vignette, which you can read by 
-         running \code{vignette("statistics", package="EdSurvey")} at the R prompt. The methods described in
-         \dQuote{Estimation of weighted percentages when plausible values are present} are use to calculate 
+         The details of the methods are shown in the
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette} in 
+         \dQuote{Estimation of Weighted Percentages When Plausible Values Are Present} and are used to calculate 
          all cumulative and discrete probabilities.
 
          When the requested achievement levels are discrete (\code{returnDiscrete = TRUE}),
          the percentage \eqn{\mathcal{A}} is the percentage of students (within the categories specified in \code{aggregateBy}) 
-         whose scores lie in the range  [\eqn{cutPoints_i}, \eqn{cutPoints_{i+1}}), i = 0,1,...,n.
+         whose scores lie in the range  \eqn{[cutPoints_i, cutPoints_{i+1}), i = 0,1,...,n}.
          \code{cutPoints} is the score thresholds provided by the user with \eqn{cutPoints_0} taken
-         to be 0. \code{cutPoints} are set to NAEP standard cut points for achievement levels by default.
+         to be 0. \code{cutPoints} are set to NAEP standard cutpoints for achievement levels by default.
          To aggregate by a specific variable, for example, \code{dsex}, specify \code{dsex} in \code{aggregateBy}
-         and all other variables in \code{achievementVars}. To aggregate by achievement levels, specify 
-         the name of the plausible value in \code{aggergateBy} and all other variables in 
-         \code{achievementVars} 
+         and all other variables in \code{achievementVars}. To aggregate by subscale, specify 
+         the name of the subscale (e.g. \code{num_oper}) in \code{aggregateBy}, and all other variables in 
+         \code{achievementVars}.
          
 
-         When the requested achievement levels are cumulative (\code{returnCumulative = TRUE})
-         the percentage \eqn{\mathcal{A}} is the percentage of students (within the categories specified in \dQuote{aggregateBy}) 
-         whose scores lie in the range  [\eqn{cutPoints_i}, \eqn{\infty}), i = 1,2...,n-1. The 
+         When the requested achievement levels are cumulative (\code{returnCumulative = TRUE}),
+         the percentage \eqn{\mathcal{A}} is the percentage of students (within the categories specified in \code{aggregateBy}) 
+         whose scores lie in the range  [\eqn{cutPoints_i}, \eqn{\infty}), \eqn{i = 1,2...,n-1}. The 
          first and last categories are the same as defined for discrete levels.
 } 
         
 \subsection{Calculation of standard error of percentages}{
-         The method used to calculate the standard error of the percentages is described in the \emph{Statistics} vignette
-         in the section
-\dQuote{Estimation of the standard error of weighted percentages when plausible values are present, using the jackknife method.}
+         The method used to calculate the standard error of the percentages is described in the 
+         \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette} 
+         in the section \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Present, Using the Jackknife Method} 
+         and \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Taylor Series Method.}
+         For \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Present, Using the Jackknife Method,}
         the value of \code{jrrIMax} sets the value of \eqn{m^*}.
 }
 }
@@ -121,16 +130,23 @@ The \code{achievementLevels} function applies appropriate weights and variance e
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
-# Discrete achievement Levels
-achievementLevels(achievementVars=c("composite"), aggregateBy=NULL, data=sdf) 
+# Discrete achievement levels
+achievementLevels(achievementVars=c("composite"), aggregateBy=NULL, data=sdf)
 
-# Cumulative achievement Levels
+# Discrete achievement levels with a different subscale
+achievementLevels(achievementVars=c("num_oper"), aggregateBy=NULL, data=sdf)
+
+# Cumulative achievement levels
 achievementLevels(achievementVars=c("composite"), aggregateBy=NULL, data=sdf, 
+                  returnCumulative=TRUE) 
+
+# Cumulative achievement levels with a different subscale
+achievementLevels(achievementVars=c("num_oper"), aggregateBy=NULL, data=sdf, 
                   returnCumulative=TRUE) 
 
 # Achievement levels as independent variables, by sex aggregated by composite
 achievementLevels(achievementVars=c("composite", "dsex"), aggregateBy="composite",
-                  data=sdf, returnCumulative = TRUE) 
+                  data=sdf, returnCumulative=TRUE) 
 
 # Achievement levels as independent variables, by sex aggregated by sex
 achievementLevels(achievementVars=c("composite", "dsex"), aggregateBy="dsex", 
@@ -140,23 +156,28 @@ achievementLevels(achievementVars=c("composite", "dsex"), aggregateBy="dsex",
 achievementLevels(achievementVars=c("composite", "sdracem"),
                   aggregateBy="sdracem", data=sdf, returnCumulative=TRUE) 
 
+# Use customized cutpoints
+achievementLevels(achievementVars=c("composite"), aggregateBy=NULL, data=sdf, 
+                  cutpoints = c("Customized Basic" = 200, 
+                                "Customized Proficient" = 300, 
+                                "Customized Advanced" = 400))
+
 # Use recode to change values for specified variables:
-achievementLevels(achievementVars=c("composite","dsex", "b017451"),
-                           aggregateBy = "dsex", sdf,
-                           recode=list(
-                             b017451=list(
-                               from=c("Never or hardly ever",
-                                      "Once every few weeks","About once a week"),
-                               to=c("Infrequently")),
-                             b017451=list(
-                               from=c("2 or 3 times a week","Every day"),
-                               to=c("Frequently"))))
+achievementLevels(achievementVars=c("composite", "dsex", "b017451"),
+                  aggregateBy = "dsex", sdf,
+                  recode=list(b017451=list(from=c("Never or hardly ever",
+                                                  "Once every few weeks",
+                                                  "About once a week"),
+                                           to="Infrequently"),
+                              b017451=list(from=c("2 or 3 times a week",
+                                                  "Every day"),
+                                           to="Frequently")))
 
 }
 }
 \references{
-Rubin, D. B. (1987). \emph{Multiple Imputation for Nonresponse in Surveys}. New York, NY: Wiley.
+Rubin, D. B. (1987). \emph{Multiple imputation for nonresponse in surveys}. New York, NY: Wiley.
 }
 \author{
-Ahmad Emad
+Huade Huo, Ahmad Emad, and Trang Nguyen
 }

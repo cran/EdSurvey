@@ -2,34 +2,25 @@
 % Please edit documentation in R/getData.R
 \name{getData}
 \alias{getData}
-\title{Gets data from an edsurvey.data.frame.}
+\title{Read Data to a Data Frame}
 \usage{
-getData(data, varnames = NULL, drop = FALSE, schoolMergeVarStudent = NULL,
-  schoolMergeVarSchool = NULL, dropUnusedLevels = TRUE,
+getData(data, varnames = NULL, drop = FALSE, dropUnusedLevels = TRUE,
   omittedLevels = TRUE, defaultConditions = TRUE, formula = NULL,
   recode = NULL, includeNaLabel = FALSE, addAttributes = FALSE,
   returnJKreplicates = TRUE)
 }
 \arguments{
 \item{data}{an \code{edsurvey.data.frame} or
-\code{light.edsurvey.data.frame}.}
+a \code{light.edsurvey.data.frame}}
 
 \item{varnames}{a character vector of variable names that will be returned.
 When both \code{varnames} and
-a formula are specified, variables associated with both are
+a \code{formula} are specified, variables associated with both are
 returned. Set to \code{NULL} by default.}
 
 \item{drop}{a logical value. When set to the default value of \code{FALSE},
 when a single column is returned, it is still represented as a
 \code{data.frame} and is not converted to a vector.}
-
-\item{schoolMergeVarStudent}{a character variable name from the student file
-used to merge student and school data files.
-Set to \code{NULL} by default.}
-
-\item{schoolMergeVarSchool}{a character variable name name from the school
-file used to merge student and school data files
-Set to \code{NULL} by default.}
 
 \item{dropUnusedLevels}{a logical value. When set to the default value of
 \code{TRUE}, drops unused levels of all factor
@@ -37,38 +28,38 @@ variables.}
 
 \item{omittedLevels}{a logical value. When set to the default value of
 \code{TRUE}, drops those levels of all factor variables
-that are specified in \code{edsurvey.data.frame}. Use
+that are specified in an \code{edsurvey.data.frame}. Use
 \code{print} on an \code{edsurvey.data.frame} to see
 the omitted levels.}
 
 \item{defaultConditions}{a logical value. When set to the default value of
 \code{TRUE}, uses the default conditions stored in
-\code{edsurvey.data.frame} to subset the data. Use
+ an \code{edsurvey.data.frame} to subset the data. Use
 \code{print} on an \code{edsurvey.data.frame} to
 see the default conditions.}
 
 \item{formula}{a \ifelse{latex}{\code{formula}}{\code{\link[stats]{formula}}}.
 When included, \code{getData} returns data associated with
-all variables of the formula. When both \code{varnames} and a
+all variables of the \code{formula}. When both \code{varnames} and a
 formula are specified, the variables associated with both are
 returned. Set to \code{NULL} by default.}
 
 \item{recode}{a list of lists to recode variables. Defaults to \code{NULL}.
 Can be set as \code{recode} \code{=} \code{list(var1}
 \code{=} \code{list(from} \code{=} \code{c("a","b","c"), to}
-\code{=} \code{"d"))}. See examples.}
+\code{=} \code{"d"))}. See Examples.}
 
-\item{includeNaLabel}{a logical value, should \code{NA} (missing) values be
-returned as literal \code{NA}s or as factor levels
-coded as \dQuote{NA}.}
+\item{includeNaLabel}{a logical value to indicate if \code{NA} (missing) values are
+returned as literal \code{NA} values or as factor levels
+coded as \code{NA}.}
 
-\item{addAttributes}{a logical value. Set to \code{TRUE} to get a
+\item{addAttributes}{a logical value set to \code{TRUE} to get a
 \code{data.frame} that can be used in calls to
 other functions that usually would take an
 \code{edsurvey.data.frame}.}
 
 \item{returnJKreplicates}{a logical value indicating if JK replicate weights
-be returned. Defaults to \code{TRUE}.}
+should be returned. Defaults to \code{TRUE}.}
 }
 \value{
 When \code{addAttributes} is \code{FALSE}, returns a
@@ -77,21 +68,29 @@ variables. When \code{addAttributes} is \code{TRUE}, returns a
 \code{light.edsurvey.data.frame}.
 }
 \description{
-Reads in selected columns.
+Reads in selected columns to a \code{data.frame} or an
+             \code{light.edsurvey.data.frame}. On an \code{edsurvey.data.frame},
+             the data are stored on disk.
 }
 \details{
-By default an \code{edsurvey.data.frame} does not have data read
-into memory until \code{getData} is called.
-This allows for a minimal memory footprint.
-To keep this footprint small, you need to limit \code{varnames} to just
-necessary variables. All the data is labeled 
-according to NAEP documentation. 
-note that if both \code{formula} and \code{varnames} are populated, the
+By default, an \code{edsurvey.data.frame} does not have data read
+into memory until \code{getData} is called and returns a data frame.
+This structure allows \code{EdSurvey} to have a minimal memory footprint.
+To keep the footprint small, you need to limit \code{varnames} to just
+the necessary variables.
+
+When \code{getData} is called, it returns a \code{data.frame}. When the
+\code{addAttributes} argument is set to \code{TRUE}, that \code{data.frame}
+has several attributes added to make it usable by the functions in 
+the \code{EdSurvey} package (e.g., \code{lm.sdf}), and the class is a
+\code{light.edsurvey.data.frame}.
+
+Note that if both \code{formula} and \code{varnames} are populated, the
 variables on both will be included.
 
-For details on using this function, see the vignette available by calling
-\code{vignette("getData",} \code{package} \code{=} \code{"EdSurvey")} 
-in R.
+See the
+\href{https://www.air.org/sites/default/files/EdSurvey-getData.pdf}{getData vignette}
+for long-form documentation on this function.
 }
 \examples{
 # read in the example data (generated, not real student data)
@@ -109,7 +108,7 @@ df2 <- getData(data=sdf, varnames=c("dsex", "t088301"),
                                         to=c("No"))))
 table(df2)
 
-# When readNAEP is called on a data file it appends a default 
+# When readNAEP is called on a data file, it appends a default 
 # condition to the edsurvey.data.frame. You can see these conditions
 # by printing the sdf
 sdf
@@ -120,23 +119,23 @@ df2 <- getData(data=sdf, varnames=c("dsex", "b017451"), defaultConditions = FALS
 table(df2)
 
 # Similarly, the default behavior of omitting certain levels specified
-# in the edsurvey.data.frame can be changed
+# in the edsurvey.data.frame can be changed as follows:
 df2 <- getData(data=sdf, varnames=c("dsex", "b017451"), omittedLevels = FALSE)
 table(df2)
 
-# Merge a school data file by passing a common variable through the arguments 
-# `schoolMergeVarStudent` and `schoolMergeVarSchool`. In this example, 
-# the variable "c052601" is from the school data file, merging on "scrpsu" and
-# "sscrspu":
-gddat <- getData(data=sdf, varnames=c("composite", "dsex", "b017451","c052601"),
-  schoolMergeVarStudent='scrpsu', schoolMergeVarSchool="sscrpsu", addAttributes = TRUE)
+# the variable "c052601" is from the school-level data file; merging is handled automatically
+# returns a light.edsurvey.data.frame using addAttributes=TRUE argument
+gddat <- getData(data=sdf, 
+                 varnames=c("composite", "dsex", "b017451","c052601"),
+                 addAttributes = TRUE)
+class(gddat)
 # look at the first few lines
 head(gddat)
 }
 \seealso{
 \code{\link{subset.edsurvey.data.frame}} for how to remove
-         rows from the output.
+         rows from the output
 }
 \author{
-Ahmad Emad and Paul Bailey
+Tom Fink, Paul Bailey, and Ahmad Emad
 }
