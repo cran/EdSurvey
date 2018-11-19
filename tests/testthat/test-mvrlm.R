@@ -9,6 +9,7 @@ sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprime
 
 context("Multivariate Regression: 2 DVs (2 non PV)")
 test_that("mvrlm.sdf results align with lm.sdf", {
+  skip_on_cran()
   mvrlm.fit <- mvrlm.sdf(mrps51 | mrps22 ~ dsex | m072801, data = sdf, jrrIMax = 5, returnVarEstInputs = T)
   lm.fit.mrps51 <- lm.sdf(mrps51 ~ dsex + m072801, data = sdf, jrrIMax = 5, returnVarEstInputs = T)
   lm.fit.mrps22 <- lm.sdf(mrps22 ~ dsex + m072801, data = sdf, jrrIMax = 5, returnVarEstInputs = T)
@@ -30,6 +31,7 @@ test_that("mvrlm.sdf results align with lm.sdf", {
 
 context("Multivariate Regression: 2 DVs (1 PV 1 non PV)")
 test_that("mvrlm.sdf results align with lm.sdf", {
+  skip_on_cran()
   mvrlm.fit <- mvrlm.sdf(composite | mrps22 ~ dsex | m072801, data = sdf, jrrIMax = 5, returnVarEstInputs = T)
   lm.fit.comp <- lm.sdf(composite ~ dsex + m072801, data = sdf, jrrIMax = 5, returnVarEstInputs = T)
   lm.fit.mrps22 <- lm.sdf(mrps22 ~ dsex + m072801, data = sdf, jrrIMax = 5, returnVarEstInputs = T)
@@ -57,14 +59,13 @@ test_that("mvrlm.sdf results align with lm.sdf", {
 
 context("Multivariate Regression: 2 DVs (both PVs)")
 test_that("mvrlm.sdf results align with lm.sdf", {
-  
+  skip_on_cran()
   # compare coefficient tables
   mvrlm.fit <- mvrlm.sdf(algebra | geometry ~ dsex | m072801, data = sdf, jrrIMax = 5, returnVarEstInputs = T)
   lm.fit.alg <- lm.sdf(algebra ~ dsex + m072801, data = sdf, jrrIMax = 5, returnVarEstInputs = T)
   lm.fit.geom <- lm.sdf(geometry ~ dsex + m072801, data = sdf, jrrIMax = 5, returnVarEstInputs = T)
   expect_equal(mvrlm.fit$coefmat$algebra, lm.fit.alg$coefmat)
   expect_equal(mvrlm.fit$coefmat$geometry, lm.fit.geom$coefmat)
-  
   # compare residuals
   attr(lm.fit.alg$PV.residuals, "dimnames") <- NULL
   attr(mvrlm.fit$residPV[[1]], "dimnames") <- NULL
@@ -83,6 +84,7 @@ test_that("mvrlm.sdf results align with lm.sdf", {
 
 context("Multivariate Regression: 3 DVs (all PVs)")
 test_that("mvrlm.sdf results align with lm.sdf",{
+  skip_on_cran()
   mvrlm.fit <- mvrlm.sdf(algebra | geometry | measurement ~ dsex | m072801, data = sdf, jrrIMax = 5, returnVarEstInputs = T)
   
   ### compare coefficients

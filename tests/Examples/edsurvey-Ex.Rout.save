@@ -27,7 +27,7 @@ Loading required package: carData
 Loading required package: lfactors
 lfactors v1.0.4
 
-EdSurvey v2.2.1
+EdSurvey v2.2.2
 
 
 Attaching package: 'EdSurvey'
@@ -1293,33 +1293,9 @@ n used: 16915
  percentile estimate       se       df confInt.ci_lower confInt.ci_upper nsmall
          50 277.4799 1.126471 17.98894         275.7192          279.188   8418
 > 
-> # get several percentiles
-> percentile("composite", c(0,1,25,50,75,99,100), sdf)
-Percentile
-Call: percentile(variable = "composite", percentiles = c(0, 1, 25, 
-    50, 75, 99, 100), data = sdf)
-full data n: 17606
-n used: 16915
-
-Warning in print.percentile(x) :
-  Some degrees of freedom less than or equal to 2, indicating non-finite variance. These estimates should be treated with caution.
- percentile estimate        se       df confInt.ci_lower confInt.ci_upper
-          0 126.1100 9.0655380  0.00000         126.1100         135.8825
-          1 185.9506 3.3800198 11.16195         179.4209         190.6413
-         25 251.9620 1.0164588 15.00887         249.7360         253.9889
-         50 277.4799 1.1264710 17.98894         275.7192         279.1880
-         75 301.1861 0.9142612 25.15841         299.4230         302.8992
-         99 355.0531 1.2769482 18.66944         352.5289         358.7604
-        100 404.1840 7.2932651  0.00000         387.5929         404.1840
- nsmall
-    0.0
-  165.2
- 4190.0
- 8418.0
- 4139.8
-  143.2
-    0.0
 > ## Not run: 
+> ##D # get several percentiles
+> ##D percentile("composite", c(0,1,25,50,75,99,100), sdf)
 > ##D # build an edsurvey.data.frame.list
 > ##D sdfA <- subset(sdf, scrpsu %in% c(5,45,56))
 > ##D sdfB <- subset(sdf, scrpsu %in% c(75,76,78))
@@ -5690,7 +5666,7 @@ Multiple R-squared: 0.0224
 > cleanEx()
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  18.77 0.84 19.74 NA NA 
+Time elapsed:  18.14 0.77 19.62 NA NA 
 > grDevices::dev.off()
 null device 
           1 

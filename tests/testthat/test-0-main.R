@@ -363,7 +363,7 @@ test_that("edsurveyTable2pdf",{
 
 context("edsurveyTable: Taylor")
 test_that("edsurveyTable: Taylor",{
- 
+  skip_on_cran()
   es1t <- edsurveyTable(composite ~ dsex + b017451, sdf, jrrIMax=1, varMethod="Taylor")
   es1tc <- capture.output(es1t)
   # compare Taylor to jackknife, only columns that should agree
@@ -378,7 +378,6 @@ test_that("edsurveyTable: Taylor",{
   es1t$data["SE(MEAN)"] <- NULL
   expect_equal(es1j, es1t)
   
-  skip_on_cran()
   # check Taylor output
   expect_equal(es1tc, es1tREF)
   # test unbalanced tables

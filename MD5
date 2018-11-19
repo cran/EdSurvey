@@ -1,4 +1,4 @@
-99d2a669f86b228b54e1559f3dfd03ef *DESCRIPTION
+07a022b54239249fa89f738992f9bcf8 *DESCRIPTION
 5d8cceb556555e40ab71f31b87b0034f *NAMESPACE
 ce6556e6a63006e58768d683e31ff85e *R/DoFCorrection.R
 a1bf21ee4c4515a25af67e49bbe5e4ea *R/achievementLevels.R
@@ -131,7 +131,7 @@ d091267a3a9551793fd155a07e5dcbad *man/examples/merge.light.edsurvey.data.frame.R
 adf542c02ff80fbf07da7ed76d7a9173 *man/examples/mvrlm.sdf.R
 9a516a2c87a0b109e844dbd23ad8f172 *man/examples/nrow.edsurvey.data.frame.R
 120db94419a55e32f7cedb583b3885f0 *man/examples/oddsRatio.R
-7f1ff35d58424c9466c3b7baeae1b0e1 *man/examples/percentile.R
+a61169590d2362d49cd6e6e7d5ec484d *man/examples/percentile.R
 e34d92de875af1ecfcdc452cf4e02e60 *man/examples/readECLS_K1998.R
 8b7f368c50ade4c7da6f3c036f9d75df *man/examples/readECLS_K2011.R
 d4fcdb23993c7b460defbe40a9b94c69 *man/examples/readICCS.R
@@ -170,7 +170,7 @@ fed427f2aba3cae77a0a805516e90708 *man/merge.Rd
 de948d76a26d881467373f9146155075 *man/mixed.sdf.Rd
 4d1955f4154b1e245c2e47c89a02af1f *man/mvrlm.sdf.Rd
 380678de19fff47d5c421c94fd426956 *man/oddsRatio.Rd
-7f442454bcafc22450537513ae84b6b3 *man/percentile.Rd
+9baa636491311e54acd20e25ab0e5d07 *man/percentile.Rd
 fd61e0212666648e663381d54ade9cf7 *man/print.achievementLevels.Rd
 7ac51f98adf2c00a3c6bfd808e4ef83e *man/print.edsurvey.data.frame.Rd
 c475189ff612df8aacaef3e4fe937005 *man/printGap.Rd
@@ -199,7 +199,7 @@ c951433ec1c981cb25be551d26fcd321 *man/subset.Rd
 77c219cc554832b5e9a86cc254180543 *man/updatePlausibleValue.Rd
 292fc7de49f1d930867cfc3bba74f10b *man/varEstToCov.Rd
 644219cc44c9aee79453baaa35635447 *man/waldTest.Rd
-32b5b53accdfa1413e4f4267efabc69b *tests/Examples/edsurvey-Ex.Rout.save
+8edf5e17834a8da9b7111d7d4f0d8453 *tests/Examples/edsurvey-Ex.Rout.save
 55621737cea09e4db83616458038a3a8 *tests/testthat/aLevels_test1.rds
 2eac734179b6170c33a48c8bdf088df2 *tests/testthat/aLevels_test2.rds
 87752c252f5a5c4563eb5c8b9ad8b9c1 *tests/testthat/aLevels_test3.rds
@@ -268,15 +268,15 @@ c1ee22925a4cd5fed0398f97137b3a96 *tests/testthat/percentileESDFL_test1.rds
 82ade28bebb7effd90931cadd6ba5290 *tests/testthat/regression.rds
 66f536ddac9885f31b1d0901f2d0fc5c *tests/testthat/slm1Scoef.rds
 8be8baf5552894dcf913d9fa96a37316 *tests/testthat/summary_lm1f.rds
-6ab82b738fab751ad10d003294643cfd *tests/testthat/test-0-main.R
+3cc807f35204df97f103cc89ddfc41e3 *tests/testthat/test-0-main.R
 7b4f5cbd1d67a321e6e2eae301b7eb1d *tests/testthat/test-1-lesdf.R
-8021924b4f069afc9d7af2f0a74825a0 *tests/testthat/test-2-esdfl.R
+51cfc559168d4b2ff2a6da493630be6b *tests/testthat/test-2-esdfl.R
 4cf03f51f51cab2b243562bf85e2ab03 *tests/testthat/test-3-TIMSS.R
 438757d78425b89edf222150992a9c7c *tests/testthat/test-4-pisa.R
 7e1d048264e4d321df83a064e25ed4da *tests/testthat/test-5-piaac.R
 0979725e68ef04eee68046f0bd5efac2 *tests/testthat/test-6-ECLS_K.R
 f3ba4272ef6949e70b922d9e8b183357 *tests/testthat/test-mixed.R
-ec31c2655379650c3ce8be86cfb589b7 *tests/testthat/test-mvrlm.R
+06f00de91c29b4523882adab89ad8fd2 *tests/testthat/test-mvrlm.R
 84502465a707e0f135b56aad1a0ec2b8 *tests/testthat/testHelper.R
 cbcd687b5f4f50973098b3a9d4b91ffc *tests/testthat/waldtestChisq.rds
 c6081dda5e3bfe1cde202b65ad40183c *tests/testthat/waldtestF.rds
