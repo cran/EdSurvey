@@ -6,16 +6,14 @@
 #' data, are used
 #' to read in and format the data for further processing.
 #' 
-#' To get started using \code{EdSurvey}, see the vignettes covering
-#' installation, first use, use of the
-#' \code{getData} function to get data that can be further manipulated
-#' or analyzed, and use of the accommodations datasets. Use 
-#' \code{browseVignettes(package="EdSurvey")} to see the vignettes.
+#' To get started using \code{EdSurvey}, see the vignettes
+#' for tutorials and the statistical methodologies. Use 
+#' \code{vignette("introduction", package="EdSurvey")} to see the vignettes.
 #' 
 #' The package provides functions called \code{\link{readNAEP}}, 
 #' \code{\link{readCivEDICCS}}, \code{\link{readICILS}}, \code{\link{readPIAAC}},
-#' \code{\link{readPIRLS}}, \code{\link{readPISA}}, \code{\link{readTALIS}},
-#' \code{\link{readTIMSS}}, and \code{\link{readTIMSSAdv}}
+#' \code{\link{readPIRLS}}, \code{\link{read_ePIRLS}}, \code{\link{readPISA}}, \code{\link{readTALIS}},
+#' \code{\link{readTIMSS}}, \code{\link{readTIMSSAdv}}, and \code{\link{readECLS_K2011}}
 #' to read in NCES datasets.
 #' The functions
 #' \code{\link{achievementLevels}},

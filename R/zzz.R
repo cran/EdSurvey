@@ -2,7 +2,6 @@
 # @author Paul Bailey
 .onAttach <- function(libname, pkgname) {
   packageStartupMessage(paste0("EdSurvey v", utils::packageDescription("EdSurvey")$Version, "\n"))
-  data.table::setDTthreads(1)
 }
 
 globalVariables(c("variable", "w", "c2", "dofNum", "dofDenom", "lengthY",

@@ -4,7 +4,7 @@
 #'              returns an \code{edsurvey.data.frame} with 
 #'              information about the file and data.
 #'
-#' @param path a character value to the full directory to the TIMSS Advanced extracted SPSS (.sav) set of data.
+#' @param path a character value to the full directory to the TIMSS Advanced extracted SPSS (.sav) set of data
 #' @param countries a character vector of the country/countries to include using
 #'                  the three-digit ISO country code.  
 #'                  A list of country codes can be found on Wikipedia at
@@ -21,7 +21,7 @@
 #'                The default value is \code{TRUE}.
 #'
 #' @details Reads in the unzipped files downloaded from the TIMSS Advanced international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}.
-#'          Datafiles require the SPSS datafile (.sav) format using the default filenames.
+#'          Data files require the SPSS data file (.sav) format using the default filenames.
 #'
 #' @details A TIMSSAdvanced \code{edsurvey.data.frame} includes three distinct data levels: 
 #'          \itemize{
@@ -58,11 +58,11 @@ readTIMSSAdv <- function(path,
                       forceReread=FALSE,
                       verbose=TRUE) {
   
-  path <- normalizePath(unique(path), winslash = "/")
+  path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
   subject <- tolower(subject)
   
-  if(sum(!dir.exists(path)) > 0) { #validate the paths to ensure they all exist
-    stop(paste0("Cannot find ", sQuote("path") , "value in ", paste(dQuote(path[!dir.exists(path)]), collapse=", ")))
+  if(!all(dir.exists(path))){
+    stop(paste0("The argument ", sQuote("path"), " cannot be located: ", pasteItems(dQuote(path[!dir.exists(path)])),"."))
   }
   
   if(!is.logical(forceReread)){
@@ -72,10 +72,10 @@ readTIMSSAdv <- function(path,
     stop(paste0("The argument ", sQuote("verbose"), " must be a logical value."))
   }
   if(length(subject)>1){
-    stop(paste0("The argument ", sQuote("subject"), " must be of length 1."))
+    stop(paste0("The argument ", sQuote("subject"), " must be of length one."))
   }
   if(!(subject %in% c("math", "physics"))){
-    stop(paste0("The argument ", sQuote("subject"), " must be a value of ", sQuote("math"), " or ", sQuote("physics"),"."))
+    stop(paste0("The argument ", sQuote("subject"), " must be a value of ", dQuote("math"), " or ", dQuote("physics"),"."))
   }
   
   #prepwork
@@ -94,8 +94,8 @@ readTIMSSAdv <- function(path,
                           pattern=paste0("^", subjChr, "..", "(",paste(countries, collapse="|"), ")(",
                                          paste(getTIMSSAdvYearCodes(), collapse = "|"), ")","\\.sav$"), full.names=TRUE, ignore.case = TRUE)
   if(length(filenames) == 0) {
-    stop(paste0("Could not find any TIMSS Advanced datafiles for countries: ", paste(countries, collapse=", "),
-                " in the following folder(s): ", paste(path, collapse=", "), "."))
+    stop(paste0("Could not find any TIMSS Advanced datafiles for countries: ", pasteItems(dQuote(countries)),
+                " in the following folder(s): ", pasteItems(dQuote(path)), "."))
   }
   
   fSubPart <- tolower(substring(basename(filenames), 1, 8)) #includes a (4th grade), country code, and year code
@@ -145,22 +145,22 @@ readTIMSSAdv <- function(path,
       
       #test for any missing files other than the 'ash' or 'asr' file::also check for any duplicate or multiple files
       if (sum(hasMissing)>0 && sum(nchar(unlist(fnames)))>0) {
-        stop(paste0("Missing TIMSS Advanced Datafile(s) for Country (", cntry, "): ", paste(TIMSSAdvfiles[hasMissing], collapse=", ")))
+        stop(paste0("Missing TIMSS Advanced Datafile(s) for country (", cntry, "): ", pasteItems(dQuote(TIMSSAdvfiles[hasMissing]),".")))
       }
       if (sum(hasExcess)>0 && sum(nchar(unlist(fnames)))>0){
-        stop(paste0("Excess/Duplicate TIMSS Advanced Datafile(s) for Country (", cntry, "): ", paste(TIMSSAdvfiles[hasExcess], collapse=", ")))
+        stop(paste0("Excess/duplicate TIMSS Advanced datafile(s) for country (", cntry, "): ", pasteItems(dQuote(TIMSSAdvfiles[hasExcess])),"."))
       }
       
       #test if there are any files for this country/year combination, if not, we can skip this loop iteration as it does not exist
       if (sum(nchar(unlist(fnames)))==0) {
-        warning(paste0("No Data Found. Skipping Country ", sQuote(cntry), " for year ", sQuote(convertTIMSSAdvYearCode(yrCode))))
+        warning(paste0("No data found. Skipping country ", sQuote(cntry), " for year ", dQuote(convertTIMSSAdvYearCode(yrCode)),"."))
         next
       }
       
       iProcCountry <- iProcCountry + 1 #update the processed country index value after we confirm that there is data to process
       processedData <- list()
       
-      processArgs <- list(dataFolderPath = path, 
+      processArgs <- list(dataFolderPath = unique(dirname(unlist(fnames))), #specify only the path in which the files exist in case multiple paths specified 
                           countryCode = cntry, 
                           fnames = fnames, 
                           fileYrs = yrCode, 
@@ -180,10 +180,10 @@ readTIMSSAdv <- function(path,
         processArgs[["forceReread"]] <- TRUE #try it again reprocessing the data
         processedData <- tryCatch(do.call("processTIMSSAdv", processArgs, quote = TRUE),
                                   error = function(e){
-                                    stop(paste0("Unable to process TIMSS Advanced data for country code ", sQuote(cntry), 
-                                                " having year code ", sQuote(yrCode) ," at folder path(s): ", paste(sQuote(path), collapse = " & "),
+                                    stop(paste0("Unable to process TIMSS Advanced data for country code ", dQuote(cntry), 
+                                                " having year code ", dQuote(yrCode) ," at folder path(s): ", pasteItems(dQuote(path)),
                                                 ". Possible file corruption with source data.",
-                                                " Error Message: ", e))
+                                                " Error message: ", e))
                                   })
       }
       
@@ -381,13 +381,14 @@ processTIMSSAdv <- function(dataFolderPath, countryCode, fnames, fileYrs, subjec
   if(runProcessing==TRUE){
     
     if(verbose==TRUE){
-      cat(paste0("Processing Data for Country: ", dQuote(countryCode),"\n"))
+      cat(paste0("Processing data for country: ", dQuote(countryCode),".\n"))
     }
     
     #SCHOOL LEVEL===================================================
     cg <- unlist(fnames[paste0(subjChr, "cg")])[1]
     schoolFP <- gsub(".sav$", "\\.txt", unlist(fnames[paste0(subjChr, "cg")])[1], ignore.case = TRUE)
-    schoolDF1 <- read_sav(cg)
+    schoolDF1 <- read_sav(cg, user_na = TRUE)
+    schoolDF1 <- UnclassCols(schoolDF1)
     colnames(schoolDF1) <- toupper(colnames(schoolDF1))
     ffsch <- writeTibbleToFWFReturnFileFormat(schoolDF1, schoolFP )  
     #===============================================================
@@ -396,11 +397,16 @@ processTIMSSAdv <- function(dataFolderPath, countryCode, fnames, fileYrs, subjec
     sa <- unlist(fnames[paste0(subjChr, "sa")])[1]
     sg <- unlist(fnames[paste0(subjChr, "sg")])[1]
     sr <- unlist(fnames[paste0(subjChr, "sr")])[1]
-    stuDF1 <- read_sav(sa)
+    
+    stuDF1 <- read_sav(sa, user_na = TRUE)
+    stuDF1 <- UnclassCols(stuDF1)
     colnames(stuDF1) <- toupper(colnames(stuDF1))
+    
     ids1 <- grep("^ID", names(stuDF1), ignore.case=TRUE, value=TRUE)
-    stuDF2 <- read_sav(sg)
+    stuDF2 <- read_sav(sg, user_na = TRUE)
+    stuDF2 <- UnclassCols(stuDF2)
     colnames(stuDF2) <- toupper(colnames(stuDF2))
+    
     ids2 <- grep("^ID", names(stuDF2), ignore.case=TRUE, value=TRUE)
     ids12 <- ids1[ids1 %in% ids2]
     ids12 <- ids12[!(ids12 %in% c("IDPUNCH", "IDGRADER"))] #IDPUNCH should be omitted for merging
@@ -415,17 +421,19 @@ processTIMSSAdv <- function(dataFolderPath, countryCode, fnames, fileYrs, subjec
     
     if(nrow(stuDF1) != nrow(mm)) {
       stop(paste0("Failed consistency check for filetype ", sQuote(paste0(subjChr, "sa")), " country code ", sQuote(tolower(countryCode)), ". ",
-                  "Please email EdSurvey.help@air.org for assistance"))
+                  "Please email EdSurvey.help@air.org for assistance."))
     }
     if(nrow(stuDF2) != nrow(mm)) {
       stop(paste0("Failed consistency check for filetype ", sQuote(paste0(subjChr, "sg")), " country code ", sQuote(tolower(countryCode)), ". ",
-                  "Please email EdSurvey.help@air.org for assistance"))
+                  "Please email EdSurvey.help@air.org for assistance."))
     }
     
     #test we have the sr file before merging
     if(min(is.na(sr)) == 0) {
-      stuDF3 <- read_sav(sr)
+      stuDF3 <- read_sav(sr, user_na = TRUE)
+      stuDF3 <- UnclassCols(stuDF3)
       colnames(stuDF3) <- toupper(colnames(stuDF3))
+      
       ids3 <- grep("^ID", names(stuDF3), ignore.case=TRUE, value=TRUE)
       idsmm3 <- ids12[ids12 %in% ids3]
       idsmm3 <- idsmm3[!(idsmm3 %in% c("IDPUNCH", "IDGRADER"))] #IDPUNCH should be omitted for merging
@@ -440,11 +448,11 @@ processTIMSSAdv <- function(dataFolderPath, countryCode, fnames, fileYrs, subjec
       mm <- mm[,names(mm)[!grepl("\\.junk$",names(mm))]]
       if(nrow(stuDF1) != nrow(mm)) {
         stop(paste0("Failed consistency check for filetype ", sQuote(paste0(subjChr, "sr")), " country code ", sQuote(tolower(countryCode)), ". ",
-                    "Please email EdSurvey.help@air.org for assistance"))
+                    "Please email EdSurvey.help@air.org for assistance."))
       }
       if(nr != nrow(mm)) {
         stop(paste0("Failed consistency check for filetype ", sQuote(paste0(subjChr, "sr")), " country code ", sQuote(tolower(countryCode)), ". ",
-                    "Please email EdSurvey.help@air.org for assistance"))
+                    "Please email EdSurvey.help@air.org for assistance."))
       }
     } else {
       idsmm3 <- ids12
@@ -460,9 +468,12 @@ processTIMSSAdv <- function(dataFolderPath, countryCode, fnames, fileYrs, subjec
     
     #ensure both the st and tg files are available before merging
     if(min(is.na(st))==0 && min(is.na(tg))==0){
-    stuTeachDF <- read_sav(st)
+    stuTeachDF <- read_sav(st, user_na = TRUE)
+    stuTeachDF <- UnclassCols(stuTeachDF)
     colnames(stuTeachDF) <- toupper(colnames(stuTeachDF))
-    teachDF <- read_sav(tg)
+    
+    teachDF <- read_sav(tg, user_na = TRUE)
+    teachDF <- UnclassCols(teachDF)
     colnames(teachDF) <- toupper(colnames(teachDF))
     
     ids1 <- grep("^ID", names(stuTeachDF), ignore.case=TRUE, value=TRUE)
@@ -480,7 +491,7 @@ processTIMSSAdv <- function(dataFolderPath, countryCode, fnames, fileYrs, subjec
     
     if(nrow(stuTeachDF) != nrow(mm)) {
       stop(paste0("Failed consistency check for filetype ", sQuote(paste0(subjChr, "tg")), " country code ", sQuote(tolower(countryCode)), ". ",
-                  "Please email EdSurvey.help@air.org for assistance"))
+                  "Please email EdSurvey.help@air.org for assistance."))
     }
     
     teachFP <- gsub(".sav$", "\\.txt", unlist(fnames[paste0(subjChr, "tg")])[1], ignore.case = TRUE)
@@ -547,23 +558,23 @@ exportTIMSSAdvToCSV <- function(folderPath, exportPath, cntryCodes, subject, ...
       sdf  <- sdfList$datalist[[i]]
       cntry <- sdf$country
       
-      cat(paste(cntry, "Working...."))
-      data <- getData(sdf, names(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
+      cat(paste(cntry, "Working.\n"))
+      data <- getData(sdf, colnames(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
       
       
       write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-      cat(paste(cntry, "Completed"), "\n")
+      cat(paste(cntry, "Completed.\n"))
     }
   } else if (class(sdfList) == "edsurvey.data.frame"){
     
     sdf <- sdfList
     cntry <- sdf$country
 
-    cat(paste(cntry, "Working...."))
-    data <- getData(sdf, names(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
+    cat(paste(cntry, "Working.\n"))
+    data <- getData(sdf, colnames(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
     
     write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-    cat(paste(cntry, "Completed"), "\n")
+    cat(paste(cntry, "Completed.\n"))
   }
   
 }

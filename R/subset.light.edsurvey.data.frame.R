@@ -28,7 +28,7 @@ subset.light.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
   env <- parent.frame(n=2)
   
   if(!inherits(x, c("light.edsurvey.data.frame"))) {
-    stop(paste0("The argument ", sQuote("x"), " must be a light.edsurvey.data.frame"))
+    stop(paste0("The argument ", sQuote("x"), " must be a light.edsurvey.data.frame."))
   }
   
   if(inside) {

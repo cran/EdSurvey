@@ -22,12 +22,12 @@ an \code{edsurvey.data.frame}}
 }
 \value{
 a \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}} that shows the variable names, labels,
-                  and levels (if applicable) from an \code{edsurvey.data.frame} or a \code{light.edsurvey.data.frame} based on a matching character string.
+                  and levels (if applicable) from an \code{edsurvey.data.frame} or a \code{light.edsurvey.data.frame} based on a matching character string
 }
 \description{
-Retrieve variable names and labels for an \code{edsurvey.data.frame},
+Retrieves variable names and labels for an \code{edsurvey.data.frame},
 a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
-using character string matching
+using character string matching.
 }
 \examples{
 # read in the example data (generated, not real student data)

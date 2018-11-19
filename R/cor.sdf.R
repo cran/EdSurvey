@@ -6,7 +6,7 @@
 #'
 #' @param x          a character variable name from the \code{data} to be correlated with \code{y}
 #' @param y          a character variable name from the \code{data} to be correlated with \code{x}
-#' @param data       an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
+#' @param data       an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
 #' @param method     a character string indicating which correlation coefficient (or covariance) is to be computed.
 #'                   One of \code{Pearson} (default), \code{Spearman}, \code{Polychoric}, or \code{Polyserial}.
 #' @param weightVar  character indicating the weight variable to use. See Details.
@@ -18,6 +18,14 @@
 #'                           to subset the data. Use \code{print} on an \code{edsurvey.data.frame} to see the default conditions.
 #' @param recode       a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
 #'                    \code{recode} \code{=} \code{list(var1} \code{=} \code{list(from} \code{=} \code{c("a","b","c"), to} \code{=} \code{"d"))}. See Examples.
+#' @param condenseLevels a logical value. When set to the default value of
+#'                       \code{TRUE} and either \code{x} or \code{y} is a
+#'                       categorical variable, the function will drop all unused
+#'                       levels and rank the levels of the variable before
+#'                       calculating the correlation. When set to \code{FALSE},
+#'                       the numeric levels of the variable remain the same as
+#'                       in the codebook. See Examples.
+#' 
 #' @details 
 #' Note that the \code{\link{getData}} arguments and \code{\link{recode.sdf}} may be useful. (See Examples.)
 #' The correlation methods are calculated as described in the documentation for the \code{wCorr} package---see \code{browseVignettes(package="wCorr")}.
@@ -36,7 +44,7 @@
 #' \item{\code{Vimp}}{the imputation component of the variance estimate. For Pearson, in the atanh space.}
 #' \item{\code{weight}}{the weight variable used}
 #' \item{\code{npv}}{the number of plausible values used}
-#' \item{\code{njk}}{the number of jackknife replicates used}
+#' \item{\code{njk}}{the number of the jackknife replicates used}
 #' 
 #' @seealso \ifelse{latex}{\code{cor}}{\code{\link[stats]{cor}}} and \ifelse{latex}{\code{weightedCorr}}{\code{\link[wCorr]{weightedCorr}}}
 #' @author Paul Bailey; relies heavily on the \code{wCorr} package, written by Ahmad Emad and Paul Bailey
@@ -54,7 +62,8 @@ cor.sdf <- function(x,
                     reorder = NULL,
                     omittedLevels=TRUE, 
                     defaultConditions=TRUE,
-                    recode = NULL) {
+                    recode = NULL,
+                    condenseLevels = TRUE) {
   if (inherits(data, c("edsurvey.data.frame.list"))) {
     # use itterateESDFL to do this call to every element of the edsurvey.data.frame.list
     return(itterateESDFL(match.call(),data))
@@ -114,7 +123,7 @@ cor.sdf <- function(x,
                       drop=FALSE,
                       omittedLevels=omittedLevels,
                       recode = recode,
-                      dropUnusedLevels=TRUE)
+                      dropUnusedLevels=condenseLevels)
 
   # Default conditions should be included only if the user set it. This adds the argument only if needed
   if(!missing(defaultConditions)) {
@@ -126,10 +135,19 @@ cor.sdf <- function(x,
   # if the weight variable is "one" then that will need to be a valid column
   if(weightVar=="one") {
     if("one" %in% colnames(lsdf)) {
-      stop("a column named one cannot be included in the input when weights of one are implicitly used. You can add your own weight one column as a work around.")
+      stop(paste0("A column named one cannot be included in the input when weights of one are implicitly used. You can rename the ", dQuote("one"), " column."))
     }
     lsdf$one <- 1
-  }
+  } else{
+    # weighted, check for negative weights
+    if(any(lsdf[,wgt] <= 0)) {
+      lsdf <- lsdf[lsdf[,wgt] > 0,]
+      if(nrow(lsdf) == 0) {
+        stop("No rows with positive weights.")
+      }
+      warning("Removing rows with 0 weight from analysis.")
+    }
+  } # end if(weightVar=="one")
   
   # do reordering of variables when the user requets a reorder
   if(!is.null(reorder[[x]])) {
@@ -139,7 +157,7 @@ cor.sdf <- function(x,
     } # End if statment: if lsdf is a factor
     if( sum(!reorder[[x]] %in% llx) > 0 ) {
       bad <- reorder[[x]][!reorder[[x]] %in% llx]
-      stop(paste0("Could not find reorder level(s) {", paste(sQuote(bad), collapse=", "), "} when reordering ", sQuote("x"), "."))
+      stop(paste0("Could not find reorder level(s) ", pasteItems(sQuote(bad), final="or"), " when reordering ", sQuote("x"), "."))
     } # End if Statment: if sum(!reorder[[x]] %in% llx) > 0
     lsdf[,x] <- factor(lsdf[,x], levels = c(reorder[[x]]))
   } # End if statment: if reorder x is not null 
@@ -152,7 +170,7 @@ cor.sdf <- function(x,
     } # End if statment: if lsdf[,y] is a factor 
     if( sum(!reorder[[y]] %in% lly) > 0 ) {
       bad <- reorder[[y]][!reorder[[y]] %in% lly]
-      stop(paste0("Could not find reorder level(s) {", paste(sQuote(bad), collapse=", "), "} when reordering ", sQuote("y"), "."))
+      stop(paste0("Could not find reorder level(s) ", pasteItems(sQuote(bad), final="or"), " when reordering ", sQuote("y"), "."))
     } # End if statment sum(!reorder[[y]] %in% lly) > 0 
     lsdf[,y] <- factor(lsdf[,y], levels = c(reorder[[y]]))
   } # End if statment: if reorder[[y]] is null
@@ -169,10 +187,19 @@ cor.sdf <- function(x,
       varn <- c()
       newv <- rep(NA,nrow(lsdf))
       for(z in 1:length(levels(lsdf[[i]]))) {
+        # Use llevels if it's a lfactor
+        if (inherits(lsdf[[i]],"lfactor") && !condenseLevels) {
+          zi <- llevels(lsdf[[i]])[z]
+        } else {
+          zi <- z
+        }
         varlev <- levels(lsdf[[i]])[z]
-        varm <- paste0(z,". ", varlev)
+        if (!varlev %in% unique(lsdf[[i]])) { # do not print out unused levels
+          next
+        }
+        varm <- paste0(zi,". ", varlev)
         varn <- c(varn, varm)
-        newv[lsdf[[i]] == varlev] <- z
+        newv[lsdf[[i]] == varlev] <- zi
       }
       lsdf[[i]] <- newv
       varlist <- list(c(varn))
@@ -186,7 +213,6 @@ cor.sdf <- function(x,
   # end reorder variables
 
   # extract plausible values
-  # TODO: why
   if(hpvx) {
     xvarlsdf <- lsdf[,pvx <- getPlausibleValue(x, lsdf), drop=FALSE] #lsdf
   } else {
@@ -204,7 +230,6 @@ cor.sdf <- function(x,
 
 
   # get method
-  # TODO: method is per the documentation a single string so why are we taking the first item? 
   method <- method[[1]]
   # correlation method (pm)
   pm <- pmatch(tolower(method), tolower(c("Pearson", "Spearman", "Polychoric", "Polyserial")))
@@ -249,7 +274,6 @@ cor.sdf <- function(x,
   # the rest of the code estimates the variance
 
   # for each jackknife replicate
-  #TODO: first and second line have same comment- how are they differnt? 
   jkwgtdf <- lsdf[,paste0(wgtl$jkbase, wgtl$jksuffixes), drop=FALSE] #dataframe of jk replicate weights
   diagVarWgt <- matrix(NA,ncol=length(xvarlsdf),nrow=length(wgts))
   

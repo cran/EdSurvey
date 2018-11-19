@@ -8,20 +8,27 @@ downloadPIAAC(root, round = 1, cache = FALSE, verbose = TRUE)
 }
 \arguments{
 \item{root}{a character string indicating the directory where the PIAAC data should
-be stored. Note that files are placed in a folder named PIAAC and then in
-a year subdirectory.}
+be stored. Files are placed in a folder named PIAAC/Round [round number].}
 
-\item{round}{a numeric value indicating the assessment round to download. Available round now is only 1 for 2012/2014 (the default).}
+\item{round}{a numeric value indicating the assessment round to download. Valid round is 1 only (2012/2014).}
 
-\item{cache}{a logical value set to \code{FALSE} to cache .txt versions of files. If set to \code{TRUE}, the function will
-process all downloaded files, which might take several hours.}
+\item{cache}{a logical value set to process and cache the text (.txt) version of files.
+This takes a very long time but saves time for future uses of 
+the data. Default value is \code{FALSE}.}
 
-\item{verbose}{a logical value that determines if you want verbose output while the function is running to indicate the progress.
-Defaults to \code{TRUE}.}
+\item{verbose}{a logical value to either print or suppress status message output.
+The default value is \code{TRUE}.}
 }
 \description{
 Uses a connection to download PIAAC data to a
              computer. Data come from the OECD website.
+}
+\examples{
+\dontrun{
+# Download all available data for PIAAC round 1 to "C:/PIAAC/Round 1" folder
+# root argument will vary by operating system conventions
+downloadPIAAC(root="C:/")
+}
 }
 \author{
 Trang Nguyen

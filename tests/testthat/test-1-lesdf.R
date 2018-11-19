@@ -6,10 +6,15 @@ require(EdSurvey)
 #  setwd(system.file("testRDs", package = "EdSurvey"))
 # }
 options(width = 500)
-source("REF-1-lesdf.R") # has REF output in it
-sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
-lsdf <- getData(sdf, c(all.vars(composite ~ dsex + b017451), "origwt"), addAttributes=TRUE)
-suppressWarnings(lsdf0 <- getData(sdf, colnames(sdf), addAttributes=TRUE, omittedLevels=FALSE, defaultConditions=FALSE))
+#source("REF-1-lesdf.R") # has REF output in it
+
+context("read LESDF")
+test_that("read LESDF",{
+  sdf <<- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+  lsdf <<- getData(sdf, c(all.vars(composite ~ dsex + b017451), "origwt"), addAttributes=TRUE)
+  suppressWarnings(lsdf0 <<- getData(sdf, colnames(sdf), addAttributes=TRUE, omittedLevels=FALSE, defaultConditions=FALSE))
+  expect_is(lsdf, "light.edsurvey.data.frame")
+})
 
 context("LESDF cbind function")
 test_that("LESDF cbind function",{
@@ -70,7 +75,7 @@ test_that("getData addAttributesTRUE returns a LESDF", {
 
 context("getData ignores defaultConditions when applied twice")
 test_that("getData ignores defaultConditions when applied twice", {
-  skip_on_cran()
+  #skip_on_cran()
   lsdf1 <- getData(sdf, c("composite", "dsex", "b017451", "origwt"), addAttributes=TRUE, defaultConditions=FALSE)
   expect_equal(lsdf1, suppressWarnings(lsdf2 <- getData(lsdf1, c("composite", "dsex", "b017451", "origwt"))))
   expect_equal(lsdf1, suppressWarnings(lsdf3 <- getData(lsdf1, c("composite", "dsex", "b017451", "origwt"), defaultConditions=FALSE)))
@@ -164,7 +169,7 @@ test_that("LESDF Simple functions", {
 
 context("LESDF gap")
 test_that("LESDF gap",{
-  skip_on_cran()
+  #skip_on_cran()
   g1 <- gap("composite", sdf, dsex=="Male", dsex=="Female")
   # omittedLevels must be set to FALSE or rows will be deleted because of other columns
   # using omitted levels 
@@ -178,7 +183,7 @@ test_that("LESDF gap",{
 
 context("LESDF achievementLevels")
 test_that("LESDF achievementLevels",{
-  skip_on_cran()
+  #skip_on_cran()
   lsdf1l <- getData(sdf, c("composite", "origwt"), addAttributes=TRUE)
   expect_known_value(test1l <- achievementLevels(returnCumulative = TRUE, data=lsdf1l), file="aLevels_test1.rds", update=FALSE)
   a1 <- achievementLevels(c("composite","dsex", "b017451"),
@@ -207,7 +212,7 @@ test_that("LESDF achievementLevels",{
 
 context("LESDF cor.sdf")
 test_that("LESDF cor.sdf",{
-  skip_on_cran()
+  #skip_on_cran()
   b3 <- cor.sdf("m815401", "b017451",method="Pearson", sdf,weightVar = "origwt")
   lsdf2 <- getData(sdf,c("m815401","m815701", "b017451","origwt"), addAttributes=TRUE, omittedLevels = FALSE)
   b4 <- cor.sdf("m815401", "b017451",method="Pearson", lsdf2,weightVar = "origwt", omittedLevels=TRUE) # dropUnusedLevels nolonger revealed, not set
@@ -232,26 +237,28 @@ test_that("LESDF cor.sdf",{
 
 context("LESDF lm.sdf")
 test_that("LESDF lm.sdf",{
-  skip_on_cran()
+  #skip_on_cran()
 	sdfoutput <- capture.output(print(sm1 <- summary(lm.sdf(composite ~ dsex + b017451,sdf, jrrIMax=Inf))))
 	gdoutput <- capture.output(print(sm2 <- summary(lm.sdf(composite ~ dsex + b017451,lsdf, jrrIMax=Inf))))
 	expect_equal(sdfoutput, gdoutput)
 	# do not expect the calls to be the same
 	sm1$call <- sm2$call <- NULL
   sm2$lm0 <- sm1$data <- NULL
+  sm1$waldDenomBaseDof <- NULL # sm2 will no have this because lsdf does not have the PSU nor stratum
 	expect_equal(sm1, sm2)
 })
 
 context("LESDF print")
 test_that("LESDF print",{
-  skip_on_cran()
+  #skip_on_cran()
 	sdfoutput <- capture.output(print(sm1 <- lm.sdf(composite ~ dsex + b017451,sdf, jrrIMax=Inf)))
 	gdoutput <- capture.output(print(sm2 <- lm.sdf(composite ~ dsex + b017451,lsdf, jrrIMax=Inf)))
 	expect_equal(gdoutput, sdfoutput)
 	# do not expect the calls to be the same
 	sm1$call <- sm2$call <- NULL
   sm2$lm0 <- sm1$data <- NULL
-	expect_equal(sm1, sm2)
+  sm1$waldDenomBaseDof <- NULL # sm2 will no have this because lsdf does not have the PSU nor stratum
+  expect_equal(sm1, sm2)
 })
 
 context("LESDF edsurveyTable")
@@ -283,7 +290,7 @@ test_that("LESDF lm.sdf correctly returns errors",{
 	sm1 <- subset(sm1, dsex == "Female")
 	expect_error(suppressWarnings(lm.sdf(composite ~ dsex + b017451,sm1, jrrIMax=Inf)))
   #LESDF lm.sdf function returns error with contradicting subset and relevel
-  skip_on_cran()
+  #skip_on_cran()
 	sm1 <- getData(sdf, c(all.vars(composite ~ dsex + b017451), "origwt"), addAttributes=TRUE)
 	# no error with relevel calls 
 	expect_is(lm.sdf(composite ~ dsex + b017451, relevels = list(dsex="Male"),sm1, jrrIMax=Inf), "edsurveyLm")
@@ -326,4 +333,21 @@ test_that("LESDF same survey",{
   expect_true(EdSurvey:::sameSurvey(sdf, lsdf))
   expect_true(EdSurvey:::sameSurvey(sdf, lsdf0))
   expect_true(EdSurvey:::sameSurvey(lsdf, lsdf0))
+})
+
+context('LESDF use returnNumberOfPSU=TRUE') 
+test_that("use returnNumberOfPSU", {
+  # percentile
+  lsdf2 <- getData(sdf, c("composite","dsex","origwt",getAttributes(sdf,'psuVar'), getAttributes(sdf,'stratumVar')), addAttributes = TRUE)
+  pctPSU <- percentile("composite", percentiles = c(10,50), data = lsdf2, returnNumberOfPSU = TRUE)
+  expect_equal(attr(pctPSU,'nPSU'), 124)
+  
+  # lm.sdf
+  lmPSU <- lm.sdf(composite ~ dsex, data=lsdf2, returnNumberOfPSU = TRUE)
+  expect_equal(lmPSU$nPSU,124)
+  
+  # gap
+  gapPSU <- gap("composite",data=lsdf2, groupA = dsex %in% "Male", groupB = dsex %in% "Female", returnNumberOfPSU = TRUE)
+  expect_equal(gapPSU$labels$nPSUA,124)
+  
 })

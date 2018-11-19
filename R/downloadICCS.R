@@ -1,23 +1,24 @@
-#' @title Instructions for Downloading and Unzipping CivED or ICCS files
+#' @title Instructions for Downloading and Unzipping CivED or ICCS Files
 #'
 #' @description Provides instructions to download CivED or ICCS data to be processed in \code{readCivEDICCS}.   
 #' 
-#' @param year an integer vector indicating the study year. Valid years are 1999 and 2009.
+#' @param years an integer vector indicating the study year. Valid years are 1999 and 2009.
 #' @author Tom Fink
 #' 
+#' @example man/examples/downloadICCS.R
 #' @seealso \code{\link{readCivEDICCS}}
 #' @export
-downloadCivEDICCS <- function(year=c(1999, 2009)) {
+downloadCivEDICCS <- function(years=c(1999, 2009)) {
   
-  if(is.null(year)){
-    stop(paste0("The argument ", sQuote("year"), " must not be null."))
+  if(is.null(years)){
+    stop(paste0("The argument ", sQuote("years"), " must not be null."))
   }
   
-  if(any(!(year %in% c(1999, 2009)))){
-    stop(paste0("The argument ", sQuote("year"), " must have values of only ", sQuote("1999"), " or ", sQuote("2009"), "."))
+  if(any(!(years %in% c(1999, 2009)))){
+    stop(paste0("The argument ", sQuote("years"), " must have values of only ", sQuote("1999"), " or ", sQuote("2009"), "."))
   }
   
-  linkURL <- "http://rms.iea-dpc.org/"
+  linkURL <- "https://www.iea.nl/data"
   
   txt <- c()
   txt <- c(txt, paste0("Please manually download and extract the SPSS (*.sav) formatted CivED 1999 or ICCS 2009 study data files from the IEA Data Repository to a folder on your local system or network. ",
@@ -25,27 +26,18 @@ downloadCivEDICCS <- function(year=c(1999, 2009)) {
                        "See help page (?readCivEDICCS) for more details."))
   txt <- c(txt, "\n")
   
-  txt <- c(txt, paste0("\t", "1) Launch the IEA Data Repository web URL (", linkURL ,") in your web browser."))
+  txt <- c(txt, paste0("\t", "1) Launch the IEA Data Repository web URL (", linkURL ,") in your web browser.",
+                       " An IEA Account is required to download the data, so either create one following the IEA instructions, or login with an existing account."))
   
-  txt <- c(txt, paste0("\t", "2) Click on ", dQuote("Search"), " to view available studies. Under ", dQuote("Select Study"), ", use the study navigation tool to select the ", 
-                       dQuote("CivED"), " or ", dQuote("ICCS"), " Study, Grade Level, and Study Year."))
+  txt <- c(txt, paste0("\t", "2) Click on the ", dQuote("here"), " link under ", dQuote("The IEA Data Repository"), " section to proceed, ", 
+                       "then click the ", dQuote("1. IEA Data Repository"), " link to view all available studies for download. ",
+                       "Find your study (CivED or ICCS) and click the appropriate studies ", dQuote("year"), " link you wish to download."))
   
-  txt <- c(txt, paste0("\t", "3) Under ", dQuote("Select File Types and Countries"), ", select all file types (columns) available for the study, as well as all education systems (rows) you wish to analyze. ",
-                       "The EdSurvey package will require all the available file types to be present for the read-in functions to work correctly. ",
-                       "A specific country might be missing particular file types, which is normal."))
+  txt <- c(txt, paste0("\t", "3) Next, select the link ", dQuote("Download SPSS Data & Documentation"), ", because the SPSS (*.sav) files are compatible with the ", dQuote("readCivEDICCS()"), " function in EdSurvey. ",
+                       "Follow your web browser's prompts to download the resulting *.zip file to a folder location you can find later."))
   
-  txt <- c(txt, paste0("\t", "4) Next, under ", dQuote("Select Format"), ", select the ", dQuote("SPSS"), " option for the data file format. ",
-                "The EdSurvey package, requires SPSS (*.sav) formatted file types for the ", dQuote("readCivEDICCS"), " function."))
-  
-  txt <- c(txt, paste0("\t", "5) Optionally, under ", dQuote("Select Documentation"), ", you may select any codebooks, user guides, or additional documents relevant to the study."))
-  
-  txt <- c(txt, paste0("\t", "6) Next to ", dQuote("Download Name"), ", enter a filename into the textbox and click the ", dQuote("Add to Basket"), " button to create a zip file (*.zip) download specification with your selections."))
-  
-  txt <- c(txt, paste0("\t", "7) Click the ", dQuote("View Basket"), " button, or ", dQuote("Basket"), " tab, to see your newly created file. ",
-                "Download the zip container to a specified folder by clicking the ", sQuote("disk"), " icon and following your specific web browser prompts."))
-  
-  txt <- c(txt, paste0("\t", "8) Locate your downloaded zip file (*.zip) container and use an extraction program to extract the folder's file contents. ",
-                "It is recommended to extract the SPSS (*.sav) files to an easy-to-remember folder path based on the study and year (e.g., for Microsoft Windows OS, ", sQuote("C:/CivED1999/"), ", ", sQuote("C:/ICCS2009/"), ")."))
+  txt <- c(txt, paste0("\t", "4) Locate your downloaded zip file (*.zip) container and use an extraction program to extract the folder's file contents. ",
+                       "It is recommended to extract the SPSS (*.sav) files to an easy-to-remember folder path based on the study and year (e.g., for Microsoft Windows OS, ", sQuote("C:/EdSurveyData/CivED/1999/"), ", ", sQuote("C:/EdSurveyData/ICCS/2009/"), ")."))
   
   txt <- c(txt, "\n")
 
@@ -56,4 +48,6 @@ downloadCivEDICCS <- function(year=c(1999, 2009)) {
   if(tolower(trimws(nav))=="y"){
     browseURL(linkURL)
   }
+  
+  return(invisible(NULL))
 }

@@ -3,35 +3,43 @@
 #' @description Uses a connection to download PISA data to a
 #'              computer. Data come from the OECD website. 
 #' 
-#' @param year the assessment years to download. Available years are 2000, 2003,
-#'             2006, 2009, and 2012. To download data for all available years,
-#'             users can input \code{*} (the default).
-#' @param database a character to indicate which database to download from. For 2012,
+#' @param root a character string indicating the directory where the PISA data should
+#'             be stored. Files are placed in a folder named PISA/[year].
+#' @param years an integer vector of the assessment years to download. Valid years are 2000, 2003,
+#'              2006, 2009, and 2012.
+#' @param database a character vector to indicate which database to download from. For 2012,
 #'              three databases are available (INT = International, CBA = Computer-Based Assessment, and
 #'              FIN = Financial Literacy). Defaults to \code{INT}.
-#' @param root a character string indicating the directory where the PISA data should
-#'             be stored. Note that files are placed in a folder named PISA and then in
-#'             a year subdirectory.
-#' @param cache a logical value set to \code{FALSE} to cache .txt versions of files. If set to \code{TRUE}, the function will
-#'        process all downloaded files, which might take several hours. 
-#' @param verbose a logical value that determines if you want verbose output while the function is running to indicate the progress.
-#'        Defaults to \code{TRUE}.   
+#' @param cache a logical value set to process and cache the text (.txt) version of files.
+#'              This takes a very long time but saves time for future uses of 
+#'              the data. Default value is \code{FALSE}.
+#' @param verbose a logical value to either print or suppress status message output.
+#'                The default value is \code{TRUE}.
+#' @details The function uses \ifelse{latex}{\code{download.file}}{\code{\link[utils]{download.file}}} to download files from provided URLs. 
+#'          Some machines might require a different user agent in HTPP(S) requests. If the downloading gives an error or behaves unexpectedly 
+#'          (for example, a zip file cannot be unzipped or a data file is significantly smaller than expected), users can toggle \code{HTPPUserAgent}
+#'          options to find one that works for their machines. One common alternative option is 
+#'
+#'          \code{options(HTTPUserAgent="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/53.0")}. 
+#' @seealso \code{\link{readPISA}}, \ifelse{latex}{\code{download.file}}{\code{\link[utils]{download.file}}}, \ifelse{latex}{\code{options}}{\code{\link[base]{options}}}
 #' @author Trang Nguyen
+#' @example man/examples/downloadPISA.R
 #' @importFrom utils unzip
 #' @export
-downloadPISA <- function(year="*", database="INT", root, cache=FALSE, verbose=TRUE) {
+downloadPISA <- function(root, years=c(2000,2003,2006,2009,2012), database=c("INT","CBA","FIN"), cache=FALSE, verbose=TRUE) {
   # valid years for PISA
-  validYears <- c(2000,2003,2006,2009,2012,2015)
-  if ("*" %in% year) {
-    year <- validYears
+  validYears <- c(2000,2003,2006,2009,2012)
+  years <- as.numeric(years)
+  if (missing(database)) {
+    # if database is not specified, default to be INT because usually users do not want to download all databases
+    database <- database[1]
   }
-  year <- as.numeric(year)
-  for (y in year) {
+  for (y in years) {
     if(verbose) {
-      cat(paste0("\n Processing PISA data for year ", y, "\n"))
+      cat(paste0("\nProcessing PISA data for year ", y, "\n"))
     }
     if (y == 2015) {
-      cat("\n PISA 2015 is currently on hold to wait for FWF file distribution license from OECD. \n")
+      warning("There is no PISA 2015 fixed-width file from OECD. Files are not downloaded.")
       next
     }
     if (!y %in% validYears) {
@@ -50,37 +58,60 @@ downloadPISA <- function(year="*", database="INT", root, cache=FALSE, verbose=TR
     }
     
     # Download all files
-    collected_files <- pisaURLDat(y,database)
-    for (f in collected_files) {
-      fn <- basename(f)
-      if(!file.exists(file.path(yroot,fn))) {
-        #options(HTTPUserAgent="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/53.0")
-        if(grepl("http",f, ignore.case = T)) {
-          download.file(f,file.path(yroot,fn))
-        } else {
-          download.file(paste0("http://www.oecd.org/",f),file.path(yroot,fn))
-        }
+    for (d in database) {
+      collected_files <- pisaURLDat(y,d)
+      if (length(collected_files) == 0) {
+        next
       }
-    }
-    # Unzipping files
-    zFiles <- list.files(yroot,pattern = "\\.zip$", ignore.case = T, full.names = F)
-    zFiles <- file.path(yroot,zFiles)
-    for (z in zFiles) {
-      lst <- unzip(z, list = TRUE)
-      for(i in 1:nrow(lst)) {
-        if(!file.exists(file.path(yroot,basename(lst$Name[i]))) | file.info(file.path(yroot,basename(lst$Name[i])))$size != lst$Length[i]) {
-          unzip(z,files=lst$Name[i], exdir = yroot)
-          if(basename(lst$Name[i]) != lst$Name[i]) {
-            file.rename(file.path(yroot,lst$Name[i]), file.path(yroot,basename(lst$Name[i])))
+      if(verbose) {
+        cat(paste0("Database ",d,"\n"))
+      }
+      for (f in collected_files) {
+        fn <- basename(f)
+        if(!file.exists(file.path(yroot,fn))) {
+          #options(HTTPUserAgent="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/53.0")
+          if(grepl("http",f, ignore.case = T)) {
+            download.file(f,file.path(yroot,fn),quiet = !verbose)
+          } else {
+            download.file(paste0("http://www.oecd.org/",f),file.path(yroot,fn), quiet = !verbose)
+          }
+        } else {
+          if (verbose) {
+            cat(paste0("Found downloaded ",y," PISA (",d," database) file ",fn,".\n"))
           }
         }
       }
-    }
-    # Process files if required
-    if (cache) {
-      suppressWarnings(notUsed <- readPISA(yroot, database = database, countries = "*", verbose = verbose))
-      notUsed <- NULL
-    }
+      # Unzipping files
+      zFiles <- list.files(yroot,pattern = "\\.zip$", ignore.case = T, full.names = F)
+      zFiles <- file.path(yroot,zFiles)
+      for (z in zFiles) {
+        lst <- tryCatch(unzip(z, list = TRUE),
+                        error = function(cond) {
+                          message("File downloading for ",z," does not work properly. Users might need to change HTTPUserAgent option. See ?downloadPISA for more information.")
+                          stop(cond)
+                        })
+        if(verbose) {
+          cat(paste0("Unzipping ",y," PISA (",d," database) files from ",z,"\n"))
+        }
+        for(i in 1:nrow(lst)) {
+          if(!file.exists(file.path(yroot,basename(lst$Name[i]))) | file.info(file.path(yroot,basename(lst$Name[i])))$size != lst$Length[i]) {
+            if (verbose) {
+              cat(paste0(" unzipping ",lst$Name[i],"\n"))
+            }
+            unzip(z,files=lst$Name[i], exdir = yroot)
+                    
+            if(basename(lst$Name[i]) != lst$Name[i]) {
+              file.rename(file.path(yroot,lst$Name[i]), file.path(yroot,basename(lst$Name[i])))
+            }
+          }
+        }
+      }
+      # Process files if required
+      if (cache) {
+        suppressWarnings(notUsed <- readPISA(yroot, database = d, countries = "*", verbose = verbose))
+        notUsed <- NULL
+      }
+    } #end for each database
   }#end for each year
 }
 

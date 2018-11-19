@@ -4,19 +4,23 @@
 \alias{downloadTIMSS}
 \title{Download and Unzip TIMSS Files}
 \usage{
-downloadTIMSS(years = c(2003, 2007, 2011, 2015), root, cache = FALSE)
+downloadTIMSS(root, years = c(2003, 2007, 2011, 2015), cache = FALSE,
+  verbose = TRUE)
 }
 \arguments{
+\item{root}{a character string indicating the directory where the TIMSS
+data should be stored. Files are placed in a
+subdirectory named TIMSS/[year].}
+
 \item{years}{an integer vector of the assessment years to download. Valid years are 2003, 2007, 2011,
 and 2015.}
 
-\item{root}{a character string indicating the directory where the TIMSS
-data should be stored. Note that files are placed in a
-subdirectory named TIMSS[year].}
-
-\item{cache}{a logical value set to process and cache the txt version of files.
+\item{cache}{a logical value set to process and cache the text (.txt) version of files.
 This takes a very long time but saves time for future uses of 
 the data. Default value is \code{FALSE}.}
+
+\item{verbose}{a logical value to either print or suppress status message output.
+The default value is \code{TRUE}.}
 }
 \description{
 Uses an Internet connection to download TIMSS data.
@@ -30,6 +34,10 @@ downloadTIMSS(year=c(2015, 2011), root = "C:/")
 
 # cache=TRUE will download then process the datafiles
 downloadTIMSS(year=2015, root = "C:/", cache = TRUE)
+
+#set verbose=FALSE for silent output
+#if year not specified, download all years
+downloadTIMSS(root="C:/", verbose = FALSE)
 }
 }
 \seealso{

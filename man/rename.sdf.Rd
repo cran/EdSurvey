@@ -13,7 +13,7 @@ or an \code{edsurvey.data.frame.list}}
 \item{oldnames}{a character vector of old variable names}
 
 \item{newnames}{a character vector of new variable names to replace the
-corresponding old names.}
+corresponding old names}
 
 \item{avoid_duplicated}{a logical value to indicate whether to avoid renaming the
 variable if the corresponding new name already exists in the data. 

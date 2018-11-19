@@ -16,7 +16,7 @@ that use plausible values.}
 }
 \description{
 Prints a summary of the subject scale or subscale and the associated variables for their
-             plausible values for an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
+             plausible values for an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 }
 \examples{
 # read in the example data (generated, not real student data)

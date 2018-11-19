@@ -8,7 +8,7 @@ recode.sdf(x, recode)
 }
 \arguments{
 \item{x}{an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, 
-or an \code{edsurvey.data.frame.list}.}
+or an \code{edsurvey.data.frame.list}}
 
 \item{recode}{a list of recoding rules. See Examples for the format of recoding rules.}
 }
@@ -21,13 +21,15 @@ Recodes variables in an \code{edsurvey.data.frame},
 }
 \examples{
 \dontrun{
+# filepath argument will vary by operating system conventions
 usaG4.15 <- readTIMSS("C:/TIMSS2015", "usa", 4)
 d <- getData(usaG4.15, "itsex")
 summary(d) #show details: MALE/FEMALE
-usaG4.15 <- recode.sdf(usaG4.15, recode = list(itsex=list(from=c("MALE"),
-                                              to=c("BOY")),
-                                   itsex=list(from=c("FEMALE"),
-                                              to=c("GIRL"))))
+usaG4.15 <- recode.sdf(usaG4.15,
+                       recode = list(itsex=list(from=c("MALE"),
+                                                to=c("BOY")),
+                                     itsex=list(from=c("FEMALE"),
+                                                to=c("GIRL"))))
 
 d <- getData(usaG4.15, "itsex") #apply recode
 summary(d) #show details: BOY/GIRL

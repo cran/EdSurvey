@@ -16,7 +16,9 @@ print.edsurvey.data.frame <- function(x, printColnames = FALSE, ...) {
     stop(paste0(sQuote("x"), " must be an edsurvey.data.frame"))
   }
   dm <- dim(x)
-  cat(paste0("edsurvey.data.frame with ", dm[1], " rows and ", dm[2], " columns.\n"))
+  cat(paste0("edsurvey.data.frame for ", x$year, " ", x$survey, " (", paste(x$subject, collapse=", "),") in ", x$country, "\n\n"))
+
+  cat(paste0("Dimensions: ", dm[1], " rows and ", dm[2], " columns.\n"))
 
   if (printColnames) {
     cat("Column names:\n")
@@ -28,24 +30,11 @@ print.edsurvey.data.frame <- function(x, printColnames = FALSE, ...) {
     showWeights(x, verbose = FALSE)
   }
   
-  
   if (length(x$pvvars) > 0) {
     cat("\n")
     showPlausibleValues(x, verbose = FALSE)
   }
   
-  # Describe File attributes
-  if (length(x$fileDescription) > 0) {
-    cat("Description of data:\n")
-    for (i in 1:length(x$fileDescription)) {
-      # pastes the i-th name and label for each value in sdf$fileDescription
-      description <- x$fileDescription[[i]]
-      cat(paste0("  ", names(x$fileDescription)[i], ": ", description, "\n"))
-    } # end of for loop: i in 1:length(x$fileDescription)
-  } # end of If statment: if length of fileDescrption is greater than 0
-  
-  # Describe omitted.levels pastes each omitted level, collapsing by ', ' (ex: 'Multiple',
-  # 'NA', 'Omitted')
   if (length(x$omittedLevels) > 0) {
     cat("\n")
     cat(paste0("Omitted Levels: '", paste(unlist(x$omittedLevels), collapse = "', '"), "'\n"))
@@ -99,8 +88,6 @@ print.edsurvey.data.frame <- function(x, printColnames = FALSE, ...) {
       }
     }
   }
-
-  cat(paste0("\nSurvey: ", x$survey, "\n"))
 }
 
 #' @export

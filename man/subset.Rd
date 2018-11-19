@@ -15,7 +15,7 @@ or a \code{light.edsurvey.data.frame}}
 
 \item{subset}{a logical expression indicating elements or rows to keep}
 
-\item{...}{not used; included only for compatibility.}
+\item{...}{not used; included only for compatibility}
 
 \item{inside}{set to \code{TRUE} to prevent the \code{substitute} condition
 from being called on it. See Details.}

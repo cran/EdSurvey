@@ -69,8 +69,8 @@
 #' can calculate the average of the subject scale or subscale for students at
 #' each level of the cross-tabulation table. 
 #'       
-#' A detailed description of all statistics is given in the
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}.
+#' A detailed description of all statistics is given in the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.
 #' 
 #' @return A table with the following columns:
 #'    \item{RHS levels}{one column for each right-hand side variable. Each row
@@ -78,28 +78,28 @@
 #'    \item{\code{N}}{count of the number of students in the survey in the \code{RHS levels}}
 #'    \item{\code{WTD_N}}{the weighted \emph{N} count of students in the survey in \code{RHS levels}}
 #'    \item{\code{PCT}}{the percentage of students at the aggregation level specified by \code{pctAggregationLevel} (see Arguments).
-#'                      See the
-#'         \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
-#'             section
+#'                      See the vignette titled
+#'         \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+#'             in the section
 #' \dQuote{Estimation of Weighted Percentages} and its first subsection
 #' \dQuote{Estimation of Weighted Percentages When Plausible Values Are Not Present.}}
 #'    \item{\code{SE(PCT)}}{the standard  error of the percentage, accounting
 #'                          for the survey sampling methodology. When \code{varMethod}
 #'                          is \code{jackknife}, the calculation of this column is
-#'                          described in the
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
-#'  section
+#'                          described in the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+#'  in the section
 #' \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Jackknife Method.}
-#'                       When \code{varMethod} is set to \code{Taylor}, then the calculation of this column is described in
+#'                       When \code{varMethod} is set to \code{Taylor}, the calculation of this column is described in
 #' \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Taylor Series Method.}
 #' }
-#'    \item{\code{MEAN}}{the mean assessment score for units in the \code{RHS levels}, calculated according to the 
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
-#' section
+#'    \item{\code{MEAN}}{the mean assessment score for units in the \code{RHS levels}, calculated according to the  vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+#' in the section
 #' \dQuote{Estimation of Weighted Means When Plausible Values Are Present.}}
-#'    \item{\code{SE(MEAN)}}{the standard error of the \code{MEAN} column (the mean assessment score for units in the \code{RHS levels}), calculated according to the 
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}                      
-#' sections
+#'    \item{\code{SE(MEAN)}}{the standard error of the \code{MEAN} column (the mean assessment score for units in the \code{RHS levels}), calculated according to the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}                      
+#' in the sections
 #' \dQuote{Estimation of Standard Errors of Weighted Means When Plausible Values Are Present, Using the Jackknife Method}
 #' or 
 #' \dQuote{Estimation of Standard Errors of Weighted Means When Plausible Values Are Present, Using the Taylor Series Method,}
@@ -119,10 +119,7 @@
 #' @example man/examples/edsurveyTable.R
 #' @author Paul Bailey and Ahmad Emad
 #'
-#' @importFrom stats terms
-#' @importFrom stats ftable
-#' @importFrom stats aggregate
-#' @importFrom stats ave
+#' @importFrom stats terms ftable aggregate ave
 #' @importFrom data.table setDT copy
 #' @export
 edsurveyTable <- function(formula,
@@ -138,7 +135,7 @@ edsurveyTable <- function(formula,
                           defaultConditions=TRUE,
                           recode=NULL,
                           returnVarEstInputs=FALSE) {
-
+  
   # Test class of incoming data 
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
   
@@ -148,7 +145,7 @@ edsurveyTable <- function(formula,
     ll <- length(data$datalist)
     
     labels <- as.character(c(1:ll))
-
+    
     for(i in 1:ll) {
       sdf <- data$datalist[[i]]
       temp <- tryCatch(result <-calcEdsurveyTable(formula, sdf, weightVar, jrrIMax, pctAggregationLevel,
@@ -193,12 +190,13 @@ edsurveyTable <- function(formula,
         for(i in 1:ncol(data$covs)) {
           cmbDi[,colnames(data$covs)[i]] <- rep(data$covs[listi,i], nrow(cmbDi))
         }
-        cmbD <- rbind(cmbD, cmbDi[,cnames]) 
+        cmbD <- rbind(cmbD, cmbDi[,cnames])
       }
     }
     # add column labels back
     for(i in 1:ncol(cmbD)) {
-      mostattributes(cmbD[,i]) <- attributes(cmbD0[,i])
+      # note, this works even if attributes(cmbD0[,i])$label is NULL
+      attr(cmbD[,i], "label") <- attributes(cmbD0[,i])$label
     }
     cmbRes$data <- cmbD
     cmbRes$n0 <- NA
@@ -233,19 +231,19 @@ calcEdsurveyTable <- function(formula,
                               returnVarEstInputs=FALSE,
                               dropUnusedLevels = TRUE
 ) {
-
+  
   ## outline: ###################
   ## 1) check and format inputs           
   ## 2) get the data
   ## 3) build the output table
   ###############################
   # in section 3, the table is built column by column
-
-
+  
+  
   ## 1) check and format inputs           
   # test class of incoming data
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
-
+  
   if(is.null(weightVar)) {
     wgt <- attributes(getAttributes(data, "weights"))$default
   } else {
@@ -271,6 +269,15 @@ calcEdsurveyTable <- function(formula,
   }
   rhs_vars <- all.vars(formula[[3]])
   
+  # check yvar and rhs_vars
+  # rhs_vars must be  discrete variables
+  if (!all(typeOfVariable(rhs_vars,data) %in% "discrete")) {
+    warning("Variables on the right-hand side of the formula must be discrete. Nondiscrete variables will be removed from the formula.")
+    rhs_vars <- rhs_vars[typeOfVariable(yvar,data) %in% "discrete"]
+  }
+  
+  
+  
   # define default aggregation level
   if(is.null(pctAggregationLevel)) {
     # set this to aggregate as far down as is reasonable
@@ -288,7 +295,7 @@ calcEdsurveyTable <- function(formula,
   
   # get plausible values 
   pvy <- hasPlausibleValue(yvar, data)
-
+  
   # when we use plausible values there are multiple y variables. When we do not there is only one
   # this code sets it up correctly
   yvars <- yvar
@@ -299,26 +306,31 @@ calcEdsurveyTable <- function(formula,
       stop(paste0("Cannot find ", sQuote(yvars), " in the edsurvey.data.frame."))
     }
   }
-
+  
   if(returnMeans) {
     yvar0 <- yvars[1]
   }
   
+  
+  
   ## 2) get the data                            
   #We need to get all the weights
-  wgtl <- data$weights[[wgt]]
+  wgtl <- getAttributes(data,"weights")[[wgt]]
   # build the replicate weight vector
   wgtall <- paste0(wgtl$jkbase, wgtl$jksuffixes)
-
-  reqvar <- c(all.vars(formula), wgt)
+  if (!returnMeans) {
+    reqvar <- c(all.vars(formula[[3]]), wgt)
+  } else {
+    reqvar <- c(all.vars(formula), wgt)
+  }
   if(returnMeans) {
     reqvar <- c(reqvar, wgtall)
   }
-  # when not returning means, get NAs as NA.
-  includeNaLabel <- !returnMeans
+  # when including omittedLevels, include NA label
+  includeNaLabel <- !omittedLevels
   # add Taylor variables, when needed
   if(varMethod=="t") {
-    reqvar <- c(reqvar, getAttributes(data, "psuVar"), getAttributes(data, "stratumVar"))
+    reqvar <- c(reqvar, getPSUVar(data, weightVar), getStratumVar(data, weightVar))
   }
   # only call with defaultConditions if it was in the call to edsurveyTable
   if(defaultConditionsMissing) {
@@ -332,304 +344,371 @@ calcEdsurveyTable <- function(formula,
                     drop= drop,
                     omittedLevels=omittedLevels, defaultConditions=defaultConditions, recode=recode, addAttributes=TRUE)
   }
+  if((returnMeans | returnSepct) & any(edf[,wgt] <= 0)) {
+    warning("Removing rows with 0 weight from analysis.")
+    edf <- edf[edf[,wgt] > 0,]
+  }
+
   if (nrow(edf) == 0) {
-    stop("The requested data has 0 row so crosstab analysis cannot be done.")
+    stop("The requested data has 0 rows, so crosstab analysis cannot be done.")
   }
-  ## 3) build the output
-  # this makes the n sizes and RHS variables in a table
-  n <- ftable(edf[,rhs_vars, drop=FALSE])
-  res <- data.frame(n)
-  #if length(rhs_vars) is 1, then the names do not get assigned correctly. Fix that.
-  names(res) <- c(rhs_vars, "N") # does nothing unless length(rhs_vars)==1
-  # fastAgg is similar to aggregate, but fast.
-  # add the weighted Ns
-  wtdn <- fastAgg(formula(paste0(wgt, " ~ ", paste(rhs_vars, collapse=" + "))), data=edf, FUN=sumna)
-  
-  # rename the last column to WTD_N
-  last_column <- names(wtdn)[length(names(wtdn))]
-  wtdn$WTD_N <- wtdn[,last_column]
-  wtdn[,last_column] <- NULL
-  # add the column WTD_N to the result table by merging it on
-  res <- merge(res, wtdn, by=rhs_vars, sort=FALSE, all.x = TRUE)
-  res$WTD_N[res$N %in% 0] <- 0
-  if(pctAggregationLevel == 0) {
-    # percent aggregation is over all units
-    res$twt <- sum(res$WTD_N, na.rm = TRUE)
-    res$group <- 1 # used in Taylor series sePct
-  } else {
-    # percent aggregation is over subsets of units
-    twt <- fastAgg(formula(paste0('WTD_N' , " ~ ", paste(rhs_vars[1:pctAggregationLevel], collapse=" + "))), data=res,  FUN=sumna)
-    names(twt) <- c(rhs_vars[1:pctAggregationLevel], 'twt')
-    twt$group <- 1:nrow(twt) # used in Taylor series sePct
-    res <- merge(res, twt, by=rhs_vars[1:pctAggregationLevel], all.x = TRUE)
-  }
-  # calculate the percent
-  res['PCT'] <- res[,'WTD_N']/res[,'twt']*100
-  # make containers for these variables
-  pctVarEstInputs <- NULL
-  pctVarEstInputsJK <- NULL
-  
-  res_no0 <- res[res$N > 0,]
-  # add the column "SE(PCT)", the SE on WTD_N. Only when requested
-  if(returnSepct) {
-    wtdnvar <- rep(0, nrow(res_no0))
-    wgtl <- getAttributes(data, "weights")[[wgt]]
-    if(varMethod == "j") {
-      # see statistics vignette for the formulas used here
-      for(jki in 1:length(wgtl$jksuffixes)) {
-        # recalculate the percent with every JK replicate weight
-        wgti <- paste0(wgtl$jkbase, wgtl$jksuffixes[jki])
-        wtdn <- fastAgg(formula(paste0(wgti, " ~ ", paste(rhs_vars, collapse=" + "))), data=edf,  FUN=sumna)
-        if(pctAggregationLevel==0) {
-          wtdt <- aggregate(formula(paste0(wgti, " ~ 1")), data=wtdn, FUN=sum, na.rm=TRUE)
-        } else {
-          wtdt <- fastAgg(formula(paste0(wgti, " ~ ", paste(rhs_vars[1:pctAggregationLevel], collapse=" + "))), data=wtdn, FUN=sumna)
-        }
-        names(wtdt)[ncol(wtdt)] <- "twti"
-        # last_column is the name of the column with the wgti sum in it
-        last_column <- names(wtdn)[length(names(wtdn))] 
-        wtdn <- merge(wtdn, res_no0, by=rhs_vars)
-        if(pctAggregationLevel==0) {
-          wtdn$one__ <- 1
-          wtdt$one__ <- 1
-          wtdn <- merge(wtdn, wtdt, by="one__")
-        } else {
-          wtdn <- merge(wtdn, wtdt, by=rhs_vars[1:pctAggregationLevel])
-        }
-        # store the JK replicate results
-        if(returnVarEstInputs) {
-          if(jki == 1) {
-            wtdn_ <- wtdn
-            for(ii in 1:length(rhs_vars)) {
-              wtdn_[,rhs_vars[ii]] <- as.character(wtdn[,rhs_vars[ii]])
-            }
-            level_ <- c()
-            for(i in 1:nrow(wtdn)) {
-              level_ <- c(level_, paste(rhs_vars, wtdn_[i,rhs_vars], sep="=", collapse=":"))
-            }
-          }
-          for(i in 1:nrow(wtdn)) {
-            level <- paste(rhs_vars, wtdn_[i,rhs_vars], sep="=", collapse=":")
-            pctVarEstInputsJKi <- data.frame(PV=0,
-                                             JKreplicate=jki,
-                                             variable=level_[i],
-                                             value=(wtdn[i,last_column]/wtdn[i,'twti'] - wtdn[i,"PCT"]/100)
-            )
-            pctVarEstInputsJK <- rbind(pctVarEstInputsJK, pctVarEstInputsJKi)
-          }
-          
-        }
-        # sum up to get the vector of variances between the full sample weight results and the JK results
-        wtdnvar <- wtdnvar + (wtdn[last_column]/wtdn['twti'] - wtdn["PCT"]/100)^2
-      }
-      # finally, add the 
-      wtdndf <- data.frame(stringsAsFactors=FALSE,
-                           100*sqrt(getAttributes(data, "jkSumMultiplier") * wtdnvar))
-      names(wtdndf)[1] <- "SE(PCT)"
-      wtdndf[,rhs_vars] <- wtdn[,rhs_vars]
-      res <- merge(res, wtdndf, by=rhs_vars, sort=FALSE, all.x = TRUE)
-    } else { # Taylor series based method
-      res_no0[,"SE(PCT)"] <- NA
-      #for every group (row of the table)
-      sapply(unique(res_no0$group), function(z) {
-        # get the Taylor series SE for this row of the table
-        res_no0i <- res_no0[res_no0$group == z,]# subset(res_no0, group == z)
-        n <- nrow(res_no0i)
-        res_no0i$groupsubset <- 1:n
-        if(n!=1) { # if n>1 then the percent is not 100 and we need to find SE(PCT)
-          pr <- res_no0[res_no0$group==z,"PCT"]/100
-          datai <- edf
-          if(pctAggregationLevel>0) {
-            for(i in 1:pctAggregationLevel) {
-              datai$rhsi <- datai[,rhs_vars[i]]
-              vvv <- as.character(res_no0i[1,rhs_vars[i]])
-              datai <- datai[datai$rhsi == vvv,]
-            }
-          }
-          datai$weight__n__ <- datai[,wgt]
-          # identify unit for each obs
-          for(i in 1:n) {
-            datai$gss <- 1 
-            # set gss to 1 for just rows in this group
-            for(j in (pctAggregationLevel+1):length(rhs_vars)) {
-              vvv <- as.character(res_no0i[i,rhs_vars[j]])
-              datai$gss[datai[,rhs_vars[j]] != vvv] <- 0
-            }
-            if(sum(datai$gss) >= 1) { # allow for units with no obs that have that
-              datai$unit[datai$gss %in% 1] <- i
-            }
-          }
-          # make W where i,jth entry is weight of unit i iff it is in j
-          # make \tilde{W} where i,jth entry is weight of unit i
-          wtilde <- w <- matrix(0, ncol=n, nrow=nrow(datai))
-          units <- sort(unique(datai$unit))
-          for(j in 1:length(units)) { # this could be 1:n but this way it is robust to levels with 0 units in them
-            ss <- datai$unit %in% units[j]
-            w[ss, j] <- datai[ss, wgt]
-          }
-          for(j in 1:ncol(wtilde)) {
-            wtilde[,j] <- datai[,wgt] * pr[j]
-          }
-          # again using notation from AM documentation, including multiplicaiton by w
-          # in TeX, u_{hij} * w, is called uhijw here
-          uhijw <- w -  wtilde # in uhijw[i,j] j= percent value, i=obs
-          colnames(uhijw) <- paste0("v",1:n)
-          # use these as a convenience
-          sumna <- function(x) { sum(x, na.rm=TRUE)}
-          meanna <- function(x) { mean(x, na.rm=TRUE)}
-          uhijw <- data.frame(uhijw,
-                              unit=datai$unit,
-                              stratV=datai[,getAttributes(data, "stratumVar")],
-                              psuV=datai[,getAttributes(data, "psuVar")])
-          for(vi in 1:n) {
-            # build uhijw, see AM documentation
-            uhijw$v <- uhijw[,paste0("v",vi)]
-            uhiw <- aggregate(v ~ psuV + stratV, data=uhijw, FUN=sum)
-            uhiw$vv <- ave(uhiw$v, uhiw$stratV, FUN=meanna)
-            uhiw$dx <- uhiw$v - uhiw$vv
-            nam <- names(uhiw)
-            nam[nam=="v"] <- paste0("uhi",vi)
-            nam[nam=="vv"]  <- paste0("uj",vi)
-            nam[nam=="dx"]  <- paste0("dx",vi)
-            names(uhiw) <- nam
-            if(vi == 1) {
-              uhiw_ <- uhiw
-            } else {
-              uhiw_ <- merge(uhiw_, uhiw, by=c("stratV", "psuV"))
-            }
-          } 
-          repu <- unique(uhiw_$stratV)
-          S <- matrix(0, nrow=nrow(res_no0i), ncol=nrow(res_no0i))
-          for(repi in 1:length(repu)) {
-            # see AM documentaiton
-            dataii <- uhiw_[uhiw_$stratV == repu[repi],]
-            jku <- unique(dataii$psuV)
-            ni <- length(jku)
-            if(ni > 1) {
-              for(jkj in 1:ni) {
-                vec <- unlist(dataii[dataii$psuV==jku[jkj], paste0("dx",1:n),drop=TRUE])
-                S <- S + (ni/(ni-1)) * vec %*% t(vec)
-              }
-            }
-          }
-          # from AM documentaiton
-          D <- diag(rep(1/res_no0i$twt[1],nrow(res_no0i)))
-          var <- D %*% S %*% t(D)
-          res_no0[res_no0$group==z,"SE(PCT)"] <<- 100 * sqrt(diag(var)) # fit to percentage
-        } else { # end if(n!=1) { 
-          # there is only one thing in this aggregation level
-          # so the percent will be 100. The frequentist SE on this will be zero.
-          res_no0[res_no0$group==z,"SE(PCT)"] <<- 0
-        } # end else for if(n!=1) { 
-      }) # end sapply(unique(res_no0$group), function(z) {
-    res <- merge(res, res_no0[,c(rhs_vars,"SE(PCT)")], by = rhs_vars, sort=FALSE, all.x=TRUE)
-    } # end else for if(varMethod == "j") {
-  } # end if(returnSepct) {
-  
-  # delete intermediates from results
-  res['group'] <- NULL
-  res['twt'] <- NULL
-  # order correctly
-  for(i in length(rhs_vars):1) {
-    res <- res[order(res[,rhs_vars[i]]),]
-  }
-  
-  #res <- res[res$N>0,] #subset(res, N > 0)
-  # for returnVarEstInputs
-  meanVarEstInputs <- NULL
-  meanVarEstInputsJK <- NULL
-  meanVarEstInputsPV <- NULL
   
   njk <- length(wgtl$jksuffixes)
   npv <- length(yvars)
-  # add mean PV score to res
-  if(returnMeans) {
-    # for each row of the table, get the mean and SE from lm
-    # by subsetting the data to just the units relevant to that row
-    # and then using lm.sdf to find the mean and SE for that row
-    for(i in 1:nrow(res)) {
-      dsdf <- edf
-      # for this row, subset it on each dimenstion
-      for(j in 1:length(rhs_vars)) {
-        if(returnVarEstInputs) {
-          if(j==1) {
-            label <- paste0(rhs_vars[j], "=", res[i,rhs_vars[j]])
-          } else{
-            label <- paste0(label, ":", rhs_vars[j], "=", res[i,rhs_vars[j]])
+  # Exception: if there is no RHS variable, just give summary statistics
+  if (length(rhs_vars) == 0) {
+    returnSepct <- FALSE
+    returnMeans <- TRUE
+    pctVarEstInputsJK <- NULL
+    res <- data.frame("N" = nrow(edf),
+                      "WTD_N" = sumna(edf[,wgt]),
+                      "PCT" = 100.00)
+    if (nrow(edf) > 1) {
+      # fit an lm to get a mean and SE estimate and add those to the res
+      # also keep track of var est inputs
+      lst <- list(formula = formula,
+                  data=edf,
+                  weightVar = wgt,
+                  jrrIMax = jrrIMax,
+                  varMethod=varMethod,
+                  returnVarEstInputs=returnVarEstInputs)
+      lmi <- tryCatch(do.call(lm.sdf, lst),
+                      error = function(cond) {
+                        message(paste0("Encountered an issue when calculating a row, ", dQuote(cond$message), " Some mean estimates will be NA in the table."))
+                        return(NULL)
+                      })
+      if (!is.null(lmi)) {
+        cf <- summary(lmi)$coefmat
+        if(!is.na(cf$coef)) {
+          res[["MEAN"]] <- cf$coef
+          res[["SE(MEAN)"]] <- cf$se
+          if(returnVarEstInputs) {
+            meanVarEstInputsJK <- lmi$varEstInputs$JK
+            meanVarEstInputsJK$variable <- "label"
+            meanVarEstInputsPV <- lmi$varEstInputs$PV
+            meanVarEstInputsPV$variable <- "label"
           }
+        } # end if (!is.na(cf$coef))
+        else {
+          lmi <- NULL
         }
-        cond <- parse(text=paste0(rhs_vars[j], " == \"", res[i,rhs_vars[j]],"\""))[[1]]
-        if(inherits(dsdf, "edsurvey.data.frame")) {
-          dsdf <- subset.edsurvey.data.frame(dsdf, cond, inside=TRUE) # subset to just those values at level i of the first X variable
-        } else {
-          dsdf <- dsdf[dsdf[,rhs_vars[j]] %in% res[i,rhs_vars[j]],] # subset to just those values at level i of the first X variable
+      }
+      if (is.null(lmi)) {
+        res[["MEAN"]] <- NA
+        res[["SE(MEAN)"]] <- NA
+        if(returnVarEstInputs) {
+          meanVarEstInputsJK <- data.frame(PV = NA, JKreplicate = NA, variable = "label",value = NA)
+          meanVarEstInputsPV <- data.frame(PV = NA, variable = "label",value = NA)
+        
         }
-      } #ends for(j in 1:length(rhs_vars)) 
-      if (nrow(dsdf) > 1) {
-        # fit an lm to get a mean and SE estimate and add those to the res
-        # also keep track of var est inputs
-        fi <- formula(paste0(yvar, " ~ 1"))
-        lst <- list(fi, dsdf,
-                    weightVar=wgt, jrrIMax=jrrIMax,
-                    varMethod=varMethod0,
-                    omittedLevels=FALSE, # taken care of above
-                    returnVarEstInputs=returnVarEstInputs)
-        lmi <- tryCatch(do.call(lm.sdf, lst),
-                        error = function(cond) {
-                          message(paste0("Encountered an issue when calculating a row, ", dQuote(cond$message), " Some mean estimates will be NA in the table."))
-                          return(NULL)
-                        })
-        if (!is.null(lmi)) {
-          cf <- summary(lmi)$coefmat
-          if(!is.na(cf$coef)) {
-            res[i,"MEAN"] <- cf$coef
-            res[i,"SE(MEAN)"] <- cf$se
+      }
+    } else { #for when nrow(dsdf) = 1
+      res[["MEAN"]] <- NA
+      res[["SE(MEAN)"]] <- NA
+      if(returnVarEstInputs) {
+        meanVarEstInputsJK <- data.frame(PV = 1, JKreplicate = 1:njk, variable = "label", value = NA)
+        meanVarEstInputsPV <- data.frame(PV = 1:npv, variable = "label", value = NA)
+      }
+    } # end if (nrow(edf) > 1)
+  } # if (length(rhs_vars) == 0)
+  else {
+    ## 3) build the output
+    # this makes the n sizes and RHS variables in a table
+    n <- ftable(edf[,rhs_vars, drop=FALSE])
+    res <- data.frame(n)
+    #if length(rhs_vars) is 1, then the names do not get assigned correctly. Fix that.
+    names(res) <- c(rhs_vars, "N") # does nothing unless length(rhs_vars)==1
+    # fastAgg is similar to aggregate, but fast.
+    # add the weighted Ns
+    wtdn <- fastAgg(formula(paste0(wgt, " ~ ", paste(rhs_vars, collapse=" + "))), data=edf, FUN=sumna)
+    
+    # rename the last column to WTD_N
+    last_column <- names(wtdn)[length(names(wtdn))]
+    wtdn$WTD_N <- wtdn[,last_column]
+    wtdn[,last_column] <- NULL
+    # add the column WTD_N to the result table by merging it on
+    res <- merge(res, wtdn, by=rhs_vars, sort=FALSE, all.x = TRUE)
+    res$WTD_N[res$N %in% 0] <- 0
+    if(pctAggregationLevel == 0) {
+      # percent aggregation is over all units
+      res$twt <- sum(res$WTD_N, na.rm = TRUE)
+      res$group <- 1 # used in Taylor series sePct
+    } else {
+      # percent aggregation is over subsets of units
+      twt <- fastAgg(formula(paste0('WTD_N' , " ~ ", paste(rhs_vars[1:pctAggregationLevel], collapse=" + "))), data=res,  FUN=sumna)
+      names(twt) <- c(rhs_vars[1:pctAggregationLevel], 'twt')
+      twt$group <- 1:nrow(twt) # used in Taylor series sePct
+      res <- merge(res, twt, by=rhs_vars[1:pctAggregationLevel], all.x = TRUE)
+    }
+    # calculate the percent
+    res['PCT'] <- res[,'WTD_N']/res[,'twt']*100
+    # make containers for these variables
+    pctVarEstInputs <- NULL
+    pctVarEstInputsJK <- NULL
+    
+    res_no0 <- res[res$N > 0,]
+    # add the column "SE(PCT)", the SE on WTD_N. Only when requested
+    if(returnSepct) {
+      wtdnvar <- rep(0, nrow(res_no0))
+      wgtl <- getAttributes(data, "weights")[[wgt]]
+      if(varMethod == "j") {
+        # see statistics vignette for the formulas used here
+        for(jki in 1:length(wgtl$jksuffixes)) {
+          # recalculate the percent with every JK replicate weight
+          wgti <- paste0(wgtl$jkbase, wgtl$jksuffixes[jki])
+          wtdn <- fastAgg(formula(paste0(wgti, " ~ ", paste(rhs_vars, collapse=" + "))), data=edf,  FUN=sumna)
+          if(pctAggregationLevel==0) {
+            wtdt <- aggregate(formula(paste0(wgti, " ~ 1")), data=wtdn, FUN=sum, na.rm=TRUE)
+          } else {
+            wtdt <- fastAgg(formula(paste0(wgti, " ~ ", paste(rhs_vars[1:pctAggregationLevel], collapse=" + "))), data=wtdn, FUN=sumna)
+          }
+          names(wtdt)[ncol(wtdt)] <- "twti"
+          # last_column is the name of the column with the wgti sum in it
+          last_column <- names(wtdn)[length(names(wtdn))] 
+          wtdn <- merge(wtdn, res_no0, by=rhs_vars)
+          if(pctAggregationLevel==0) {
+            wtdn$one__ <- 1
+            wtdt$one__ <- 1
+            wtdn <- merge(wtdn, wtdt, by="one__")
+          } else {
+            wtdn <- merge(wtdn, wtdt, by=rhs_vars[1:pctAggregationLevel])
+          }
+          # store the JK replicate results
+          if(returnVarEstInputs) {
+            if(jki == 1) {
+              wtdn_ <- wtdn
+              for(ii in 1:length(rhs_vars)) {
+                wtdn_[,rhs_vars[ii]] <- as.character(wtdn[,rhs_vars[ii]])
+              }
+              level_ <- c()
+              for(i in 1:nrow(wtdn)) {
+                level_ <- c(level_, paste(rhs_vars, wtdn_[i,rhs_vars], sep="=", collapse=":"))
+              }
+            }
+            for(i in 1:nrow(wtdn)) {
+              level <- paste(rhs_vars, wtdn_[i,rhs_vars], sep="=", collapse=":")
+              pctVarEstInputsJKi <- data.frame(PV=0,
+                                               JKreplicate=jki,
+                                               variable=level_[i],
+                                               value=(wtdn[i,last_column]/wtdn[i,'twti'] - wtdn[i,"PCT"]/100)
+              )
+              pctVarEstInputsJK <- rbind(pctVarEstInputsJK, pctVarEstInputsJKi)
+            }
+            
+          }
+          # sum up to get the vector of variances between the full sample weight results and the JK results
+          wtdnvar <- wtdnvar + (wtdn[last_column]/wtdn['twti'] - wtdn["PCT"]/100)^2
+        }
+        # finally, add the 
+        wtdndf <- data.frame(stringsAsFactors=FALSE,
+                             100*sqrt(getAttributes(data, "jkSumMultiplier") * wtdnvar))
+        names(wtdndf)[1] <- "SE(PCT)"
+        wtdndf[,rhs_vars] <- wtdn[,rhs_vars]
+        res <- merge(res, wtdndf, by=rhs_vars, sort=FALSE, all.x = TRUE)
+      } else { # Taylor series based method
+        res_no0[,"SE(PCT)"] <- NA
+        #for every group (row of the table)
+        sapply(unique(res_no0$group), function(z) {
+          # get the Taylor series SE for this row of the table
+          res_no0i <- res_no0[res_no0$group == z,]# subset(res_no0, group == z)
+          n <- nrow(res_no0i)
+          res_no0i$groupsubset <- 1:n
+          if(n!=1) { # if n>1 then the percent is not 100 and we need to find SE(PCT)
+            pr <- res_no0[res_no0$group==z,"PCT"]/100
+            datai <- edf
+            if(pctAggregationLevel>0) {
+              for(i in 1:pctAggregationLevel) {
+                datai$rhsi <- datai[,rhs_vars[i]]
+                vvv <- as.character(res_no0i[1,rhs_vars[i]])
+                datai <- datai[datai$rhsi == vvv,]
+              }
+            }
+            datai$weight__n__ <- datai[,wgt]
+            # identify unit for each obs
+            for(i in 1:n) {
+              datai$gss <- 1 
+              # set gss to 1 for just rows in this group
+              for(j in (pctAggregationLevel+1):length(rhs_vars)) {
+                vvv <- as.character(res_no0i[i,rhs_vars[j]])
+                datai$gss[datai[,rhs_vars[j]] != vvv] <- 0
+              }
+              if(sum(datai$gss) >= 1) { # allow for units with no obs that have that
+                datai$unit[datai$gss %in% 1] <- i
+              }
+            }
+            # make W where i,jth entry is weight of unit i iff it is in j
+            # make \tilde{W} where i,jth entry is weight of unit i
+            wtilde <- w <- matrix(0, ncol=n, nrow=nrow(datai))
+            units <- sort(unique(datai$unit))
+            for(j in 1:length(units)) { # this could be 1:n but this way it is robust to levels with 0 units in them
+              ss <- datai$unit %in% units[j]
+              w[ss, j] <- datai[ss, wgt]
+            }
+            for(j in 1:ncol(wtilde)) {
+              wtilde[,j] <- datai[,wgt] * pr[j]
+            }
+            # again using notation from AM documentation, including multiplicaiton by w
+            # in TeX, u_{hij} * w, is called uhijw here
+            uhijw <- w -  wtilde # in uhijw[i,j] j= percent value, i=obs
+            colnames(uhijw) <- paste0("v",1:n)
+            # use these as a convenience
+            sumna <- function(x) { sum(x, na.rm=TRUE)}
+            meanna <- function(x) { mean(x, na.rm=TRUE)}
+            uhijw <- data.frame(uhijw,
+                                unit=datai$unit,
+                                stratV=datai[,getStratumVar(data, weightVar)],
+                                psuV=datai[,getPSUVar(data, weightVar)])
+            for(vi in 1:n) {
+              # build uhijw, see AM documentation
+              uhijw$v <- uhijw[,paste0("v",vi)]
+              uhiw <- aggregate(v ~ psuV + stratV, data=uhijw, FUN=sum)
+              uhiw$vv <- ave(uhiw$v, uhiw$stratV, FUN=meanna)
+              uhiw$dx <- uhiw$v - uhiw$vv
+              nam <- names(uhiw)
+              nam[nam=="v"] <- paste0("uhi",vi)
+              nam[nam=="vv"]  <- paste0("uj",vi)
+              nam[nam=="dx"]  <- paste0("dx",vi)
+              names(uhiw) <- nam
+              if(vi == 1) {
+                uhiw_ <- uhiw
+              } else {
+                uhiw_ <- merge(uhiw_, uhiw, by=c("stratV", "psuV"))
+              }
+            } 
+            repu <- unique(uhiw_$stratV)
+            S <- matrix(0, nrow=nrow(res_no0i), ncol=nrow(res_no0i))
+            for(repi in 1:length(repu)) {
+              # see AM documentaiton
+              dataii <- uhiw_[uhiw_$stratV == repu[repi],]
+              jku <- unique(dataii$psuV)
+              ni <- length(jku)
+              if(ni > 1) {
+                for(jkj in 1:ni) {
+                  vec <- unlist(dataii[dataii$psuV==jku[jkj], paste0("dx",1:n),drop=TRUE])
+                  S <- S + (ni/(ni-1)) * vec %*% t(vec)
+                }
+              }
+            }
+            # from AM documentaiton
+            D <- diag(rep(1/res_no0i$twt[1],nrow(res_no0i)))
+            var <- D %*% S %*% t(D)
+            res_no0[res_no0$group==z,"SE(PCT)"] <<- 100 * sqrt(diag(var)) # fit to percentage
+          } else { # end if(n!=1) { 
+            # there is only one thing in this aggregation level
+            # so the percent will be 100. The frequentist SE on this will be zero.
+            res_no0[res_no0$group==z,"SE(PCT)"] <<- 0
+          } # end else for if(n!=1) { 
+        }) # end sapply(unique(res_no0$group), function(z) {
+        res <- merge(res, res_no0[,c(rhs_vars,"SE(PCT)")], by = rhs_vars, sort=FALSE, all.x=TRUE)
+      } # end else for if(varMethod == "j") {
+    } # end if(returnSepct) {
+    
+    # delete intermediates from results
+    res['group'] <- NULL
+    res['twt'] <- NULL
+    # order correctly
+    for(i in length(rhs_vars):1) {
+      res <- res[order(res[,rhs_vars[i]]),]
+    }
+    
+    #res <- res[res$N>0,] #subset(res, N > 0)
+    # for returnVarEstInputs
+    meanVarEstInputs <- NULL
+    meanVarEstInputsJK <- NULL
+    meanVarEstInputsPV <- NULL
+    
+
+    # add mean PV score to res
+    if(returnMeans) {
+      # for each row of the table, get the mean and SE from lm
+      # by subsetting the data to just the units relevant to that row
+      # and then using lm.sdf to find the mean and SE for that row
+      for(i in 1:nrow(res)) {
+        dsdf <- edf
+        # for this row, subset it on each dimenstion
+        for(j in 1:length(rhs_vars)) {
+          if(returnVarEstInputs) {
+            if(j==1) {
+              label <- paste0(rhs_vars[j], "=", res[i,rhs_vars[j]])
+            } else{
+              label <- paste0(label, ":", rhs_vars[j], "=", res[i,rhs_vars[j]])
+            }
+          }
+          cond <- parse(text=paste0(rhs_vars[j], " == \"", res[i,rhs_vars[j]],"\""))[[1]]
+          if(inherits(dsdf, "edsurvey.data.frame")) {
+            dsdf <- subset.edsurvey.data.frame(dsdf, cond, inside=TRUE) # subset to just those values at level i of the first X variable
+          } else {
+            dsdf <- dsdf[dsdf[,rhs_vars[j]] %in% res[i,rhs_vars[j]],] # subset to just those values at level i of the first X variable
+          }
+        } #ends for(j in 1:length(rhs_vars)) 
+        if (nrow(dsdf) > 1) {
+          # fit an lm to get a mean and SE estimate and add those to the res
+          # also keep track of var est inputs
+          fi <- formula(paste0(yvar, " ~ 1"))
+          lst <- list(fi, dsdf,
+                      weightVar=wgt, jrrIMax=jrrIMax,
+                      varMethod=varMethod0,
+                      omittedLevels=FALSE, # taken care of above
+                      returnVarEstInputs=returnVarEstInputs)
+          lmi <- tryCatch(do.call(lm.sdf, lst),
+                          error = function(cond) {
+                            message(paste0("Encountered an issue when calculating a row, ", dQuote(cond$message), " Some mean estimates will be NA in the table."))
+                            return(NULL)
+                          })
+          if (!is.null(lmi)) {
+            cf <- summary(lmi)$coefmat
+            if(!is.na(cf$coef)) {
+              res[i,"MEAN"] <- cf$coef
+              res[i,"SE(MEAN)"] <- cf$se
+              if(returnVarEstInputs) {
+                meanVarEstInputsJKi <- lmi$varEstInputs$JK
+                meanVarEstInputsJKi$variable <- label
+                meanVarEstInputsJK <- rbind(meanVarEstInputsJK, meanVarEstInputsJKi)
+                meanVarEstInputsPVi <- lmi$varEstInputs$PV
+                meanVarEstInputsPVi$variable <- label
+                meanVarEstInputsPV <- rbind(meanVarEstInputsPV, meanVarEstInputsPVi)
+              }
+            } # end if (!is.na(cf$coef))
+            else {
+              lmi <- NULL
+            }
+          }
+          if (is.null(lmi)) {
+            res[i,"MEAN"] <- NA
+            res[i,"SE(MEAN)"] <- NA
             if(returnVarEstInputs) {
-              meanVarEstInputsJKi <- lmi$varEstInputs$JK
-              meanVarEstInputsJKi$variable <- label
+              meanVarEstInputsJKi <- data.frame(PV = NA, JKreplicate = NA, variable = "label",value = NA)
               meanVarEstInputsJK <- rbind(meanVarEstInputsJK, meanVarEstInputsJKi)
-              meanVarEstInputsPVi <- lmi$varEstInputs$PV
-              meanVarEstInputsPVi$variable <- label
+              meanVarEstInputsPVi <- data.frame(PV = NA, variable = "label",value = NA)
               meanVarEstInputsPV <- rbind(meanVarEstInputsPV, meanVarEstInputsPVi)
             }
-          } # end if (!is.na(cf$coef))
-          else {
-            lmi <- NULL
           }
-        }
-        if (is.null(lmi)) {
+        } else { #for when nrow(dsdf) = 1
           res[i,"MEAN"] <- NA
           res[i,"SE(MEAN)"] <- NA
           if(returnVarEstInputs) {
-            meanVarEstInputsJKi <- data.frame(PV = NA, JKreplicate = NA, variable = "label",value = NA)
+            meanVarEstInputsJKi <- data.frame(PV = 1, JKreplicate = 1:njk, variable = "label", value = NA)
+            meanVarEstInputsJKi$variable <- label
             meanVarEstInputsJK <- rbind(meanVarEstInputsJK, meanVarEstInputsJKi)
-            meanVarEstInputsPVi <- data.frame(PV = NA, variable = "label",value = NA)
+            meanVarEstInputsPVi <- data.frame(PV = 1:npv, variable = "label", value = NA)
+            meanVarEstInputsPVi$variable <- label
             meanVarEstInputsPV <- rbind(meanVarEstInputsPV, meanVarEstInputsPVi)
           }
-        }
-      } else { #for when nrow(dsdf) = 1
-        res[i,"MEAN"] <- NA
-        res[i,"SE(MEAN)"] <- NA
-        if(returnVarEstInputs) {
-          meanVarEstInputsJKi <- data.frame(PV = 1, JKreplicate = 1:njk, variable = "label", value = NA)
-          meanVarEstInputsJKi$variable <- label
-          meanVarEstInputsJK <- rbind(meanVarEstInputsJK, meanVarEstInputsJKi)
-          meanVarEstInputsPVi <- data.frame(PV = 1:npv, variable = "label", value = NA)
-          meanVarEstInputsPVi$variable <- label
-          meanVarEstInputsPV <- rbind(meanVarEstInputsPV, meanVarEstInputsPVi)
-        }
-      } # end if (nrow(dsdf) > 1)
-      
-    } # end for(i in 1:nrow(res)) {
-  } # if(returnMeans)
-
+        } # end if (nrow(dsdf) > 1)
+        
+      } # end for(i in 1:nrow(res)) {
+    } # if(returnMeans)
+    
+  } # end else if (length(rhs_vars) == 0)
+  
+  # clean up and produce return output
   if(varMethod== "t") {
     njk <- NA
   }
   rownames(res) <- NULL
   varmeth <- ifelse(varMethod=="t", "Taylor series", "jackknife")
   
-
+  
   # order the output by the "by" variables
   vnames <- intersect(names(res), all.vars(formula))
   
@@ -646,7 +725,7 @@ calcEdsurveyTable <- function(formula,
         vnames <- c(vnames, names(res)[i])
       }
     }
-  }
+  } 
   
   res2 <- list(formula=formula, npv=length(yvars),
                jrrIMax=min(jrrIMax, length(yvars)), weight=wgt,
@@ -689,7 +768,7 @@ print.edsurveyTableList <- function(x, digits=getOption("digits"), ...) {
 #' @export 
 print.edsurveyTable <- function(x, digits=getOption("digits"), ...) {
   cat(paste0("\nFormula: ", paste(deparse(x$formula), "\n",collapse=""), "\n"))
-    
+  
   if(x$npv > 1) {
     # only print if it could be larger than one.
     cat(paste0("Plausible values: ", x$npv, "\n"))
@@ -712,3 +791,38 @@ print.edsurveyTable <- function(x, digits=getOption("digits"), ...) {
 }
 
 sumna <- function(x) { sum(x, na.rm=TRUE)}
+
+typeOfVariable <- function(var, data) {
+  if (inherits(data,"light.edsurvey.data.frame")) {
+    return(sapply(var, function(v) {
+      if (hasPlausibleValue(v,data)) {
+        return("continuous")
+      }
+      if (!tolower(v) %in% tolower(colnames(data))) {
+        return(NA)
+      }
+      if (is.numeric(data[[v]])) {
+        return('continuous')
+      } else {
+        return('discrete')
+      }
+    }))
+  }
+  fileFormat <- do.call('rbind', list(data$fileFormat,
+                                      data$fileFormatSchool,
+                                      data$fileFormatTeacher))
+  sapply(var, function(v) {
+    if (hasPlausibleValue(v,data)) {
+      return("continuous")
+    }
+    if (!tolower(v) %in% tolower(colnames(data))) {
+      return(NA)
+    }
+    
+    if (fileFormat$dataType[tolower(fileFormat$variableName) == tolower(v)] == "numeric") {
+      return("continuous")
+    } else {
+      return("discrete")
+    }
+  })
+}

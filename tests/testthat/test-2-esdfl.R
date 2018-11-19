@@ -2,23 +2,29 @@ require(testthat)
 require(EdSurvey)
 options(width = 500)
 options(useFancyQuotes=FALSE)
-source("REF-2-esdfl.R") # has REF output in it
-sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+#source("REF-2-esdfl.R") # has REF output in it
 
-sdfA <- subset(sdf, scrpsu %in% c(5,45,56))
-sdfB <- subset(sdf, scrpsu %in% c(75,76,78))
-sdfC <- subset(sdf, scrpsu %in% 100:200)
-sdfD <- subset(sdf, scrpsu %in% 201:300)
+context("read ESDFL")
+test_that("read ESDFL",{
+  sdf <<- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+  sdfA <<- subset(sdf, scrpsu %in% c(5,45,56))
+  sdfB <- subset(sdf, scrpsu %in% c(75,76,78))
+  sdfC <- subset(sdf, scrpsu %in% 100:200)
+  sdfD <<- subset(sdf, scrpsu %in% 201:300)
 
-sdfB$year <- 2002
-sdfC$year <- 2003
-# construct an edsurvey.data.frame.list from these four data sets
-sdfl <- edsurvey.data.frame.list(list(sdfA, sdfB, sdfC, sdfD),
-                                 labels=c("A locations",
-                                          "B locations",
-                                          "C locations",
-                                          "D locations"))
+  sdfB$year <- 2002
+  sdfC$year <- 2003
 
+  sdfB <<- sdfB
+  sdfC <<- sdfC
+  # construct an edsurvey.data.frame.list from these four data sets
+  sdfl <<- edsurvey.data.frame.list(list(sdfA, sdfB, sdfC, sdfD),
+                                    labels=c("A locations",
+                                             "B locations",
+                                             "C locations",
+                                             "D locations"))
+  expect_is(sdfl, "edsurvey.data.frame.list")
+})
 
 context("ESDFL achievementLevels")
 test_that("ESDFL achievementLevels", {
@@ -96,7 +102,7 @@ test_that("ESDFL error handling",{
 
 context("ESDFL gap")
 test_that("ESDFL gap",{
-  skip_on_cran()
+  #skip_on_cran()
 	g1 <- gap("composite", sdfl, dsex=="Male", dsex=="Female", returnSimpleDoF=TRUE)
 	# check that the columns output for just one agree between esdfl and sdf
 	g2 <- gap("composite", sdfC, dsex=="Male", dsex=="Female", returnSimpleDoF=TRUE)
@@ -150,7 +156,7 @@ test_that("ESDFL helper functions",{
 
 context("ESDFL cor")
 test_that("ESDFL cor", {
-  skip_on_cran()
+  #skip_on_cran()
   c1 <- cor.sdf("b017451", "b003501", sdfA,
 						    method="Pearson",
 						    weightVar="origwt")

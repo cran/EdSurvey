@@ -1,6 +1,6 @@
 #' @title Retrieve Weight Variables
 #'
-#' @description Prints a summary of the weights in an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
+#' @description Prints a summary of the weights in an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 #'
 #' @param data an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
 #'         an \code{edsurvey.data.frame.list}

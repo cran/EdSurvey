@@ -23,7 +23,7 @@ The student-level and teacher-level datasets cannot both be returned at the same
 Note: The CivED 1999 study also included student-to-teacher data for Grade 8.  Specifying \code{dataSet="student"} and \code{gradeLvl=8}
 will include both the \code{student} and \code{teacher} data in the resulting \code{edsurvey.data.frame}.}
 
-\item{gradeLvl}{a character value of the grade level to return.
+\item{gradeLvl}{a character value of the grade level to return
 \itemize{
      \item{\strong{8} = eighth grade (the default if not specified)}
      \item{\strong{9} = ninth grade} 
@@ -37,7 +37,7 @@ The default value of \code{FALSE} will speed up the \code{readCivEDICCS} functio
 The default value is \code{TRUE}.}
 }
 \value{
-An \code{edsurvey.data.frame} for a single specified country or an \code{edsurvey.data.frame.list} if multiple countries specified.
+an \code{edsurvey.data.frame} for a single specified country or an \code{edsurvey.data.frame.list} if multiple countries specified
 }
 \description{
 Opens a connection to an ICCS or CivEd (1999) data file and
@@ -46,7 +46,7 @@ Opens a connection to an ICCS or CivEd (1999) data file and
 }
 \details{
 Reads in the unzipped files downloaded from the international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}.
-         Datafiles require the SPSS datafile (.sav) format using the default filenames.
+         Data files require the SPSS data file (.sav) format using the default filenames.
 
 When using the \code{getData} function with a CivED or ICCS study \code{edsurvey.data.frame},
          the requested data variables are inspected, and it handles any necessary data merges automatically. 

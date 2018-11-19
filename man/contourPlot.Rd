@@ -4,8 +4,8 @@
 \alias{contourPlot}
 \title{Overlaid Scatter and Contour Plots}
 \usage{
-contourPlot(x, y, m = 30L, xrange, yrange, xkernel, ykernel, nlevels = 9L,
-  ...)
+contourPlot(x, y, m = 30L, xrange, yrange, xkernel, ykernel,
+  nlevels = 9L, ...)
 }
 \arguments{
 \item{x}{numeric vector of the \code{x} data to be plotted}

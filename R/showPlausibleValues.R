@@ -1,7 +1,7 @@
 #' @title Plausible Value Variable Names
 #'
 #' @description Prints a summary of the subject scale or subscale and the associated variables for their
-#'              plausible values for an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
+#'              plausible values for an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 #'
 #' @param data an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
 #'         an \code{edsurvey.data.frame.list}
@@ -91,7 +91,7 @@ getPlausibleValue <- function(var, data) {
 }
 
 #' @title Update Plausible Value Variable Names
-#' @description Changes the name used to refer to a set of plausible values from \code{oldVar} to \code{newVar} in an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
+#' @description Changes the name used to refer to a set of plausible values from \code{oldVar} to \code{newVar} in an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 #'
 #' @param data an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
 #'         an \code{edsurvey.data.frame.list}

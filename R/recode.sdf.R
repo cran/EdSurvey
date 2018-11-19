@@ -4,16 +4,18 @@
 #'              a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 #'
 #' @param x an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, 
-#'        or an \code{edsurvey.data.frame.list}.
+#'        or an \code{edsurvey.data.frame.list}
 #' @param recode a list of recoding rules. See Examples for the format of recoding rules.
 #' 
 #' @return an object of the same class as \code{x} with the recode added to it
+#' @usage recode.sdf(x, recode)
 #' 
 #' @author Trang Nguyen and Paul Bailey
 #' @example man\examples\recode.sdf.R
-#' @export
+#' @export recode.sdf
 recode.sdf <- function(x, recode) {
   checkDataClass(x, c("edsurvey.data.frame.list","edsurvey.data.frame", "light.edsurvey.data.frame"))
+
   if (inherits(x, "edsurvey.data.frame.list")) {
     for (i in 1:length(x$data)) {
       newUserConditions <- getAttributes(x$datalist[[i]],"userConditions")
@@ -127,14 +129,13 @@ recode.sdf <- function(x, recode) {
       } # end else for if(inherits(x[,ni], "factor"))
       if(length(badFrom) > 0) {
         warning(paste0("When recoding, could not find the level(s) ",
-                       paste(dQuote(badFrom), collapse=", "),
+                       pasteItems(dQuote(badFrom)),
                        " in the variable ", dQuote(ni), "."))
       }
     } # for (i in 1:length(recode))
   } #ends else if (inherits(x, "light.edsurvey.data.frame"))
   invisible(x)
 } # end of fuction recode.sdf
-
 
 checkRecode <- function(x, recode) {
   for (vi in 1:length(recode)) {
@@ -145,13 +146,18 @@ checkRecode <- function(x, recode) {
       stop(paste0("More than one 'To' value found in the ", sQuote(v) ," element of the 'recode' argument."))
     }
     varlevels <- levelsSDF(v,x)[[1]]
-    #TODO: clarify the [[]] stuff
+    # strsplit returns a list regardless of the length of i, so must unlist
     levs <- unname(sapply(varlevels, function(i) strsplit(i,"=")[[1]][1]))
     labs <- unname(sapply(varlevels, function(i) strsplit(i,"=")[[1]][2]))
     if (any(!tolower(from) %in% c(tolower(labs), tolower(levs)))) {
       warning(paste0("When recoding, could not find the level(s) ",
-                     paste(dQuote(from[which(!tolower(from) %in% tolower(c(labs,levs)))]), collapse=", "),
+                     pasteItems(dQuote(from[which(!tolower(from) %in% tolower(c(labs,levs)))])),
                      " in the variable ", dQuote(v), "."))
     }
+    recodeNames <- names(recode[[vi]])
+    badV <- recodeNames[!recodeNames %in% c("from", "to")]
+    if(length(badV) > 0) {
+      stop(paste0("Each recode should have a ", sQuote("from"), " and a ", sQuote("to"), " and no other elements. Found additional element(s) named ", pasteItems(dQuote(badV)), "."))
+    } 
   }
 }

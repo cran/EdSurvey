@@ -7,7 +7,7 @@
 readPIRLS(path, countries, forceReread = FALSE, verbose = TRUE)
 }
 \arguments{
-\item{path}{a character value to the full directory to the PIRLS extracted SPSS (.sav) set of data.}
+\item{path}{a character value to the full directory to the PIRLS extracted SPSS (.sav) set of data}
 
 \item{countries}{a character vector of the country/countries to include using
 the three-digit ISO country code.  
@@ -34,7 +34,7 @@ Opens a connection to a PIRLS data file and
 }
 \details{
 Reads in the unzipped files downloaded from the PIRLS international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}. 
-         Datafiles require the SPSS datafile (.sav) format using the default filenames.
+         Data files require the SPSS data file (.sav) format using the default filenames.
 
 A PIRLS \code{edsurvey.data.frame} includes three distinct data levels: 
          \itemize{

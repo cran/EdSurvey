@@ -11,7 +11,7 @@
 #'                    Default value is \code{composite} if not specified.
 #' @param omittedLevels a character vector indicating which factor levels/labels
 #'                       should be excluded. When set to the default value of \code{c('Multiple',NA,'Omitted')}, adds the vector to the \code{edsurvey.data.frame}.
-#' @param frPath a character value indicating the location of the \code{fr2} parameter layout file included with the data companion to parse the specified \code{filepath} data file.
+#' @param frPath a character value indicating the location of the \code{fr2} parameter layout file included with the data companion to parse the specified \code{filepath} data file
 #' @details The function uses the \code{frPath} file layout (.fr2) data to read in the fixed-width data file (.dat), and builds the \code{edsurvey.data.frame}.
 #'           
 #' @return An \code{edsurvey.data.frame} containing the following elements:
@@ -359,7 +359,7 @@ ignoreCaseFileName <- function(f) {
     stop(paste0("Could not find file ", dQuote(f),"."))
   }
   if(length(ff) > 1) {
-    stop(paste0("File name ", dQuote(f)," is ambigious with respect to capitalization. Please remove one of the following files and try again.", paste(dQuote(ff), collapse=", ")))
+    stop(paste0("File name ", dQuote(f)," is ambigious with respect to capitalization. Please remove one of the following files and try again.", pasteItems(dQuote(ff), final="or"),"."))
   }
   ff
 }

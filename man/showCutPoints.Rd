@@ -14,7 +14,7 @@ an \code{edsurvey.data.frame.list}}
 Retrieves a summary of the achievement level cutpoints for a
              selected study represented in an
              \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame},
-             or an \code{edsurvey.data.frame.list}
+             or an \code{edsurvey.data.frame.list}.
 }
 \examples{
 # read in the example data (generated, not real student data)

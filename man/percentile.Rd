@@ -7,7 +7,7 @@
 percentile(variable, percentiles, data, weightVar = NULL, jrrIMax = 1,
   varMethod = c("jackknife", "Taylor"), alpha = 0.05,
   omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
-  returnVarEstInputs = FALSE)
+  returnVarEstInputs = FALSE, returnNumberOfPSU = FALSE)
 }
 \arguments{
 \item{variable}{the character name of the variable to percentiles computed,
@@ -28,7 +28,7 @@ method, the \eqn{V_{jrr}} term
 of plausible values and is 
 estimated on the lower of the number of
 available plausible values and 
-\code{jrrIMax}. When \code{jrrIMax} is set to \code{Inf}
+\code{jrrIMax}. When \code{jrrIMax} is set to \code{Inf},
 all plausible values will 
 be used. Higher values of \code{jrrIMax} lead to longer
 computing times and more
@@ -36,7 +36,7 @@ accurate variance estimates.}
 
 \item{varMethod}{a character set to \code{jackknife} or \code{Taylor}
 that indicates the variance estimation method used when 
-constructing the confidence intervals. the jackknife
+constructing the confidence intervals. The jackknife
 variance estimation method is always
 used to calculate the standard error.}
 
@@ -69,6 +69,9 @@ inputs to the jackknife and imputation variance
 estimates. This is intended to allow for the
 computation
 of covariances between estimates.}
+
+\item{returnNumberOfPSU}{a logical value set to \code{TRUE} to return the number of 
+primary sampling units (PSU)}
 }
 \value{
 The return type depends on whether the class of the \code{data} argument is an
@@ -77,17 +80,27 @@ The return type depends on whether the class of the \code{data} argument is an
 \subsection{the data argument is an edsurvey.data.frame}{
   When the \code{data} argument is an \code{edsurvey.data.frame},
   \code{percentile} returns an S3 object of class \code{percentile}.
-  This is a \code{data.frame} with a \code{call} attribute.
+  This is a \code{data.frame} with typical attributes (\code{names},
+  \code{row.names}, and \code{class}) and additional attributes as follows:
+  \describe{
+    \item{n0}{number of rows on \code{edsurvey.data.frame} before any conditions were applied}
+    \item{nUsed}{number of observations with valid data and weights larger than zero}
+    \item{nPSU}{number of PSUs used in calculation}
+    \item{call}{the call used to generate these results}
+  }
 
   The columns of the \code{data.frame} are as follows:
   \describe{
     \item{percentile}{the percentile of this row}
     \item{estimate}{the estimated value of the percentile}
     \item{se}{the jackknife standard error of the estimated percentile}
+    \item{df}{degrees of freedom}
     \item{confInt.ci_lower}{the lower bound
                      of the confidence interval}
     \item{confInt.ci_upper}{the upper bound
                      of the confidence interval}
+    \item{nsmall}{number of units with more extreme results, averaged
+                  across plausible values}
   }
 }
 
@@ -117,8 +130,8 @@ Calculates the percentiles of a numeric variable in an
 }
 \details{
 Percentiles, their standard errors, and confidence intervals
-         are calculated according to the  
-\href{https://www.air.org/sites/default/files/EdSurvey-Percentiles.pdf}{Methods Used for Estimating Percentiles vignette}.
+         are calculated according to the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Percentiles.pdf}{Methods Used for Estimating Percentiles}.
          Note that the standard errors and confidence intervals are based
          on separate formulas and assumptions.
 

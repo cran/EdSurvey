@@ -12,7 +12,7 @@
 #'                  or other online sources. Consult the \emph{TIMSS User Guide} documentation to help determine what countries
 #'                  are included within a specific testing year of TIMSS and for country code definitions.  
 #'                  To select all countries available, use a wildcard value of \strong{\code{*}}.
-#' @param gradeLvl a character value to indicate the specific grade level you wish to return. 
+#' @param gradeLvl a character value to indicate the specific grade level you wish to return
 #'                 \itemize{
 #'                      \item{\strong{4} = fourth grade (the default if not specified)}
 #'                      \item{\strong{8} = eighth grade} 
@@ -23,7 +23,7 @@
 #' @param verbose a logical value to either print or suppress status message output.
 #'                The default value is \code{TRUE}.
 #' @details Reads in the unzipped files downloaded from the TIMSS international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}.
-#'          Datafiles require the SPSS datafile (.sav) format using the default filenames.
+#'          Data files require the SPSS data file (.sav) format using the default filenames.
 #'
 #' @details A TIMSS \code{edsurvey.data.frame} includes three distinct data levels: 
 #'          \itemize{
@@ -72,10 +72,10 @@ readTIMSS <- function(path,
                       forceReread = FALSE,
                       verbose = TRUE) {
   #validate the folder path(s) the user specified to make sure they exist
-  path <- normalizePath(unique(path), winslash = "/")
-  # check in apply
-  if(sum(!dir.exists(path)) > 0) {
-    stop(paste0("Cannot find ", sQuote("path") , "value in ", paste(dQuote(path[!dir.exists(path)]), collapse=", ")))
+  path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
+  
+  if(!all(dir.exists(path))){
+    stop(paste0("The argument ", sQuote("path"), " cannot be located: ", pasteItems(dQuote(path[!dir.exists(path)])),"."))
   }
   
   includeNumeracy <- TRUE #include numeracy as default
@@ -120,6 +120,10 @@ readTIMSS <- function(path,
   
   fSubPart <- tolower(substring(basename(filenames), 1, 8)) #includes a/b (4 or 8th grade), country code, and year code
   fileYrs <- sort(unique(tolower(substring(basename(filenames),7,8))))
+  
+  #ensure we grab the year code of the base year if only the numeracy code is found for our loop (country only has literacy data)
+  yrNum <- unique(convertTIMSSYearCode(fileYrs))
+  fileYrs <- getTIMSSYearCodes(gradeLvl)[names(getTIMSSYearCodes(gradeLvl)) %in% yrNum]
   
   procCountryData <- list()
   iProcCountry <- 0 #index counter for adding countries to the list
@@ -229,7 +233,7 @@ readTIMSS <- function(path,
       
       if(gradeLvl == 4) {
         if(hasData==TRUE){ #process our 4th grade data::run event if we have both sets
-          processArgs <- list(dataFolderPath=path,
+          processArgs <- list(dataFolderPath=unique(dirname(unlist(fnames))), #specify only the directory in which the files exist
                               countryCode=cntry,
                               fnames=fnames,
                               fileYrs=yrCode,
@@ -257,7 +261,7 @@ readTIMSS <- function(path,
           
         }
         if(hasDataNumeracy==TRUE){ #process our numeracy data only
-          processArgs <- list(dataFolderPath=path,
+          processArgs <- list(dataFolderPath=unique(dirname(unlist(fnamesNumeracy))), #specify folders where data resides
                               countryCode=cntry,
                               fnames=fnamesNumeracy,
                               fileYrs=yrCodeNumeracy,
@@ -284,7 +288,7 @@ readTIMSS <- function(path,
           }
         }
         if(hasDataNumeracy==TRUE && hasData==TRUE){#process both 4th and numeracy, then merge together
-          processArgs <- list(dataFolderPath=path,
+          processArgs <- list(dataFolderPath=unique(c(dirname(unlist(fnames)), dirname(unlist(fnamesNumeracy)))), #specify folders where data resides
                               countryCode=cntry,
                               fnames=fnames,
                               fnamesNumeracy = fnamesNumeracy,
@@ -312,7 +316,7 @@ readTIMSS <- function(path,
           }
         }
       }else { #8th grade data
-        processArgs <- list(dataFolderPath=path,
+        processArgs <- list(dataFolderPath=unique(dirname(unlist(fnames))), #specify folders where data resides
                             countryCode=cntry,
                             fnames=fnames,
                             fileYrs=yrCode,
@@ -544,13 +548,14 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
   if(runProcessing==TRUE){
     
     if(verbose==TRUE){
-      cat(paste0("Processing Data for Country: ", dQuote(countryCode),"\n"))
+      cat(paste0("Processing data for country: ", dQuote(countryCode),".\n"))
     }
     
     #SCHOOL LEVEL===================================================
     acg <- unlist(fnames["acg"])[1]
     schoolFP <- gsub(".sav$", "\\.txt", unlist(fnames["acg"])[1], ignore.case = TRUE)
-    schoolDF1 <- read_sav(acg)
+    schoolDF1 <- read_sav(acg, user_na = TRUE)
+    schoolDF1 <- UnclassCols(schoolDF1)
     colnames(schoolDF1) <- toupper(colnames(schoolDF1))
     ffsch <- writeTibbleToFWFReturnFileFormat(schoolDF1, schoolFP)
     #===============================================================
@@ -561,11 +566,16 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
     asg <- unlist(fnames["asg"])[1]
     ash <- unlist(fnames["ash"])[1]
     asr <- unlist(fnames["asr"])[1]
-    stuDF1 <- read_sav(asa)
+    
+    stuDF1 <- read_sav(asa, user_na = TRUE)
+    stuDF1 <- UnclassCols(stuDF1)
     colnames(stuDF1) <- toupper(colnames(stuDF1))
     ids1 <- grep("^ID", names(stuDF1), ignore.case=TRUE, value=TRUE)
-    stuDF2 <- read_sav(asg)
+    
+    stuDF2 <- read_sav(asg, user_na = TRUE)
+    stuDF2 <- UnclassCols(stuDF2)
     colnames(stuDF2) <- toupper(colnames(stuDF2))
+    
     ids2 <- grep("^ID", names(stuDF2), ignore.case=TRUE, value=TRUE)
     ids12 <- ids1[ids1 %in% ids2]
     ids12 <- ids12[!(ids12 %in% c("IDGRADER", "IDPUNCH"))] #omit these vars for merging
@@ -580,17 +590,19 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
     
     if(nrow(stuDF1) != nrow(mm)) {
       stop(paste0("Failed consistency check for filetype ", sQuote("asa"), " country code ", sQuote(tolower(countryCode)), ". ",
-                  "Please email EdSurvey.help@air.org for assistance"))
+                  "Please email EdSurvey.help@air.org for assistance."))
     }
     if(nrow(stuDF2) != nrow(mm)) {
       stop(paste0("Failed consistency check for filetype ", sQuote("asg"), " country code ", sQuote(tolower(countryCode)), ". ",
-                  "Please email EdSurvey.help@air.org for assistance"))
+                  "Please email EdSurvey.help@air.org for assistance."))
     }
     
     #test to ensure the ash filepath is not NA (0==FALSE (Have file) | 1==TRUE (No File))
     if(min(is.na(ash)) == 0) {
-      stuDF3 <- read_sav(ash)
+      stuDF3 <- read_sav(ash, user_na = TRUE)
+      stuDF3 <- UnclassCols(stuDF3)
       colnames(stuDF3) <- toupper(colnames(stuDF3))
+      
       ids3 <- grep("^ID", names(stuDF3), ignore.case=TRUE, value=TRUE)
       idsmm3 <- ids12[ids12 %in% ids3]
       idsmm3 <- idsmm3[!(idsmm3 %in% c("IDGRADER", "IDPUNCH"))] #omit these vars for merging
@@ -605,17 +617,18 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
       mm <- mm[,names(mm)[!grepl("\\.junk$",names(mm))]]
       if(nrow(stuDF1) != nrow(mm)) {
         stop(paste0("Failed consistency check for filetype ", sQuote("ash"), " country code ", sQuote(tolower(countryCode)), ". ",
-                    "Please email EdSurvey.help@air.org for assistance"))
+                    "Please email EdSurvey.help@air.org for assistance."))
       }
       if(nr != nrow(mm)) {
         stop(paste0("Failed consistency check for filetype ", sQuote("ash"), " country code ", sQuote(tolower(countryCode)), ". ",
-                    "Please email EdSurvey.help@air.org for assistance"))
+                    "Please email EdSurvey.help@air.org for assistance."))
       }
     } else {
       idsmm3 <- ids12
     }
     if(min(is.na(asr)) == 0){
-      stuDF4 <- read_sav(asr)
+      stuDF4 <- read_sav(asr, user_na = TRUE)
+      stuDF4 <- UnclassCols(stuDF4)
       colnames(stuDF4) <- toupper(colnames(stuDF4))
       ids4 <- grep("^ID", names(stuDF4), ignore.case=TRUE, value=TRUE)
       idsmm4 <- idsmm3[idsmm3 %in% ids4]
@@ -631,7 +644,7 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
       mm <- mm[,names(mm)[!grepl("\\.junk$",names(mm))]]
       if(nr != nrow(mm)) {
         stop(paste0("Failed consistency check for filetype ", sQuote("asr"), " country code ", sQuote(tolower(countryCode)), ". ",
-                    "Please email EdSurvey.help@air.org for assistance"))
+                    "Please email EdSurvey.help@air.org for assistance."))
       }
       mm <- mm[,names(mm)[!grepl("\\.junk$",names(mm))]]
     }
@@ -644,9 +657,12 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
     ast <- unlist(fnames["ast"])[1]
     atg <- unlist(fnames["atg"])[1]
     
-    stuTeachDF <- read_sav(ast)
+    stuTeachDF <- read_sav(ast, user_na = TRUE)
+    stuTeachDF <- UnclassCols(stuTeachDF)
     colnames(stuTeachDF) <- toupper(colnames(stuTeachDF))
-    teachDF <- read_sav(atg)
+    
+    teachDF <- read_sav(atg, user_na = TRUE)
+    teachDF <- UnclassCols(teachDF)
     colnames(teachDF) <- toupper(colnames(teachDF))
     
     ids1 <- grep("^ID", names(stuTeachDF), ignore.case=TRUE, value=TRUE)
@@ -664,7 +680,7 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
   
     if(nrow(stuTeachDF) != nrow(mm)) {
       stop(paste0("Failed consistency check for filetype ", sQuote("ast"), " country code ", sQuote(tolower(countryCode)), ". ",
-                  "Please email EdSurvey.help@air.org for assistance"))
+                  "Please email EdSurvey.help@air.org for assistance."))
     }
     
     teachFP <- gsub(".sav$", "\\.txt", unlist(fnames["atg"])[1], ignore.case = TRUE)
@@ -755,20 +771,32 @@ processTIMSSGr8 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
     
     #SCHOOL LEVEL===================================================
     bcg <- unlist(fnames["bcg"])[1]
-    schoolDF1 <- read_sav(bcg)
+    
+    schoolDF1 <- read_sav(file=bcg, user_na = TRUE)
+    schoolDF1 <- UnclassCols(schoolDF1)
+    
     colnames(schoolDF1) <- toupper(colnames(schoolDF1))
     schoolFP <- gsub(".sav$", "\\.txt", unlist(fnames["bcg"])[1], ignore.case = TRUE)
-    ffsch <- writeTibbleToFWFReturnFileFormat(schoolDF1,  schoolFP)  
+    ffsch <- writeTibbleToFWFReturnFileFormat(schoolDF1,  schoolFP)
+    
+    #cleanup
+    schoolDF1 <- NULL
     #===============================================================
     
     #STUDENT LEVEL==================================================
     bsa <- unlist(fnames["bsa"])[1]
     bsg <- unlist(fnames["bsg"])[1]
     bsr <- unlist(fnames["bsr"])[1]
-    stuDF1 <- read_sav(bsa)
+    
+    stuDF1 <- read_sav(bsa, user_na = TRUE)
+    stuDF1 <- UnclassCols(stuDF1)
+    
     colnames(stuDF1) <- toupper(colnames(stuDF1))
     ids1 <- grep("^ID", names(stuDF1), ignore.case=TRUE, value=TRUE)
-    stuDF2 <- read_sav(bsg)
+    
+    stuDF2 <- read_sav(bsg, user_na = TRUE)
+    stuDF2 <- UnclassCols(stuDF2)
+    
     colnames(stuDF2) <- toupper(colnames(stuDF2))
     ids2 <- grep("^ID", names(stuDF2), ignore.case=TRUE, value=TRUE)
     ids12 <- ids1[ids1 %in% ids2]
@@ -791,8 +819,15 @@ processTIMSSGr8 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
                   "Please email EdSurvey.help@air.org for assistance"))
     }
     
+    #cleanup
+    stuDF1 <- NULL
+    stuDF2 <- NULL
+    
     if(min(is.na(bsr)) == 0){
-      stuDF3 <- read_sav(bsr)
+      
+      stuDF3 <- read_sav(bsr, user_na = TRUE)
+      stuDF3 <- UnclassCols(stuDF3)
+      
       colnames(stuDF3) <- toupper(colnames(stuDF3))
       ids3 <- grep("^ID", names(stuDF3), ignore.case=TRUE, value=TRUE)
       idsmm3 <- ids12[ids12 %in% ids3]
@@ -813,6 +848,9 @@ processTIMSSGr8 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
       }
     }
     
+    #cleanup
+    stuDF3 <- NULL
+    
     stuFP <- gsub(".sav$", "\\.txt", unlist(fnames["bsg"])[1], ignore.case = TRUE)
     ffstu <- writeTibbleToFWFReturnFileFormat(mm, stuFP)  
     #===============================================================
@@ -822,10 +860,15 @@ processTIMSSGr8 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
     btm <- unlist(fnames["btm"])[1]
     bts <- unlist(fnames["bts"])[1]
     
-    stuTeachDF <- read_sav(bst)
+    stuTeachDF <- read_sav(bst, user_na = TRUE)
+    stuTeachDF <- UnclassCols(stuTeachDF)
+    
     colnames(stuTeachDF) <- toupper(colnames(stuTeachDF))
     ids1 <- grep("^ID", names(stuTeachDF), ignore.case=TRUE, value=TRUE)
-    teachMathDF <- read_sav(btm)
+    
+    teachMathDF <- read_sav(btm, user_na = TRUE)
+    teachMathDF <- UnclassCols(teachMathDF)
+    
     colnames(teachMathDF) <- toupper(colnames(teachMathDF))
     ids2 <- grep("^ID", names(teachMathDF), ignore.case=TRUE, value=TRUE)
     ids12 <- ids1[ids1 %in% ids2]
@@ -853,7 +896,13 @@ processTIMSSGr8 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
                   "Please email EdSurvey.help@air.org for assistance"))
     }
   
-    teachSciDF <- read_sav(bts)
+    #cleanup
+    stuTeachDF <- NULL
+    teachMathDF <- NULL
+    
+    teachSciDF <- read_sav(bts, user_na = TRUE)
+    teachSciDF <- UnclassCols(teachSciDF)
+    
     colnames(teachSciDF) <- toupper(colnames(teachSciDF))
     ids3 <- grep("^ID", names(teachSciDF), ignore.case=TRUE, value=TRUE)
     idsmm3 <- ids1[ids1 %in% ids3]
@@ -883,6 +932,10 @@ processTIMSSGr8 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
     
     stuTeachFP <- gsub(".sav$", "\\.txt", unlist(fnames["bst"])[1], ignore.case = TRUE)
     ffTeach <- writeTibbleToFWFReturnFileFormat(mm, stuTeachFP) 
+    
+    #cleanup
+    teachSciDF <- NULL
+    mm <- NULL
     #===============================================================
     
     #gather the LaF connections to return
@@ -910,7 +963,7 @@ processTIMSSGr8 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
     #===============================================================
   } else {
     if(verbose==TRUE){
-      cat(paste0("Found cached data for country code ", dQuote(countryCode),"\n"))
+      cat(paste0("Found cached data for country code ", dQuote(countryCode),".\n"))
     }
   }
   
@@ -923,8 +976,11 @@ processTIMSSGr8 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
 
 #when a tibble is merged it comes back as a data.frame instead of a tibble, this converts the data.frame back to tibble
 mergeTibble <- function(a, b, by,  ..., suffixes=c("", ".junk")) {
+  
   suffixes[1] <- ""
+  
   ab <- merge(a, b, by=by, ..., suffixes=suffixes)
+  
   cols <- names(ab)
   abt <- as_tibble(ab)
   
@@ -977,6 +1033,7 @@ writeTibbleToFWFReturnFileFormat <- function(spssDF, outF, jkType=c("JK2", "JK1"
     #ensure we have no out of bounds values per the file format specification::this also converts any scientific notation numbers to their full character count
     #since we are using the 'format' function NaN and NA values are returned as nchar of 3 or 2
     
+    
     #set maximum number of digits for the fwf file
     if(is.numeric(spssDF[[coli]])){
       spssDF[[coli]] <- round(spssDF[[coli]], digits = 8) #set the maximum number of digits allowed in output file
@@ -1016,7 +1073,6 @@ writeTibbleToFWFReturnFileFormat <- function(spssDF, outF, jkType=c("JK2", "JK1"
       colInfo$multiplier[coli] <- 10^max(decTestLen)
     }
   }
-  
   
   #format the output matrix for Fixed Width Format datafile after the data variable size validation above
   omat <- sapply(1:nrow(colInfo), function(coli) {
@@ -1162,7 +1218,7 @@ writeTibbleToFWFReturnFileFormat <- function(spssDF, outF, jkType=c("JK2", "JK1"
   #char 7-8 is the numeric 01-05 designation of the pausible value
   ff$Type <- rep("", nrow(colInfo))
   ff$Type <- sapply(colInfo$names, function(zzz){
-    if(grepl("[ABMPabmp][Ss][MSPRmspr]...[0][1-5]", zzz, ignore.case = TRUE)==TRUE){
+    if(grepl("[ABMPabmp][Ss][MSPREmspre]...[0][1-5]", zzz, ignore.case = TRUE)==TRUE){
       return(substring(tolower(zzz),3,6))
     } 
     else if(grepl("^PV[1-5]CI[LV]$", zzz, ignore.case = TRUE)==TRUE){ #specific for ICILS (PV1CIL) single PV measure and ICCS (PV1CIV) single PV measure
@@ -1204,23 +1260,23 @@ exportTIMSSToCSV <- function(folderPath, exportPath, cntryCodes, gradeLvl, ...){
       sdf  <- sdfList$datalist[[i]]
       cntry <- sdf$country
       
-      cat(paste(cntry, "Working...."))
-      data <- getData(sdf, names(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
+      cat(paste(cntry, "Working.\n"))
+      data <- getData(sdf, colnames(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
       
       
       write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-      cat(paste(cntry, "Completed"), "\n")
+      cat(paste(cntry, "Completed.\n"))
     }
   } else if (class(sdfList) == "edsurvey.data.frame"){
     
     sdf <- sdfList
     cntry <- sdf$country
     
-    cat(paste(cntry, "Working...."))
-    data <- getData(sdf, names(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
+    cat(paste(cntry, "Working.\n"))
+    data <- getData(sdf, colnames(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
     
     write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-    cat(paste(cntry, "Completed"), "\n")
+    cat(paste(cntry, "Completed.\n"))
   }
   
 }
@@ -1269,7 +1325,7 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
   if(runProcessing==TRUE){
     
     if(verbose==TRUE){
-      cat(paste0("Processing Data for Country: ", dQuote(countryCode),"\n"))
+      cat(paste0("Processing data for country: ", dQuote(countryCode),".\n"))
     }
     
     #SCHOOL LEVEL===================================================
@@ -1277,9 +1333,14 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
     acgN <- unlist(fnamesNumeracy["acg"])[1]
     
     schoolFP <- file.path(dataFolderPath,paste0("acg", countryCode, yearCode, ".txt"))
-    schoolDF1 <- read_sav(acg)
+    
+    schoolDF1 <- read_sav(acg, user_na = TRUE)
+    schoolDF1 <- UnclassCols(schoolDF1)
     colnames(schoolDF1) <- toupper(colnames(schoolDF1))
-    schoolDF1Num <- read_sav(acgN)
+    
+    schoolDF1Num <- read_sav(acgN, user_na = TRUE)
+    schoolDF1Num <- UnclassCols(schoolDF1Num)
+    
     colnames(schoolDF1Num) <- toupper(colnames(schoolDF1Num))
     
     schoolDFx <- rBindTibble(schoolDF1, schoolDF1Num)
@@ -1316,9 +1377,12 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
     asrN <- unlist(fnamesNumeracy["asr"])[1]
     
     #ASA MERGE================================
-    stuDF1 <- read_sav(asa)
+    stuDF1 <- read_sav(asa, user_na = TRUE)
+    stuDF1 <- UnclassCols(stuDF1)
     colnames(stuDF1) <- toupper(colnames(stuDF1))
-    stuDF1Num <- read_sav(asaN)
+    
+    stuDF1Num <- read_sav(asaN, user_na = TRUE)
+    stuDF1Num <- UnclassCols(stuDF1Num)
     colnames(stuDF1Num) <- toupper(colnames(stuDF1Num))
     
     stuDFx <- rBindTibble(stuDF1, stuDF1Num)
@@ -1334,9 +1398,12 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
     #=========================================
     
     #ASG MERGE================================
-    stuDF2 <- read_sav(asg)
+    stuDF2 <- read_sav(asg, user_na = TRUE)
+    stuDF2 <- UnclassCols(stuDF2)
     colnames(stuDF2) <- toupper(colnames(stuDF2))
-    stuDF2Num <- read_sav(asgN)
+    
+    stuDF2Num <- read_sav(asgN, user_na = TRUE)
+    stuDF2Num <- UnclassCols(stuDF2Num)
     colnames(stuDF2Num) <- toupper(colnames(stuDF2Num))
     
     stuDFx <- rBindTibble(stuDF2, stuDF2Num)
@@ -1366,22 +1433,24 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
     
     if(nrow(stuDF1) != nrow(mm)) {
       stop(paste0("Failed consistency check for filetype ", sQuote("asa"), " country code ", sQuote(tolower(countryCode)), ". ",
-                  "Please email EdSurvey.help@air.org for assistance"))
+                  "Please email EdSurvey.help@air.org for assistance."))
     }
     if(nrow(stuDF2) != nrow(mm)) {
       stop(paste0("Failed consistency check for filetype ", sQuote("asg"), " country code ", sQuote(tolower(countryCode)), ". ",
-                  "Please email EdSurvey.help@air.org for assistance"))
+                  "Please email EdSurvey.help@air.org for assistance."))
     }
     #=========================================
     
     
     if(min(is.na(ash)) == 0 || min(is.na(ashN))==0) {#test if we have the ash file
       if(min(is.na(ash))==0){#test 4th grade file
-        stuDF3 <- read_sav(ash)
+        stuDF3 <- read_sav(ash, user_na = TRUE)
+        stuDF3 <- UnclassCols(stuDF3)
         colnames(stuDF3) <- toupper(colnames(stuDF3))
       }
       if(min(is.na(ashN))==0){#test 4th grade file
-        stuDF3N <- read_sav(ashN)
+        stuDF3N <- read_sav(ashN, user_na = TRUE)
+        stuDF3N <- UnclassCols(stuDF3N)
         colnames(stuDF3N) <- toupper(colnames(stuDF3N))
       }
       
@@ -1408,11 +1477,11 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
       mm <- mm[,names(mm)[!grepl("\\.junk$",names(mm))]]
       if(nrow(stuDF1) != nrow(mm)) {
         stop(paste0("Failed consistency check for filetype ", sQuote("ash"), " country code ", sQuote(tolower(countryCode)), ". ",
-                    "Please email EdSurvey.help@air.org for assistance"))
+                    "Please email EdSurvey.help@air.org for assistance."))
       }
       if(nr != nrow(mm)) {
         stop(paste0("Failed consistency check for filetype ", sQuote("ash"), " country code ", sQuote(tolower(countryCode)), ". ",
-                    "Please email EdSurvey.help@air.org for assistance"))
+                    "Please email EdSurvey.help@air.org for assistance."))
       }
     } else {
       idsmm3 <- ids12
@@ -1420,11 +1489,13 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
     
     if(min(is.na(asr)) == 0 ||min(is.na(asrN)) == 0 ){ #test if either set has an asr file
       if(min(is.na(asr)) == 0 ){#test 4th grade asr file
-        stuDF4 <- read_sav(asr)
+        stuDF4 <- read_sav(asr, user_na = TRUE)
+        stuDF4 <- UnclassCols(stuDF4)
         colnames(stuDF4) <- toupper(colnames(stuDF4))
       }
       if(min(is.na(asrN)) == 0 ){#test 4th grade asr file
-        stuDF4N <- read_sav(asrN)
+        stuDF4N <- read_sav(asrN, user_na = TRUE)
+        stuDF4N <- UnclassCols(stuDF4N)
         colnames(stuDF4N) <- toupper(colnames(stuDF4N))
       }
       
@@ -1450,7 +1521,7 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
       mm <- mm[,names(mm)[!grepl("\\.junk$",names(mm))]]
       if(nr != nrow(mm)) {
         stop(paste0("Failed consistency check for filetype ", sQuote("asr"), " country code ", sQuote(tolower(countryCode)), ". ",
-                    "Please email EdSurvey.help@air.org for assistance"))
+                    "Please email EdSurvey.help@air.org for assistance."))
       }
       mm <- mm[,names(mm)[!grepl("\\.junk$",names(mm))]]
     }
@@ -1465,9 +1536,12 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
     astN <- unlist(fnamesNumeracy["ast"])[1]
     atgN <- unlist(fnamesNumeracy["atg"])[1]
     
-    stuTeachDF <- read_sav(ast)
+    stuTeachDF <- read_sav(ast, user_na = TRUE)
+    stuTeachDF <- UnclassCols(stuTeachDF)
     colnames(stuTeachDF) <- toupper(colnames(stuTeachDF))
-    stuTeachDFN <- read_sav(astN)
+    
+    stuTeachDFN <- read_sav(astN, user_na = TRUE)
+    stuTeachDFN <- UnclassCols(stuTeachDFN)
     colnames(stuTeachDFN) <- toupper(colnames(stuTeachDFN))
     
     stuTeachDFx <- rBindTibble(stuTeachDF, stuTeachDFN)
@@ -1481,7 +1555,8 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
     stuTeachDFN <- NULL
     stuTeachDFx <- NULL
     
-    teachDF <- read_sav(atg)
+    teachDF <- read_sav(atg, user_na = TRUE)
+    teachDF <- UnclassCols(teachDF)
     colnames(teachDF) <- toupper(colnames(teachDF))
     
     #DO NOT MERGE THE TEACHER BACKROUND DATA::The 4th grade file includes all teacher data and the Numeracy file is just a small subset of those teachers
@@ -1500,7 +1575,7 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
     
     if(nrow(stuTeachDF) != nrow(mm)) {
       stop(paste0("Failed consistency check for filetype ", sQuote("atg"), " country code ", sQuote(tolower(countryCode)), ". ",
-                  "Please email EdSurvey.help@air.org for assistance"))
+                  "Please email EdSurvey.help@air.org for assistance."))
     }
     
     teachFP <- file.path(dataFolderPath,paste0("atg", countryCode, yearCode, ".txt"))
@@ -1652,4 +1727,18 @@ rBindTibble <- function(tbl1, tbl2){
     }
   }
   return(xTbl)
+}
+
+#removes the haven defined column classes from a returned tibble
+#needed for issues revolving around `user_na=TRUE` argument of haven 'read_sav' method parameter
+#throwing a strange error: `x` and `labels` must be same type
+UnclassCols <- function(tbl){
+  
+  if(ncol(tbl)>0){
+    for(i in 1:ncol(tbl)){
+      tbl[[i]] <- unclass(tbl[[i]])
+    }
+  }
+  
+  return(tbl)
 }

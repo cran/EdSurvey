@@ -24,10 +24,10 @@
 #'                The default value is \code{TRUE}.
 #' 
 #' @details Reads in the unzipped files downloaded from the ICILS international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}.
-#'          Datafiles require the SPSS datafile (.sav) format using the default filenames.
+#'          Data files require the SPSS data file (.sav) format using the default filenames.
 #'
 #' @return
-#'  An \code{edsurvey.data.frame} for a single specified country or an \code{edsurvey.data.frame.list} if multiple countries specified.
+#'  an \code{edsurvey.data.frame} for a single specified country or an \code{edsurvey.data.frame.list} if multiple countries specified
 #'
 #' @seealso \code{\link{readNAEP}}, \code{\link{readTIMSS}}, and \code{\link{getData}}
 #' @author Tom Fink
@@ -43,17 +43,22 @@ readICILS <- function(path,
                       forceReread=FALSE,
                       verbose=TRUE) {
   
-  path <- normalizePath(unique(path), winslash = "/")
+  path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
+  
+  if(!all(dir.exists(path))){
+    stop(paste0("The argument ", sQuote("path"), " cannot be located: ", pasteItems(dQuote(path[!dir.exists(path)])),"."))
+  }
+  
   dataSet <- tolower(dataSet)
   
   if (length(dataSet) > 1){
     dataSet <- dataSet[1]
   }
   if(sum(!(dataSet %in% c("student", "teacher"))>0)){
-    stop(paste0("The argument ", sQuote("dataSet"), " must be either ", sQuote("student"), " or ", sQuote("teacher")))
+    stop(paste0("The argument ", sQuote("dataSet"), " must be either ", dQuote("student"), " or ", dQuote("teacher"),"."))
   }
   if(sum(!dir.exists(path)) > 0) { #validate the paths to ensure they all exist
-    stop(paste0("Cannot find ", sQuote("path") , "value in ", paste(dQuote(path[!dir.exists(path)]), collapse=", ")))
+    stop(paste0("Cannot find ", sQuote("path") , "value in ", pasteItems(dQuote(path[!dir.exists(path)])),"."))
   }
   if(!is.logical(forceReread)){
     stop(paste0("The argument ", sQuote("forceReread"), " must be a logical value."))
@@ -78,8 +83,8 @@ readICILS <- function(path,
                           pattern=paste0("^", gradeL, "..", "(",paste(countries, collapse="|"), ")(",
                                          paste(getICILSYearCodes(), collapse = "|"), ")","\\.sav$"), full.names=TRUE, ignore.case = TRUE)
   if(length(filenames) == 0) {
-    stop(paste0("Could not find any ICILS datafiles for countries: ", paste(countries, collapse=", "),
-                " in the following folder(s): ", paste(path, collapse=", "), "."))
+    stop(paste0("Could not find any ICILS datafiles for countries: ", pasteItems(countries),
+                " in the following folder(s): ", pasteItems(path), "."))
   }
   
   fSubPart <- tolower(substring(basename(filenames), 1, 8)) #includes a (4th grade), country code, and year code
@@ -118,21 +123,21 @@ readICILS <- function(path,
       
       #test if no teacher file exists if we are looking at teacher level data
       if (sum(nchar(unlist(fnames["btg"])))==0 && dataSet=="teacher") {
-        warning(paste0("No teacher background file. Skipping Country ", sQuote(cntry), " for year ", sQuote(convertICILSYearCode(yrCode))))
+        warning(paste0("No teacher background file. Skipping country ", sQuote(cntry), " for year ", sQuote(convertICILSYearCode(yrCode)),"."))
         next
       }
       
       #test for any missing files other than the 'ash' or 'asr' file::also check for any duplicate or multiple files
       if (sum(hasMissing)>0 && sum(nchar(unlist(fnames)))>0) {
-        stop(paste0("Missing ICILS Datafile(s) for Country (", cntry, "): ", paste(ICILSfiles[hasMissing], collapse=", "), " for dataset ", sQuote(dataSet)))
+        stop(paste0("Missing ICILS datafile(s) for country (", cntry, "): ", pasteItems(ICILSfiles[hasMissing]), " for dataset ", sQuote(dataSet),"."))
       }
       if (sum(hasExcess)>0 && sum(nchar(unlist(fnames)))>0){
-        stop(paste0("Excess/Duplicate ICILS Datafile(s) for Country (", cntry, "): ", paste(ICILSfiles[hasExcess], collapse=", "), " for dataset ", sQuote(dataSet)))
+        stop(paste0("Excess/duplicate ICILS datafile(s) for country (", cntry, "): ", paste(ICILSfiles[hasExcess], collapse=", "), " for dataset ", sQuote(dataSet),"."))
       }
       
       #test if there are any files for this country/year combination, if not, we can skip this loop iteration as it does not exist
       if (sum(nchar(unlist(fnames)))==0) {
-        warning(paste0("No Data Found. Skipping Country ", sQuote(cntry), " for year ", sQuote(convertICILSYearCode(yrCode))))
+        warning(paste0("No data found. Skipping country ", sQuote(cntry), " for year ", sQuote(convertICILSYearCode(yrCode)),"."))
         next
       }
       
@@ -140,7 +145,7 @@ readICILS <- function(path,
       processedData <- list()
       
       if(dataSet=="student"){
-        processArgs <- list(dataFolderPath = path, 
+        processArgs <- list(dataFolderPath = unique(dirname(unlist(fnames))), #specify only the directory in which the files exist 
                             countryCode = cntry, 
                             fnames = fnames, 
                             fileYrs = yrCode, 
@@ -159,10 +164,10 @@ readICILS <- function(path,
           processArgs[["forceReread"]] <- TRUE #try it again reprocessing the data
           processedData <- tryCatch(do.call("processICILS.Student", processArgs, quote = TRUE),
                                     error = function(e){
-                                      stop(paste0("Unable to process ICILS Student data for country code ", sQuote(cntry), 
-                                                  " having year code ", sQuote(yrCode) ," at folder path(s): ", paste(sQuote(path), collapse = " & "),
+                                      stop(paste0("Unable to process ICILS student data for country code ", sQuote(cntry), 
+                                                  " having year code ", sQuote(yrCode) ," at folder path(s): ", pasteItems(sQuote(path)),
                                                   ". Possible file corruption with source data.",
-                                                  " Error Message: ", e))
+                                                  " Error message: ", e))
                                     })
         }
         
@@ -206,7 +211,7 @@ readICILS <- function(path,
         processedData$stratumVar <- "jkzones"
         
       }else if(dataSet=="teacher"){
-        processArgs <- list(dataFolderPath = path, 
+        processArgs <- list(dataFolderPath = unique(dirname(unlist(fnames))), #specify only the directory in which the files exist 
                             countryCode = cntry, 
                             fnames = fnames, 
                             fileYrs = yrCode, 
@@ -225,10 +230,10 @@ readICILS <- function(path,
           processArgs[["forceReread"]] <- TRUE #try it again reprocessing the data
           processedData <- tryCatch(do.call("processICILS.Teacher", processArgs, quote = TRUE),
                                     error = function(e){
-                                      stop(paste0("Unable to process ICILS Teacher data for country code ", sQuote(cntry), 
-                                                  " having year code ", sQuote(yrCode) ," at folder path(s): ", paste(sQuote(path), collapse = " & "),
+                                      stop(paste0("Unable to process ICILS teacher data for country code ", sQuote(cntry), 
+                                                  " having year code ", sQuote(yrCode) ," at folder path(s): ", pasteItems(sQuote(path)),
                                                   ". Possible file corruption with source data.",
-                                                  " Error Message: ", e))
+                                                  " Error message: ", e))
                                     })
         }
         
@@ -405,20 +410,22 @@ processICILS.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, f
   if(runProcessing==TRUE){
     
     if(verbose==TRUE){
-      cat(paste0("Processing Data for Country: ", dQuote(countryCode),"\n"))
+      cat(paste0("Processing data for country: ", dQuote(countryCode),".\n"))
     }
     
     #SCHOOL LEVEL===================================================
     bcg <- unlist(fnames["bcg"])[1]
     schoolFP <- gsub(".sav$", "\\.txt", unlist(fnames["bcg"])[1], ignore.case = TRUE)
-    schoolDF1 <- read_sav(bcg)  
+    schoolDF1 <- read_sav(bcg, user_na = TRUE) 
+    schoolDF1 <- UnclassCols(schoolDF1)
     colnames(schoolDF1) <- toupper(colnames(schoolDF1))
     ffsch <- writeTibbleToFWFReturnFileFormat(schoolDF1, schoolFP )  
     #===============================================================
     
     #STUDENT LEVEL==================================================
     bsg <- unlist(fnames["bsg"])[1]
-    stuDF1 <- read_sav(bsg)
+    stuDF1 <- read_sav(bsg, user_na = TRUE)
+    stuDF1 <- UnclassCols(stuDF1)
     colnames(stuDF1) <- toupper(colnames(stuDF1))
     stuFP <- gsub(".sav$", "\\.txt", unlist(fnames["bsg"])[1], ignore.case = TRUE)
     ffstu <- writeTibbleToFWFReturnFileFormat(stuDF1, stuFP)  
@@ -494,13 +501,14 @@ processICILS.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, f
   if(runProcessing==TRUE){
     
     if(verbose==TRUE){
-      cat(paste0("Processing Data for Country: ", dQuote(countryCode),"\n"))
+      cat(paste0("Processing data for country: ", dQuote(countryCode),".\n"))
     }
     
     #SCHOOL LEVEL===================================================
     bcg <- unlist(fnames["bcg"])[1]
     schoolFP <- gsub(".sav$", "\\.txt", unlist(fnames["bcg"])[1], ignore.case = TRUE)
-    schoolDF1 <- read_sav(bcg)  
+    schoolDF1 <- read_sav(bcg, user_na = TRUE)  
+    schoolDF1 <- UnclassCols(schoolDF1)
     colnames(schoolDF1) <- toupper(colnames(schoolDF1))
     ffsch <- writeTibbleToFWFReturnFileFormat(schoolDF1, schoolFP )  
     #===============================================================
@@ -511,7 +519,8 @@ processICILS.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, f
     hasTeacherData <- FALSE
     
     if(min(is.na(btg)) == 0) { #test this in the main readICILS to ensure we have a teacher file before processing
-      tchDF1 <- read_sav(btg)
+      tchDF1 <- read_sav(btg, user_na = TRUE)
+      tchDF1 <- UnclassCols(tchDF1)
       colnames(tchDF1) <- toupper(colnames(tchDF1))
       tchFP <- gsub(".sav$", "\\.txt", unlist(fnames["btg"])[1], ignore.case = TRUE)
       ffTch <- writeTibbleToFWFReturnFileFormat(tchDF1, tchFP) 
@@ -542,7 +551,7 @@ processICILS.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, f
     
   } else { #used the cache files
     if(verbose==TRUE){
-      cat(paste0("Found cached data for country code ", dQuote(countryCode),"\n"))
+      cat(paste0("Found cached data for country code ", dQuote(countryCode),".\n"))
     }
   } #end if(runProcessing==TRUE)
   
@@ -561,23 +570,23 @@ exportICILSToCSV <- function(folderPath, exportPath, cntryCodes, dataSet, ...){
       sdf  <- sdfList$datalist[[i]]
       cntry <- sdf$country
       
-      cat(paste(cntry, "Working...."))
-      data <- getData(sdf, names(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
+      cat(paste(cntry, "working.\n"))
+      data <- getData(sdf, colnames(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
       
       
       write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-      cat(paste(cntry, "Completed"), "\n")
+      cat(paste(cntry, "completed."), "\n")
     }
   } else if (class(sdfList) == "edsurvey.data.frame"){
     
     sdf <- sdfList
     cntry <- sdf$country
     
-    cat(paste(cntry, "Working...."))
-    data <- getData(sdf, names(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
+    cat(paste(cntry, "working."))
+    data <- getData(sdf, colnames(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
     
     write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-    cat(paste(cntry, "Completed"), "\n")
+    cat(paste(cntry, "completed."), "\n")
   }
   
 }

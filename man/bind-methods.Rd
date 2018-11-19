@@ -11,7 +11,7 @@ cbind(..., deparse.level = 1)
 rbind(..., deparse.level = 1)
 }
 \arguments{
-\item{...}{one or more objects of class \code{vector}, \code{data.frame}, \code{matrix}, or \code{light.edsurvey.data.frame}.}
+\item{...}{one or more objects of class \code{vector}, \code{data.frame}, \code{matrix}, or \code{light.edsurvey.data.frame}}
 
 \item{deparse.level}{integer determining under which circumstances column and row names are built from the actual arguments. See \link[base:cbind]{cbind}.}
 }

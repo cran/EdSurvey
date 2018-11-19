@@ -18,14 +18,14 @@
 #'                  of plausible values and is 
 #'                  estimated on the lower of the number of
 #'                  available plausible values and 
-#'                  \code{jrrIMax}. When \code{jrrIMax} is set to \code{Inf}
+#'                  \code{jrrIMax}. When \code{jrrIMax} is set to \code{Inf},
 #'                  all plausible values will 
 #'                  be used. Higher values of \code{jrrIMax} lead to longer
 #'                  computing times and more
 #'                  accurate variance estimates.
 #' @param varMethod a character set to \code{jackknife} or \code{Taylor}
 #'                  that indicates the variance estimation method used when 
-#'                  constructing the confidence intervals. the jackknife
+#'                  constructing the confidence intervals. The jackknife
 #'                  variance estimation method is always
 #'                  used to calculate the standard error.
 #' @param alpha a numeric value between 0 and 1 indicating the confidence level.
@@ -53,10 +53,11 @@
 #'                           estimates. This is intended to allow for the
 #'                           computation
 #'                           of covariances between estimates.
-#'                         
+#' @param returnNumberOfPSU a logical value set to \code{TRUE} to return the number of 
+#'                          primary sampling units (PSU)                         
 #' @details Percentiles, their standard errors, and confidence intervals
-#'          are calculated according to the  
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Percentiles.pdf}{Methods Used for Estimating Percentiles vignette}.
+#'          are calculated according to the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Percentiles.pdf}{Methods Used for Estimating Percentiles}.
 #'          Note that the standard errors and confidence intervals are based
 #'          on separate formulas and assumptions.
 #'
@@ -70,17 +71,27 @@
 #' \subsection{the data argument is an edsurvey.data.frame}{
 #'   When the \code{data} argument is an \code{edsurvey.data.frame},
 #'   \code{percentile} returns an S3 object of class \code{percentile}.
-#'   This is a \code{data.frame} with a \code{call} attribute.
+#'   This is a \code{data.frame} with typical attributes (\code{names},
+#'   \code{row.names}, and \code{class}) and additional attributes as follows:
+#'   \describe{
+#'     \item{n0}{number of rows on \code{edsurvey.data.frame} before any conditions were applied}
+#'     \item{nUsed}{number of observations with valid data and weights larger than zero}
+#'     \item{nPSU}{number of PSUs used in calculation}
+#'     \item{call}{the call used to generate these results}
+#'   }
 #'
 #'   The columns of the \code{data.frame} are as follows:
 #'   \describe{
 #'     \item{percentile}{the percentile of this row}
 #'     \item{estimate}{the estimated value of the percentile}
 #'     \item{se}{the jackknife standard error of the estimated percentile}
+#'     \item{df}{degrees of freedom}
 #'     \item{confInt.ci_lower}{the lower bound
 #'                      of the confidence interval}
 #'     \item{confInt.ci_upper}{the upper bound
 #'                      of the confidence interval}
+#'     \item{nsmall}{number of units with more extreme results, averaged
+#'                   across plausible values}
 #'   }
 #' }
 #' 
@@ -116,11 +127,25 @@ percentile <- function(variable, percentiles, data,
                 omittedLevels=TRUE,
                 defaultConditions=TRUE,
                 recode=NULL,
-                returnVarEstInputs=FALSE) {
+                returnVarEstInputs=FALSE,
+                returnNumberOfPSU=FALSE) {
   # check incoming variables
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
   varMethod <- substr(tolower(varMethod[[1]]), 0,1)
   call <- match.call()
+  
+  # check percentiles arguments
+  if (any(percentiles < 0 | percentiles > 100)) {
+    message(sQuote("percentiles"), " must be between 0 and 100. Values out of range are omitted.")
+    percentiles <- percentiles[percentiles >=0 & percentiles <= 100]
+  }
+  
+  if (length(percentiles) == 0) {
+    stop("The function requires at least 1 valid percentile. Please check ", sQuote("percentiles"), " argument.")
+  }
+  if (all(percentiles >= 0 & percentiles <= 1) & any(percentiles != 0)) {
+    warning("All values in the ",sQuote("percentiles"), " argument are between 0 and 1. Note that the function uses a 0-100 scale.")
+  }
 
   # deal with the possibility that data is an edsurvey.data.frame.list
   if(inherits(data, "edsurvey.data.frame.list")) {
@@ -185,11 +210,24 @@ percentile <- function(variable, percentiles, data,
     # 1) get data for this variable and weight
     taylorVars <- NULL
     if(varMethod=="t") {
-      taylorVars <- c(getAttributes(data, "psuVar"), getAttributes(data, "stratumVar"))
+      taylorVars <- c(getPSUVar(data, weightVar), getStratumVar(data, weightVar))
     }
-
+    getDataVarNames <- c(variable, wgt, taylorVars)
+    
+    if (returnNumberOfPSU){
+      # Get stratum and PSU variable
+      stratumVar <- getAttributes(data,"stratumVar")
+      psuVar <- getAttributes(data,"psuVar")
+      if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% names(data$data))) {
+        getDataVarNames <- unique(c(getDataVarNames, stratumVar, psuVar))
+      } else {
+        warning("Warning: Stratum and PSU variable are required for this call and are not on the incoming data. Ignoring returnNumberOfPSU=TRUE.")
+        returnNumberOfPSU <- FALSE
+      }
+      
+    }
     getDataArgs <- list(data=data,
-                        varnames=c(variable, wgt, taylorVars),
+                        varnames=getDataVarNames,
                         returnJKreplicates=TRUE,
                         drop=FALSE,
                         omittedLevels=omittedLevels,
@@ -204,6 +242,10 @@ percentile <- function(variable, percentiles, data,
     # edf is the actual data
     edf <- do.call(getData, getDataArgs)
     # check that there is some data to work with
+    if(any(edf[,wgt] <= 0)) {
+      warning("Removing rows with 0 weight from analysis.")
+      edf <- edf[edf[,wgt] > 0,]
+    }
     if(nrow(edf) <= 0) {
       stop(paste0(sQuote("data"), " must have more than 0 rows after a call to ",
                   sQuote("getData"), "."))
@@ -229,8 +271,9 @@ percentile <- function(variable, percentiles, data,
     
     # get the jackknife replicate weights for this sdf
     jkw <- getWeightJkReplicates(wgt, data)
-    varm <- matrix(NA,nrow=length(variables),ncol=length(percentiles))
-    r <- matrix(NA, nrow=length(variables), ncol=length(percentiles))
+    # varm: JRR contributions
+    # nsmall: minimum (smaller value) of n above or below percentile
+    varm <- nsmall <- r <- matrix(NA, nrow=length(variables), ncol=length(percentiles))
     for(vari in 1:length(variables)) {
       # calculate the percentiles for this variable (now vv).
       vv <- variables[vari]
@@ -260,11 +303,19 @@ percentile <- function(variable, percentiles, data,
       # 3) identify requested points
       # pctf finds the points. the sapply does it for each value in percentiles
       r[vari, ] <- sapply(1:length(percentiles), function(peri) {
-                    pctf(percentiles[peri],xpw) 
+                    pctf(percentiles[peri], xpw) 
                   })
+      # get the smaller of n above the cutoff or n below
+      # subtract one to account for edge data at the end.
+      # max with 0 incase a discrete variable has no cases more extreme
+      nsmall[vari, ] <- sapply(1:length(percentiles), function(peri) {
+                          max(0, -1 + min( sum(xpw$x < r[vari,peri]), sum(xpw$x > r[vari,peri])  ))
+                        })
+
+
       # now, estimate the variance of this statistic
       if(vari <= jrrIMax) {
-
+        # get statistic with jackknife weights, this PV
         rprs <- sapply(1:length(percentiles), function(peri) {
                         p <- percentiles[peri]
                         rp <- r[vari, peri]
@@ -316,6 +367,7 @@ percentile <- function(variable, percentiles, data,
       Vimp <- (M+1)/M * apply(r, 2, var)
     }
     r0 <- apply(r, 2, mean)
+    nsmall0 <- apply(nsmall, 2, mean)
     # variance due to sampling
     Vjrr <- getAttributes(data, "jkSumMultiplier") * apply(varm[1:jrrIMax,,drop=FALSE], 2, mean)
     V <- Vimp + Vjrr
@@ -434,8 +486,8 @@ percentile <- function(variable, percentiles, data,
           vv <- variables[vari]
           xpw <- data.frame(x=edf[[vv]],
                             w=edf[[wgt]],
-                            psuV=edf[,getAttributes(data, "psuVar")],
-                            stratV=edf[,getAttributes(data, "stratumVar")])
+                            psuV=edf[,getPSUVar(data, weightVar)],
+                            stratV=edf[,getStratumVar(data, weightVar)])
           xpw <- xpw[!is.na(xpw$x),]
           # filter to just stratra that have more than one active PSU
           lengthunique <- function(x) { length(unique(x)) }
@@ -521,12 +573,16 @@ percentile <- function(variable, percentiles, data,
     # 4) Calculate final results
     res <- data.frame(percentile=percentiles, estimate=r0, se=sqrt(V),
                       df=dof,
-                      confInt=ci)
+                      confInt=ci,
+                      nsmall=nsmall0)
     if(returnVarEstInputs) {
       attr(res, "varEstInputs") <- varEstInputs
     }
     attr(res, "n0") <- nrow2.edsurvey.data.frame(data)
     attr(res, "nUsed") <- nrow(edf)
+    if (returnNumberOfPSU) {
+      attr(res, "nPSU") <- nrow(unique(edf[,c(stratumVar,psuVar)]))
+    }
     attr(res, "call") <- call
     class(res) <- c("percentile", "data.frame")
     return(res)
@@ -562,6 +618,9 @@ print.percentile <- function(x, ...) {
   print(attributes(x)$call)
   cat(paste0("full data n: ", attributes(x)$n0, "\n"))
   cat(paste0("n used: ", attributes(x)$nUsed, "\n"))
+  if(!is.null(attributes(x)$nPSU)) {
+    cat(paste0("n PSU: ", attributes(x)$nPSU, "\n"))
+  }
   cat("\n")
   class(x) <- "data.frame"
   if(min(x$df) <=2) {

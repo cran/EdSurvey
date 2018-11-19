@@ -4,11 +4,11 @@
 \alias{readTALIS}
 \title{Connect to TALIS Data}
 \usage{
-readTALIS(path, countries, isced, dataLevel = "teacher",
+readTALIS(path, countries, isced = "b", dataLevel = "teacher",
   forceReread = FALSE, verbose = TRUE)
 }
 \arguments{
-\item{path}{a character value to the full directory to the TALIS SPSS files (.sav)}
+\item{path}{a character vector to the full directory path(s) to the TALIS SPSS files (.sav)}
 
 \item{countries}{a character vector of the country/countries to include using the 
 three-digit ISO country code. A list of country codes can be found in the TALIS codebook or you can use
@@ -16,7 +16,7 @@ three-digit ISO country code. A list of country codes can be found in the TALIS 
 You can use \code{*} to indicate all countries available.}
 
 \item{isced}{a character value that is one of \code{a}, \code{b}, or \code{c}. \code{a} stands for \emph{Primary Level}, 
-\code{b} is for \emph{Lower Secondary Level}; and, \code{c} is for \emph{Upper Secondary Level}.}
+\code{b} is for \emph{Lower Secondary Level}; and, \code{c} is for \emph{Upper Secondary Level}. Default to \code{b}.}
 
 \item{dataLevel}{a character value that indicates which data level to be used. It can be \code{teacher} (the default) or \code{school}.}
 
@@ -57,7 +57,7 @@ edsurveyTable(tt2g05b ~ tt2g01, data = usa2013)
 }
 }
 \references{
-OECD. (2014a). \emph{TALIS 2013 technical report}. Paris, France: OECD Publishing. Retrieved from \emph{\url{http://www.oecd.org/education/school/TALIS-technical-report-2013.pdf}}
+Organisation for Economic Co-operation and Development. (2014a). \emph{TALIS 2013 technical report}. Paris, France: Author. Retrieved from \emph{\url{http://www.oecd.org/education/school/TALIS-technical-report-2013.pdf}}
 }
 \seealso{
 \code{\link{getData}} and \code{\link{downloadTALIS}}

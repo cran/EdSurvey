@@ -40,6 +40,8 @@
 #'                          \code{edsurvey.data.frame} to see the default conditions.
 #' @param recode a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
 #'               \code{recode=} \code{list(}\code{var1=} \code{list(from=} \code{c("a",} \code{"b",} \code{"c"),} \code{to=}\code{"d"))}. See Examples.
+#' @param returnNumberOfPSU a logical value set to \code{TRUE} to return the number of 
+#'                          primary sampling units (PSU)
 #' @param returnVarEstInputs a logical value set to \code{TRUE} to return the
 #'                           inputs to the jackknife and imputation variance
 #'                           estimates. This is intended to allow for
@@ -50,15 +52,15 @@
 #' This function implements an estimator that correctly handles left-hand side
 #' variables that are logical, allows for survey sampling weights, and estimates
 #' variances using the jackknife replication method.
-#' The
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
+#' The vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
 #' describes estimation of the reported statistics. 
 #' 
 #' The coefficients are estimated
 #' using the sample weights according to the section
 #' \dQuote{Estimation of Weighted Means When Plausible Values Are Not Present}
-#' or the section titled
-#' \dQuote{Estimation of Weighted Means When Plausible Values Are Present}
+#' or the section 
+#' \dQuote{Estimation of Weighted Means When Plausible Values Are Present,}
 #' depending on if there are assessment variables or variables with plausible values
 #' in them.
 #' 
@@ -74,11 +76,11 @@
 #' and the link function named in the function call (logit or probit).
 #' By default, \code{glm} fits a logistic regression when \code{family} is not set, 
 #' so the two are expected to give the same results in that case.
-#' Other types of generalized linear model are not currently supported.
+#' Other types of generalized linear models are not supported.
 #'
 #' \subsection{Variance estimation of coefficients}{
-#'   All variance estimation methods are shown in the
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}.
+#'   All variance estimation methods are shown in the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.
 #'   When the predicted
 #'   value does not have plausible values, the variance of the coefficients
 #'   is estimated according to the section
@@ -102,11 +104,12 @@
 #'    \item{Vimp}{the estimated variance due to uncertainty in the scores (plausible values variables)}
 #'    \item{Vjrr}{the estimated variance due to sampling}
 #'    \item{M}{the number of plausible values}
+#'    \item{nPSU}{the number of PSUs used in calculation}
 #'    \item{varm}{the variance estimates under the various plausible values}
 #'    \item{coefm}{the values of the coefficients under the various plausible values}
 #'    \item{coefmat}{the coefficient matrix (typically produced by the summary of a model)}
 #'    \item{weight}{the name of the weight variable}
-#'    \item{npv}{the number of plausible values.}
+#'    \item{npv}{the number of plausible values}
 #'    \item{njk}{the number of jackknife replicates used}
 #'    \item{varMethod}{always \code{jackknife}}
 #'    \item{varEstInputs}{when \code{returnVarEstInputs} is \code{TRUE},
@@ -118,7 +121,9 @@
 #' @author Paul Bailey
 #'
 #' @example man/examples/glm.sdf.R
-#' @importFrom stats glm binomial glm.fit predict
+#' @importFrom stats binomial predict
+#' @importFrom glm2 glm2 glm.fit2
+#' @importFrom Matrix rankMatrix
 #' @method glm sdf
 #' @export
 #' @export glm.sdf
@@ -126,7 +131,7 @@
 #' glm.sdf(formula, family = binomial(link = "logit"), data,
 #'   weightVar = NULL, relevels = list(), jrrIMax = 1,
 #'   omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
-#'   returnVarEstInputs = FALSE)
+#'   returnNumberOfPSU=FALSE, returnVarEstInputs = FALSE)
 #'
 glm.sdf <- function(formula,
                     family=binomial(link="logit"),
@@ -137,6 +142,7 @@ glm.sdf <- function(formula,
                     omittedLevels=TRUE,
                     defaultConditions=TRUE,
                     recode=NULL,
+                    returnNumberOfPSU=FALSE,
                     returnVarEstInputs=FALSE) {
   varMethod <- "jackknife"
   call <- match.call()
@@ -160,6 +166,7 @@ glm.sdf <- function(formula,
                         recode=recode,
                         returnVarEstInputs=returnVarEstInputs,
                         returnLm0=FALSE,
+                        returnNumberOfPSU=returnNumberOfPSU,
                         call=call))
   }
 }
@@ -174,6 +181,7 @@ logit.sdf <- function(formula,
                       omittedLevels=TRUE,
                       defaultConditions=TRUE,
                       recode=NULL,
+                      returnNumberOfPSU=FALSE,
                       returnVarEstInputs=FALSE) {
   call <- match.call()
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
@@ -195,6 +203,7 @@ logit.sdf <- function(formula,
                         missingDefaultConditions=missing(defaultConditions),
                         recode=recode,
                         returnVarEstInputs=returnVarEstInputs,
+                        returnNumberOfPSU=returnNumberOfPSU,
                         returnLm0=FALSE,
                         call=call))
   }
@@ -248,6 +257,7 @@ calc.glm.sdf <- function(formula,
                          recode=NULL,
                          returnVarEstInputs=FALSE,
                          returnLm0=FALSE,
+                         returnNumberOfPSU = FALSE,
                          call=NULL) {
   if(is.null(call)) {
     call <- match.call()
@@ -265,7 +275,7 @@ calc.glm.sdf <- function(formula,
   # 5) run the main regression
   # 6) form the inputs for variance estimation
   # 7) form output, including final variance estimation
-
+  
   # 1) check, format inputs
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
   
@@ -287,46 +297,86 @@ calc.glm.sdf <- function(formula,
   } else{
     yvar <- all.vars(formula[[2]])
   } # End of If/Else: if (zeroLengthLHS)
-
+  
   # grab the variables needed for the Taylor series method, if that is the variance estimation method being used
   taylorVars <- c()
+  psuVar <- getPSUVar(data,weightVar)
+  stratumVar <- getStratumVar(data,weightVar)
+  if(stratumVar == "JK1" & varMethod == "t") {
+    varMethod <- "j"
+    warning("Cannot use Taylor series estimation on a one-stage simple random sample.")
+  }
   if(varMethod=="t") {
-    taylorVars <- c(getAttributes(data, "psuVar"), getAttributes(data, "stratumVar"))
+    taylorVars <- c(psuVar, stratumVar)
     jrrIMax <- NA
+  } else {
+    if(all(c(psuVar, stratumVar) %in% colnames(data))) {
+      taylorVars <- c(psuVar, stratumVar)
+    }
+  }
+  getDataVarNames <- c(all.vars(formula), wgt, taylorVars)
+  if (returnNumberOfPSU){
+    # Get stratum and PSU variable
+    stratumVar <- getAttributes(data, "stratumVar")
+    psuVar <- getAttributes(data, "psuVar")
+    if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% names(data$data))) {
+      getDataVarNames <- unique(c(getDataVarNames,stratumVar,psuVar))
+    } else {
+      warning(paste0("Stratum and PSU variable are required for this call and are not on the incoming data. Resetting ", dQuote("returnNumberOfPSU"), " to ", sQuote("FALSE"), "."))
+      returnNumberOfPSU <- FALSE
+    }
   }
   # 2) get the data
   # This is most of the arguments
   getDataArgs <- list(data=data,
-                      varnames=c(all.vars(formula), wgt, taylorVars),
+                      varnames=getDataVarNames,
                       returnJKreplicates=(varMethod=="j"),
                       drop= FALSE,
                       omittedLevels=omittedLevels,
                       recode = recode,
                       includeNaLabel=TRUE,
                       dropUnusedLevels=TRUE)
-
+  
   # Default conditions should be included only if the user set it. This adds the argument only if needed
   if(!missingDefaultConditions) {
     getDataArgs <- c(getDataArgs, list(defaultConditions=defaultConditions))
   }
   # edf is the actual data
   edf <- do.call(getData, getDataArgs)
-  if(any(!complete.cases(edf))) {
-    warning("Removing rows with NAs from analysis.")
-    edf <- edf[complete.cases(edf),]
+
+  relVars <- colnames(edf)
+  relVars <- relVars[!relVars %in% taylorVars]
+  incomplete <- !complete.cases(edf[,relVars])
+  if(any(incomplete)) {
+    warning("Removing ", sum(incomplete), " rows with NAs from analysis.")
+    edf <- edf[!incomplete,]
+  }
+  # if doing Taylor series, check Taylor vars too
+  if(varMethod=="t") {
+    incomplete <- !complete.cases(edf[,taylorVars])
+    if(any(incomplete)) {
+      warning("Removing ", sum(incomplete), " rows with NA PSU of stratum variables from analysis.")
+      edf <- edf[!incomplete,]
+    }
+  }
+  # remove non-positive (full sample) weights
+  if(any(edf[,wgt] <= 0)) {
+    posWeights <- edf[,wgt] > 0
+    warning("Removing ", sum(!posWeights), " rows with nonpositive weight from analysis.")
+    edf <- edf[posWeights,]
   }
 
   # check that there are not factors with only one level and give error message
   lapply(names(edf)[names(edf) %in% all.names(formula)],
-          function(z) {
-            if(is.factor(edf[,z]) & length(levels(edf[,z])) <2) {
-              stop(paste0("The covariate ",
-                          dQuote(z),
-                          " has fewer than two levels and cannot be included in the regression."
-                          ))
-            }
-          }
-        )
+         function(z) {
+           if(is.factor(edf[,z]) & length(levels(edf[,z])) <2) {
+             stop(paste0("The covariate ",
+                         dQuote(z),
+                         " has fewer than two levels and cannot be included in the regression."
+             ))
+           }
+         }
+  )
   # check that there is some data to work with
   if(nrow(edf) <= 0) {
     stop(paste0(sQuote("data"), " must have more than 0 rows after a call to ",
@@ -340,7 +390,7 @@ calc.glm.sdf <- function(formula,
       vari <- names(relevels)[i]
       if(! vari %in% names(edf)) {
         stop(paste0("In the ", sQuote("relevels"),
-                    " argument, can't find the variable named ",sQuote(vari),"."))
+                    " argument, cannot find the variable named ",sQuote(vari),"."))
       } # End of if statment: ! vari %in% names(edf)
       if(length(relevels[[i]]) != 1) {
         stop(paste0("In the ", sQuote("relevels"),
@@ -354,9 +404,9 @@ calc.glm.sdf <- function(formula,
       }# End of if statment: inherits(edf[,vari], "lfactor")
       if(!relevels[[i]] %in% lvls){
         stop(paste0("In the ", sQuote("relevels"),
-                    " argument, for the variable ", sQuote(vari), ", the level ",
-                    sQuote(relevels[[i]]) , " not found. Found levels are ",
-                    paste(sQuote(lvls), collapse=", "), "."))
+                    " argument, for the variable ", dQuote(vari), ", the level ",
+                    dQuote(relevels[[i]]) , " not found. Found levels are ",
+                    pasteItems(dQuote(lvls)), "."))
       } # End of if statment !relevels[[i]] %in% lvls
       edf[,vari] <- relevel(edf[,vari], ref=relevels[[i]])
     } # end for(i in 1:length(relevels))
@@ -376,7 +426,7 @@ calc.glm.sdf <- function(formula,
   } # End of if statment: any(pvy)
   
   # 5) run the main regression
-
+  
   # run a regression, starting with the first PV or maybe the only outcome variable
   yvar0 <- yvars[1]
   
@@ -384,7 +434,7 @@ calc.glm.sdf <- function(formula,
   if(family$family %in% c("binomial", "quasibinomial")) { #if using binomial set y to 1 only if it has the highest value
     if(any(pvy)) {
       for(i in 1:length(yvars)) {
-        # PV, so we have not evaluated the I() yet
+        # PV, so we have not evaluated the I() yet (if any)
         for(yvi in 1:length(pvy)) {
           if(pvy[yvi]) {
             edf[,yvar[yvi]] <- edf[,getPlausibleValue(yvar[yvi], data)[i]]
@@ -406,13 +456,13 @@ calc.glm.sdf <- function(formula,
   #set up formula for initial regression with yvar0 predicted by all other vars
   frm <- update(formula, yvar0 ~ .)
   edf$w <- edf[,wgt]
-
+  
   # get an approximate fit without weights. Starting with weights can lead to
   # convergence problems.
-  suppressWarnings(lm00 <- glm(frm, data=edf, family=family))
+  suppressWarnings(lm00 <- glm2(frm, data=edf, family=family))
   edf$c2 <- predict(lm00, type="response")
   # get a final fit, with weights. Starting at c2
-  suppressWarnings(lm0 <- glm(frm, data=edf, weights=w, family=family, mustart=c2, epsilon=1e-14))
+  suppressWarnings(lm0 <- glm2(frm, data=edf, weights=w, family=family, mustart=c2, epsilon=1e-14))
   # get final prediction
   edf$c2 <- predict(lm0, type="response")
   if(returnLm0) {
@@ -432,7 +482,7 @@ calc.glm.sdf <- function(formula,
     if(varMethod=="t") {
       jrrIMax <- length(yvars)
     } 
-
+    
     # varm is the variance matrix by coefficient and PV (for V_jrr)
     varm <- matrix(NA, nrow=jrrIMax, ncol=length(coef(lm0)))
     varM <- list()
@@ -447,13 +497,13 @@ calc.glm.sdf <- function(formula,
           edf$yvar0 <- ifelse(edf$yvar0 %in% oneDef, 1, 0)
         }
         edf$w <- edf[,wgt]
-        suppressWarnings(lmi <- glm(frm, data=edf, weights=w, family=family, mustart=c2, epsilon=1e-14))
+        suppressWarnings(lmi <- glm2(frm, data=edf, weights=w, family=family, mustart=c2, epsilon=1e-14))
         co0 <- coef(lmi)
         coefm[pvi,] <- co0
-
+        
         for(jki in 1:length(wgtl$jksuffixes)) {
           edf$w_lmi <- edf[,paste0(wgtl$jkbase, wgtl$jksuffixes[jki])]
-          suppressWarnings(lmi <- glm(frm, data=edf, weights=w_lmi, family=family, mustart=c2, epsilon=1e-14))
+          suppressWarnings(lmi <- glm2(frm, data=edf, weights=w_lmi, family=family, mustart=c2, epsilon=1e-14))
           coefa[jki,] <- coef(lmi)
         } # End of for loop: jki in 1:length(wgtl$jksuffixes)
         # subtract the full sample weights coefficients from the jackknife replicate coefficients
@@ -462,7 +512,7 @@ calc.glm.sdf <- function(formula,
         if(any(!is.na(coefa))==0 || sum(coefa,na.rm=TRUE) == 0) {
           stop("No variance across strata. This could be due to only one stratum being included in the sample.")
         }
-
+        
         if(pvi == 1) {
           dfl <- lapply(1:ncol(coefa), function(coli) {
             data.frame(PV=rep(pvi, nrow(coefa)),
@@ -484,17 +534,17 @@ calc.glm.sdf <- function(formula,
         # varm is now the diagonal of this. Notice that this only uses first 
         # jrrIMax PVs
         varM[[pvi]] <- getAttributes(data, "jkSumMultiplier") * 
-                       Reduce("+",
-                              lapply(1:nrow(coefa), function(jki) {
-                                cc <- coefa[jki,]
-                                cc[is.na(cc)] <- 0
-                                outer(cc, cc)
-                              }))
+          Reduce("+",
+                 lapply(1:nrow(coefa), function(jki) {
+                   cc <- coefa[jki,]
+                   cc[is.na(cc)] <- 0
+                   outer(cc, cc)
+                 }))
         coefa <- coefa^2
         varm[pvi,] <- getAttributes(data, "jkSumMultiplier") * apply(coefa, 2, sum)
       } # End of for loop: (pvi in 1:jrrIMax)
       varEstInputs[["JK"]] <- veiJK
-
+      
       while(pvi < length(yvars)) {
         pvi <- pvi + 1
         edf$yvar0 <- as.numeric(edf[,yvars[pvi]])
@@ -502,17 +552,17 @@ calc.glm.sdf <- function(formula,
           edf$yvar0 <- ifelse(edf$yvar0 %in% oneDef, 1, 0)
         }
         edf$w <- edf[,wgt]
-        suppressWarnings(co0 <- coef(lmi <- glm(frm, data=edf, weights=w, family=family, mustart=c2, epsilon=1e-14)))
+        suppressWarnings(co0 <- coef(lmi <- glm2(frm, data=edf, weights=w, family=family, mustart=c2, epsilon=1e-14)))
         coefm[pvi,] <- co0
       } # End while loop: pvi < length(yvars)
     } else { # End of if statment: varMethod == "j"
       stop("Taylor series variance estimation not supported in this function.")
     } # End of if/else statment: varMethod == "j"
-
+    
     # number of PVs
     M <- length(yvars)
     # imputaiton variance / variance due to uncertaintly about PVs
-
+    
     # get the deviation of the coefficients from the mean.
     coefm0 <- t(t(coefm) - apply(coefm, 2, mean))
     B <- (1/(M-1))* Reduce("+", # add up the matrix results of the sapply
@@ -521,14 +571,14 @@ calc.glm.sdf <- function(formula,
                              # (2.19 of Van Buuren)
                              outer(coefm0[q,],coefm0[q,])
                            }, simplify=FALSE)
-                          )
+    )
     madeB <- TRUE
     # 2.18 in var Buuren
     Ubar <- (1/length(varM)) * Reduce("+", varM)
     
     Vimp <- (M+1)/M * apply(coefm, 2, var)
     coef <- apply(coefm, 2, mean)
-
+    
     # variance due to sampling
     Vjrr <- apply(varm[1:jrrIMax,,drop=FALSE], 2, mean)
     V <- Vimp + Vjrr
@@ -551,7 +601,7 @@ calc.glm.sdf <- function(formula,
       # run with the JK weights
       for(jki in 1:length(wgtl$jksuffixes)) {
         edf$w_lmi <- edf[,paste0(wgtl$jkbase, wgtl$jksuffixes[jki])]
-        suppressWarnings(lmi <- glm(frm, data=edf, weights=w_lmi, family=family, mustart=c2, epsilon=1e-14))
+        suppressWarnings(lmi <- glm2(frm, data=edf, weights=w_lmi, family=family, mustart=c2, epsilon=1e-14))
         coefa[jki,] <- coef(lmi)
       }
       # get coefficiet deviations from the full wegith model
@@ -564,8 +614,17 @@ calc.glm.sdf <- function(formula,
                    value=coefa[,coli])
       })
       veiJK <- do.call(rbind, dfl)
-      varEstInputs[["JK"]] <- veiJK
-      
+      varEstInputs[["JK"]] <- veiJK 
+      # for VC
+      Ubar <- getAttributes(data, "jkSumMultiplier") * 
+              Reduce("+",
+                lapply(1:nrow(coefa), function(jki) {
+                  cc <- coefa[jki,]
+                  cc[is.na(cc)] <- 0
+                  outer(cc, cc)
+                }))
+      B <- 0 * Ubar
+
       njk <- length(wgtl$jksuffixes)
       coefa <- coefa^2 # this is JK-2
       Vjrr <- getAttributes(data, "jkSumMultiplier") * apply(coefa, 2, sum)
@@ -574,6 +633,7 @@ calc.glm.sdf <- function(formula,
       M <- 1 # only on replicate when there are no PVs
       varm <- NULL # no variance by PV
       coefm <- NULL # no coefficients matrix by PV
+
     } else { # end if(varMethod == "j")
       stop("Taylor series variance estimation not supported in this function.")
     } # end else for if(varMethod == "j")
@@ -584,7 +644,7 @@ calc.glm.sdf <- function(formula,
   names(coef) <- names(coef(lm0))
   se <- sqrt(V)
   names(se) <- names(coef)
-
+  
   # get fitted and resid based on overall coef
   X <- model.matrix(frm, edf) 
   fittedLatent <- as.vector(X%*%coef)
@@ -595,6 +655,14 @@ calc.glm.sdf <- function(formula,
   resid1 <- Y - fitted1
   colnames(resid1) <- yvars
   
+  # residual df calculation
+  nobs <- nrow(edf)
+  n.ok <- nobs - sum(edf$origwt==0)
+  nvars <- ncol(X)
+  rank <- rankMatrix(X)
+  resdf <- n.ok - rank
+  df.r <- resdf
+  
   # get residual based on coef by PV
   if(!is.null(coefm)) {
     if(!is.matrix(coefm)) {
@@ -603,7 +671,7 @@ calc.glm.sdf <- function(formula,
     fitted2 <- family$linkinv(as.matrix(X%*%t(coefm)))
     resid2 <- Y - fitted2
   }
-
+  
   coefmat <- data.frame(coef=coef,
                         se=se,
                         t=coef/se)
@@ -626,23 +694,35 @@ calc.glm.sdf <- function(formula,
               coefmat=coefmat, weight=wgt,
               npv=length(yvars), jrrIMax=min(jrrIMax,length(yvars)),
               njk=njk, varMethod=varmeth,
-              residuals=resid1, fitted.values=fitted1, fittedLatent=fittedLatent)
+              residuals=resid1, fitted.values=fitted1, fittedLatent=fittedLatent, residual.df = resdf)
   if(!is.null(coefm)) {
     res <- c(res, list(PV.residuals=resid2, PV.fitted.values=fitted2))
   }
-
+  
   if(returnVarEstInputs) {
     res <- c(res, list(varEstInputs=varEstInputs))
     if(varMethod=="t") {
       warning(paste0("Taylor series method not supported with the ",
-              sQuote("varEstInputs"), " argument set to ", dQuote("TRUE"), "."))
+                     sQuote("varEstInputs"), " argument set to ", dQuote("TRUE"), "."))
     }
   }
+  
   if(madeB) {
     # equation 2.29 in van Buuren, pp 42
     rbar <- (1+1/M)*(1/nrow(Ubar))*sum(diag(B %*% solve(Ubar)))
     Ttilde <- (1+rbar)*Ubar
     res <- c(res, list(B=B, U=Ubar, rbar=rbar, Ttilde=Ttilde))
+  } else {
+    res <- c(res, list(B=B, U=Ubar))
+  }
+  if(returnNumberOfPSU) {
+    res <- c(res, list(nPSU=nrow(unique(edf[,c(stratumVar, psuVar)]))))
+  }
+  # add waldDenomBaseDof if relevant
+  if(all(c(stratumVar, psuVar) %in% colnames(edf))) {
+    res <- c(res, list(waldDenomBaseDof=waldDof(edf, stratumVar, psuVar)))
+  } else if(all(c("stratumVar", "psuVar") %in% names(data))) {
+    res <- c(res, list(waldDenomBaseDof=waldDof(data, data$stratumVar, data$psuVar)))
   }
   res <- c(res, list(n0=nrow2.edsurvey.data.frame(data), nUsed=nrow(edf)))
   if(inherits(data, "edsurvey.data.frame")) {
@@ -729,6 +809,43 @@ coef.edsurveyGlmList <- function(object, ...) {
   })
 }
 
+#' @method vcov edsurveyGlm
+#' @export
+vcov.edsurveyGlm <- function(object, ...) {
+  vcov.edsurveyLm(object, ...)
+}
+
+#' @title Odds Ratios for \code{edsurveyGlm} Models
+#' @description Converts coefficients from \code{edsurveyGlm} logit regression model to odds ratios.
+#' @param model an \code{edsurveyGlm} model
+#' 
+#' @return 
+#' An \code{oddsRatio.edsurveyGlm} object with the following elements:
+#'    \item{OR}{odds ratio coefficient estimates}
+#'    \item{2.5\%}{lower bound 95\% confidence interval}
+#'    \item{97.5\%}{upper bound 95\% confidence interval}
+#'
+#' @export
+oddsRatio <- function(model){
+  if (!inherits(model, "edsurveyGlm")) stop("x must be of class 'edsurveyGlm'.")
+  if(model$family$family != "binomial" & model$family$family != "quasibinomial"){
+    stop("Model must be binomial.")
+  }
+  if(model$family$link != "logit"){
+    stop("Model must be logit.")
+  }
+  OR <- exp(coef(model))
+  varDiag <- diag(vcov(model))
+  orSE <- sqrt(OR^2 * varDiag)
+  CIlo <- OR - (1.96 * orSE)
+  CIup <- OR + (1.96 * orSE)
+  r <- cbind(OR, CIlo, CIup)
+  colnames(r) <- c("OR", "2.5%", "97.5%")
+  r <- as.data.frame(r)
+  class(r) <- c("oddsRatio.edsurveyGlm", "data.frame")
+  r
+}
+
 # @export
 setMethod("glm",
           c(data="edsurvey.data.frame"),
@@ -748,3 +865,8 @@ setMethod("coef",
 setMethod("coef",
           c(object="edsurveyGlmList"),
           coef.edsurveyGlmList)
+
+# @export
+setMethod("vcov",
+          c(object="edsurveyGlm"),
+          vcov.edsurveyGlm)

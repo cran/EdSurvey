@@ -30,7 +30,7 @@ the contrast between \code{varA} and \code{varB}.}
 \item{method}{a character that is either \code{WS} for the Welch-Satterthwaite
 formula or 
 \code{JR} for the Johnson-Rust correction to the
-Welch-Satterthwaite formula.}
+Welch-Satterthwaite formula}
 }
 \value{
 numeric; the estimated degrees of freedom
@@ -48,8 +48,8 @@ some strata will contribute fewer than a full degree of freedom.
 Note that these functions are not vectorized, so \code{varA} and 
 \code{varB} must contain exactly one variable name.
 
-The method used to compute the degrees of freedom is in the
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
+The method used to compute the degrees of freedom is in the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
 section \dQuote{Estimation of Degrees of Freedom.}
 }
 \examples{

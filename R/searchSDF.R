@@ -1,8 +1,8 @@
 #' @title EdSurvey Codebook Search 
 #'
-#' @description Retrieve variable names and labels for an \code{edsurvey.data.frame},
+#' @description Retrieves variable names and labels for an \code{edsurvey.data.frame},
 #' a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
-#' using character string matching
+#' using character string matching.
 #'
 #' @param string     a character string to search for in the database connection object (\code{data}).
 #'                   Note that the function will search the student, school,
@@ -14,7 +14,7 @@
 #' @param levels     a logical value; set to \code{TRUE} to return a snapshot of the levels in
 #'                   an \code{edsurvey.data.frame}
 #' @return           a \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}} that shows the variable names, labels,
-#'                   and levels (if applicable) from an \code{edsurvey.data.frame} or a \code{light.edsurvey.data.frame} based on a matching character string.
+#'                   and levels (if applicable) from an \code{edsurvey.data.frame} or a \code{light.edsurvey.data.frame} based on a matching character string
 #'
 #' @author Michael Lee
 #' @example \man\examples\searchSDF.R
@@ -30,20 +30,16 @@ searchSDF <- function(string, data, fileFormat = NULL, levels = FALSE) {
     # bind and search fileFormats in both student and school if not defined
     if (inherits(sdf, c("edsurvey.data.frame"))) {
       labelsFile <- rbind(sdf$fileFormat, sdf$fileFormatSchool, sdf$fileFormatTeacher)
-      vars = labelsFile[grepl(string, labelsFile$variableName, ignore.case = TRUE) | 
+      vars <- labelsFile[grepl(string, labelsFile$variableName, ignore.case = TRUE) | 
                         grepl(string, labelsFile$Labels, ignore.case = TRUE),] 
-      #vars = subset(labelsFile, grepl(string, labelsFile$variableName, ignore.case = TRUE) | 
-      #  grepl(string, labelsFile$Labels, ignore.case = TRUE))
     } else {
       warning(paste0("Searched for string ", sQuote(string),
                      " only in this light.edsurvey.data.frame. To search the full data set, change ", 
                      paste0(sQuote("data")), " argument to the edsurvey.data.frame."))
       labelsFile <- rbind(attributes(sdf)$fileFormat, attributes(sdf)$fileFormatSchool, attributes(sdf)$fileFormatTeacher)
       labelsFile <- labelsFile[(labelsFile$variableName %in% toupper(colnames(sdf))), ]
-      vars = labelsFile[grepl(string, labelsFile$variableName, ignore.case = TRUE) | 
+      vars <- labelsFile[grepl(string, labelsFile$variableName, ignore.case = TRUE) | 
                         grepl(string, labelsFile$Labels, ignore.case = TRUE),] 
-      #vars = subset(labelsFile, grepl(string, labelsFile$variableName, ignore.case = TRUE) | 
-      #  grepl(string, labelsFile$Labels, ignore.case = TRUE))
     }
   } else {
     # fileFormat is defined (must be either student or school) and subset based on a string
@@ -55,60 +51,45 @@ searchSDF <- function(string, data, fileFormat = NULL, levels = FALSE) {
     if (inherits(sdf, c("edsurvey.data.frame"))) {
       # sdf is an edsurvey.data.frame, so fileFormat is subset using sdf$fileFormat
       if (fileFormat == "student") {
-        vars = sdf$fileFormat[grepl(string, sdf$fileFormat$variableName, ignore.case = TRUE) | 
+        vars <- sdf$fileFormat[grepl(string, sdf$fileFormat$variableName, ignore.case = TRUE) | 
                               grepl(string, sdf$fileFormat$Labels, ignore.case = TRUE),]
-        #vars = subset(sdf$fileFormat, grepl(string, sdf$fileFormat$variableName, ignore.case = TRUE) | 
-        #  grepl(string, sdf$fileFormat$Labels, ignore.case = TRUE))
       }
       if (fileFormat == "school") {
         if (is.null(sdf$fileFormatSchool)) {
-          stop(paste0("The argument ", sQuote("data"), " doesn't contain a school file."))
+          stop(paste0("The argument ", sQuote("data"), " does not contain a school file."))
         } else {
-          vars = sdf$fileFormatSchool[grepl(string, sdf$fileFormatSchool$variableName, ignore.case = TRUE) |
+          vars <- sdf$fileFormatSchool[grepl(string, sdf$fileFormatSchool$variableName, ignore.case = TRUE) |
                                       grepl(string, sdf$fileFormatSchool$Labels, ignore.case = TRUE),]
-          #vars = subset(sdf$fileFormatSchool, grepl(string, sdf$fileFormatSchool$variableName, 
-          #ignore.case = TRUE) | grepl(string, sdf$fileFormatSchool$Labels, ignore.case = TRUE))
         }
       }
       if (fileFormat == "teacher") {
         if (is.null(sdf$fileFormatTeacher)) {
-          stop(paste0(sQuote("data"), " doesn't contain a teacher file."))
+          stop(paste0(sQuote("data"), " does not contain a teacher file."))
         } else {
-          vars = sdf$fileFormatTeacher[grepl(string, sdf$fileFormatTeacher$variableName, ignore.case = TRUE) |
+          vars <- sdf$fileFormatTeacher[grepl(string, sdf$fileFormatTeacher$variableName, ignore.case = TRUE) |
                                         grepl(string, sdf$fileFormatTeacher$Labels, ignore.case = TRUE),]
-          #vars = subset(sdf$fileFormatSchool, grepl(string, sdf$fileFormatSchool$variableName, 
-          #ignore.case = TRUE) | grepl(string, sdf$fileFormatSchool$Labels, ignore.case = TRUE))
         }
       }
     } else {
       if (fileFormat == "student") {
         # sdf is a light.edsurvey.data.frame, so fileFormat is subset using
-        # attributes(sdf)$fileFormat
-        vars = attributes(sdf)$fileFormat[grepl(string, attributes(sdf)$fileFormat$variableName, ignore.case = TRUE) |
+        vars <- attributes(sdf)$fileFormat[grepl(string, attributes(sdf)$fileFormat$variableName, ignore.case = TRUE) |
                                           grepl(string, attributes(sdf)$fileFormat$Labels, ignore.case = TRUE),]
-        #vars = subset(attributes(sdf)$fileFormat, grepl(string, attributes(sdf)$fileFormat$variableName, 
-        #  ignore.case = TRUE) | grepl(string, attributes(sdf)$fileFormat$Labels, ignore.case = TRUE))
       }
       if (fileFormat == "school") {
         if (is.null(attributes(sdf)$fileFormatSchool)) {
-          stop(paste0("The argument ", sQuote("data"), " doesn't contain a school file."))
+          stop(paste0("The argument ", sQuote("data"), " does not contain a school file."))
         } else {
-          vars = attributes(sdf)$fileFormatSchool[grepl(string, attributes(sdf)$fileFormatSchool$variableName, ignore.case = TRUE) |
+          vars <- attributes(sdf)$fileFormatSchool[grepl(string, attributes(sdf)$fileFormatSchool$variableName, ignore.case = TRUE) |
                                                   grepl(string, attributes(sdf)$fileFormatSchool$Labels, ignore.case = TRUE),]
-          #vars = subset(attributes(sdf)$fileFormatSchool, grepl(string, attributes(sdf)$fileFormatSchool$variableName, 
-          #ignore.case = TRUE) | grepl(string, attributes(sdf)$fileFormatSchool$Labels, 
-          #ignore.case = TRUE))
         }
       }
       if (fileFormat == "teacher") {
         if (is.null(attributes(sdf)$fileFormatTeacher)) {
-          stop(paste0(sQuote("data"), " doesn't contain a school file."))
+          stop(paste0(sQuote("data"), " does not contain a school file."))
         } else {
-          vars = attributes(sdf)$fileFormatTeacher[grepl(string, attributes(sdf)$fileFormatTeacher$variableName, ignore.case = TRUE) |
+          vars <- attributes(sdf)$fileFormatTeacher[grepl(string, attributes(sdf)$fileFormatTeacher$variableName, ignore.case = TRUE) |
                                                     grepl(string, attributes(sdf)$fileFormatTeacher$Labels, ignore.case = TRUE),]
-          #vars = subset(attributes(sdf)$fileFormatSchool, grepl(string, attributes(sdf)$fileFormatSchool$variableName, 
-          #ignore.case = TRUE) | grepl(string, attributes(sdf)$fileFormatSchool$Labels, 
-          #ignore.case = TRUE))
         }
       }
     }
@@ -128,7 +109,7 @@ searchSDF <- function(string, data, fileFormat = NULL, levels = FALSE) {
       if (string == "") {
         stop(paste0("The argument ", sQuote("string"), " must be nonempty to return variable levels."))
       }
-      varsData = vars[, c("variableName", "Labels", "labelValues", "Levels")]
+      varsData <- vars[, c("variableName", "Labels", "labelValues", "Levels")]
       if ("light.edsurvey.data.frame" %in% class(sdf) == TRUE) {
         varsData <- varsData[varsData$variableName %in% colnames(sdf), ]
       }
@@ -152,13 +133,13 @@ searchSDF <- function(string, data, fileFormat = NULL, levels = FALSE) {
           varsData$Levels[[i]] <- paste0(NA)
         }
       }
-      varsData = varsData[, c("variableName", "Labels", "Levels")]
+      varsData <- varsData[, c("variableName", "Labels", "Levels")]
       class(varsData) <- c("searchSDF", "data.frame")
     } else {
       # variable levels aren't returned
       vars$variableName <- tolower(vars$variableName)
-      varsData = vars[, c("variableName", "Labels")]
-      varsData = data.frame(varsData, stringsAsFactors = FALSE, row.names = NULL)
+      varsData <- vars[, c("variableName", "Labels")]
+      varsData <- data.frame(varsData, stringsAsFactors = FALSE, row.names = NULL)
       # remove douplicates such as linking variables
       varsData <- varsData[!duplicated(varsData$variableName),]
     }

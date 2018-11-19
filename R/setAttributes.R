@@ -1,7 +1,7 @@
-# @author Ahmad Emad and Paul Bailey
-# NOT EXPORTED
+#' @rdname edsurvey-class
+#' @export
 setAttributes <- function(data, attribute, value) {
-  # return attributes in a uniform way for either an edesurvey.data.frame or
+  # return attributes in a uniform way for either an edsurvey.data.frame or
   # a light.edsurvey.data.frame
   if(! inherits(data, c("edsurvey.data.frame", "light.edsurvey.data.frame")) ) {
     stop(paste0(sQuote("data"), " must be an edsurvey.data.frame or a light.edsurvey.data.frame."))

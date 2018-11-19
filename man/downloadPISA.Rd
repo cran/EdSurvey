@@ -4,31 +4,51 @@
 \alias{downloadPISA}
 \title{Download and Unzips PISA Files}
 \usage{
-downloadPISA(year = "*", database = "INT", root, cache = FALSE,
-  verbose = TRUE)
+downloadPISA(root, years = c(2000, 2003, 2006, 2009, 2012),
+  database = c("INT", "CBA", "FIN"), cache = FALSE, verbose = TRUE)
 }
 \arguments{
-\item{year}{the assessment years to download. Available years are 2000, 2003,
-2006, 2009, and 2012. To download data for all available years,
-users can input \code{*} (the default).}
+\item{root}{a character string indicating the directory where the PISA data should
+be stored. Files are placed in a folder named PISA/[year].}
 
-\item{database}{a character to indicate which database to download from. For 2012,
+\item{years}{an integer vector of the assessment years to download. Valid years are 2000, 2003,
+2006, 2009, and 2012.}
+
+\item{database}{a character vector to indicate which database to download from. For 2012,
 three databases are available (INT = International, CBA = Computer-Based Assessment, and
 FIN = Financial Literacy). Defaults to \code{INT}.}
 
-\item{root}{a character string indicating the directory where the PISA data should
-be stored. Note that files are placed in a folder named PISA and then in
-a year subdirectory.}
+\item{cache}{a logical value set to process and cache the text (.txt) version of files.
+This takes a very long time but saves time for future uses of 
+the data. Default value is \code{FALSE}.}
 
-\item{cache}{a logical value set to \code{FALSE} to cache .txt versions of files. If set to \code{TRUE}, the function will
-process all downloaded files, which might take several hours.}
-
-\item{verbose}{a logical value that determines if you want verbose output while the function is running to indicate the progress.
-Defaults to \code{TRUE}.}
+\item{verbose}{a logical value to either print or suppress status message output.
+The default value is \code{TRUE}.}
 }
 \description{
 Uses a connection to download PISA data to a
              computer. Data come from the OECD website.
+}
+\details{
+The function uses \ifelse{latex}{\code{download.file}}{\code{\link[utils]{download.file}}} to download files from provided URLs. 
+         Some machines might require a different user agent in HTPP(S) requests. If the downloading gives an error or behaves unexpectedly 
+         (for example, a zip file cannot be unzipped or a data file is significantly smaller than expected), users can toggle \code{HTPPUserAgent}
+         options to find one that works for their machines. One common alternative option is 
+
+         \code{options(HTTPUserAgent="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/53.0")}.
+}
+\examples{
+\dontrun{
+# Download PISA 2012 data (for all three databases)
+downloadPISA(years = 2012, database = c("INT","CBA","FIN"), root="C:/")
+
+# Download PISA 2009 and 2012 data (International Database only) 
+# to C:/PISA/2009 and C:/PISA/2012 folder respectively
+downloadPISA(years = c(2009,2012), root="C:/")  
+}
+}
+\seealso{
+\code{\link{readPISA}}, \ifelse{latex}{\code{download.file}}{\code{\link[utils]{download.file}}}, \ifelse{latex}{\code{options}}{\code{\link[base]{options}}}
 }
 \author{
 Trang Nguyen

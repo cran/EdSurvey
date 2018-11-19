@@ -45,13 +45,18 @@
 #'                           estimates. This is intended to allow for
 #'                           the computation
 #'                           of covariances between estimates.
+#' @param returnNumberOfPSU a logical value set to \code{TRUE} to return the number of 
+#'                          primary sampling units (PSU).
+#' @param standardizeWithSamplingVar a logical value indicating if the standardized coefficients
+#'                                   should have the variance of the regressors and outcome measured
+#'                                   with sampling variance. Defaults to \code{FALSE}.
 #' @details 
 #'  
 #' This function implements an estimator that correctly handles left-hand
 #' side variables that are either numeric or plausible values and allows for survey 
 #' sampling weights and estimates variances using the jackknife replication method.
-#' The
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
+#' The vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
 #'  describes estimation of the reported statistics. 
 #' 
 #' Regardless of the variance estimation, the coefficients are estimated
@@ -74,8 +79,8 @@
 #'
 #'
 #' \subsection{Variance estimation of coefficients}{
-#'   All variance estimation methods are shown in the
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}.
+#'   All variance estimation methods are shown in the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.
 #'   When \code{varMethod} is set to \code{jackknife} and the predicted
 #'   value does not have plausible values, the variance of the coefficients
 #'   is estimated according to the section
@@ -103,6 +108,8 @@
 #'
 #' Rubin, D. B. (1987). \emph{Multiple imputation for nonresponse in surveys}. New York, NY: Wiley.
 #'
+#' van Buuren, S. (2012). \emph{Flexible imputation of missing data}. New York, NY: CRC Press.
+#'
 #' Weisberg, S. (1985). \emph{Applied linear regression} (2nd ed.). New York, NY: Wiley.
 #'
 #' @return
@@ -120,34 +127,52 @@
 #'    \item{r.squared}{the coefficient of determination}
 #'    \item{weight}{the name of the weight variable}
 #'    \item{npv}{the number of plausible values}
-#'    \item{njk}{the number of jackknife replicates used; set to \code{NA} when Taylor series variance estimates are used}
+#'    \item{jrrIMax}{the \code{jrrIMax} value used in computation}
+#'    \item{njk}{the number of jackknife replicates used; set to \code{NA}
+#'               when Taylor series variance estimates are used}
 #'    \item{varMethod}{one of \code{Taylor series} or \code{jackknife}}
+#'    \item{residuals}{residuals from the average regression coefficients}
+#'    \item{PV.residuals}{residuals from the by plausible value coefficients}
+#'    \item{PV.fitted.values}{fitted values from the by plausible value coefficients}
+#'    \item{B}{imputation variance covariance matrix, before multiplication by (M+1)/M}
+#'    \item{U}{sampling variance covariance matrix}
+#'    \item{rbar}{average relative increase in variance; see van Buuren (2012, eq. 2.29)}
+#'    \item{nPSU}{number of PSUs used in calculation}
+#'    \item{n0}{number of rows on \code{edsurvey.data.frame} before any conditions were applied}
+#'    \item{nUsed}{number of observations with valid data and weights larger than zero}
+#'    \item{data}{data used for the computation}
+#'    \item{Xstdev}{standard deviations of regressors, used for computing standardized
+#'                  regression coefficients when \code{standardizeWithSamplingVar} is set to
+#'                  \code{FALSE} (the default)}
+#'    \item{varSummary}{the result of running \code{summary2} (unweighted) on each variable in the
+#'                      regression}
 #'    \item{varEstInputs}{when \code{returnVarEstInputs} is \code{TRUE},
 #'                        this element is returned. These are
 #'                        used for calculating covariances with
 #'                        \code{\link{varEstToCov}}.}
+#'    \item{standardizeWithSamplingVar}{when \code{standardizeWithSamplingVar}
+#'                                      is set to \code{TRUE} this element is
+#'                                      returned. Calculates the standard deviation
+#'                                      of the standardized
+#'                                      regression coefficients like any other
+#'                                      variable.}
 #'
 #' @seealso \ifelse{latex}{\code{lm}}{\code{\link[stats]{lm}}}
 #' @author Paul Bailey
 #'
 #' @example \man\examples\lm.sdf.R
-#' @importFrom Matrix sparse.model.matrix
-#' @importFrom stats lm
-#' @importFrom stats aggregate
-#' @importFrom stats pt
-#' @importFrom stats relevel
-#' @importFrom stats model.matrix
-#' @importFrom stats lm.wfit
-#' @importFrom stats as.formula
-#' @importFrom stats complete.cases
+#' @importFrom Matrix sparse.model.matrix rankMatrix
+#' @importFrom stats lm aggregate pt relevel model.matrix lm.wfit as.formula complete.cases
 #' @importFrom Formula Formula
 #' @importFrom MASS ginv
 #' @method lm sdf
 #' @export
 #' @export lm.sdf
 #' @usage lm.sdf(formula, data, weightVar = NULL, relevels = list(),
-#'               varMethod = c("jackknife", "Taylor"), jrrIMax = 1, omittedLevels = TRUE,
-#'               defaultConditions = TRUE, recode = NULL, returnVarEstInputs = FALSE)
+#'               varMethod = c("jackknife", "Taylor"), jrrIMax = 1,
+#'               omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
+#'               returnVarEstInputs = FALSE, returnNumberOfPSU = FALSE,
+#'               standardizeWithSamplingVar = FALSE)
 lm.sdf <- function(formula,
                    data,
                    weightVar=NULL,
@@ -157,7 +182,9 @@ lm.sdf <- function(formula,
                    omittedLevels=TRUE,
                    defaultConditions=TRUE,
                    recode=NULL,
-                   returnVarEstInputs=FALSE) {
+                   returnVarEstInputs=FALSE,
+                   returnNumberOfPSU=FALSE,
+                   standardizeWithSamplingVar=FALSE) {
   call <- match.call()
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
   # if data is an edsurvey.data.frame.list, simply return a list with results
@@ -179,7 +206,9 @@ lm.sdf <- function(formula,
                        recode=recode,
                        returnVarEstInputs=returnVarEstInputs,
                        returnLm0=FALSE,
-                       call=call))
+                       call=call,
+                       returnNumberOfPSU=returnNumberOfPSU,
+                       standardizeWithSamplingVar=standardizeWithSamplingVar))
   }
 }
 
@@ -195,7 +224,9 @@ calc.lm.sdf <- function(formula,
                         recode=NULL,
                         returnVarEstInputs=FALSE,
                         returnLm0=FALSE,
-                        call=NULL) {
+                        call=NULL,
+                        returnNumberOfPSU=FALSE,
+                        standardizeWithSamplingVar=FALSE) {
   if(is.null(call)) {
     call <- match.call()
   }
@@ -216,6 +247,10 @@ calc.lm.sdf <- function(formula,
   
   # get varMethod, turn into first character as lower case
   varMethod <- substr(tolower(match.arg(varMethod)), 0, 1)
+  if(standardizeWithSamplingVar & varMethod == "t") { 
+    warning(paste0(sQuote("standardizeWithSamplingVar"), " reset to ", dQuote("FALSE"), " because ", sQuote("varMethod"), " is ", dQuote("Taylor"), "."))
+    standardizeWithSamplingVar <- FALSE
+  }
 
   # if the weight var is not set, use the default
   if(is.null(weightVar)) {
@@ -223,7 +258,11 @@ calc.lm.sdf <- function(formula,
   } else {
     wgt <- weightVar
   } # End of if/else: is.null(weightVar)
-  
+  if(min(nchar(wgt)) == 0) {
+    # no weight
+    stop(paste0("There is no default weight variable for ",getAttributes(sdf,"survey")," data, so the argument ",sQuote("weightVar"), " must be specified."))
+  }
+
   # check if there is an outcome variable and set it to the default if it is missing
   zeroLengthLHS <- attr(terms(formula), "response") == 0
   if(zeroLengthLHS) {
@@ -235,43 +274,77 @@ calc.lm.sdf <- function(formula,
 
   # grab the variables needed for the Taylor series method, if that is the variance estimation method being used
   taylorVars <- c()
+  psuVar <- getPSUVar(data,weightVar)
+  stratumVar <- getStratumVar(data,weightVar)
+  # in PIAAC there is sometimes an SRS, that is not appropriate for Taylor
+  if(stratumVar == "JK1" & varMethod == "t") {
+    varMethod <- "j"
+    warning("Cannot use Taylor series estimation on a one-stage simple random sample.")
+  }
   if(varMethod=="t") {
-    taylorVars <- c(getAttributes(data, "psuVar"), getAttributes(data, "stratumVar"))
+    taylorVars <- c(psuVar, stratumVar)
     jrrIMax <- NA
+  } else {
+    if(all(c(psuVar, stratumVar) %in% colnames(data))) {
+      taylorVars <- c(psuVar, stratumVar)
+    }
+  }
+  formulaVars <- all.vars(formula)
+  getDataVarNames <- c(all.vars(formula), wgt, taylorVars)
+  if (returnNumberOfPSU){
+    # Get stratum and PSU variable
+    stratumVar <- getStratumVar(data, wgt)
+    psuVar <- getPSUVar(data, wgt)
+    if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% names(data$data))) {
+      getDataVarNames <- unique(c(getDataVarNames,stratumVar,psuVar))
+    } else {
+      warning(paste0("Stratum and PSU variable are required for this call and are not on the incoming data. Resetting ", sQuote("returnNumberOfPSU"), " to ", dQuote("FALSE"), "."))
+      returnNumberOfPSU <- FALSE
+    }
   }
   # 2) get the data
   # This is most of the arguments
   getDataArgs <- list(data=sdf,
-                   varnames=c(all.vars(formula), wgt, taylorVars),
-                   returnJKreplicates=(varMethod=="j"),
-                   drop= FALSE,
-                   omittedLevels=omittedLevels,
-                   recode = recode,
-                   includeNaLabel=TRUE,
-                   dropUnusedLevels=TRUE)
+                      varnames=getDataVarNames,
+                      returnJKreplicates=(varMethod=="j"),
+                      drop= FALSE,
+                      omittedLevels=omittedLevels,
+                      recode = recode,
+                      includeNaLabel=TRUE,
+                      dropUnusedLevels=TRUE,
+                      addAttributes=TRUE)
 
   # Default conditions should be included only if the user set it. This adds the argument only if needed
   if(!missingDefaultConditions) {
     getDataArgs <- c(getDataArgs, list(defaultConditions=defaultConditions))
   }
+  
   # edf is the actual data
   edf <- do.call(getData, getDataArgs)
-  if(any(!complete.cases(edf))) {
-    warning("Removing rows with NAs from analysis.")
-    edf <- edf[complete.cases(edf),]
+  # check for incomplete cases on the formula variables and weights (excluding Taylor vars)
+  relVars <- colnames(edf)
+  relVars <- relVars[!relVars %in% taylorVars]
+  incomplete <- !complete.cases(edf[,relVars])
+  if(any(incomplete)) {
+    warning("Removing ", sum(incomplete), " rows with NAs from analysis.")
+    edf <- edf[!incomplete,]
   }
-
-  # check that there are not factors with only one level and give more informative error. 
-  lapply(names(edf)[names(edf) %in% all.names(formula)],
-          function(z) {
-            if(is.factor(edf[,z]) & length(levels(edf[,z])) <2) {
-              stop(paste0("The covariate ",
-                          dQuote(z),
-                          " has fewer than two levels and cannot be included in the regression."
-                          ))
-            }
-          }
-        )
+  # if doing Taylor series, check Taylor vars too
+  if(varMethod=="t") {
+    incomplete <- !complete.cases(edf[,taylorVars])
+    if(any(incomplete)) {
+      warning("Removing ", sum(incomplete), " rows with NA PSU of stratum variables from analysis.")
+      edf <- edf[!incomplete,]
+    }
+  }
+  
+  # remove non-positive (full sample) weights
+  if(any(edf[,wgt] <= 0)) {
+    posWeights <- edf[,wgt] > 0
+    warning("Removing ", sum(!posWeights), " rows with nonpositive weight from analysis.")
+    edf <- edf[posWeights,]
+  }
+  
   # check that there is some data to work with
   if(nrow(edf) <= 0) {
     stop(paste0(sQuote("data"), " must have more than 0 rows after a call to ",
@@ -285,7 +358,7 @@ calc.lm.sdf <- function(formula,
       vari <- names(relevels)[i]
       if(! vari %in% names(edf)) {
         stop(paste0("In the ", sQuote("relevels"),
-                    " argument, can't find the variable named ",sQuote(vari),"."))
+                    " argument, cannot find the variable named ",sQuote(vari),"."))
       } # End of if statment: ! vari %in% names(edf)
       if(length(relevels[[i]]) != 1) {
         stop(paste0("In the ", sQuote("relevels"),
@@ -301,22 +374,57 @@ calc.lm.sdf <- function(formula,
         stop(paste0("In the ", sQuote("relevels"),
                     " argument, for the variable ", sQuote(vari), ", the level ",
                     sQuote(relevels[[i]]) , " not found. Found levels are ",
-                    paste(sQuote(lvls), collapse=", "), "."))
+                    pasteItems(dQuote(lvls)), "."))
       } # End of if statment !relevels[[i]] %in% lvls
       edf[,vari] <- relevel(edf[,vari], ref=relevels[[i]])
     } # end for(i in 1:length(relevels))
   } # end if(length(relevels) > 0) 
   
+  # droplevel on covariates to avoid problems with X is formed later.
+  # also, check that there are not factors with only one level and give more informative error. 
+  for(i in 1:ncol(edf)) {
+    if(inherits(edf[,i], "factor") & colnames(edf)[i] %in% formulaVars) {
+      edf[,i] <- droplevels(edf[,i])
+      if(length(levels(edf[,i])) <2) {
+        stop(paste0("The covariate ", dQuote(colnames(edf)[i]),
+                    " has fewer than two levels after zero-weight cases are dropped. This covariate cannot be included in the regression."))
+      }
+    }
+  }
+  varSummary <- lapply(formulaVars, function(x) summary2(data=edf, variable=x, weightVar=NULL, omittedLevels=FALSE))
+  
   # 4) deal with yvar having plausible values
   pvy <- hasPlausibleValue(yvar, sdf) # pvy is the plausible values of the y variable
   yvars <- yvar
-  if(pvy) {
-    yvars <- getPlausibleValue(yvar, sdf)
+  lyv <- length(yvars)
+  if(any(pvy)) {
+    yvars <- paste0("outcome",1:length(getPlausibleValue(yvars[max(pvy)], data)))
   } else {
-    # if not, make sure that this variable is numeric
-    edf[,yvars] <- as.numeric(edf[,yvars])
-  } # End of if statment: pvy
+    # no PVs, just make sure that this variable is numeric
+    edf[,"yvar"] <- as.numeric(eval(formula[[2]],edf))
+    formula <- update(formula, new=substitute( yvar ~ ., list(yvar=as.name(yvar))))
+    yvars <- "yvar"
+  } # End of if statment: any(pvy)
 
+  yvar0 <- yvars[1]
+  
+  # this allows that variable to not be dynamic variable, it is explicitly defined to be yvar0
+  if(any(pvy)) {
+    for(i in 1:length(yvars)) {
+      # PV, so we have not evaluated the I() yet (if any)
+      # first, by PV, rename the ith PVs to be e.g. composite
+      for(yvi in 1:length(pvy)) {
+        if(pvy[yvi]) {
+          edf[,yvar[yvi]] <- edf[,getPlausibleValue(yvar[yvi], data)[i]]
+        }
+      }
+      # then set yvars[i] (e.g. outcome1) to be the evaluation at this PV point
+      edf[,yvars[i]] <- as.numeric(eval(formula[[2]],edf))
+    }
+    # finally, correctly set yvar0
+    edf$yvar0 <- edf[,yvar0]
+  } # end if(any(pvy)), no else
+  
   # 5) run the main regression
 
   # run a regression, starting with the first PV or maybe the only outcome variable
@@ -329,14 +437,22 @@ calc.lm.sdf <- function(formula,
   if(returnLm0) {
     return(lm0)
   }
+
+  # get standard devaitions for future standard mean difference (SMD)
+  # calculation
+  X <- model.matrix(frm, edf)
+  # fill this in regardless of standardizeWithSamplingVar to make a "shell"
+  std <- getStdev(edf[,yvars], X, edf[,wgt])
+
   # this grabs the list of weight variable names
   wgtl <- getAttributes(sdf, "weights")[[wgt]]
   varEstInputs <- list()
   # note we have not made the B matrix
   madeB <- FALSE
+  # setup std as a matrix we can condense.
   # there is now a very long set of conditionals
   # 6) run the regressions, form the inputs for variance estimation
-  if(pvy) { # the y variable is a plausible value
+  if(any(pvy)) { # the y variable is a plausible value
     # this if condition takes care of the Taylor series method as well as the jackknife method
     # for equations, see the statistics vignette
     jrrIMax <- min(jrrIMax, length(yvars))
@@ -344,21 +460,31 @@ calc.lm.sdf <- function(formula,
       jrrIMax <- length(yvars)
     } 
     # varm is the variance matrix by coefficient and PV (for V_jrr)
-
     varm <- matrix(NA, nrow=jrrIMax, ncol=length(coef(lm0)))
     varM <- list()
     # coefficients by PV
     coefm <- matrix(NA, nrow=length(yvars), ncol=length(coef(lm0)))
+    if(standardizeWithSamplingVar) {
+      varmS <- varm
+      coefmS <- coefm
+    }
     # R-squared by PV
     r2s <- vector(length=length(yvars))
     if(varMethod == "j") {
       # y is a variable with plausible values and we are using the jackknife apporach
-      for(pvi in 1:jrrIMax) {
+      for(pvi in 1:jrrIMax) { # for each PV (up to jrrIMax)
         coefa <- matrix(NA, nrow=length(wgtl$jksuffixes), ncol=length(coef(lm0)))
+        if(standardizeWithSamplingVar) {
+          coefS <- coefa
+        }
         edf$yvar0 <- edf[,yvars[pvi]]
         edf$w <- edf[,wgt]
         lmi <- lm(frm, data=edf, weights=w)
         co0 <- coef(lmi)
+        if(standardizeWithSamplingVar) {
+          coS0 <- standardizeCoef(co0, std)
+          coefmS[pvi,] <- coS0
+        }
         r2s[pvi] <- summary(lmi)$r.squared
         coefm[pvi,] <- co0
         X_lmi <- model.matrix(frm, edf)
@@ -367,34 +493,45 @@ calc.lm.sdf <- function(formula,
           w_lmi <- edf[,paste0(wgtl$jkbase, wgtl$jksuffixes[jki])]
           lmi <- lm.wfit(x = X_lmi, y = Y_lmi, w = w_lmi)
           coefa[jki,] <- coef(lmi)
+          if(standardizeWithSamplingVar) {
+            stdij <- getStdev(edf[,yvar0], X, w_lmi)
+            coefi <- coefa[jki,]
+            names(coefi) <- names(co0)
+            coefS[jki,] <- standardizeCoef(coefi, stdij)
+          }
         } # End of for loop: jki in 1:length(wgtl$jksuffixes)
         coefa <- t( (t(coefa) - co0))
-        # if(sum(!is.na(coefa))==0 || sum(coefa,na.rm=TRUE) == 0) {
-        #   stop("No variance across strata. This could be due to only one stratum being included in the sample.")
-        # }
-        frm <- Formula::Formula(frm)
+        if(standardizeWithSamplingVar) {
+          coefS <- t( (t(coefS) - coS0) )
+          # correctly uses the coefa cutoff
+          coefS[ 2*abs(co0 * .Machine$double.eps) > abs(coefa)] <- 0
+          coefS <- coefS^2
+          varmS[pvi,] <- getAttributes(data, "jkSumMultiplier") * apply(coefS, 2, sum)
+        }
+        # find computational zeros and set them to actual zero
+        coefa[ 2*abs(co0 * .Machine$double.eps) > abs(coefa)] <- 0
+        frm <- Formula(frm)
+        # except for the null model, check for lack of variance across strata
+        # null model is used in edsurveyTable and gives mean estimates
         if(terms(frm, lhs = 0, rhs = NULL) != ~1){
           if(sum(!is.na(coefa))==0 || sum(coefa,na.rm=TRUE) == 0) {
             stop("No variance across strata. This could be due to only one stratum being included in the sample.")
           }
         }
+
+        # store results for building varEstInputs$JK (veiJK)
+        dfl <- lapply(1:ncol(coefa), function(coli) {
+          data.frame(PV=rep(pvi, nrow(coefa)),
+                     JKreplicate=1:nrow(coefa),
+                     variable=names(coef(lmi))[coli],
+                     value=coefa[,coli])
+        })
+        # veiJK is the JK part of varEstInputs
         if(pvi == 1) {
-            dfl <- lapply(1:ncol(coefa), function(coli) {
-              data.frame(PV=rep(pvi, nrow(coefa)),
-                         JKreplicate=1:nrow(coefa),
-                         variable=names(coef(lmi))[coli],
-                         value=coefa[,coli])
-            })
-            veiJK <- do.call(rbind, dfl)
-          } else {
-            dfl <- lapply(1:ncol(coefa), function(coli) {
-              data.frame(PV=rep(pvi, nrow(coefa)),
-                         JKreplicate=1:nrow(coefa),
-                         variable=names(coef(lmi))[coli],
-                         value=coefa[,coli])
-            })
-            veiJK <- rbind(veiJK, do.call(rbind, dfl))
-          }
+          veiJK <- do.call(rbind, dfl)
+        } else {
+          veiJK <- rbind(veiJK, do.call(rbind, dfl))
+        }
         # varm is now the diagonal of this. Notice that this only uses first 
         # jrrIMax PVs 
         varM[[pvi]] <- getAttributes(data, "jkSumMultiplier") * 
@@ -408,7 +545,7 @@ calc.lm.sdf <- function(formula,
         varm[pvi,] <- getAttributes(data, "jkSumMultiplier") * apply(coefa, 2, sum)
       } # End of for loop: (pvi in 1:jrrIMax)
         
-        varEstInputs[["JK"]] <- veiJK
+      varEstInputs[["JK"]] <- veiJK
       while(pvi < length(yvars)) {
         pvi <- pvi + 1
         edf$yvar0 <- edf[,yvars[pvi]]
@@ -416,6 +553,11 @@ calc.lm.sdf <- function(formula,
         co0 <- coef(lmi <- lm(frm, data=edf, weights=w))
         r2s[pvi] <- summary(lmi)$r.squared
         coefm[pvi,] <- co0
+        if(standardizeWithSamplingVar) {
+          #stdi <- getStdev(edf[,yvar0], X, edf$w) # global weight
+          coS0 <- standardizeCoef(co0, std)
+          coefmS[pvi,] <- coS0
+        }
       } # End while loop: pvi < length(yvars)
     } else { # End of if statment: varMethod == "j"
       # Taylor series
@@ -449,40 +591,41 @@ calc.lm.sdf <- function(formula,
           coln <- colnames(uhij)[bi]
           # get the stratum/PSU based sum
           edf$bb <- uhij[,bi] * edf[,wgt]
-          taylorVars <- c(getAttributes(data, "psuVar"), getAttributes(data, "stratumVar"))
-          res_sp <- aggregate(formula(paste0("bb ~ ", getAttributes(data, "psuVar"), " + ", getAttributes(data, "stratumVar"))), edf, sum)
+          taylorVars <- c(psuVar, stratumVar)
+          res_sp <- aggregate(formula(paste0("bb ~ ", psuVar, " + ", stratumVar)), edf, sum)
           # and the average of the same across strata
-          res_s <- aggregate(formula(paste0("bb ~ ", getAttributes(data, "stratumVar"))),res_sp,function(x) { mean(x)})
+          res_s <- aggregate(formula(paste0("bb ~ ", stratumVar)),res_sp,function(x) { mean(x)})
           names(res_sp)[3] <- coln
           names(res_s)[2] <- paste0("uh_",coln)
           if(bi==1) {
             uhi <- res_sp
             edf$strtWgt <- edf[,wgt]
-            res_s_wgt <- aggregate(formula(paste0("strtWgt ~ ", getAttributes(data, "stratumVar"))), edf, function(x) { sum(x)})
-            uhi <- merge(uhi, res_s_wgt, by=c(getAttributes(data, "stratumVar")), all=TRUE)
+            res_s_wgt <- aggregate(formula(paste0("strtWgt ~ ", stratumVar)), edf, function(x) { sum(x)})
+            uhi <- merge(uhi, res_s_wgt, by=c(stratumVar), all=TRUE)
           } else{
-            uhi <- merge(uhi,res_sp, by=c(getAttributes(data, "psuVar"), getAttributes(data, "stratumVar")), all=TRUE)
+            uhi <- merge(uhi,res_sp, by=c(psuVar, stratumVar), all=TRUE)
           }
-          uhi <- merge(uhi, res_s, by=c(getAttributes(data, "stratumVar")), all=TRUE)
+          uhi <- merge(uhi, res_s, by=c(stratumVar), all=TRUE)
           uhi[,paste0("dx",bi)] <- uhi[,coln] - uhi[,paste0("uh_",coln)]
         } #end of for(bi in 1:length(b)) 
 
         # this will be the variance-covariance matrix for this plausible value
         vv <- matrix(0,nrow=length(b), ncol=length(b))
-        sa <-  lapply(unique(uhi[,getAttributes(data, "stratumVar")]), function(ii) {
+        sa <-  lapply(unique(uhi[,stratumVar]), function(ii) {
           vvj <- matrix(0,nrow=length(b), ncol=length(b))
-          unkj <- unique(uhi[uhi[,getAttributes(data, "stratumVar")] == ii, getAttributes(data, "psuVar"), drop=TRUE])
+          unkj <- unique(uhi[uhi[,stratumVar] == ii, psuVar, drop=TRUE])
           if(length(unkj)>1) { # cannot estimate variance off one unit
             sb <- lapply(unkj, function(jj) {
-              v <- as.numeric(t(uhi[uhi[,getAttributes(data, "stratumVar")]==ii & uhi[,getAttributes(data, "psuVar")]==jj, paste0("dx",1:length(b)), drop=FALSE]))
+              v <- as.numeric(t(uhi[uhi[,stratumVar]==ii & uhi[,psuVar]==jj, paste0("dx",1:length(b)), drop=FALSE]))
               vvj <<- vvj + v %*% t(v)
             })
             vvj <- vvj * ( (length(unkj)) / ( length(unkj) - 1) )
             vv <<- vv + vvj
-            sw <- (uhi$strtWgt[uhi[,getAttributes(data, "stratumVar")]==ii])[1]
+            sw <- (uhi$strtWgt[uhi[,stratumVar]==ii])[1]
             num <- sw * diag(vvj)
             dofNum[,mm] <<- dofNum[,mm] + num
             dofDenom[,mm] <<- dofDenom[,mm] + num^2
+            
           }
         })
         M <- vv
@@ -497,6 +640,7 @@ calc.lm.sdf <- function(formula,
         varM[[mm]] <<- as.matrix(vc)
         varm[mm,] <<- as.numeric(diag(vc))
       })
+
     } # End of if/else statment: varMethod == "j"
     # number of PVs
     M <- length(yvars)
@@ -514,6 +658,7 @@ calc.lm.sdf <- function(formula,
     madeB <- TRUE
     # \bar{U} from 2.18 in var Buuren 
     Ubar <- (1/length(varM)) * Reduce("+", varM)
+
     Vimp <- (M+1)/M * apply(coefm, 2, var)
 
     r2 <- mean(r2s)
@@ -521,14 +666,19 @@ calc.lm.sdf <- function(formula,
     # variance due to sampling
     Vjrr <- apply(varm[1:jrrIMax,,drop=FALSE], 2, mean)
     V <- Vimp + Vjrr
-      coefmPV <- t( t(coefm) - apply(coefm, 2, mean))
-      dfl <- lapply(1:ncol(coefmPV), function(coli) {
-        data.frame(PV=1:nrow(coefmPV),
-                   variable=rep(names(coef(lm0))[coli], nrow(coefmPV)),
-                   value=coefmPV[,coli])
-      })
-      coefmPV <- do.call(rbind, dfl)
-      varEstInputs[["PV"]] <- coefmPV
+    coefmPV <- t( t(coefm) - apply(coefm, 2, mean))
+    dfl <- lapply(1:ncol(coefmPV), function(coli) {
+      data.frame(PV=1:nrow(coefmPV),
+                 variable=rep(names(coef(lm0))[coli], nrow(coefmPV)),
+                 value=coefmPV[,coli])
+    })
+    coefmPV <- do.call(rbind, dfl)
+    varEstInputs[["PV"]] <- coefmPV
+    if(standardizeWithSamplingVar) {
+      VSjrr <- apply(varmS[1:jrrIMax,,drop=FALSE], 2, mean)
+      VSimp <- (M+1)/M * apply(coefmS, 2, var)
+      VS <- VSimp + VSjrr
+    }
   } else { # end if(pvy)
     # the y variable is not a plausible value
     # this section handles jackknife and Taylor series estimation
@@ -545,7 +695,6 @@ calc.lm.sdf <- function(formula,
         lmi <- lm.wfit(x = X_lmi, y = Y_lmi, w = w_lmi)
         coefa[jki,] <- coef(lmi)
       }
-
       coefa <- t( (t(coefa) - co0)) # conservative JK estimator
       # gt var est inputs
       dfl <- lapply(1:ncol(coefa), function(coli) {
@@ -556,6 +705,14 @@ calc.lm.sdf <- function(formula,
       })
       veiJK <- do.call(rbind, dfl)
       varEstInputs[["JK"]] <- veiJK
+      # covariance matrix is the outer
+      Ubar <- getAttributes(data, "jkSumMultiplier") * 
+                Reduce("+",
+                  lapply(1:nrow(coefa), function(jki) {
+                    cc <- coefa[jki,]
+                    cc[is.na(cc)] <- 0
+                    outer(cc, cc)
+                  }))
       # done getting var est inputs
       njk <- length(wgtl$jksuffixes)
       coefa <- coefa^2 # this is JK-2
@@ -565,6 +722,7 @@ calc.lm.sdf <- function(formula,
       M <- 1 # only on replicate when there are no PVs
       varm <- NULL # no variance by PV
       coefm <- NULL # no coefficients matrix by PV
+
     } else { # end if(varMethod == "j")
       # Taylor series
       X <- sparse.model.matrix(frm, edf)
@@ -585,36 +743,36 @@ calc.lm.sdf <- function(formula,
         coln <- colnames(uhij)[bi]
         # get the stratum/PSU based sum
         edf$bb <- uhij[,bi] * edf[,wgt]
-        resi <- aggregate(formula(paste0("bb ~ ", getAttributes(data, "psuVar"), " + ", getAttributes(data, "stratumVar"))), edf, sum)
+        resi <- aggregate(formula(paste0("bb ~ ", psuVar, " + ", stratumVar)), edf, sum)
         # and the average of the same across strata
-        resj <- aggregate(formula(paste0("bb ~ ", getAttributes(data, "stratumVar"))),resi,function(x) { mean(x)})
+        resj <- aggregate(formula(paste0("bb ~ ", stratumVar)),resi,function(x) { mean(x)})
         names(resi)[3] <- coln
         names(resj)[2] <- paste0("uh_",coln)
         if(bi==1) {
           uhi <- resi
           edf$strtWgt <- edf[,wgt]
-          resw <- aggregate(formula(paste0("strtWgt ~ ", getAttributes(data, "stratumVar"))), edf, function(x) { sum(x)})
-          uhi <- merge(uhi, resw, by=c(getAttributes(data, "stratumVar")), all=TRUE)
+          resw <- aggregate(formula(paste0("strtWgt ~ ", stratumVar)), edf, function(x) { sum(x)})
+          uhi <- merge(uhi, resw, by=c(stratumVar), all=TRUE)
         } else{
-          uhi <- merge(uhi,resi, by=c(getAttributes(data, "psuVar"), getAttributes(data, "stratumVar")), all=TRUE)
+          uhi <- merge(uhi,resi, by=c(psuVar, stratumVar), all=TRUE)
         }
-        uhi <- merge(uhi, resj, by=c(getAttributes(data, "stratumVar")), all=TRUE)
+        uhi <- merge(uhi, resj, by=c(stratumVar), all=TRUE)
         uhi[,paste0("dx",bi)] <- uhi[,coln] - uhi[,paste0("uh_",coln)]
       } # End of for loop: bi in 1:length(b)
       # this will be the variance-covariance matrix for this plausible value
       vv <- matrix(0,nrow=length(b), ncol=length(b))
       dofNum <- rep(0,length(b))
       dofDenom <- rep(0,length(b))
-      sa <-  lapply(unique(uhi[,getAttributes(data, "stratumVar")]), function(ii) {
+      sa <-  lapply(unique(uhi[,stratumVar]), function(ii) {
         vvj <- matrix(0,nrow=length(b), ncol=length(b))
-            unkj <- unique(uhi[uhi[,getAttributes(data, "stratumVar")] == ii, getAttributes(data, "psuVar"), drop=TRUE])
+            unkj <- unique(uhi[uhi[,stratumVar] == ii, psuVar, drop=TRUE])
         if(length(unkj)>1) { # cannot estimate variance of single unit
           sb <- lapply(unkj, function(jj) {
-            v <- as.numeric(t(uhi[uhi[,getAttributes(data, "stratumVar")]==ii & uhi[,getAttributes(data, "psuVar")]==jj, paste0("dx",1:length(b)), drop=FALSE]))
+            v <- as.numeric(t(uhi[uhi[,stratumVar]==ii & uhi[,psuVar]==jj, paste0("dx",1:length(b)), drop=FALSE]))
             vvj <<- vvj + v %*% t(v)
           })
           vvj <- vvj * ( (length(unkj)) / ( length(unkj) - 1) )
-          sw <- (uhi$strtWgt[uhi[,getAttributes(data, "stratumVar")]==ii])[1]
+          sw <- (uhi$strtWgt[uhi[,stratumVar]==ii])[1]
           num <- sw * diag(vvj)
           dofNum <<- dofNum + num
           dofDenom <<- dofDenom + num^2
@@ -635,12 +793,14 @@ calc.lm.sdf <- function(formula,
       Vimp <- 0
       varm <- NULL
       coefm <- NULL
+      # this is the VC matrix, store it for vcov to recover
+      Ubar <- as.matrix(vc)
     } # end else for if(varMethod == "j")
   } # end else for if(pvy)
   
   # 7) form output, including final variance estimation
   
-  # Deal with estimates with no sampling variance, make sure they return NA for SE
+  # for estimates with no sampling variance, make sure they return NA for SE
   Vjrr[Vjrr == 0] <- NA
   
   V <- Vjrr + Vimp
@@ -649,13 +809,20 @@ calc.lm.sdf <- function(formula,
   names(se) <- names(coef)
 
   # get fitted and resid based on overall coef
-  X <- model.matrix(frm, edf) 
   fitted1 <- as.vector(X%*%coef)
   Y <- sapply(1:length(yvars), function(yi) {
     as.vector(edf[,yvars[yi]])
   }, simplify=TRUE)
   resid1 <- Y - fitted1
-  colnames(resid1) <- yvars
+  colnames(resid1) <- NULL
+  
+  # residual df calculation
+  nobs <- nrow(edf)
+  n.ok <- nobs - sum(edf$origwt==0)
+  nvars <- ncol(X)
+  rank <- rankMatrix(X, method="qr")[1]
+  resdf <- n.ok - rank
+  df.r <- resdf
   
   # get residual based on coef by PV
   if(!is.null(coefm)) {
@@ -672,12 +839,16 @@ calc.lm.sdf <- function(formula,
   
   #assign var that are almost 0 to 0 to make DOF correction run correctly
   if (!is.null(varEstInputs$JK)){
-  varEstInputs$JK$value[which(abs(varEstInputs$JK$value) < (sqrt(.Machine$double.eps)*sqrt(nrow(varEstInputs$JK))))] <- 0 
-}
+    varEstInputs$JK$value[which(abs(varEstInputs$JK$value) < (sqrt(.Machine$double.eps)*sqrt(nrow(varEstInputs$JK))))] <- 0 
+  }
   if(varMethod=="t") {
     m <- length(wgtl$jksuffixes)
     # Johnson and Rust dfo correction
-    coefmat$dof <- (3.16 - 2.77/sqrt(m)) * apply(dofNum^2/dofDenom, 1, mean)
+    if(inherits(dofNum, "matrix")) {
+      coefmat$dof <- (3.16 - 2.77/sqrt(m)) * apply(dofNum^2/dofDenom, 1, mean)
+    } else {
+      coefmat$dof <- (3.16 - 2.77/sqrt(m)) * dofNum^2/dofDenom
+    }
   } else {
     coefmat$dof <- sapply(names(coef), function(cn) {
       DoFCorrection(varEstA=varEstInputs, varA=cn, method="JR")
@@ -695,7 +866,13 @@ calc.lm.sdf <- function(formula,
               coefmat=coefmat, r.squared=r2, weight=wgt,
               npv=length(yvars), jrrIMax=min(jrrIMax,length(yvars)),
               njk=njk, varMethod=varmeth,
-              residuals=resid1, fitted.values=fitted1)
+              residuals=resid1, fitted.values=fitted1, residual.df = resdf)
+  if(standardizeWithSamplingVar) {
+    coefmatStd <- coefmat
+    coefmatStd$coef <- standardizeCoef(coef, std)
+    coefmatStd$se <- sqrt(VS)
+    res <- c(res, list(coefmatStd=coefmatStd))
+  }
   if(!is.null(coefm)) {
     res <- c(res, list(PV.residuals=resid2, PV.fitted.values=fitted2))
   }
@@ -707,22 +884,35 @@ calc.lm.sdf <- function(formula,
               sQuote("varEstInputs"), " argument set to ", dQuote("TRUE"), "."))
     }
   }
+  
   if(madeB) {
     # equation 2.29 in var Buuren, pp 42
     tryCatch(
       rbar <- (1+1/M)*(1/nrow(Ubar))*sum(diag(B %*% solve(Ubar))),
       error = function(e){
         rbar <<- (1+1/M)*(1/nrow(Ubar))*sum(diag(B %*% MASS::ginv(Ubar)))
-        frm <- Formula::Formula(frm)
+        frm <- Formula(frm)
         if(terms(frm, lhs = 0, rhs = NULL) == ~1){
-          warning("A variance estimate was replaced with NA, because there was no variance across strata.", call. = FALSE)
+          warning("A variance estimate was replaced with NA because there was no variance across strata.", call. = FALSE)
         } else {
-          warning("Variance estimation problematic, consider using jackknife", call. = FALSE)
+          warning("Variance estimation problematic; consider using jackknife.", call. = FALSE)
         }
       }
     )
     Ttilde <- (1+rbar)*Ubar
     res <- c(res, list(B=B, U=Ubar, rbar=rbar, Ttilde=Ttilde))
+  } else {
+    # used for TS vcov
+    res <- c(res, list(U=Ubar))
+    if(!any(pvy)) {
+      res <- c(res, list(B=0*Ubar))
+    }
+  }
+  if(returnNumberOfPSU) {
+    res <- c(res, list(nPSU=nrow(unique(edf[,c(stratumVar, psuVar)]))))
+  }
+  if(all(c(stratumVar, psuVar) %in% colnames(edf))) {
+    res <- c(res, list(waldDenomBaseDof=waldDof(edf, stratumVar, psuVar)))
   }
   res <- c(res, list(n0=nrow2.edsurvey.data.frame(data), nUsed=nrow(edf)))
   if(inherits(data, "edsurvey.data.frame")) {
@@ -730,6 +920,7 @@ calc.lm.sdf <- function(formula,
   } else {
     res <- c(res, list(lm0=lm0))
   }
+  res <- c(res, list(Xstdev=std, varSummary=varSummary))
   class(res) <- "edsurveyLm"
   return(res)
 }
@@ -749,19 +940,43 @@ print.edsurveyLmList <- function(x, ...) {
   }
 }
 
+
+# @param src boolean indicating if the the standardized regression coefficients
+#            should be included in the coefficients table. 
 #' @method summary edsurveyLm
 #' @export
-summary.edsurveyLm <- function(object, ...) {
+summary.edsurveyLm <- function(object, src=FALSE, ...) {
   class(object) <- "summary.edsurveyLm"
-  object
+  if(src) {
+    if("coefmatStd" %in% names(object)) {
+      cm <- object$coefmat
+      cm$stdCoef <- object$coefmatStd$coef
+      cm$stdSE <- object$coefmatStd$se
+    } else {
+      cm <- object$coefmat
+      std <- object$Xstdev
+      cm$stdCoef <- NA
+      cm$stdSE <- NA
+      for(i in 1:nrow(cm)) {
+        if(rownames(cm)[i] %in% names(std) && std[rownames(cm)[i]] > 0) {
+          # standardize regression coef = sdX_i/sdY * coef_i 
+          cm$stdCoef[i] <- (std[[rownames(cm)[i]]]/std[["outcome.std"]]) * cm$coef[i]
+          # same formula for standareized SE
+          cm$stdSE[i] <- (std[[rownames(cm)[i]]]/std[["outcome.std"]]) * cm$se[i]
+        }
+      }
+    } # end else for if("coefmatStd" %in% names(object))
+    object$coefmat <- cm
+  } # end if(src)
+  return(object)
 }
 
 #' @method summary edsurveyLmList
 #' @export
-summary.edsurveyLmList <- function(object, ...) {
+summary.edsurveyLmList <- function(object, smd=FALSE, ...) {
   class(object) <- "summary.edsurveyLmList"
   for(i in 1:length(object)) {
-    class(object[[i]]) <- "summary.edsurveyLm"
+    object[[i]] <- summary.edsurveyLm(object[[i]], smd)
   }
   object
 }
@@ -780,7 +995,11 @@ print.summary.edsurveyLm <- function(x, ...) {
     cat(paste0("JK replicates: ", x$njk, "\n"))
   }
   cat(paste0("full data n: ", x$n0, "\n"))
+  if (!is.null(x$nPSU)) {
+    cat(paste0("n PSU: ", x$nPSU, "\n"))
+  }
   cat(paste0("n used: ", x$nUsed, "\n\n"))
+  
   cat(paste0("Coefficients:\n"))
   printCoefmat(x$coefmat, P.values=TRUE, has.Pvalue=TRUE)
   cat("\n")
@@ -808,6 +1027,26 @@ coef.edsurveyLmList <- function(object, ...) {
   sapply(object, function(li) {
     li$coef
   })
+}
+ 
+#' @method vcov edsurveyLm
+#' @export
+vcov.edsurveyLm <- function(object, ...) {
+  if(all(c("U", "B") %in% names(object))) {
+    if(object$M > 1) {
+      # there are PVs, V_samp + V_imp
+      return(object$U + (object$M + 1)/object$M * object$B)
+    } else {
+      # no PVs, V_samp only
+      return(object$U)
+    }
+  }
+  if(is.null(object$varEstInputs)){
+    stop("This model must be fit with returnVarEstInputs=TRUE or with Taylor series to find the covariance matrix.")
+  }
+  varnames <- expand.grid(names(coef(object)),names(coef(object)))
+  vc <- mapply(varEstToCov, varA = varnames$Var1, varB = varnames$Var2, MoreArgs = list(varEstA = object$varEstInputs, jkSumMultiplier = object$data$jkSumMultiplier))
+  matrix(vc, nrow = length(coef(object)), ncol = length(coef(object)))
 }
 
 # @export
@@ -843,4 +1082,36 @@ plot.edsurveyLm <- function(x, ...) {
     cr <- eval(cl)
   }
   plot(cr)
+}
+
+# helper to get standard deviations for a weight
+getStdev <- function(outcomeData, XData, weightData) {
+  std <- c(outcome=fast.sd(outcomeData, weightData)["std"])
+  for(i in 1:ncol(XData)) {
+    if(sd(XData[,i]) > 0) {
+    std <- c(std, fast.sd(XData[,i], weightData)["std"])
+    } else {
+      std <- c(std, 0)
+    }
+    names(std) <- c(names(std)[-length(std)], colnames(XData)[i])
+  }
+  return(std)
+}
+
+# coef is the (named) coefficients)
+# std is the (named) standard deviations
+standardizeCoef <- function(coef, std) {
+  if(length(names(coef)) == 0) {
+    stop("coef must have names.")
+  }
+  for(si in 1:length(coef)) {
+    coefName <- names(coef)[si]
+    if(std[[coefName]] > 0) {
+      # standardize regression coef = sdX_i/sdY * coef_i 
+      coef[si] <- (std[[coefName]]/std[["outcome.std"]]) * coef[si]
+    } else {
+      coef[si] <- NA
+    }
+  }
+  return(coef)
 }

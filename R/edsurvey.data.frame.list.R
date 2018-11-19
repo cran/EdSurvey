@@ -1,7 +1,7 @@
 #' @title EdSurvey Dataset Vectorization
 #'
-#' @description \code{edsurvey.data.frame.list} creates an
-#'              \code{edsurvey.data.frame.list} from a series of
+#' @description The \code{edsurvey.data.frame.list} function creates an
+#'              \code{edsurvey.data.frame.list} object from a series of
 #'              \code{edsurvey.data.frame} objects.
 #'              \code{append.edsurvey.data.frame.list} creates an
 #'              \code{edsurvey.data.frame.list} from two
@@ -152,8 +152,6 @@ edsurvey.data.frame.list <- function(datalist, cov=NULL, labels=NULL) {
 #' @export
 append.edsurvey.data.frame.list <- function(sdfA, sdfB, labelsA=NULL, labelsB=NULL) {
   # return a list of sdfs from either an edsurvey.data.frame.list or a single edsurvey.data.frame
-  #TODO: I dont think this would be hugely hard to generalize to take more than two dfs or lists of dfs
-  # perhaps using Reduce. Is that worth impelmenting? 
   getDataList <- function(sdf) {
     if (inherits(sdf, c("edsurvey.data.frame.list"))) {
       return(unlist(lapply(sdf[[1]], list), recursive = FALSE))
@@ -166,7 +164,7 @@ append.edsurvey.data.frame.list <- function(sdfA, sdfB, labelsA=NULL, labelsB=NU
     if (inherits(sdf, c("edsurvey.data.frame.list"))) {
       if ("labels" %in% colnames(sdf[[2]])) {
         if (!is.null(label)) {
-          warning(paste0("Ignored label since ", deparse(substitute(sdf)), " is an edsurvey.data.frame.list"))
+          warning(paste0("Ignored label since ", deparse(substitute(sdf)), " is an edsurvey.data.frame.list."))
           return(as.character(sdf[[2]]$labels))
         } else {
           return(as.character(sdf[[2]]$labels))

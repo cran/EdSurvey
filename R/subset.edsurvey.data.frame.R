@@ -10,7 +10,7 @@
 #' @param subset a logical expression indicating elements or rows to keep
 #' @param inside set to \code{TRUE} to prevent the \code{substitute} condition
 #'               from being called on it. See Details.
-#' @param ... not used; included only for compatibility.
+#' @param ... not used; included only for compatibility
 #' @details Note that any variables defined on condition that are not references
 #' to column names on the
 #' \code{edsurvey.data.frame} and are part of the environment where
@@ -34,7 +34,7 @@ subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
   env <- parent.frame(n=2)
   
   if(!inherits(x, c("edsurvey.data.frame"))) {
-    stop(paste0("The argument ", sQuote("x"), " must be an edsurvey.data.frame"))
+    stop(paste0("The argument ", sQuote("x"), " must be an edsurvey.data.frame."))
   }
 
   if(inside) {
@@ -96,9 +96,8 @@ subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
 #' @method [ edsurvey.data.frame
 #' @export
 "[.edsurvey.data.frame" <- function(x, i, ...) {
-  vn <- colnames(x)
   suppressWarnings(
-    z <- getData(x, varnames=vn,
+    z <- getData(x, varnames=i,
                  dropUnusedLevels=FALSE, omittedLevels=FALSE,
                  addAttributes=TRUE)
     )

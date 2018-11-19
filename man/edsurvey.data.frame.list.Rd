@@ -3,12 +3,12 @@
 \name{edsurvey.data.frame.list}
 \alias{edsurvey.data.frame.list}
 \alias{append.edsurvey.data.frame.list}
-\alias{append.edsurvey.data.frame.list}
 \title{EdSurvey Dataset Vectorization}
 \usage{
 edsurvey.data.frame.list(datalist, cov = NULL, labels = NULL)
 
-append.edsurvey.data.frame.list(sdfA, sdfB, labelsA = NULL, labelsB = NULL)
+append.edsurvey.data.frame.list(sdfA, sdfB, labelsA = NULL,
+  labelsB = NULL)
 }
 \arguments{
 \item{datalist}{a list of \code{edsurvey.data.frame}s to be combined}
@@ -58,8 +58,8 @@ elements
                    \code{covs}.}
 }
 \description{
-\code{edsurvey.data.frame.list} creates an
-             \code{edsurvey.data.frame.list} from a series of
+The \code{edsurvey.data.frame.list} function creates an
+             \code{edsurvey.data.frame.list} object from a series of
              \code{edsurvey.data.frame} objects.
              \code{append.edsurvey.data.frame.list} creates an
              \code{edsurvey.data.frame.list} from two

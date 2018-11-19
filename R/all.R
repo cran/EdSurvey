@@ -3,7 +3,6 @@
 #' @import methods
 #' @import lfactors
 #' @import NAEPprimer
-#' @import magrittr
 
 setGeneric("glm")
 setGeneric("lm")
@@ -14,6 +13,7 @@ setOldClass("edsurveyLm")
 setOldClass("edsurveyLmList")
 setOldClass("edsurveyGlm")
 setOldClass("edsurveyGlmList")
+
 setOldClass("edsurvey.data.frame")
 setOldClass("light.edsurvey.data.frame")
 setOldClass("edsurvey.data.frame.list")

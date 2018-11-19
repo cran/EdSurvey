@@ -56,7 +56,7 @@ subset.edsurvey.data.frame.list <- function(x, subset, inside=FALSE, drop = FALS
     # check whether the variable exists the edsurvey.data.frame
     for (v in subsetVars) {
       if (!v %in% colnames(li)) {
-        warning("Variable ", sQuote(v), "is not found in the data ",sQuote(x$covs[i,]))
+        warning(paste0("Variable ", sQuote(v), "is not found in the data ",sQuote(x$covs[i,]),"."))
         return(NULL)
       }
     }

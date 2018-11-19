@@ -1,7 +1,7 @@
 #' @title Summary Codebook
 #'
 #' @description Retrieves variable names, variable labels, and value labels for an \code{edsurvey.data.frame}, \code{light.edsurvey.data.frame},
-#' or \code{edsurvey.data.frame.list}
+#' or \code{edsurvey.data.frame.list}.
 #'
 #' @param data            an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
 #'                        an \code{edsurvey.data.frame.list}
@@ -13,9 +13,9 @@
 #' @param includeRecodes  a logical value; set to \code{TRUE} to return value labels that have been recoded in
 #'                        an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}. When set to \code{FALSE}
 #'                        (the default), only the original value labels are included in the returned \code{data.frame}.
-#' @return                A \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}} that shows the variable names, variable labels, value labels,
+#' @return                a \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}} that shows the variable names, variable labels, value labels,
 #'                        value levels (if applicable), and the file format data source from an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame},
-#'                        or an \code{edsurvey.data.frame.list}.
+#'                        or an \code{edsurvey.data.frame.list}
 #'
 #' @author Michael Lee
 #' @example \man\examples\showCodebook.R
@@ -69,7 +69,7 @@ showCodebook <- function(data, fileFormat = NULL, labelLevels = FALSE, includeRe
 
     # return a warning if there is no fileFormat attribute information available for a specified format listed in fileFormat argument
     if (any(!fileFormatOrig %in% names(dataList))) {
-      warning(paste0("The ", paste(fileFormatOrig[which(!fileFormatOrig %in% names(dataList))], collapse = " and "), " codebook is not present on this ", class(sdf), "; returning only ", paste(fileFormatOrig[which(fileFormatOrig %in% names(dataList))], collapse = " and ")))
+      warning(paste0("The ", pasteItems(fileFormatOrig[which(!fileFormatOrig %in% names(dataList))]), " codebook is not present on this ", class(sdf)[1], "; returning only ", pasteItems(fileFormatOrig[which(fileFormatOrig %in% names(dataList))]), "."))
     }
     # retrieve all available fileFormats from connection via getAttributes and append
     for(i in 1:length(fileFormat)) {
@@ -117,26 +117,26 @@ showCodebook <- function(data, fileFormat = NULL, labelLevels = FALSE, includeRe
       varsData <- parseLevelRecodes(varsData, variableName = "variableName", variableLevel = "labelValues")
     }
     
-    # if label levels aren't returned AND output should include recodes, parse out the "^" and the value level and replace it with ", "
+    # if label levels aren't returned AND output should include recodes, parse out the "^" and the value level and replace it with "; "
     if(all(includeRecodes & !labelLevels)) {
       varsData$labelValueRecodes <- as.character(lapply(strsplit(varsData$labelValueRecodes, "^", fixed=TRUE),function(x) {
-                paste(sapply(strsplit(x, "\\="), `[`, 2), collapse = ", ")
+                paste(sapply(strsplit(x, "\\="), `[`, 2), collapse = "; ")
               }))
       } 
 
-    # if label levels aren't returned, parse out the "^" and the value level and replace it with ", "
+    # if label levels aren't returned, parse out the "^" and the value level and replace it with "; "
     if(!labelLevels) {
       varsData$labelValues <- as.character(lapply(strsplit(varsData$labelValues, "^", fixed=TRUE),function(x) {
-                paste(sapply(strsplit(x, "\\="), `[`, 2), collapse = ", ")
+                paste(sapply(strsplit(x, "\\="), `[`, 2), collapse = "; ")
               }))
     }
 
-    # if labelLevels are returned, parse out the "^" and replace it with ", "
+    # if labelLevels are returned, parse out the "^" and replace it with "; "
     if(labelLevels) {
       if(includeRecodes) {
-        varsData$labelValueRecodes <-gsub("\\^", ", ", varsData$labelValueRecodes)
+        varsData$labelValueRecodes <-gsub("\\^", "; ", varsData$labelValueRecodes)
       } 
-      varsData$labelValues <-gsub("\\^", ", ", varsData$labelValues)
+      varsData$labelValues <-gsub("\\^", "; ", varsData$labelValues)
     } 
   }
   return(varsData)

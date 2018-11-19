@@ -4,7 +4,8 @@
 \alias{readTIMSS}
 \title{Connect to TIMSS Data}
 \usage{
-readTIMSS(path, countries, gradeLvl, forceReread = FALSE, verbose = TRUE)
+readTIMSS(path, countries, gradeLvl, forceReread = FALSE,
+  verbose = TRUE)
 }
 \arguments{
 \item{path}{a character vector to the full directory path(s) to the TIMSS extracted SPSS (.sav) set of data}
@@ -17,7 +18,7 @@ or other online sources. Consult the \emph{TIMSS User Guide} documentation to he
 are included within a specific testing year of TIMSS and for country code definitions.  
 To select all countries available, use a wildcard value of \strong{\code{*}}.}
 
-\item{gradeLvl}{a character value to indicate the specific grade level you wish to return. 
+\item{gradeLvl}{a character value to indicate the specific grade level you wish to return
 \itemize{
      \item{\strong{4} = fourth grade (the default if not specified)}
      \item{\strong{8} = eighth grade} 
@@ -39,7 +40,7 @@ Opens a connection to a TIMSS data file and
 }
 \details{
 Reads in the unzipped files downloaded from the TIMSS international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}.
-         Datafiles require the SPSS datafile (.sav) format using the default filenames.
+         Data files require the SPSS data file (.sav) format using the default filenames.
 
 A TIMSS \code{edsurvey.data.frame} includes three distinct data levels: 
          \itemize{

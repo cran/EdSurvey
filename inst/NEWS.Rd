@@ -1,6 +1,57 @@
 \name{NEWS}
 \title{NEWS for EdSurvey}
 
+\section{Changes in version 2.2.0}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item The \code{waldTest} function allows the user to test composite hypotheses--hypotheses with multiple coefficients involved--even when the data include plausible values.  Because there is no likelihood test for plausible values nor residuals, the Wald test fills the role of the likelihood ratio test, ANOVA, and F-test.
+      \item The \code{mvrlm} function adds multivariate regression (a regression with multiple outcomes) to the package. See the \code{mvrlm} documentation for more information.
+      \item Survey weighted mixed models can now be fit with the \code{mixed.sdf} function. Both linear and logistic models can be fit. These models are limited to 2 levels (one level with random effects).
+      \item Regressions can now output standardized regression coefficients using \code{summary(myLm, src=TRUE)}. When the \code{lm.sdf} call includes \code{standardizeWithSamplingVar=TRUE} the standardized error of the standardized regression coefficient account for the sampling error and measurement error (when applicable). Otherwise, the standard deviations are assumed to be measured without error.
+      \item Added \code{summary2} function to produce unweighted and weighted descriptive statistics of a variable in \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}
+      \item Added $ variable access to edsurvey.data.frame. e.g. sdf$dsex
+      \item Updated covariance matrix estimation in the \code{vcov} function for \code{lm.sdf} and \code{glm.sdf} to work when \code{varEstInputs} was not returned
+      \item Added covariance matrix estimation for \code{lm.sdf} when Taylor series variance estimation was used.
+      \item Added \code{rebindAttributes} function to make dplyr interaction more smooth. See the \code{rebindAttributes} documentation for an example.
+      \item When printing an \code{edsurvey.data.frame} it now says the survey, year, subject, and country at the top. The dimensions are moved down.
+      \item In \code{gap}, achievement levels can be specified with partial matches. This helps out when achievement levels have long names.
+    }
+  }
+  \subsection{NEW DATA}{
+    \itemize{
+      \item Added the ECLS Kindergarten Class of 2010-2011 Study. Longitudinal datasets can be downloaded with \code{downloadECLS_K} and read in with \code{readECLS_K2011}.
+      \item PIRLS 2016 is now supported.
+    }
+  }
+  \subsection{NEW STATISTICS}{
+    \itemize{
+      \item Added \code{returnNumberOfPSU} in \code{achievenemtLevels}, \code{percentile}, \code{lm.sdf}, and \code{gap} to report the number of primary sampling units (PSUs) used to calculate a statistic.
+      \item Added \code{oddsRatio} helper function for logit results to show odds ratios.
+      \item When running a Pearson correlation on a discrete variable, \code{cor.sdf} function by default condenses the occupied response codes to be consecutive integers. This can now be turned off by setting the \code{condenseLevels} argument to \code{FALSE} so that the code book levels are used instead.
+    }
+  }
+  \subsection{UPDATES}{
+    \itemize{
+      \item The \code{glm.sdf} function now uses the \code{glm2} package to fit models. This package converges on a broader class of models.
+      \item The \code{EdSurvey} package nolonger sets the number of threads used by the required \code{data.table} package to one when EdSurvey is being attached. The issue is now fixed in \code{data.table}.
+      \item Across the download functions, when a file is missing the warning text was homogenized. Additionally, all download functions now support a \code{verbose} argument that can be used to make downloads silent.
+      \item The \code{lm.sdf} and \code{glm.sdf} functions now accept formulas that use the \code{I()} function or other unevaluated expressions to the left of the tilda. Previously only a single variable could be named.
+      \item \code{recode.sdf} now checks that each recode has only a \code{to} and \code{from} in it.
+      \item The \code{edsurveyTable} function now works without RHS variable, allowing the formula \code{y ~ 1} to return overall means.
+      \item The \code{percentile} function used to produce output even if asked to produce a percentile outside of the valid range (0 to 100). Now it prints out message if users input at least percentile outside of the valid range, and stops if all percentiles are invalid.
+      \item The \code{getData} function now removes rows with omitted levels after being recoded.
+      \item All SPSS (.sav) file reads using the \code{haven} package set the \code{user_na = TRUE} flag to ensure no defined missing/omitted values are automatically converted to \code{NA} values prematurely.
+      \item For consistency with other download functions, \code{downloadPISA} now uses a \code{years} argument instead of a \code{year} argument. 
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item Running an \code{edsurveyTable} on an \code{edsurvey.data.frame.list} used to have the potential to create invalid (unprintable) output if the factor levels did not agree on every element of the \code{edsurvey.data.frame.list}. They now return printable output.
+      \item An \code{edsurveyTable} could produce a standard error when there was data from only one stratum. It now produces an \code{NA} standard error.
+    }
+  }
+}
+
 \section{Changes in version 2.0.0}{
   \subsection{NEW DATA}{
     \itemize{

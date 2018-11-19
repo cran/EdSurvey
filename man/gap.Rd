@@ -7,10 +7,11 @@
 gap(variable, data, groupA = "default", groupB = "default",
   percentiles = NULL, achievementLevel = NULL,
   achievementDiscrete = FALSE, targetLevel = NULL, weightVar = NULL,
-  jrrIMax = 1, varMethod = c("jackknife", "Taylor"), omittedLevels = TRUE,
-  defaultConditions = TRUE, recode = NULL, referenceDataIndex = 1,
-  returnVarEstInputs = FALSE, returnSimpleDoF = FALSE,
-  returnSimpleN = FALSE)
+  jrrIMax = 1, varMethod = c("jackknife", "Taylor"),
+  omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
+  referenceDataIndex = 1, returnVarEstInputs = FALSE,
+  returnSimpleDoF = FALSE, returnSimpleN = FALSE,
+  returnNumberOfPSU = FALSE)
 }
 \arguments{
 \item{variable}{a character indicating the variable to be compared,
@@ -95,7 +96,7 @@ See Examples.}
 \item{referenceDataIndex}{a numeric used only when \code{data} is an
 \code{edsurvey.data.frame.list},
 indicating which dataset is the reference
-dataset that other datasets are compared to. 
+dataset that other datasets are compared with. 
 Defaults to one.}
 
 \item{returnVarEstInputs}{a logical value; set to \code{TRUE} to return the
@@ -112,28 +113,40 @@ section) that do not have a
 \item{returnSimpleN}{a logical value set to \code{TRUE} to add the count
 (\emph{n}-size) of observations included in groups A and B
 in the percentage object}
+
+\item{returnNumberOfPSU}{a logical value set to \code{TRUE} to return the number of 
+primary sampling units (PSU) used in calculation.}
 }
 \value{
 The return type depends on if the class of the \code{data} argument is an
 \code{edsurvey.data.frame} or an \code{edsurvey.data.frame.list}. Both
-include the call (called \code{call}), a list called \code{labels} that
-shows the definition of
-\code{groupA} and \code{groupB}, an object named \code{percentage}
+include the call (called \code{call}), a list called \code{labels}, 
+an object named \code{percentage}
 that shows the percentage in \code{groupA} and \code{groupB}, and an object
 that shows the gap called \code{results}. 
 
-The percentages are computed according to the
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
- section
+The labels includes the following elements:
+\describe{
+  \item{definition}{the definitions of the groups}
+  \item{nFullData}{the n-size for the full dataset (before applying the definition)}
+  \item{nUsed}{the n-size for the data after the group is subsetted and other
+               restrictions (such as omitted values) are applied}
+  \item{nPSU}{the number of PSUs used in calculation--only returned when 
+              \code{returnNumberOfPSU} \code{=} \code{TRUE}}
+}
+
+The percentages are computed according to the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+ in the section
 \dQuote{Estimation of Weighted Percentages When Plausible Values Are Not Present.}
 The standard errors are calculated according to
 \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Jackknife Method.}
 Standard errors of differences are calculated as the square root of the typical
 variance formula
 \deqn{Var(A-B) = Var(A) + Var(B) - 2 Cov(A,B)}
-where the covariance term is calculated as described in the 
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
- section
+where the covariance term is calculated as described in the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+ in the section
 \dQuote{Estimation of Covariances.} These degrees of freedom are available only
 with the jackknife variance estimation. The degrees of freedom used for hypothesis testing
 are always set to the number of jackknife replicates in the data.
@@ -149,16 +162,16 @@ are always set to the number of jackknife replicates in the data.
                       \code{groupA}}
     \item{dofA}{degrees of freedom appropriate for a \emph{t}-test involving \code{pctA}.
                 This value is returned only if 
-                \code{returnSimpleDoF}\code{=}\code{TRUE}}
-    \item{pctB}{the percentage of respondents in \code{groupB}}
+                \code{returnSimpleDoF}\code{=}\code{TRUE}.}
+    \item{pctB}{the percentage of respondents in \code{groupB}.}
     \item{pctBse}{the standard error on the percentage of respondents in
                       \code{groupB}}
     \item{dofB}{degrees of freedom appropriate for a \emph{t}-test involving \code{pctA}.
                 This value is returned only if 
-                \code{returnSimpleDoF}\code{=}\code{TRUE}}
+                \code{returnSimpleDoF}\code{=}\code{TRUE}.}
     \item{diffAB}{the value of \code{pctA} minus \code{pctB}}
     \item{covAB}{the covariance of \code{pctA} and \code{pctB}; used in
-                 calculating \code{diffABse}}
+                 calculating \code{diffABse}.}
     \item{diffABse}{the standard error of \code{pctA}
                            minus \code{pctB}}
     \item{diffABpValue}{the \emph{p}-value associated with the \emph{t}-test used
@@ -184,7 +197,7 @@ are always set to the number of jackknife replicates in the data.
                 \code{returnSimpleDoF}\code{=}\code{TRUE}.}
     \item{diffAB}{the value of \code{estimateA} minus \code{estimateB}}
     \item{covAB}{the covariance of \code{estimateA} and \code{estimateB}. Used in
-                 calculating \code{diffABse}}
+                 calculating \code{diffABse}.}
     \item{diffABse}{the standard error of \code{diffAB}}
     \item{diffABpValue}{the \emph{p}-value associated with the \emph{t}-test used
                         for the hypothesis test that \code{diffAB}
@@ -225,10 +238,10 @@ are always set to the number of jackknife replicates in the data.
     \item{covAA}{the covariance of \code{pctA} in the reference data and
                  \code{pctA} on this row. Used in
                  calculating \code{diffAAse}.}
-    \item{diffAAse}{the standard error for \code{diffAA}}
+    \item{diffAAse}{the standard error for \code{diffAA}.}
     \item{diffAApValue}{the \emph{p}-value associated with the \emph{t}-test used
                         for the hypothesis test that \code{diffAA}
-                        is zero.}
+                        is zero}
     \item{diffBB}{the difference in \code{pctB} between the reference data
                   and this dataset. Set to \code{NA} for the
                   reference dataset.}
@@ -238,7 +251,7 @@ are always set to the number of jackknife replicates in the data.
     \item{diffBBse}{the standard error for \code{diffBB}}
     \item{diffBBpValue}{the \emph{p}-value associated with the \emph{t}-test used
                         for the hypothesis test that \code{diffBB}
-                        is zero.}
+                        is zero}
     \item{diffABAB}{the value of \code{diffAB} in the reference dataset
                            minus the value of \code{diffAB} in this dataset. Set
                            to \code{NA} for the reference dataset.}
@@ -248,7 +261,7 @@ are always set to the number of jackknife replicates in the data.
     \item{diffABABse}{the standard error for \code{diffABAB}}
     \item{diffABABpValue}{the \emph{p}-value associated with the \emph{t}-test used
                         for the hypothesis test that \code{diffABAB}
-                        is zero.}
+                        is zero}
   }
 
   The \code{results} object is a \code{data.frame} with the following elements:
@@ -257,14 +270,14 @@ are always set to the number of jackknife replicates in the data.
                previous section}
     \item{diffAA}{the value of \code{groupA} in the reference dataset minus
                          the value in this dataset. Set to \code{NA} for the
-                         reference dataset}
+                         reference dataset.}
     \item{covAA}{the covariance of \code{meanA} in the reference data and
                  \code{meanA} on this row. Used in
                  calculating \code{diffAAse}.}
     \item{diffAAse}{the standard error for \code{diffAA}.}
     \item{diffAApValue}{the \emph{p}-value associated with the \emph{t}-test used
                         for the hypothesis test that \code{diffAA}
-                        is zero.}
+                        is zero}
     \item{diffBB}{the value of \code{groupB} in the reference dataset minus
                          the value in this dataset. Set to \code{NA} for the
                          reference dataset.}
@@ -274,7 +287,7 @@ are always set to the number of jackknife replicates in the data.
     \item{diffBBse}{the standard error for \code{diffBB}}
     \item{diffBBpValue}{the \emph{p}-value associated with the \emph{t}-test used
                         for the hypothesis test that \code{diffBB}
-                        is zero.}
+                        is zero}
     \item{diffABAB}{the value of \code{diffAB} in the reference dataset
                            minus the value of \code{diffAB}
                            in this dataset. Set
@@ -285,7 +298,7 @@ are always set to the number of jackknife replicates in the data.
     \item{diffABABse}{the standard error for \code{diffABAB}}
     \item{diffABABpValue}{the \emph{p}-value associated with the \emph{t}-test used
                         for the hypothesis test that \code{diffABAB}
-                        is zero.}
+                        is zero}
     \item{sameSurvey}{a logical value indicating if this line uses the same
                       survey as the reference line. Set to \code{NA} for the
                       reference line.}

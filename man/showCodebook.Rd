@@ -23,13 +23,13 @@ an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{e
 (the default), only the original value labels are included in the returned \code{data.frame}.}
 }
 \value{
-A \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}} that shows the variable names, variable labels, value labels,
+a \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}} that shows the variable names, variable labels, value labels,
                        value levels (if applicable), and the file format data source from an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame},
-                       or an \code{edsurvey.data.frame.list}.
+                       or an \code{edsurvey.data.frame.list}
 }
 \description{
 Retrieves variable names, variable labels, and value labels for an \code{edsurvey.data.frame}, \code{light.edsurvey.data.frame},
-or \code{edsurvey.data.frame.list}
+or \code{edsurvey.data.frame.list}.
 }
 \examples{
 # read in the example data (generated, not real student data)

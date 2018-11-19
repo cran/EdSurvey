@@ -34,7 +34,7 @@ contourPlot <- function(x, y,
   xydf <- data.frame(x=as.numeric(x), y=as.numeric(y))
   xydf <- subset(xydf, !is.na(x) & !is.na(y))
   if(nrow(xydf) < 2) {
-    stop("There must be at least two x,y pairs that are non-missing")
+    stop("There must be at least two x,y pairs that are nonmissing.")
   }
   x <- xydf$x
   y <- xydf$y
@@ -65,10 +65,10 @@ contourPlot <- function(x, y,
     }
   }
   if(dx > xkernel) {
-    warning("xkernel set too small. Increase m argument.")
+    warning(paste0(sQuote("xkernel"), " set too small. Increase ", sQuote("m"), " argument."))
   }
   if(dy > ykernel) {
-    warning("ykernel set too small. Increase m argument.")
+    warning(paste0(sQuote("ykernel"), " set too small. Increase ", sQuote("m"), " argument."))
   }
   # xc/yc are the x/y grid centroids
   # z is the contours and is the height of a kernel smoothed density at (xc,yc)

@@ -71,7 +71,7 @@
 #' @param referenceDataIndex a numeric used only when \code{data} is an
 #'                           \code{edsurvey.data.frame.list},
 #'                           indicating which dataset is the reference
-#'                           dataset that other datasets are compared to. 
+#'                           dataset that other datasets are compared with. 
 #'                           Defaults to one.
 #' @param returnVarEstInputs a logical value; set to \code{TRUE} to return the
 #'                           inputs to the jackknife and imputation variance
@@ -85,7 +85,8 @@
 #' @param returnSimpleN      a logical value set to \code{TRUE} to add the count
 #'                           (\emph{n}-size) of observations included in groups A and B
 #'                           in the percentage object
-#'                         
+#' @param returnNumberOfPSU a logical value set to \code{TRUE} to return the number of 
+#'                          primary sampling units (PSU) used in calculation.
 #' @details This function calculates the gap between \code{groupA} and \code{groupB} (which 
 #' may be omitted to indicate the full sample). The gap is
 #' calculated for one of four statistics:
@@ -117,24 +118,33 @@
 #' @return
 #' The return type depends on if the class of the \code{data} argument is an
 #' \code{edsurvey.data.frame} or an \code{edsurvey.data.frame.list}. Both
-#' include the call (called \code{call}), a list called \code{labels} that
-#' shows the definition of
-#' \code{groupA} and \code{groupB}, an object named \code{percentage}
+#' include the call (called \code{call}), a list called \code{labels}, 
+#' an object named \code{percentage}
 #' that shows the percentage in \code{groupA} and \code{groupB}, and an object
 #' that shows the gap called \code{results}. 
 #'
-#' The percentages are computed according to the
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
-#'  section
+#' The labels includes the following elements:
+#' \describe{
+#'   \item{definition}{the definitions of the groups}
+#'   \item{nFullData}{the n-size for the full dataset (before applying the definition)}
+#'   \item{nUsed}{the n-size for the data after the group is subsetted and other
+#'                restrictions (such as omitted values) are applied}
+#'   \item{nPSU}{the number of PSUs used in calculation--only returned when 
+#'               \code{returnNumberOfPSU} \code{=} \code{TRUE}}
+#' }
+#'
+#' The percentages are computed according to the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+#'  in the section
 #' \dQuote{Estimation of Weighted Percentages When Plausible Values Are Not Present.}
 #' The standard errors are calculated according to
 #' \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Jackknife Method.}
 #' Standard errors of differences are calculated as the square root of the typical
 #' variance formula
 #' \deqn{Var(A-B) = Var(A) + Var(B) - 2 Cov(A,B)}
-#' where the covariance term is calculated as described in the 
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
-#'  section
+#' where the covariance term is calculated as described in the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+#'  in the section
 #' \dQuote{Estimation of Covariances.} These degrees of freedom are available only
 #' with the jackknife variance estimation. The degrees of freedom used for hypothesis testing
 #' are always set to the number of jackknife replicates in the data.
@@ -150,16 +160,16 @@
 #'                       \code{groupA}}
 #'     \item{dofA}{degrees of freedom appropriate for a \emph{t}-test involving \code{pctA}.
 #'                 This value is returned only if 
-#'                 \code{returnSimpleDoF}\code{=}\code{TRUE}}
-#'     \item{pctB}{the percentage of respondents in \code{groupB}}
+#'                 \code{returnSimpleDoF}\code{=}\code{TRUE}.}
+#'     \item{pctB}{the percentage of respondents in \code{groupB}.}
 #'     \item{pctBse}{the standard error on the percentage of respondents in
 #'                       \code{groupB}}
 #'     \item{dofB}{degrees of freedom appropriate for a \emph{t}-test involving \code{pctA}.
 #'                 This value is returned only if 
-#'                 \code{returnSimpleDoF}\code{=}\code{TRUE}}
+#'                 \code{returnSimpleDoF}\code{=}\code{TRUE}.}
 #'     \item{diffAB}{the value of \code{pctA} minus \code{pctB}}
 #'     \item{covAB}{the covariance of \code{pctA} and \code{pctB}; used in
-#'                  calculating \code{diffABse}}
+#'                  calculating \code{diffABse}.}
 #'     \item{diffABse}{the standard error of \code{pctA}
 #'                            minus \code{pctB}}
 #'     \item{diffABpValue}{the \emph{p}-value associated with the \emph{t}-test used
@@ -185,7 +195,7 @@
 #'                 \code{returnSimpleDoF}\code{=}\code{TRUE}.}
 #'     \item{diffAB}{the value of \code{estimateA} minus \code{estimateB}}
 #'     \item{covAB}{the covariance of \code{estimateA} and \code{estimateB}. Used in
-#'                  calculating \code{diffABse}}
+#'                  calculating \code{diffABse}.}
 #'     \item{diffABse}{the standard error of \code{diffAB}}
 #'     \item{diffABpValue}{the \emph{p}-value associated with the \emph{t}-test used
 #'                         for the hypothesis test that \code{diffAB}
@@ -226,10 +236,10 @@
 #'     \item{covAA}{the covariance of \code{pctA} in the reference data and
 #'                  \code{pctA} on this row. Used in
 #'                  calculating \code{diffAAse}.}
-#'     \item{diffAAse}{the standard error for \code{diffAA}}
+#'     \item{diffAAse}{the standard error for \code{diffAA}.}
 #'     \item{diffAApValue}{the \emph{p}-value associated with the \emph{t}-test used
 #'                         for the hypothesis test that \code{diffAA}
-#'                         is zero.}
+#'                         is zero}
 #'     \item{diffBB}{the difference in \code{pctB} between the reference data
 #'                   and this dataset. Set to \code{NA} for the
 #'                   reference dataset.}
@@ -239,7 +249,7 @@
 #'     \item{diffBBse}{the standard error for \code{diffBB}}
 #'     \item{diffBBpValue}{the \emph{p}-value associated with the \emph{t}-test used
 #'                         for the hypothesis test that \code{diffBB}
-#'                         is zero.}
+#'                         is zero}
 #'     \item{diffABAB}{the value of \code{diffAB} in the reference dataset
 #'                            minus the value of \code{diffAB} in this dataset. Set
 #'                            to \code{NA} for the reference dataset.}
@@ -249,7 +259,7 @@
 #'     \item{diffABABse}{the standard error for \code{diffABAB}}
 #'     \item{diffABABpValue}{the \emph{p}-value associated with the \emph{t}-test used
 #'                         for the hypothesis test that \code{diffABAB}
-#'                         is zero.}
+#'                         is zero}
 #'   }
 #'
 #'   The \code{results} object is a \code{data.frame} with the following elements:
@@ -258,14 +268,14 @@
 #'                previous section}
 #'     \item{diffAA}{the value of \code{groupA} in the reference dataset minus
 #'                          the value in this dataset. Set to \code{NA} for the
-#'                          reference dataset}
+#'                          reference dataset.}
 #'     \item{covAA}{the covariance of \code{meanA} in the reference data and
 #'                  \code{meanA} on this row. Used in
 #'                  calculating \code{diffAAse}.}
 #'     \item{diffAAse}{the standard error for \code{diffAA}.}
 #'     \item{diffAApValue}{the \emph{p}-value associated with the \emph{t}-test used
 #'                         for the hypothesis test that \code{diffAA}
-#'                         is zero.}
+#'                         is zero}
 #'     \item{diffBB}{the value of \code{groupB} in the reference dataset minus
 #'                          the value in this dataset. Set to \code{NA} for the
 #'                          reference dataset.}
@@ -275,7 +285,7 @@
 #'     \item{diffBBse}{the standard error for \code{diffBB}}
 #'     \item{diffBBpValue}{the \emph{p}-value associated with the \emph{t}-test used
 #'                         for the hypothesis test that \code{diffBB}
-#'                         is zero.}
+#'                         is zero}
 #'     \item{diffABAB}{the value of \code{diffAB} in the reference dataset
 #'                            minus the value of \code{diffAB}
 #'                            in this dataset. Set
@@ -286,7 +296,7 @@
 #'     \item{diffABABse}{the standard error for \code{diffABAB}}
 #'     \item{diffABABpValue}{the \emph{p}-value associated with the \emph{t}-test used
 #'                         for the hypothesis test that \code{diffABAB}
-#'                         is zero.}
+#'                         is zero}
 #'     \item{sameSurvey}{a logical value indicating if this line uses the same
 #'                       survey as the reference line. Set to \code{NA} for the
 #'                       reference line.}
@@ -311,7 +321,8 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
                 referenceDataIndex=1,
                 returnVarEstInputs=FALSE,
                 returnSimpleDoF=FALSE,
-                returnSimpleN=FALSE) {
+                returnSimpleN=FALSE,
+                returnNumberOfPSU=FALSE) {
   if(is.character(substitute(groupA))) {
     groupA <- parse(text=groupA)[[1]]
   }
@@ -323,7 +334,7 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
       groupB <- parse(text=groupB)[[1]]
     }
   }
-  
+
   # check incoming variables
   call <- match.call()
   varMethod <- substr(tolower(varMethod[[1]]), 0,1)
@@ -334,6 +345,7 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
   if (!is.null(recode)) {
     data <- recode.sdf(data, recode)
   }
+
   # deal with the possibility that data is an edsurvey.data.frame.list
   if(inherits(data, "edsurvey.data.frame.list") | length(percentiles) > 1 | length(achievementLevel) > 1) {
     # a flag that is TRUE when there is no information in data$covs. Default to false
@@ -352,7 +364,7 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
     # check variable specific to edsurvey.data.frame.list
     suppressWarnings(refi <- as.integer(referenceDataIndex))
     if(!refi %in% 1:ll) {
-      stop(paste0("The argument, ", sQuote("referenceDataIndex"), " must be an integer between 1 and ", ll, "."))
+      stop(paste0("The argument ", sQuote("referenceDataIndex"), " must be an integer between 1 and ", ll, "."))
     }
     res <- list(results=list(),
                 labels=list(A=substitute(groupA),B=substitute(groupB)))
@@ -394,7 +406,7 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
       resilist[[i]] <- tryCatch(resi <- eval(as.call(calli)),
                                 error=function(cond) {
                                   message(paste0("An error occurred while working on a dataset ",
-                                                 paste(dQuote(data$covs[i,]), collapse=", "),
+                                                 pasteItems(dQuote(data$covs[i,])),
                                                  ". The results from that dataset will be excluded. Error message: ",
                                                  cond))
                                   return(0)
@@ -552,6 +564,10 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
                 pctdf0$nA[i] <- resi$labels$nUsedA
                 pctdf0$nB[i] <- resi$labels$nUsedB
               }
+              if(returnNumberOfPSU) {
+                pctdf0$nPSUA[i] <- ifelse(is.null(resi$labels$nPSUA),NA,resi$labels$nPSUA)
+                pctdf0$nPSUB[i] <- ifelse(is.null(resi$labels$nPSUB),NA,resi$labels$nPSUB)
+              }
             } # end if(j == 1) 
           } # end if(class(temp) == "gap")
         } # End of for(i in 1:i) loop
@@ -629,6 +645,14 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
           resvar <- c(resvar, "nA", "nB")
         } else {
           resvar <- c(resvar, "nA")
+        }
+        
+      }
+      if(returnNumberOfPSU) {
+        if (!skipB) {
+          resvar <- c(resvar, "nPSUA", "nPSUB")
+        } else {
+          resvar <- c(resvar, "nPSUA")
         }
         
       }
@@ -714,7 +738,8 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
                       referenceDataIndex=1,
                       returnVarEstInputs=FALSE,
                       returnSimpleDoF=FALSE,
-                      returnSimpleN=FALSE) {
+                      returnSimpleN=FALSE,
+                      returnNumberOfPSU=FALSE) {
   if(is.character(substitute(groupA))) {
     groupA <- parse(text=groupA)[[1]]
   }
@@ -745,8 +770,9 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
       stop(paste0("Only one of ", sQuote("percentiles"), ", ", sQuote("achievementLevel"), ", and ", sQuote("targetLevel"), " can be defined."))
     }
     type <- "AL"
-    if (any(!tolower(gsub("(below |at or above )","",achievementLevel, ignore.case = TRUE)) %in% tolower(names(getAttributes(data,"achievementLevels"))))) {
-      stop("Achievement Level ",sQuote(achievementLevel), " is not available for the current survey.")
+    achievementLevel <- gmatchAttr(achievementLevel, names(getAttributes(data,"achievementLevels")))
+    if (any(!tolower(gsub("^(below |at or above |at )","",achievementLevel, ignore.case = TRUE)) %in% tolower(names(getAttributes(data,"achievementLevels"))))) {
+      stop("Achievement level ",sQuote(achievementLevel), " is not available for the current survey.")
     }
   }
   if(!is.null(targetLevel)) {
@@ -927,7 +953,7 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     #     dataB$pvvars[[variable]]$achievementLevel <- getAttributes(dataB,"pvvars")[[variable]]$achievementLevel[achievementLevel]
     #   }
     # }
-    als <- getAttributes(data,"achievementLevels") # get a full achievementLevels
+    als <- getAttributes(data, "achievementLevels") # get a full achievementLevels
     callalA <- c(callal, list(data=dataA))
     meanA <- do.call(achievementLevels, callalA)
     if (!skipB) {
@@ -941,24 +967,32 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
         if (grepl("below", al, ignore.case = TRUE)) {
           lal <- al
         } else {
-          lal <- paste0("At ",al)
+          if(!grepl("^at", al, ignore.case=TRUE)) {
+            lal <- paste0("At ",al)
+          } else {
+            lal <- al
+          }
         }
         grep(lal,meanA$discrete$Level, ignore.case = TRUE)
       })
       if (length(lA) == 0) {
-        stop("Achievement Level cannot be found in the results of the call of the function ",sQuote("achievementLevel"))
+        stop("Achievement level cannot be found in the results of the call of the function ", sQuote("achievementLevel"), ".")
       }
       if (!skipB) {
         lB <- sapply(achievementLevel, function(al) {
           if (grepl("below", al, ignore.case = TRUE)) {
             lal <- al
           } else {
-            lal <- paste0("At ",al)
+            if(!grepl("^at", al, ignore.case=TRUE)) {
+              lal <- paste0("At ",al)
+            } else {
+              lal <- al
+            }
           }
           grep(lal,meanA$discrete$Level, ignore.case = TRUE)
         })
         if (length(lB) == 0) {
-          stop("Achievement Level cannot be found in the results of the call of the function ",sQuote("achievementLevel"))
+          stop("Achievement level cannot be found in the results of the call of the function ", sQuote("achievementLevel"), ".")
         }
       }
       resA <- meanA$discrete$Percent[lA]
@@ -973,24 +1007,34 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     } else {
       # get index of desired achievement levels from the results
       lA <- sapply(achievementLevel, function(al) {
-        if (grepl("below", al, ignore.case = TRUE)) { # cumulative should not have Below achievementLevel
+        if(grepl("^below", al, ignore.case = TRUE)) { # cumulative should not have Below achievementLevel
           return(NULL)
         } else {
-          lal <- paste0(ifelse(tolower(al) == tolower(names(als[length(als)])),"At ", "At or Above "),al)
-          grep(lal,meanA$cumulative$Level, ignore.case = TRUE)
+          # if it doesn't have the at prefix, add it
+          if(!grepl("^at", al, ignore.case=TRUE)) {
+            al <- paste0(ifelse(tolower(al) == tolower(names(als[length(als)])),
+                                "At ",
+                                "At or Above "),
+                         al)
+          }
+          grep(al,meanA$cumulative$Level, ignore.case = TRUE)
         }
       })
       if (length(lA) == 0) {
-        stop("Achievement Level cannot be found in the results of the call of the function ",sQuote("achievementLevel"))
+        stop("Achievement level cannot be found in the results of the call of the function ", sQuote("achievementLevel"), ".")
       }
       if (!skipB) {
         lB <- sapply(achievementLevel, function(al) {
           if (grepl("below", al, ignore.case = TRUE)) {
             lal <- al
           } else {
-            lal <- paste0(ifelse(tolower(al) == tolower(names(als[length(als)])),"At ", "At or Above "),al)
+            if(grepl("^at", al, ignore.case=TRUE)) {
+              lal <- al
+            } else {
+              lal <- paste0(ifelse(tolower(al) == tolower(names(als[length(als)])),"At ", "At or Above "),al)
+            }
           }
-          grep(lal,meanB$cumulative$Level, ignore.case = TRUE)
+          grep(lal, meanB$cumulative$Level, ignore.case = TRUE)
         })
       }
       resA <- meanA$cumulative$Percent[lA]
@@ -1210,7 +1254,19 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     vn <- c(vn, wgt, variable)
     # add Taylor variables when apropos
     taylorVars <- if(varMethod == "t") {
-      vn <- c(wgt, c(getAttributes(data, "psuVar"), getAttributes(data, "stratumVar")))
+      vn <- c(wgt, c(getPSUVar(data, weightVar), getStratumVar(data, weightVar)))
+    }
+    
+    if (returnNumberOfPSU){
+      # Get stratum and PSU variable
+      stratumVar <- getAttributes(data,"stratumVar")
+      psuVar <- getAttributes(data,"psuVar")
+      if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% names(data$data))) {
+        vn <- unique(c(vn, stratumVar, psuVar))
+      } else {
+        warning("Stratum and PSU variable are required for this call and are not on the incoming data. Ignoring returnNumberOfPSU=TRUE.")
+        returnNumberOfPSU <- FALSE
+      }
     }
     
     # setup non-data call variables    
@@ -1315,14 +1371,20 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
                                    diffABse=seAB,
                                    diffABpValue=pdiffp,
                                    dofAB=pctJRdf))
+   
     
     lst <- list(results=vec,
                 labels=list(A=substitute(groupA),B=substitute(groupB),
                             n0A=nrow2.edsurvey.data.frame(dataA),
                             n0B=nrow2.edsurvey.data.frame(dataB),
                             nUsedA=nrow(dA),
-                            nUsedB=nrow(dB)),
+                            nUsedB=nrow(dB)
+                           ),
                 percentage=percentage)
+    if (returnNumberOfPSU) {
+      lst$labels$nPSUA <- nrow(unique(dA[,c(stratumVar,psuVar)]))
+      lst$labels$nPSUB <- nrow(unique(dB[,c(stratumVar,psuVar)]))
+    }
   } else {
     wgtl <- getAttributes(data,"weights")[[wgt]]
     JRdfA <- ifelse(groupA_0,NA,length(wgtl$jksuffixes))
@@ -1355,9 +1417,19 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     vn <- c(vn, wgt, variable)
     # add Taylor variables when apropos
     taylorVars <- if(varMethod == "t") {
-      vn <- c(wgt, c(getAttributes(data, "psuVar"), getAttributes(data, "stratumVar")))
+      vn <- c(wgt, c(getPSUVar(data, weightVar), getStratumVar(data, weightVar)))
     }
-    
+    if (returnNumberOfPSU){
+      # Get stratum and PSU variable
+      stratumVar <- getAttributes(data,"stratumVar")
+      psuVar <- getAttributes(data,"psuVar")
+      if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% names(data$data))) {
+        vn <- unique(c(vn, stratumVar, psuVar))
+      } else {
+        warning("Stratum and PSU variable are required for this call and are not on the incoming data. Ignoring returnNumberOfPSU=TRUE.")
+        returnNumberOfPSU <- FALSE
+      }
+    }
     # setup non-data call variables    
     callv <- list(varnames=vn,
                   drop=FALSE,
@@ -1423,14 +1495,20 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
                                pctAse=seA)
       
     }
+    
     lst <- list(results=vec,
                 labels=list(A=substitute(groupA),
                             n0A=nrow2.edsurvey.data.frame(dataA),
                             n0B=NA,
                             nUsedA=nrow(dA),
-                            nUsedB=NA),
+                            nUsedB=NA
+                ),
                 percentage=percentage
                 )
+    if(returnNumberOfPSU) {
+      lst$labels$nPSUA <- nrow(dA[,c(stratumVar,psuVar)])
+      lst$labels$nPSUB <- NA
+    }
   }
   
   if(returnVarEstInputs) {
@@ -1459,10 +1537,10 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
 #' @title Gap Analysis Printing
 #'
 #' @description Prints labels and a results vector of a gap analysis.
-#' @param x an R object representing a \code{gap} of class \code{gap} or \code{gapList}.
+#' @param x an R object representing a \code{gap} of class \code{gap} or \code{gapList}
 #' @param printPercentage a logical value set to \code{TRUE} to request printing 
 #'                        of the percentage in the groups. Defaults to \code{TRUE}.
-#' @param ... these arguments are not passed anywhere and are included only for compatibility.
+#' @param ... these arguments are not passed anywhere and are included only for compatibility
 #' @method print gap
 #' @author Paul Bailey
 #' @aliases print.gapList
@@ -1476,6 +1554,9 @@ print.gap <- function(x, ..., printPercentage=TRUE) {
                     nFullData=c(x$labels$n0A, x$labels$n0B),
                     nUsed=c(x$labels$nUsedA, x$labels$nUsedB),
                     stringsAsFactors=FALSE)
+  if (!is.null(x$labels$nPSUA)) {
+    lab$nPSU <- c(x$labels$nPSUA, x$labels$nPSUB)
+  }
   print(lab, row.names=FALSE)
   if(printPercentage) {
     cat("\npercentage:\n")
@@ -1550,4 +1631,55 @@ dofCompute <- function(seA,seB,dofA,dofB) {
 pt2 <- function(q, df) {
   df2 <- ifelse(df == 0, Inf, df)
   return(ifelse(df == 0, NA, pt(q, df2)))
+}
+
+# match strings to attributes in a case insensitive way
+# throwing an error if the string matches more than one achievement level
+# or matches none
+gmatchAttr <- function(strings, achievementLevelNames) {
+  s0 <- strings
+  alN0 <- achievementLevelNames
+  # lower case everyting to make the function case insensitive
+  strings <- tolower(trimws(strings))
+  alN <- tolower(achievementLevelNames)
+  # find and store the prefix, then remove it from strings
+  prefix <- ifelse(grepl("^at or above", strings), substr(s0,0,nchar("at or above")+1), "")
+  prefix <- ifelse(nchar(prefix) == 0 & grepl("^at ", strings), substr(s0,0,3), prefix)
+  prefix <- ifelse(grepl("^below", strings), substr(s0,0,nchar("below")+1), prefix)
+  strings <- trimws(substr(strings, nchar(prefix)+1, nchar(strings)))
+  out <- rep("", length(strings))
+  error <- rep("", length(strings))
+  for(i in 1:length(out)) {
+    for(j in 1:length(alN)) {
+      update <- grepl(strings[i], alN[j], fixed=TRUE)
+      if(update) {
+        if(nchar(out[i]) == 0) {
+          # base case, store the output
+          out[i] <- ifelse(update, alN0[j], out[i])
+        } else {
+          # append this level to previously found levels in an error
+          # we can then replay all the levels to the user at the end.
+          # first...
+          # if this is the second match, store the previous
+          # one as an error
+          if(nchar(error[i]) == 0) {
+            error[i] <- sQuote(out[i])
+          }
+          error[i] <- paste0(c(error[i], sQuote(alN0[j])), collapse=", ")
+          out[i] <- "Error"
+        }
+      }
+    }
+  }
+  # finalize formatting for errors
+  error <- ifelse(nchar(error) > 0, paste0(" matched to ", error), "")
+  error <- ifelse(nchar(out) == 0, "No Match", error)
+  # if there is an error, format it and throw it
+  if(any(nchar(error) > nchar(out))) {
+    evars <- nchar(error)>0
+    ferror <- paste0(sQuote(s0[evars]), error[evars], collapse="; ")
+    stop(paste0(ferror,"."))
+  }
+  out <- trimws(paste(trimws(prefix), trimws(out), sep=" "))
+  return(out)
 }

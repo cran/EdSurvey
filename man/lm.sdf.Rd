@@ -6,8 +6,10 @@
 \title{EdSurvey Linear Models}
 \usage{
 lm.sdf(formula, data, weightVar = NULL, relevels = list(),
-              varMethod = c("jackknife", "Taylor"), jrrIMax = 1, omittedLevels = TRUE,
-              defaultConditions = TRUE, recode = NULL, returnVarEstInputs = FALSE)
+              varMethod = c("jackknife", "Taylor"), jrrIMax = 1,
+              omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
+              returnVarEstInputs = FALSE, returnNumberOfPSU = FALSE,
+              standardizeWithSamplingVar = FALSE)
 }
 \arguments{
 \item{formula}{a \ifelse{latex}{\code{formula}}{\code{\link[stats]{formula}}} for the
@@ -62,6 +64,13 @@ inputs to the jackknife and imputation variance
 estimates. This is intended to allow for
 the computation
 of covariances between estimates.}
+
+\item{returnNumberOfPSU}{a logical value set to \code{TRUE} to return the number of 
+primary sampling units (PSU).}
+
+\item{standardizeWithSamplingVar}{a logical value indicating if the standardized coefficients
+should have the variance of the regressors and outcome measured
+with sampling variance. Defaults to \code{FALSE}.}
 }
 \value{
 An \code{edsurvey.lm} with the following elements:
@@ -78,12 +87,35 @@ An \code{edsurvey.lm} with the following elements:
    \item{r.squared}{the coefficient of determination}
    \item{weight}{the name of the weight variable}
    \item{npv}{the number of plausible values}
-   \item{njk}{the number of jackknife replicates used; set to \code{NA} when Taylor series variance estimates are used}
+   \item{jrrIMax}{the \code{jrrIMax} value used in computation}
+   \item{njk}{the number of jackknife replicates used; set to \code{NA}
+              when Taylor series variance estimates are used}
    \item{varMethod}{one of \code{Taylor series} or \code{jackknife}}
+   \item{residuals}{residuals from the average regression coefficients}
+   \item{PV.residuals}{residuals from the by plausible value coefficients}
+   \item{PV.fitted.values}{fitted values from the by plausible value coefficients}
+   \item{B}{imputation variance covariance matrix, before multiplication by (M+1)/M}
+   \item{U}{sampling variance covariance matrix}
+   \item{rbar}{average relative increase in variance; see van Buuren (2012, eq. 2.29)}
+   \item{nPSU}{number of PSUs used in calculation}
+   \item{n0}{number of rows on \code{edsurvey.data.frame} before any conditions were applied}
+   \item{nUsed}{number of observations with valid data and weights larger than zero}
+   \item{data}{data used for the computation}
+   \item{Xstdev}{standard deviations of regressors, used for computing standardized
+                 regression coefficients when \code{standardizeWithSamplingVar} is set to
+                 \code{FALSE} (the default)}
+   \item{varSummary}{the result of running \code{summary2} (unweighted) on each variable in the
+                     regression}
    \item{varEstInputs}{when \code{returnVarEstInputs} is \code{TRUE},
                        this element is returned. These are
                        used for calculating covariances with
                        \code{\link{varEstToCov}}.}
+   \item{standardizeWithSamplingVar}{when \code{standardizeWithSamplingVar}
+                                     is set to \code{TRUE} this element is
+                                     returned. Calculates the standard deviation
+                                     of the standardized
+                                     regression coefficients like any other
+                                     variable.}
 }
 \description{
 Fits a linear model that uses weights and variance estimates appropriate for the data.
@@ -92,8 +124,8 @@ Fits a linear model that uses weights and variance estimates appropriate for the
 This function implements an estimator that correctly handles left-hand
 side variables that are either numeric or plausible values and allows for survey 
 sampling weights and estimates variances using the jackknife replication method.
-The
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
+The vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
  describes estimation of the reported statistics. 
 
 Regardless of the variance estimation, the coefficients are estimated
@@ -116,8 +148,8 @@ the average \emph{R}-squared using the average across the plausible values.
 
 
 \subsection{Variance estimation of coefficients}{
-  All variance estimation methods are shown in the
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}.
+  All variance estimation methods are shown in the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.
   When \code{varMethod} is set to \code{jackknife} and the predicted
   value does not have plausible values, the variance of the coefficients
   is estimated according to the section
@@ -177,6 +209,8 @@ summary(lm4)
 Binder, D. A. (1983). On the variances of asymptotically normal estimators from complex surveys. \emph{International Statistical Review}, \emph{51}(3), 279--292. 
 
 Rubin, D. B. (1987). \emph{Multiple imputation for nonresponse in surveys}. New York, NY: Wiley.
+
+van Buuren, S. (2012). \emph{Flexible imputation of missing data}. New York, NY: CRC Press.
 
 Weisberg, S. (1985). \emph{Applied linear regression} (2nd ed.). New York, NY: Wiley.
 }

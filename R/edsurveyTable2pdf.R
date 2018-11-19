@@ -3,7 +3,7 @@
 #' @description Produces the LaTeX code and compiles as a PDF file from the \code{edsurveyTable} results.
 #' 
 #' @param data an \code{edsurveyTable}. See Value 
-#'             in \code{\link[EdSurvey]{edsurveyTable}}
+#'             in \code{\link[EdSurvey]{edsurveyTable}}.
 #' @param formula a formula of the form \code{LHS ~ RHS} to cast the \code{edsurveyTable} 
 #'                results from long format to wide format. This formula takes the form 
 #'                \code{LHS ~ RHS} (e.g., \code{var1 + var2 ~ var3}). 
@@ -12,11 +12,11 @@
 #'                If length is two, the second item is the "short caption" used when LaTeX generates 
 #'                a \code{List of Tables}. 
 #'                Set to \code{NULL} to suppress the caption. Default value is \code{NULL}.
-#' @param filename a character string containing file names and paths. By default (\code{filename = ""}),
+#' @param filename a character string containing filenames and paths. By default (\code{filename = ""}),
 #'                 table will be saved in the working directory (\code{getwd()}). 
 #'                 Use \code{filename = "CONSOLE"} to 
 #'                 print LaTeX code in R console without generating a PDF file.
-#' @param toCSV a character string containing file names and paths of \code{.csv} table output.
+#' @param toCSV a character string containing filenames and paths of \code{.csv} table output.
 #'              \code{""} indicates no \code{.csv} output. \code{toCSV} is 
 #'              independent to \code{filename}, so both
 #'              a csv file and PDF file would be generated if both \code{filename} 
@@ -36,8 +36,8 @@
 #' so, for example, \code{estDigits = -2} rounds estimates to the nearest hundred.
 #' 
 #' @note 
-#' For more details, see vignette on "Producing \code{LaTeX} Tables From \code{edsurveyTable} 
-#' Results With \code{edsurveyTable2pdf}".
+#' For more details, see the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-LaTeXtables.pdf}{Producing \code{LaTeX} Tables From \code{edsurveyTable} Results With \code{edsurveyTable2pdf}}.
 #' 
 #' @example /man/examples/edsurveyTable2pdf.R
 #' @author Huade Huo
@@ -47,7 +47,6 @@
 #' @importFrom xtable xtable
 #' 
 #' @export
-
 edsurveyTable2pdf <- function(data, 
                               formula, 
                               caption=NULL,

@@ -6,14 +6,15 @@
 \usage{
 cor.sdf(x, y, data, method = c("Pearson", "Spearman", "Polychoric",
   "Polyserial"), weightVar = "default", reorder = NULL,
-  omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL)
+  omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
+  condenseLevels = TRUE)
 }
 \arguments{
 \item{x}{a character variable name from the \code{data} to be correlated with \code{y}}
 
 \item{y}{a character variable name from the \code{data} to be correlated with \code{x}}
 
-\item{data}{an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.}
+\item{data}{an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}}
 
 \item{method}{a character string indicating which correlation coefficient (or covariance) is to be computed.
 One of \code{Pearson} (default), \code{Spearman}, \code{Polychoric}, or \code{Polyserial}.}
@@ -31,6 +32,14 @@ to subset the data. Use \code{print} on an \code{edsurvey.data.frame} to see the
 
 \item{recode}{a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
 \code{recode} \code{=} \code{list(var1} \code{=} \code{list(from} \code{=} \code{c("a","b","c"), to} \code{=} \code{"d"))}. See Examples.}
+
+\item{condenseLevels}{a logical value. When set to the default value of
+\code{TRUE} and either \code{x} or \code{y} is a
+categorical variable, the function will drop all unused
+levels and rank the levels of the variable before
+calculating the correlation. When set to \code{FALSE},
+the numeric levels of the variable remain the same as
+in the codebook. See Examples.}
 }
 \value{
 An \code{edsurvey.cor} that has print and summary methods.
@@ -46,7 +55,7 @@ The class includes the following elements:
 \item{\code{Vimp}}{the imputation component of the variance estimate. For Pearson, in the atanh space.}
 \item{\code{weight}}{the weight variable used}
 \item{\code{npv}}{the number of plausible values used}
-\item{\code{njk}}{the number of jackknife replicates used}
+\item{\code{njk}}{the number of the jackknife replicates used}
 }
 \description{
 Computes the correlation of two variables on an \code{edsurvey.data.frame},
@@ -73,6 +82,14 @@ c1_polyc <- cor.sdf(x="b017451", y="b003501", data=sdf, method="Polychoric",
 c1_pears
 c1_spear
 c1_polyc
+
+# for categorical variables, users can either keep the original numeric levels of the variables
+# or condense the levels (default)
+# The following call condenses the levels of the variable 'c046501'
+cor.sdf(x="c046501", y="c044006", data=sdf)
+
+# The following call keeps the original levels of the variable 'c046501'
+cor.sdf(x="c046501", y="c044006", data=sdf, condenseLevels = FALSE)
 
 # these take awhile to calculate for large datasets, so limit to a subset
 sdf_dnf <- subset(sdf, b003601 == 1)

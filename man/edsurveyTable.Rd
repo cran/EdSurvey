@@ -88,28 +88,28 @@ A table with the following columns:
    \item{\code{N}}{count of the number of students in the survey in the \code{RHS levels}}
    \item{\code{WTD_N}}{the weighted \emph{N} count of students in the survey in \code{RHS levels}}
    \item{\code{PCT}}{the percentage of students at the aggregation level specified by \code{pctAggregationLevel} (see Arguments).
-                     See the
-        \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
-            section
+                     See the vignette titled
+        \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+            in the section
 \dQuote{Estimation of Weighted Percentages} and its first subsection
 \dQuote{Estimation of Weighted Percentages When Plausible Values Are Not Present.}}
    \item{\code{SE(PCT)}}{the standard  error of the percentage, accounting
                          for the survey sampling methodology. When \code{varMethod}
                          is \code{jackknife}, the calculation of this column is
-                         described in the
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
- section
+                         described in the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+ in the section
 \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Jackknife Method.}
-                      When \code{varMethod} is set to \code{Taylor}, then the calculation of this column is described in
+                      When \code{varMethod} is set to \code{Taylor}, the calculation of this column is described in
 \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Taylor Series Method.}
 }
-   \item{\code{MEAN}}{the mean assessment score for units in the \code{RHS levels}, calculated according to the 
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
-section
+   \item{\code{MEAN}}{the mean assessment score for units in the \code{RHS levels}, calculated according to the  vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+in the section
 \dQuote{Estimation of Weighted Means When Plausible Values Are Present.}}
-   \item{\code{SE(MEAN)}}{the standard error of the \code{MEAN} column (the mean assessment score for units in the \code{RHS levels}), calculated according to the 
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}                      
-sections
+   \item{\code{SE(MEAN)}}{the standard error of the \code{MEAN} column (the mean assessment score for units in the \code{RHS levels}), calculated according to the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}                      
+in the sections
 \dQuote{Estimation of Standard Errors of Weighted Means When Plausible Values Are Present, Using the Jackknife Method}
 or 
 \dQuote{Estimation of Standard Errors of Weighted Means When Plausible Values Are Present, Using the Taylor Series Method,}
@@ -134,8 +134,8 @@ table with unweighted and weighted \emph{n} values and percentages. It also
 can calculate the average of the subject scale or subscale for students at
 each level of the cross-tabulation table. 
       
-A detailed description of all statistics is given in the
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}.
+A detailed description of all statistics is given in the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.
 }
 \examples{
 \dontrun{

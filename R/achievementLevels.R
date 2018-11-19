@@ -4,11 +4,11 @@
 #'
 #' @param achievementVars character vector indicating variables to be included in the achievement 
 #'                        levels table, potentially with a subject scale or subscale. When the subject 
-#'                        scale or subscale is omitted, then the default subject scale or subscale is 
+#'                        scale or subscale is omitted, the default subject scale or subscale is 
 #'                        used. You can find the default composite scale and all subscales using the 
 #'                        function \code{\link{showPlausibleValues}}.
 #' @param aggregateBy character vector specifying variables to aggregate achievement levels by. The percentage
-#'                    column sums up to 100 for all levels of all variables specified here. When set to 
+#'                    column sums up to 100 for all levels of all variables specified here. When set to the 
 #'                    default of \code{NULL}, the percentage column sums up to 100 for all 
 #'                    levels of all variables specified in \code{achievementVars}.
 #' @param data      an \code{edsurvey.data.frame}
@@ -35,11 +35,13 @@
 #'                          Use \code{print} on an \code{edsurvey.data.frame} to see the default
 #'                          conditions.
 #' @param recode a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
-#'               \code{recode = list(var1= list(from=c("a", "b", "c"), to ="d"))}. See Examples.
+#'               \code{recode} \code{=} \code{list(var1=} \code{list(from=c("a",} \code{"b",} \code{"c"),} \code{to ="d"))}. See Examples.
 #' @param returnDiscrete logical indicating if discrete achievement levels should be returned. Defaults 
 #'                       to \code{TRUE}.
 #' @param returnCumulative logical indicating if cumulative achievement levels should be returned. Defaults
 #'                         to \code{FALSE}. The first and last categories are the same as defined for discrete levels.
+#' @param returnNumberOfPSU a logical value set to \code{TRUE} to return the number of 
+#'                          primary sampling units (PSU)
 #' @param returnVarEstInputs a logical value set to \code{TRUE} to return the
 #'                           inputs to the jackknife and imputation variance
 #'                           estimates. This is intended to allow for
@@ -50,13 +52,13 @@
 #'          \code{edsurvey.data.frame}, with several arguments for customizing the aggregation and output of the analysis 
 #'          results. Namely, by using these optional arguments, users can choose to generate the percentage of students 
 #'          performing at each achievement level (discrete), generate the percentage of students performing at or above each achievement level (cumulative), 
-#'          calculate the percentage distribution of students by achievement levels (discrete or cumulative) and 
+#'          calculate the percentage distribution of students by achievement level (discrete or cumulative) and 
 #'          selected characteristics (specified in \code{aggregateBy}), and compute the percentage distribution of students 
 #'          by selected characteristics within a specific achievement level.
 #'
 #' \subsection{Calculation of percentages}{
-#'          The details of the methods are shown in the
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette} in 
+#'          The details of the methods are shown in the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics} in 
 #'          \dQuote{Estimation of Weighted Percentages When Plausible Values Are Present} and are used to calculate 
 #'          all cumulative and discrete probabilities.
 #'
@@ -67,10 +69,9 @@
 #'          to be 0. \code{cutPoints} are set to NAEP standard cutpoints for achievement levels by default.
 #'          To aggregate by a specific variable, for example, \code{dsex}, specify \code{dsex} in \code{aggregateBy}
 #'          and all other variables in \code{achievementVars}. To aggregate by subscale, specify 
-#'          the name of the subscale (e.g. \code{num_oper}) in \code{aggregateBy}, and all other variables in 
+#'          the name of the subscale (e.g., \code{num_oper}) in \code{aggregateBy} and all other variables in 
 #'          \code{achievementVars}.
 #'          
-#'
 #'          When the requested achievement levels are cumulative (\code{returnCumulative = TRUE}),
 #'          the percentage \eqn{\mathcal{A}} is the percentage of students (within the categories specified in \code{aggregateBy}) 
 #'          whose scores lie in the range  [\eqn{cutPoints_i}, \eqn{\infty}), \eqn{i = 1,2...,n-1}. The 
@@ -78,9 +79,9 @@
 #' } 
 #'         
 #' \subsection{Calculation of standard error of percentages}{
-#'          The method used to calculate the standard error of the percentages is described in the 
-#'          \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette} 
-#'          in the section \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Present, Using the Jackknife Method} 
+#'          The method used to calculate the standard error of the percentages is described in the vignette titled
+#'          \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics} 
+#'          in the sections \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Present, Using the Jackknife Method} 
 #'          and \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Taylor Series Method.}
 #'          For \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Present, Using the Jackknife Method,}
 #'         the value of \code{jrrIMax} sets the value of \eqn{m^*}.
@@ -89,18 +90,17 @@
 #' @return
 #' A \code{list} containing up to two data frames, one for each of the discrete and cumulative achievement levels
 #' as determined by \code{returnDiscrete} and \code{returnCumulative}. The \code{data.frame} contains the following columns:
-#' \item{\code{Level}}{one row for each level of the specified achievement cutpoints.}
+#' \item{\code{Level}}{one row for each level of the specified achievement cutpoints}
 #' \item{Variables in achievementVars}{one column for each variable in \code{achievementVars} 
 #' and one row for each level of each variable in \code{achievementVars}}
 #' \item{\code{Percent}}{the percentage of students at or above each achievement level aggregated as specified by \code{aggregateBy}}
 #' \item{\code{StandardError}}{the standard error of the percentage, accounting for the survey sampling methodology. 
-#'                             See the \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}.}
-#' \item{\code{n0}}{the number of observations in the incoming data (the
+#'                             See the vignette titled \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.}
+#' \item{\code{N}}{the number of observations in the incoming data (the
 #'                  number of rows when \code{omittedLevels} and
-#'                  \code{defaultConditions} are set to \code{FALSE}.}
-#' \item{\code{nUsed}}{the number of observations in the data after applying all
-#'                     filters (see \code{omittedLevels} and
-#'                     \code{defaultConditions}).}
+#'                  \code{defaultConditions} are set to \code{FALSE}).}
+#' \item{\code{wtdN}}{the weighted number of observations in the data}
+#' \item{\code{nPSU}}{the number of primary sampling units (PSUs) at or above each achievement level aggregated as specified by \code{aggregateBy}. Only returned with \code{returnNumberOfPSU=TRUE}.}
 #' @references 
 #' Rubin, D. B. (1987). \emph{Multiple imputation for nonresponse in surveys}. New York, NY: Wiley.
 #'
@@ -117,7 +117,8 @@ achievementLevels <- function(achievementVars = NULL,
                               jrrIMax=1,
                               omittedLevels=TRUE,
                               defaultConditions=TRUE,
-                              recode = NULL,
+                              recode=NULL,
+                              returnNumberOfPSU=FALSE,
                               returnVarEstInputs=FALSE) {
   
   alResultDfList <- list()
@@ -136,9 +137,10 @@ achievementLevels <- function(achievementVars = NULL,
                                          returnCumulative, weightVar, jrrIMax, omittedLevels, defaultConditions,
                                          recode,
                                          defaultConditionsMissing=missing(defaultConditions),
-                                         returnVarEstInputs=returnVarEstInputs),
+                                         returnVarEstInputs=returnVarEstInputs,
+                                         returnNumberOfPSU=returnNumberOfPSU),
                        error = function(cond) {
-                         message(paste("An error occurred while working on data set", labels[i], " excluding results from this data set."))
+                         message(paste("An error occurred while working on dataset", labels[i], " excluding results from this dataset."))
                          message(cond)
                          return(NULL)
                        }
@@ -154,7 +156,7 @@ achievementLevels <- function(achievementVars = NULL,
     alResult <- calAL(achievementVars, aggregateBy, data, cutpoints, returnDiscrete,
                       returnCumulative, weightVar, jrrIMax, omittedLevels, defaultConditions,
                       recode, defaultConditionsMissing=missing(defaultConditions),
-                      returnVarEstInputs=returnVarEstInputs)
+                      returnVarEstInputs=returnVarEstInputs, returnNumberOfPSU=returnNumberOfPSU)
     alResult
   }
   
@@ -173,7 +175,8 @@ calAL <- function(achievementVars = NULL,
                   defaultConditions=TRUE,
                   recode = NULL,
                   defaultConditionsMissing=FALSE,
-                  returnVarEstInputs=FALSE) {
+                  returnVarEstInputs=FALSE,
+                  returnNumberOfPSU=returnNumberOfPSU) {
   assertArgument(data)
   als <- getAttributes(data, "achievementLevels")
   assertArgument(als)
@@ -190,7 +193,12 @@ calAL <- function(achievementVars = NULL,
   assertArgument(has.more.pvs)
   
   # Determine if weight supplied, otherwise use default weight
-  wgt <- attributes(getAttributes(data, "weights"))$default 
+  if (is.null(weightVar)) {
+    wgt <- attributes(getAttributes(data, "weights"))$default 
+  } else {
+    wgt <- weightVar
+  }
+  assertArgument(wgt, data)
   
   # Get yvar, if no yvar is specified 
   has.pv <- sum(sapply(vars, FUN= function(x) hasPlausibleValue(x, data)))
@@ -212,10 +220,25 @@ calAL <- function(achievementVars = NULL,
   
   pvs <- getPlausibleValue(yvar, data)
   jrrIMax <- min(jrrIMax, length(pvs))
+  
+  getDataVarNames <- c(vars, wgt)
+  if (returnNumberOfPSU){
+      # Get stratum and PSU variable
+      stratumVar <- getAttributes(data,"stratumVar")
+      psuVar <- getAttributes(data,"psuVar")
+      if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% names(data$data))) {
+        getDataVarNames <- c(vars, wgt, stratumVar, psuVar)
+    } else {
+      warning(paste0("Stratum and PSU variable are required for this call and are not on the incoming data. Ignoring ", dQuote("returnNumberOfPSU=TRUE"),"."))
+      returnNumberOfPSU <- FALSE
+    }
+
+  }
+
 
   # get the data. This is most of the arguments
   getDataArgs <- list(data=data,
-                      varnames=c(vars, wgt),
+                      varnames=getDataVarNames,
                       returnJKreplicates=TRUE,
                       drop=FALSE,
                       omittedLevels=omittedLevels,
@@ -229,6 +252,13 @@ calAL <- function(achievementVars = NULL,
   edfDT <- do.call(getData, getDataArgs)
   edfDT <- setDT(edfDT)
   edfDTnrow <- nrow(edfDT)
+  stratumAndPSU <- NULL
+  if (returnNumberOfPSU) {
+    # Combine stratumVar and psuVar
+    edfDT <- edfDT[, stratumAndPSU:=paste0(.SD, collapse = "-"), 
+                   .SDcols=c(stratumVar, psuVar), 
+                   by = 1:edfDTnrow][, c(stratumVar, psuVar):=NULL]
+  }
   assertArgument(edfDT)
   
   
@@ -254,6 +284,13 @@ calAL <- function(achievementVars = NULL,
   
   jkWeights <- getWeightJkReplicates(wgt, data)
   
+  # Remove zero-weight cases
+  edfDT <- edfDT[eval(parse(text = paste0(wgt, " > 0", sep = " "))), ]
+  if (nrow(edfDT) < edfDTnrow) {
+    warning("Removing ", edfDTnrow - nrow(edfDT), " rows with nonpositive weight from analysis.")
+    edfDTnrow <- nrow(edfDT)
+  }
+  
   # Gather information about the call.
   # jrrIMax <- min(length(pvs), jrrIMax)
   callVars <- list(achievementVars=achievementVars,
@@ -277,11 +314,11 @@ calAL <- function(achievementVars = NULL,
                                 jrrIMax = jrrIMax, returnVarEstInputs = returnVarEstInputs,
                                 achievementVars = achievementVarsNoPV, aggregateBy=aggregateByNoPV,
                                 wgt = wgt, jkSumMultiplier=getAttributes(data, "jkSumMultiplier"),
-                                jkWeights = jkWeights)
+                                jkWeights = jkWeights, returnNumberOfPSU = returnNumberOfPSU)
   discreteDT <- NULL
   # Report rows with missing percent/N/wtdN
   if (length(achievementVarsNoPV) != 0) {
-    discreteLevelAndAchievementVars <- merge(discreteOrder,levelsOfEdfDTGrid)
+    discreteLevelAndAchievementVars <- base::merge.default(discreteOrder,levelsOfEdfDTGrid)
   } else {
     discreteLevelAndAchievementVars <- as.data.frame(discreteOrder)
   }
@@ -319,7 +356,8 @@ calAL <- function(achievementVars = NULL,
       cumulativeDTLevelIResult <- calculateAL(recodeEdfResults = cumulativeDTLevelI, pvs = pvs, 
                                               jrrIMax = jrrIMax, returnVarEstInputs = returnVarEstInputs,
                                               achievementVars = achievementVarsNoPV, aggregateBy = aggregateByNoPV,
-                                              wgt = wgt, jkSumMultiplier=getAttributes(data, "jkSumMultiplier"), jkWeights = jkWeights)
+                                              wgt = wgt, jkSumMultiplier=getAttributes(data, "jkSumMultiplier"), 
+                                              jkWeights = jkWeights, returnNumberOfPSU = returnNumberOfPSU)
       cumulativeResults <- rbind(cumulativeResults, cumulativeDTLevelIResult[[1]])
       # Return combined JK and PV result if returnVarEstInputs is TRUE
       if (returnVarEstInputs) {
@@ -403,7 +441,7 @@ calAL <- function(achievementVars = NULL,
   
 }
 
-assertArgument <- function(arguments){
+assertArgument <- function(arguments, data){
   argumentName <- deparse(substitute(arguments))
   switch(argumentName,
          "data"= {
@@ -424,6 +462,15 @@ assertArgument <- function(arguments){
                          sQuote("achievementVars"), " or ", sQuote("aggregateBy"), " arguments."))
            }
          },
+         "wgt" = {
+           if (arguments == "") {
+             stop("Argument ", sQuote("weightVar"), " is required.")
+           }
+           if (!(arguments %in% attributes(getAttributes(data, "weights")))) {
+             stop(paste0("Argument ", sQuote("weightVar"), " value of ", sQuote(arguments), 
+                         " is not available on the data.")) 
+           }
+         },
          "yvar" = {
            # Check to see if at least one plausible value variable identified
            if(length(arguments) == 0) {
@@ -439,7 +486,7 @@ assertArgument <- function(arguments){
          "cutpoints" = {
            # check if cutpoints are numeric
            if (!is.numeric(arguments)) {
-             stop("cutpoints must be numeric values.")
+             stop(paste0(dQuote("cutpoints"), " must be numeric values."))
            }
          }
   )
@@ -489,7 +536,8 @@ recodeEdf <- function(edfDT, pvs, als, returnCumulative, cumulativeLevel = 0){
 
 
 # Estimation of weighted percentages when plausible values are present
-calculateAL <- function(recodeEdfResults, pvs, jrrIMax, returnVarEstInputs, achievementVars, aggregateBy, wgt, jkSumMultiplier, jkWeights){
+calculateAL <- function(recodeEdfResults, pvs, jrrIMax, returnVarEstInputs, 
+                        achievementVars, aggregateBy, wgt, jkSumMultiplier, jkWeights, returnNumberOfPSU){
   # result list
   # 1. res: discrete or cumulative result by Level and achievementVars/ aggregateBy variables
   # 2. VarEstImput: JK (jrr) by PV (jrrIMAx), Level, achievementVars, jk
@@ -515,6 +563,19 @@ calculateAL <- function(recodeEdfResults, pvs, jrrIMax, returnVarEstInputs, achi
   jrr_dt <- rbindlist(jrr_dt)
   names(jrr_dt)[1] <- "Level"
   # end jrr_dt
+  
+  # Count unique PSU and stratum combinations
+  if (returnNumberOfPSU){
+    nPSU_dt <- lapply(1:jrrIMax, function(i) {
+      recodeEdfResults[,lapply(.SD, function(x) length(unique(x))), 
+                       by = c(paste0(pvs[i],"_lvl"), achievementVars), 
+                       .SDcols = "stratumAndPSU"][,PV:=i]
+    })
+    nPSU_dt <- rbindlist(nPSU_dt)
+    names(nPSU_dt)[1] <- "Level"
+    names(nPSU_dt)[names(nPSU_dt) == "stratumAndPSU"] <- "nPSU"
+  }
+  # end nPSU_dt
   
   # 1. Calculate weighted percentages (N, wtdN, Percent)
   res <- imp_dt[,list(wtdN=sum(sumY), N = sum(lengthY)), by = c("Level",achievementVars)]
@@ -545,7 +606,13 @@ calculateAL <- function(recodeEdfResults, pvs, jrrIMax, returnVarEstInputs, achi
   
   # c. StandardError
   res <- res[,StandardError:= sqrt(Vjrr + Vimp)]
-  alList[[1]] <- as.data.frame(res)[,c("Level",achievementVars, "N", "wtdN","Percent","StandardError")]
+  if (returnNumberOfPSU) {
+    res <- merge(res, nPSU_dt, sort = FALSE, by = c("Level", achievementVars), all.x = TRUE)
+    alList[[1]] <- as.data.frame(res)[,c("Level",achievementVars, "N", "wtdN","Percent","StandardError", "nPSU")]
+  } else {
+    alList[[1]] <- as.data.frame(res)[,c("Level",achievementVars, "N", "wtdN","Percent","StandardError")]
+  }
+
   
   # 3. Return VarEstInputs (JK and PV)
   if (returnVarEstInputs) {
@@ -583,12 +650,12 @@ calculateAL <- function(recodeEdfResults, pvs, jrrIMax, returnVarEstInputs, achi
 #' 
 #' @param x             an \code{achievementLevels} object
 #' @param printCall     a logical value; by default (\code{TRUE}), prints details about plausible 
-#'                      values and weights used for calculating achievement levels.
+#'                      values and weights used for calculating achievement levels
 #' @param printDiscrete a logical value; by default (\code{TRUE}), prints discrete achievement 
-#'                      levels if they are present in \code{x}.
+#'                      levels if they are present in \code{x}
 #' @param printCumulative a logical value; by default (\code{TRUE}), prints cumulative achievement 
 #'                        levels if they are present in \code{x}
-#' @param ... these arguments are not passed anywhere and are included only for compatibility.
+#' @param ... these arguments are not passed anywhere and are included only for compatibility
 #' @method print achievementLevels
 #' @author Huade Huo and Ahmad Emad 
 #' @export

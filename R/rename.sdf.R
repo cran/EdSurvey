@@ -9,7 +9,7 @@
 #'          or an \code{edsurvey.data.frame.list}
 #' @param oldnames a character vector of old variable names
 #' @param newnames a character vector of new variable names to replace the
-#'                 corresponding old names.
+#'                 corresponding old names
 #' @param avoid_duplicated a logical value to indicate whether to avoid renaming the
 #'                         variable if the corresponding new name already exists in the data. 
 #'                         Defaults to \code{TRUE}.
@@ -18,19 +18,18 @@
 #'          the \code{EdSurvey} standard.
 #'
 #' @return an object of the same class as \code{x} with new variable names
-#' @export
+#' @usage rename.sdf(x, oldnames, newnames, avoid_duplicated = TRUE)
+#' @export rename.sdf
 #' 
 #' @seealso \code{\link{gap}}
 #' @author Trang Nguyen
 #' @example \man\examples\rename.sdf.R
 rename.sdf <- function(x,
-                   oldnames,
-                   newnames,
-                   avoid_duplicated = TRUE){
+                       oldnames,
+                       newnames,
+                       avoid_duplicated = TRUE){
   # Preparing/ checking arguments
   checkDataClass(x, c("edsurvey.data.frame.list","edsurvey.data.frame","light.edsurvey.data.frame"))
-  oldnames <- tolower(unlist(oldnames))
-  newnames <- tolower(unlist(newnames))
   if(length(oldnames) != length(newnames)){
     stop("Length of old variable names is not equal to length of new variable names. ")
   }
@@ -40,6 +39,17 @@ rename.sdf <- function(x,
     userConditions <- getAttributes(x,"userConditions")
     pvvars <- getAttributes(x,"pvvars")
     weights <- getAttributes(x, "weights")
+    psuVarList <- getAttributes(x,"psuVar")
+    stratumVarList <- getAttributes(x,"stratumVar")
+    defaultTaylorVar <- TRUE
+    if (is.null(psuVarList) || psuVarList == "") {
+      psuVarList <- sapply(weights, function(w) w$psuVar)
+      defaultTaylorVar <- FALSE
+    }
+    if (is.null(stratumVarList) || stratumVarList == "") {
+      stratumVarList <- sapply(weights, function(w) w$stratumVar)
+      defaultTaylorVar <- FALSE
+    }
     if (inherits(x,"edsurvey.data.frame")) {
       varnames <-  names(x$data)
     } else {
@@ -54,25 +64,25 @@ rename.sdf <- function(x,
       # to avoid duplicates after the operation
       if (newnames[vari] %in% c(varnames, names(weights), names(pvvars))) {
         if (avoid_duplicated) {
-          warning("Variable name ",sQuote(newnames[vari]), " already exists in the data. Not renaming the variable to avoid duplicates. ")
+          warning(paste0("Variable name ",sQuote(newnames[vari]), " already exists in the data. Not renaming the variable to avoid duplicates."))
           next
         } else {
-          warning("Variable name ",sQuote(newnames[vari]), " already exists in the data. Renaming the variable to ",sQuote(paste0(newnames[vari],"_2")),". ")
+          warning(paste0("Variable name ",sQuote(newnames[vari]), " already exists in the data. Renaming the variable to ",sQuote(paste0(newnames[vari],"_2")),". "))
           newnames[vari] <- paste0(newnames[vari],"_2")
         }
       }
       ## change the name in fileformat
-      varn <- toupper(oldnames[vari])
+      varn <- oldnames[vari]
       if(varn %in% fileFormat$variableName) {
-        fileFormat$variableName[fileFormat$variableName == toupper(oldnames[vari])] <- toupper(newnames[vari])
+        fileFormat$variableName[fileFormat$variableName == varn] <- newnames[vari]
       }
       
       if(varn %in% fileFormatSchool$variableName) {
-        fileFormatSchool$variableName[fileFormatSchool$variableName == toupper(oldnames[vari])] <- toupper(newnames[vari])
+        fileFormatSchool$variableName[fileFormatSchool$variableName == varn] <- newnames[vari]
       }
       
       if(varn %in% fileFormatTeacher$variableName) {
-        fileFormatTeacher$variableName[fileFormatTeacher$variableName == toupper(oldnames[vari])] <- toupper(newnames[vari])
+        fileFormatTeacher$variableName[fileFormatTeacher$variableName == varn] <- newnames[vari]
       }
       # change variable name in userConditions list
       if (!is.null(userConditions) && length(userConditions) > 0) {
@@ -85,9 +95,9 @@ rename.sdf <- function(x,
           }
         } # end (for(i in 1:length(userConditions)))
       } # end if (!is.null(userConditons))
-     
+      
       # change pvvars
-      if(!is.null(pvvars)) {
+      if(!is.null(pvvars) & length(pvvars) > 0) {
         if (oldnames[vari] %in% names(pvvars)) {
           names(pvvars)[names(pvvars) == oldnames[vari]] <- newnames[vari]
           attr(pvvars,'default') <- gsub(paste0("\\b", oldnames[vari],"\\b"), newnames[vari], attr(pvvars,'default'))
@@ -105,6 +115,26 @@ rename.sdf <- function(x,
         next
       }
       
+      # change stratumVar and psuVar
+      if (length(psuVarList) > 0) {
+        if (oldnames[vari] %in% psuVarList) {
+          if (defaultTaylorVar) {
+            setAttributes(x,"psuVar", newnames[vari])
+          } else {
+            weights[[which(psuVarList == oldnames[vari])]]$psuVar <- newnames[vari]
+          }
+        }
+      }
+      if (length(stratumVarList) > 0) {
+        if (oldnames[vari] %in% stratumVarList) {
+          if (defaultTaylorVar) {
+            setAttributes(x,"stratumVar", newnames[vari])
+          } else {
+            weights[[which(stratumVarList == oldnames[vari])]]$stratumVar <- newnames[vari]
+          }
+        }
+      }
+      
       if(!oldnames[vari] %in% varnames) {
         warning(paste0(oldnames[vari]," is not in the data.\n"))
         next
@@ -114,7 +144,7 @@ rename.sdf <- function(x,
       varnames[varnames == oldnames[vari]] <- newnames[vari]
       
       # if the name is one of the plausible values
-      if(!is.null(pvvars)) {
+      if(!is.null(pvvars) & length(pvvars) > 0) {
         for (pvi in 1:length(pvvars)) {
           pvvars[[pvi]]$varnames <- gsub(paste0("\\b",oldnames[vari],"\\b"),newnames[vari], pvvars[[pvi]]$varnames)
         }  

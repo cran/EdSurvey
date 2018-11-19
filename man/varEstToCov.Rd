@@ -4,7 +4,8 @@
 \alias{varEstToCov}
 \title{Covariance Estimation}
 \usage{
-varEstToCov(varEstA, varEstB = varEstA, varA, varB = varA, jkSumMultiplier)
+varEstToCov(varEstA, varEstB = varEstA, varA, varB = varA,
+  jkSumMultiplier)
 }
 \arguments{
 \item{varEstA}{a list of two \code{data.frame}s returned by a function after 
@@ -19,10 +20,10 @@ present in each \code{data.frame}. When the same as
 \code{varEstA}, the covariance is within one result.}
 
 \item{varA}{a character that names the statistic in the \code{varEstA}
-argument for which a covariance is required.}
+argument for which a covariance is required}
 
 \item{varB}{a character that names the statistic in the \code{varEstB}
-argument for which a covariance is required.}
+argument for which a covariance is required}
 
 \item{jkSumMultiplier}{when the jackknife variance estimation method---or
 balanced repeated replication (BRR) 
@@ -48,13 +49,13 @@ Note that these functions are not vectorized, so \code{varA} and
 \code{varB} must contain exactly one variable name.
 
 The method used to compute the covariance is in
-the
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
- section \dQuote{Estimation of Covariances.}
+the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+in the section \dQuote{Estimation of Covariances.}
 
-The method used to compute the degrees of freedom is in the
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
-section \dQuote{Estimation of Degrees of Freedom.}
+The method used to compute the degrees of freedom is in the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+in the section \dQuote{Estimation of Degrees of Freedom.}
 }
 \examples{
 # read in the example data (generated, not real student data)

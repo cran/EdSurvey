@@ -1,15 +1,11 @@
 ---
 title: 'Introduction to Analyzing NCES Data Using EdSurvey'
-author: Developed by Paul Bailey, Nancy Collins, Ahmad Emad, Thomas Fink, Huade Huo, Julian Gerez, Michael Lee, Yuqi Liao, Trang Nguyen, Qingshu Xie, Jiao Yu, and Ting Zhang\footnote{This publication was prepared for NCES under Contract No. ED-IES-12-D-0002 with the American Institutes for Research. Mention of trade names, commercial products, or organizations does not imply endorsement by the U.S. Government.} \footnote{The authors would like to thank Young Yee Kim and Dan Sherman for reviewing this document, as well as Jiayi Li and Fei Liu for conducting quality control tests to verify the functions in this document.}
+author: Developed by Paul Bailey, Nancy Collins, Ahmad Emad, Thomas Fink, Huade Huo, Julian Gerez, Michael Lee, Yuqi Liao, Trang Nguyen, Qingshu Xie, Jiao Yu, and Ting Zhang
 date: 'May 3, 2018'
-output:
-  pdf_document:
-    fig_caption: yes
-    number_sections: no
+output: html_document
 vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteIndexEntry{EdSurvey}
-  \usepackage[utf8]{inputenc}
 ---
   
 # Overview of the EdSurvey Package
@@ -49,6 +45,12 @@ Documents that describe the statistical methodology used in the `EdSurvey` packa
 * [*Methods Used for Gap Analysis in EdSurvey*](https://www.air.org/sites/default/files/EdSurvey-Gap.pdf) covers the methods comparing the gap analysis results of the `EdSurvey` package to the NAEP Data Explorer.
 
 * [*Methods Used for Estimating Percentiles in EdSurvey*](https://www.air.org/sites/default/files/EdSurvey-Percentiles.pdf) describes the methods used to estimate percentiles.
+
+* [*Methods Used for Estimating Mixed-Effects Models in EdSurvey*](https://www.air.org/sites/default/files/EdSurvey-Mixed_Models.pdf) describes the methods used to estimate mixed-effects models with plausible values and survey weights, and how to fit different types of mixed-effects models using the EdSurvey package.
+
+* [*Methods and Overview of Using EdSurvey for Multivariate Regression*](https://www.air.org/sites/default/files/EdSurvey-Multivariate_Regression.pdf) details the estimation of multivariate regression models using `mvrlm.sdf`.
+
+* [*Methods and Overview of Using EdSurvey for Running Wald Tests*](https://www.air.org/sites/default/files/EdSurvey-WaldTest.pdf) describes the use of the Wald test to jointly test regression coefficients estimated using `lm.sdf` and `glm.sdf`.
 
 ***
 

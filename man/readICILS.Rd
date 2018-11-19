@@ -30,7 +30,7 @@ by using existing read-in data already processed.}
 The default value is \code{TRUE}.}
 }
 \value{
-An \code{edsurvey.data.frame} for a single specified country or an \code{edsurvey.data.frame.list} if multiple countries specified.
+an \code{edsurvey.data.frame} for a single specified country or an \code{edsurvey.data.frame.list} if multiple countries specified
 }
 \description{
 Opens a connection to an ICILS data file residing
@@ -39,7 +39,7 @@ Opens a connection to an ICILS data file residing
 }
 \details{
 Reads in the unzipped files downloaded from the ICILS international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}.
-         Datafiles require the SPSS datafile (.sav) format using the default filenames.
+         Data files require the SPSS data file (.sav) format using the default filenames.
 }
 \examples{
 \dontrun{

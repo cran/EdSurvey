@@ -24,5 +24,4 @@ edsurveyTable2pdf(est1,
                   b017451~dsex, 
                   "C:/example table.pdf",
                   returnMeans = FALSE)
-
 }

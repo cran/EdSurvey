@@ -7,7 +7,7 @@
 readPIAAC(path, countries, forceReread = FALSE, verbose = TRUE)
 }
 \arguments{
-\item{path}{a character value to the full directory to the PIAAC .csv files and Microsoft Excel codebook.}
+\item{path}{a character value to the full directory to the PIAAC .csv files and Microsoft Excel codebook}
 
 \item{countries}{a character vector of the country/countries to include using the 
 three-digit ISO country code. A list of country codes can be found in the PIAAC codebook or \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}.
@@ -48,7 +48,7 @@ edsurveyTable(~ c_d05 + ageg10lfs, data = can)
 
 }
 \references{
-OECD. (2016). \emph{Technical report of the survey of adult skills (PIAAC) (2nd ed.)}. \emph{\url{http://www.oecd.org/skills/piaac/PIAAC_Technical_Report_2nd_Edition_Full_Report.pdf}}
+Organisation for Economic Co-operation and Development. (2016). \emph{Technical report of the survey of adult skills (PIAAC)} (2nd ed.). Paris, France: Author. Retrieved from \emph{\url{http://www.oecd.org/skills/piaac/PIAAC_Technical_Report_2nd_Edition_Full_Report.pdf}}
 }
 \seealso{
 \code{\link{getData}} and \code{\link{downloadPIAAC}}

@@ -4,13 +4,13 @@
 #'              returns an \code{edsurvey.data.frame} with 
 #'              information about the file and data.
 #'              
-#' @param path a character value to the full directory to the TALIS SPSS files (.sav)
+#' @param path a character vector to the full directory path(s) to the TALIS SPSS files (.sav)
 #' @param countries a character vector of the country/countries to include using the 
 #'        three-digit ISO country code. A list of country codes can be found in the TALIS codebook or you can use
 #'        \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}.
 #'        You can use \code{*} to indicate all countries available.
 #' @param isced a character value that is one of \code{a}, \code{b}, or \code{c}. \code{a} stands for \emph{Primary Level}, 
-#'        \code{b} is for \emph{Lower Secondary Level}; and, \code{c} is for \emph{Upper Secondary Level}.
+#'        \code{b} is for \emph{Lower Secondary Level}; and, \code{c} is for \emph{Upper Secondary Level}. Default to \code{b}.
 #' @param dataLevel a character value that indicates which data level to be used. It can be \code{teacher} (the default) or \code{school}.
 #' @param forceReread a logical value to force rereading of all processed data. Defaults to \code{FALSE}.
 #'        Setting \code{forceReread} to be \code{TRUE} will cause PISA data to be reread and increase processing time.
@@ -31,7 +31,7 @@
 #' @example man/examples/readTALIS.R
 #' 
 #' @references 
-#'  OECD. (2014a). \emph{TALIS 2013 technical report}. Paris, France: OECD Publishing. Retrieved from \emph{\url{http://www.oecd.org/education/school/TALIS-technical-report-2013.pdf}}
+#'  Organisation for Economic Co-operation and Development. (2014a). \emph{TALIS 2013 technical report}. Paris, France: Author. Retrieved from \emph{\url{http://www.oecd.org/education/school/TALIS-technical-report-2013.pdf}}
 #' @importFrom data.table fwrite
 #' @importFrom readr read_csv
 #' @importFrom haven read_sav
@@ -39,177 +39,198 @@
 #' @export 
 readTALIS <- function(path, 
                       countries,
-                      isced,
+                      isced = "b",
                       dataLevel = "teacher",
                       forceReread = FALSE,
                       verbose = TRUE) {
-  filepath <- normalizePath(path, winslash = "/") # to match IEA read-in function
+  path <- normalizePath(path, winslash = "/") # to match IEA read-in function
   forceRead <- forceReread # to match IEA read-in function
-  
-  filepath <- unlist(filepath)[1]
-  filepath <- gsub("/$","",filepath)
-  if (!dir.exists(filepath)) {
-    stop(paste0("Cannot find ", sQuote("filepath"), "value in ", paste(dQuote(filepath[!dir.exists(filepath)]), collapse = ", ")))
-  }
-  # Unzip files (usually this step is done in download function but TALIS data cannot be downloaded automatically)
-  zFiles <- list.files(filepath,pattern = "\\.zip$", ignore.case = T, full.names = F)
-  zFiles <- file.path(filepath,zFiles)
-  for (z in zFiles) {
-    lst <- unzip(z, list = TRUE)
-    for(i in 1:nrow(lst)) {
-      if(!file.exists(file.path(filepath,basename(lst$Name[i]))) || file.info(file.path(filepath,basename(lst$Name[i])))$size != lst$Length[i]) {
-        if (verbose) {
-          cat(paste0("Unzipping file ", sQuote(basename(lst$Name[i])), "\n"))
-        }
-        unzip(z,files=lst$Name[i], exdir = filepath)
-        if(basename(lst$Name[i]) != lst$Name[i]) {
-          file.rename(file.path(filepath,lst$Name[i]), file.path(filepath,basename(lst$Name[i])))
-        }
-      }
-    }
-  }
-  
-  # Process data files
-  runProcessing <- FALSE
-  metaCacheFP <- list.files(filepath,pattern = paste0(toupper(isced),"[0-9].*_ALL.meta"))
-  if(length(metaCacheFP) == 0) {
-    runProcessing <- TRUE
-  } else {
-    for (i in 1:length(metaCacheFP)) {
-      cacheFile <- tryCatch(readRDS(file.path(filepath,unlist(metaCacheFP)[i])),
-                            error = function(err) {
-                              return(NULL)
-                            },
-                            warning = function(w) {
-                              return(NULL)
-                            })
-      if(is.null(cacheFile) || cacheMetaReqUpdate(cacheFile$cacheFileVer, "TALIS")) {
-        if (i < length(metaCacheFP)) {
-          next
-        }
-        runProcessing <- TRUE
-      } else {
-        break
-      }
-    }
-    
-    
-  }
-  if(runProcessing || forceRead) {
-    if (verbose) {
-      cat("Writing out cache files ... \n")
-    }
-    cacheFile = processReturnFFormat(filepath, isced)
-  }
-  all_countries <- cacheFile$countryDict$cntry
-  if (unlist(countries)[1] == "*") {
-    countries <- all_countries
+  sdf <- list() # list to store edsurvey.data.frame elements
+  icntry <- 0 # index to store edsurvey.data.frame elements
+  if (missing(countries)) {
+    stop("Missing argument ", sQuote("countries"),".")
   }
   countries <- tolower(countries)
-  year <- cacheFile$year
-  sdf <- list()
-  bad_countries <- countries[!countries %in% tolower(all_countries)]
-  if (length(bad_countries) == 1) {
-    stop("Country ",dQuote(bad_countries), 
-            " does not have data in TALIS ",year, " at isced level ",convertISCEDcode(isced),". \nPlease refer to the TALIS User Guide for the list of participating countries and their country codes.")
-  } else if (length(bad_countries) > 1) {
-    stop("Countries ",paste0(dQuote(bad_countries), collapse = ", "), 
-         " do not have data in TALIS ",year, " at isced level ",convertISCEDcode(isced))
+  if (missing(isced)) {
+    stop("Missing argument ", sQuote("isced"), ".")
   }
-  
-  countries <- countries[countries %in% tolower(all_countries)]
-  # Find cache files and construct an sdf
-  for (cntry in countries) {
-    processedData <- processCountry(filepath, cntry, isced, cacheFile)
-    if(!runProcessing & !forceRead) {
+  isced <- tolower(isced)
+  if (!isced %in% c("a","b","c")) {
+    stop(paste0("Argument ", sQuote('isced'), " only accepts three values: ",
+                sQuote('a'),", ",sQuote('b'),", or ",sQuote('c'),"."))
+  }
+  for (filepath in path) { # loop through the vector of path(s)
+    filepath <- gsub("/$","",filepath)
+    if (!dir.exists(filepath)) {
+      stop(paste0("Cannot find ", sQuote("filepath"), "value in ", pasteItems(dQuote(filepath[!dir.exists(filepath)])),"."))
+    }
+    # Unzip files (usually this step is done in download function but TALIS data cannot be downloaded automatically)
+    zFiles <- list.files(filepath,pattern = "SPSS.*\\.zip$", ignore.case = TRUE, full.names = FALSE)
+    zFiles <- file.path(filepath,zFiles)
+    for (z in zFiles) {
+      lst <- unzip(z, list = TRUE)
+      for(i in 1:nrow(lst)) {
+        if (grepl("\\.sav$",basename(lst$Name[i]), ignore.case = TRUE)) {
+          if(!file.exists(file.path(filepath,basename(lst$Name[i]))) || file.info(file.path(filepath,basename(lst$Name[i])))$size != lst$Length[i]) {
+            if (verbose) {
+              cat(paste0("Unzipping file ", sQuote(basename(lst$Name[i])), ".\n"))
+            }
+            unzip(z,files=lst$Name[i], exdir = filepath)
+            if(basename(lst$Name[i]) != lst$Name[i]) {
+              file.rename(file.path(filepath,lst$Name[i]), file.path(filepath,basename(lst$Name[i])))
+            }
+          }
+        } # end if file is a sav file
+      } # end for(i in 1:nrow(lst))
+    } # end for(z in zFiles)
+    
+    # Process data files
+    runProcessing <- FALSE
+    metaCacheFP <- list.files(filepath,pattern = paste0(toupper(isced),"[0-9].*_ALL.meta"))
+    if(length(metaCacheFP) == 0) {
+      runProcessing <- TRUE
+    } else {
+      for (i in 1:length(metaCacheFP)) {
+        cacheFile <- tryCatch(readRDS(file.path(filepath,unlist(metaCacheFP)[i])),
+                              error = function(err) {
+                                return(NULL)
+                              },
+                              warning = function(w) {
+                                return(NULL)
+                              })
+        if(is.null(cacheFile) || cacheMetaReqUpdate(cacheFile$cacheFileVer, "TALIS")) {
+          if (i < length(metaCacheFP)) {
+            next
+          }
+          runProcessing <- TRUE
+        } else {
+          break
+        }
+      }
+      
+      
+    }
+    if(runProcessing || forceRead) {
       if (verbose) {
-        cat("Found cached data for country code ",dQuote(cntry),"\n")  
-      }  
+        cat("Writing cache files.\n")
+      }
+      cacheFile = processReturnFFormat(filepath, isced)
     }
-    processedData$userConditions <- list()
-    processedData$defaultConditions <- NULL
-    if (dataLevel == "teacher") {
-      processedData$data <- processedData$dataList$teacher
-      processedData$dataSch <- processedData$dataList$school
-    } else if (dataLevel == "school") {
-      processedData$data <- processedData$dataList$school
-      processedData$dataSch <- NULL
+    all_countries <- cacheFile$countryDict$cntry
+    if (unlist(countries)[1] == "*") {
+      countries <- all_countries
     }
-    processedData$dataTch <- NULL#data is already dataTch
-    
-    if (dataLevel == "teacher") {
-      processedData$dataListMeta <- list(student = processedData$dataListMeta$teacher,
-                                         school = processedData$dataListMeta$school)
-    } else {
-      processedData$dataListMeta <- list()
+    countries <- tolower(countries)
+    year <- cacheFile$year
+    if (year == 2008) {
+      if(isced != "b") {
+        warning(paste0("TALIS 2008 only provides data at lower secondary level, so ", sQuote("isced")," is automatically set to ", dQuote('b'),"."))
+        isced <- "b" #2008 only has one isced level
+      }
     }
-    
-    # Set up weights
-    uklz <- unique(processedData$dataListFF$teacher[,"pvWT"])
-    uklz <- max(as.integer(uklz[uklz != "" & !is.na(uklz)]))
-    weights <- list(tchwgt = list(jkbase = "trwgt", jksuffixes = as.character(1:uklz)))
-    
-    # 2. school-level weights
-    uklz <- unique(processedData$dataListFF$school[,"pvWT"])
-    uklz <- max(as.integer(uklz[uklz != "" & !is.na(uklz)]))
-    weights$schwgt = list(jkbase = "srwgt", jksuffixes = as.character(1:uklz))
-    
-    if (dataLevel == "teacher") {
-      attr(weights, "default") <- "tchwgt"
-    } else if (dataLevel == "school") {
-      attr(weights, "default") <- "schwgt"
+    bad_countries <- countries[!countries %in% tolower(all_countries)]
+    if (length(bad_countries) == 1) {
+      stop("Missing TALIS data file(s) at isced level ", dQuote(convertISCEDcode(isced)), " for country ",pasteItems(dQuote(bad_countries)),".")
+    } else if (length(bad_countries) > 1) {
+      stop("Missing TALIS data file(s) at isced level ", dQuote(convertISCEDcode(isced)), " for countries ",pasteItems(dQuote(bad_countries)),".")
     }
     
-    processedData$weights <- weights
-    processedData$pvvars <- NULL
-    processedData$subject <- NULL
-    processedData$year <- year
-    processedData$assessmentCode <- "International"
-    if (dataLevel == "teacher") {
-      processedData$dataType <- "Teacher Data"
-    } else {
-      processedData$dataType <- "School Data"
+    countries <- countries[countries %in% tolower(all_countries)]
+    # Find cache files and construct an sdf
+    for (cntry in countries) {
+      processedData <- processCountry(filepath, cntry, isced, cacheFile)
+      if(!runProcessing & !forceRead) {
+        if (verbose) {
+          cat("Found cached data for country code ",dQuote(cntry),".\n")  
+        }  
+      }
+      processedData$userConditions <- list()
+      processedData$defaultConditions <- NULL
+      if (dataLevel == "teacher") {
+        processedData$data <- processedData$dataList$teacher
+        processedData$dataSch <- processedData$dataList$school
+      } else if (dataLevel == "school") {
+        processedData$data <- processedData$dataList$school
+        processedData$dataSch <- NULL
+      }
+      processedData$dataTch <- NULL#data is already dataTch
+      
+      if (dataLevel == "teacher") {
+        processedData$dataListMeta <- list(student = processedData$dataListMeta$teacher,
+                                           school = processedData$dataListMeta$school)
+      } else {
+        processedData$dataListMeta <- list()
+      }
+      
+      # Set up weights
+      uklz <- unique(processedData$dataListFF$teacher[,"pvWT"])
+      uklz <- max(as.integer(uklz[uklz != "" & !is.na(uklz)]))
+      weights <- list(tchwgt = list(jkbase = "trwgt", jksuffixes = as.character(1:uklz)))
+      
+      # 2. school-level weights
+      uklz <- unique(processedData$dataListFF$school[,"pvWT"])
+      uklz <- max(as.integer(uklz[uklz != "" & !is.na(uklz)]))
+      weights$schwgt = list(jkbase = "srwgt", jksuffixes = as.character(1:uklz))
+      
+      if (dataLevel == "teacher") {
+        attr(weights, "default") <- "tchwgt"
+      } else if (dataLevel == "school") {
+        attr(weights, "default") <- "schwgt"
+      }
+      
+      processedData$weights <- weights
+      processedData$pvvars <- NULL
+      processedData$subject <- NULL
+      processedData$year <- year
+      processedData$assessmentCode <- "International"
+      if (dataLevel == "teacher") {
+        processedData$dataType <- "Teacher Data"
+      } else {
+        processedData$dataType <- "School Data"
+      }
+      processedData$gradeLevel <- convertISCEDcode(isced)
+      processedData$achievementLevels <- NULL
+      processedData$omittedLevels <- c("OMITTED",NA,"OMITTED OR VALID","(Missing)")
+      if (dataLevel == "teacher") {
+        processedData$fileFormat <- processedData$dataListFF$teacher
+        processedData$fileFormatSchool <- processedData$dataListFF$school
+      } else {
+        processedData$fileFormat <- processedData$dataListFF$school
+        processedData$fileFormatSchool <- NULL
+      }
+      processedData$fileFormatTeacher <- NULL
+      processedData$survey <- "TALIS"
+      processedData$country <- cacheFile$countryDict$country.name[cacheFile$countryDict$cntry == toupper(cntry)]
+      sdf[[cntry]] <- edsurvey.data.frame(userConditions = processedData$userConditions,
+                                          defaultConditions = processedData$defaultConditions,
+                                          data = processedData$data,
+                                          dataSch = processedData$dataSch,
+                                          dataTch = processedData$dataTch,
+                                          dataListMeta <- processedData$dataListMeta,
+                                          weights = processedData$weights,
+                                          pvvars = processedData$pvvars,
+                                          subject = processedData$subject,
+                                          year = processedData$year,
+                                          assessmentCode = processedData$assessmentCode,
+                                          dataType = processedData$dataType,
+                                          gradeLevel = processedData$gradeLevel,
+                                          achievementLevels = processedData$achievementLevels,
+                                          omittedLevels = processedData$omittedLevels,
+                                          fileFormat = processedData$fileFormat,
+                                          fileFormatSchool = processedData$fileFormatSchool,
+                                          fileFormatTeacher = processedData$fileFormatTeacher,
+                                          survey = processedData$survey,
+                                          country = processedData$country,
+                                          psuVar = NULL,
+                                          stratumVar = NULL,
+                                          jkSumMultiplier = 0.04) # see Reference (TALIS 2013 Chapter 9)
     }
-    processedData$gradeLevel <- convertISCEDcode(isced)
-    processedData$achievementLevels <- NULL
-    processedData$omittedLevels <- c("OMITTED",NA,"OMITTED OR VALID","(Missing)")
-    if (dataLevel == "teacher") {
-      processedData$fileFormat <- processedData$dataListFF$teacher
-      processedData$fileFormatSchool <- processedData$dataListFF$school
-    } else {
-      processedData$fileFormat <- processedData$dataListFF$school
-      processedData$fileFormatSchool <- NULL
-    }
-    processedData$fileFormatTeacher <- NULL
-    processedData$survey <- "TALIS"
-    processedData$country <- cacheFile$countryDict$country.name[cacheFile$countryDict$cntry == toupper(cntry)]
-    sdf[[cntry]] <- edsurvey.data.frame(userConditions = processedData$userConditions,
-                                        defaultConditions = processedData$defaultConditions,
-                                        data = processedData$data,
-                                        dataSch = processedData$dataSch,
-                                        dataTch = processedData$dataTch,
-                                        dataListMeta <- processedData$dataListMeta,
-                                        weights = processedData$weights,
-                                        pvvars = processedData$pvvars,
-                                        subject = processedData$subject,
-                                        year = processedData$year,
-                                        assessmentCode = processedData$assessmentCode,
-                                        dataType = processedData$dataType,
-                                        gradeLevel = processedData$gradeLevel,
-                                        achievementLevels = processedData$achievementLevels,
-                                        omittedLevels = processedData$omittedLevels,
-                                        fileFormat = processedData$fileFormat,
-                                        fileFormatSchool = processedData$fileFormatSchool,
-                                        fileFormatTeacher = processedData$fileFormatTeacher,
-                                        survey = processedData$survey,
-                                        country = processedData$country,
-                                        psuVar = NULL,
-                                        stratumVar = NULL,
-                                        jkSumMultiplier = 0.04) # see Reference (TALIS 2013 Chapter 9)
-  }
-
-  if(length(countries) > 1) {
-    return(edsurvey.data.frame.list(sdf, labels = countries))
+    
+  } # end for(filepath in path)
+  
+  # Return output
+  if(length(sdf) > 1) {
+    return(edsurvey.data.frame.list(sdf))
   } else {
     return(sdf[[1]])
   }
@@ -227,12 +248,12 @@ processCountry <- function(filepath, countryCode, isced, cacheFile) {
                                    pattern = paste0(isced,"cg",countryCode,".*\\.txt"), 
                                    full.names = FALSE, ignore.case = TRUE))
   if(length(teacherFP) > 1 | length(schoolFP) > 1) {
-    warning(paste0("There are more than 1 relevant FWF file for ",countryCode))
+    warning(paste0("There is more than one relevant FWF file for ",countryCode, "."))
   }
   teacherFP <- teacherFP[1]
   schoolFP <- schoolFP[1]
   if(!file.exists(teacherFP) || !file.exists(schoolFP)) {
-    stop(paste0("There are no text files of country ",countryCode," at the isced level ",isced))
+    stop(paste0("There are no text files of country ",countryCode," at the isced level ",isced,"."))
   }
   teacherLAF  <- getCSVLaFConnection(teacherFP, cacheFile$dataListFF$teacher)
   schoolLAF <- getCSVLaFConnection(schoolFP, cacheFile$dataListFF$school)
@@ -254,6 +275,9 @@ processReturnFFormat <- function(filepath, isced) {
   }
   # SCHOOL LEVEL ============================
   cg <- grep("cg", fnames, value = TRUE, ignore.case = TRUE)
+  if (length(cg) == 0) {
+    stop("Missing TALIS data file(s) for school level at isced level of ", sQuote(isced), " in the path ",sQuote(filepath), ".")
+  }
   schoolFP <- gsub("\\.sav","\\.txt", cg) # basename for schoolFP for each country - replace INT with countryCode
   
   # reading in combined files for this isced level
@@ -262,6 +286,9 @@ processReturnFFormat <- function(filepath, isced) {
   
   # TEACHER LEVEL =============================
   tg <- grep("tg", fnames, value = TRUE, ignore.case = TRUE)
+  if (length(tg) == 0) {
+    stop("Missing TALIS data file(s) for teacher level at isced level of ", sQuote(isced), " in the path ",sQuote(filepath))
+  }
   teacherFP <- gsub("\\.sav","\\.txt", tg) # basename for teacherFP for each country - replace INT with countryCode
   
   # reading in combined files for this isced level
@@ -341,7 +368,7 @@ writeTALISTibbleToFWFReturnFileFormat <- function(spssDF, outF) {
 }
 
 returnFF <- function(spssDF) {
-  if(!inherits(spssDF, "tbl_df")) stop("spssDF must be a tibble")
+  if(!inherits(spssDF, "tbl_df")) stop("argument ", sQuote("spssDF"), " must be a tibble.")
   colInfo <- data.frame(names=colnames(spssDF), stringsAsFactors=FALSE)
   colInfo$format <- sapply(colInfo$names, function(z) {
     attributes(spssDF[[z]])$format.spss
@@ -476,7 +503,7 @@ Austria,40,AUT
   countryDict <- readr::read_csv(dict, progress = F)
   countryCode <- toupper(countryCode)
   if (!countryCode %in% countryDict$cntry) {
-    warning(paste0(countryCode, " did not participate in TALIS 2008"))
+    warning(paste0(countryCode, " did not participate in TALIS 2008."))
     return(NA)
   } else {
     return(countryDict$country.name[countryDict$cntry == countryCode])

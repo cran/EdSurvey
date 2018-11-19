@@ -4,13 +4,22 @@
 \alias{downloadTALIS}
 \title{Instructions for Downloading TALIS Files}
 \usage{
-downloadTALIS(year)
+downloadTALIS(years)
 }
 \arguments{
-\item{year}{a numeric value indicating the assessment year to download. Available years are 2008 and 2013.}
+\item{years}{a numeric value indicating the assessment year. Available years are 2008 and 2013.}
 }
 \description{
 Provides instructions to download TALIS data to be processed in \code{\link{readTALIS}}.
+}
+\examples{
+\dontrun{
+# Print out downloading instructions for TALIS 2008 database
+downloadTALIS(2008)
+}
+}
+\seealso{
+\code{\link{readTALIS}}
 }
 \author{
 Trang Nguyen

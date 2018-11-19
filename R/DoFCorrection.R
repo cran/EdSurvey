@@ -21,7 +21,7 @@
 #' @param method a character that is either \code{WS} for the Welch-Satterthwaite
 #'               formula or 
 #'               \code{JR} for the Johnson-Rust correction to the
-#'               Welch-Satterthwaite formula.
+#'               Welch-Satterthwaite formula
 #'
 #' @details
 #' This calculation happens under the notion that statistics
@@ -31,8 +31,8 @@
 #' Note that these functions are not vectorized, so \code{varA} and 
 #' \code{varB} must contain exactly one variable name.
 #'
-#' The method used to compute the degrees of freedom is in the
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
+#' The method used to compute the degrees of freedom is in the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
 #' section \dQuote{Estimation of Degrees of Freedom.}
 #'
 #' @return
@@ -46,25 +46,25 @@ DoFCorrection <- function(varEstA, varEstB=varEstA, varA, varB=varA, method=c("W
   # grab just first element of method so we have only one method we are using
   method <- match.arg(method)
   if(! varA %in% unique(varEstA$JK$variable)) {
-    stop(paste0("Could not find ", sQuote("varA"), " value of ", dQuote(varA) ," in varEstA$JK$variable. Existing values include ", paste(unique(varEstA$JK$variable), collapse=", "), "."))
+    stop(paste0("Could not find ", sQuote("varA"), " value of ", dQuote(varA) ," in varEstA$JK$variable. Existing values include ", pasteItems(dQuote(unique(varEstA$JK$variable))), "."))
   }
   if(! varB %in% unique(varEstB$JK$variable)) {
-    stop(paste0("Could not find ", sQuote("varB"), " value of ", dQuote(varB) ," in varEstB$JK$variable. Existing values include ", paste(unique(varEstB$JK$variable), collapse=", "), "."))
+    stop(paste0("Could not find ", sQuote("varB"), " value of ", dQuote(varB) ," in varEstB$JK$variable. Existing values include ", pasteItems(dQuote(unique(varEstB$JK$variable))), "."))
   }
   if(!is.null(varEstA$PV) & !is.null(varEstB$PV)) {
     if(! varA %in% unique(varEstA$PV$variable)) {
-      stop(paste0("Could not find ", sQuote("varA"), " value of ", dQuote(varA) ," in varEstA$PV$variable. Existing values include ", paste(unique(varEstA$PV$variable), collapse=", "), "."))
+      stop(paste0("Could not find ", sQuote("varA"), " value of ", dQuote(varA) ," in varEstA$PV$variable. Existing values include ", pasteItems(dQuote(unique(varEstA$PV$variable))), "."))
     }
     if(! varB %in% unique(varEstB$PV$variable)) {
-      stop(paste0("Could not find ", sQuote("varB"), " value of ", dQuote(varB) ," in varEstB$PV$variable. Existing values include ", paste(unique(varEstB$PV$variable), collapse=", "), "."))
+      stop(paste0("Could not find ", sQuote("varB"), " value of ", dQuote(varB) ," in varEstB$PV$variable. Existing values include ", pasteItems(dQuote(unique(varEstB$PV$variable))), "."))
     }
   }
   mergeVar <- c("PV", "JKreplicate")
   if(any(!mergeVar %in% names(varEstA$JK))) {
-    stop(paste0("Merge vars missing from varEstA$JK ", paste(mergeVar[!mergeVar %in% names(varEstA$JK)], collapse=", "), "."))
+    stop(paste0("Merge vars missing from varEstA$JK ", pasteItems(dQuote(mergeVar[!mergeVar %in% names(varEstA$JK)])), "."))
   }
   if(any(!mergeVar %in% names(varEstB$JK))) {
-    stop(paste0("Merge vars missing from varEstB$JK ", paste(mergeVar[!mergeVar %in% names(varEstB$JK)], collapse=", "), "."))
+    stop(paste0("Merge vars missing from varEstB$JK ", pasteItems(dQuote(mergeVar[!mergeVar %in% names(varEstB$JK)])), "."))
   }
   if( all.equal(varEstA, varEstB)[[1]] == TRUE & all.equal(varA, varB) == TRUE) {
     # the variable is already the difference (e.g. A - B)
@@ -77,13 +77,13 @@ DoFCorrection <- function(varEstA, varEstB=varEstA, varA, varB=varA, method=c("W
                 by=mergeVar, all.x=FALSE, all.y=FALSE,
                 suffixes=c(".A", ".B"))
     if(nrow(JK) < 1) {
-      stop("Could not find appropiriate values in JK results to calculate covariance.")
+      stop("Could not find appropriate values in JK results to calculate covariance.")
     }
     JK$cov <- (JK$value.A - JK$value.B)^2
   }
  
   # the results will be NA if the denominator is zero
-  if(!any(abs(JK$cov) > 0)) {
+  if(!any(abs(JK$cov) > 0, na.rm=TRUE)) {
     # there is no variance, which means zero degress of freedom
     return(0)
   }

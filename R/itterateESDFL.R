@@ -6,7 +6,7 @@ itterateESDFL <- function(call, list) {
     call$data <- li
     tryCatch(eval(call),
              error =  function(cond) {
-               message(paste("An error occurred while working on a data set. Excluding results from this data set."))
+               message(paste("An error occurred while working on a dataset. Excluding results from this dataset."))
                message(cond)
                # returning zero allows unlist and other operations that remove e.g. NULLs
                return(0)

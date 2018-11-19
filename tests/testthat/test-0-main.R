@@ -2,9 +2,10 @@ require(testthat)
 require(EdSurvey)
 options(width = 500)
 options(useFancyQuotes=FALSE)
+options(digits=7)
 
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
-source("REF-0-main.R") # has REF output in it
+#source("REF-0-main.R") # has REF output in it
 
 context("wd is set correctly") #When this fails all regression tests are invalid.
 test_that("wd is set correctly",{
@@ -60,6 +61,7 @@ test_that("getData", {
                    addAttributes = TRUE, omittedLevels = FALSE)
   gddat <- gddat[c(1:50,(nrow(gddat)-50):nrow(gddat)),]   # this file was larger. slim down a bit.
   attributes(gddat)$dataSch <- NULL
+  attributes(gddat)$validateFactorLabels <- NULL
   expect_known_value(gddat, file="gddat.rds", update=FALSE)
   
   expect_known_value(gd7 <- getData(sdf, c("dsex", "b017451")), file="gd7.rds", update=FALSE)
@@ -155,8 +157,8 @@ test_that("rename.sdf", {
                                                                         to = "Other")))
   sdf_rename <- subset(sdf_rename, race_recode %in% "Other")
   expect_equal(nrow(sdf_rename), nrow(subset(sdf, sdracem %in% c("Hispanic","Asian/Pacific Island","Amer Ind/Alaska Natv","Other"))))
-  
 })
+
 context("subset throws an error")
 test_that("subset throws an error", {
   expect_error(sdf_error <- subset(sdf, dsex1 %in% "Male"))
@@ -166,18 +168,19 @@ test_that("subset throws an error", {
 context("lm.sdf")
 test_that("lm.sdf",{
   lm1 <- lm.sdf( ~ dsex + b017451, sdf)
-  slm1 <- summary(lm1)
-  lm1$formula <- NULL
-  lm1$call <- NULL
-  lm1$data <- NULL
-  lm1$residuals <- head(lm1$residuals)
-  lm1$PV.residuals <- head(lm1$PV.residuals)
-  lm1$PV.fitted.values <- head(lm1$PV.fitted.values)
-  lm1_read <- readRDS(file="lm1.rds")
-  lm1_read$formula <- NULL
-  lm1_read$call <- NULL
-  expect_equal(lm1, lm1_read)
+  slm1 <- summary(lm1, src=TRUE)
+  slm1$formula <- NULL
+  slm1$call <- NULL
+  slm1$data <- NULL
+  slm1$residuals <- head(lm1$residuals)
+  slm1$PV.residuals <- head(lm1$PV.residuals)
+  slm1$PV.fitted.values <- head(lm1$PV.fitted.values)
+  slm1_read <- readRDS(file="lm1.rds")
+  expect_equal(slm1, slm1_read)
   skip_on_cran()
+  lm1S <- lm.sdf( ~ dsex + b017451, sdf, standardizeWithSamplingVar=TRUE)
+  slm1Scoef <- capture.output(summary(lm1S, src=TRUE)$coefmat)
+  expect_equal(slm1Scoef, stdCoefREF)
   lm10 <- lm.sdf(composite ~ dsex + b017451, sdf)
   lm10$data <- NULL
   lm10$residuals <- head(lm10$residuals)
@@ -212,32 +215,32 @@ test_that("lm.sdf",{
 
 context("lm.sdf: Taylor series")
 test_that("lm.sdf: Taylor series",{
-  
   expect_is(sdf_taylor <- lm.sdf(composite ~ sdracem + dsex + pared,
                                  subset(sdf, pared == 1 | pared == 2, verbose=FALSE),
                                  weightVar="origwt",
                                  varMethod = "Taylor",
                                  jrrIMax=Inf),
             "edsurveyLm")
-  
   lm1t <- lm.sdf(composite ~ dsex + b017451, sdf, varMethod="Taylor")
   lm1t$data <- NULL
   lm1t$residuals <- head(lm1t$residuals)
+  
   lm1t$PV.residuals <- head(lm1t$PV.residuals)
   lm1t$PV.fitted.values <- head(lm1t$PV.fitted.values)
   lm1t.ref <- readRDS("lm1t.rds")
   expect_equal(lm1t, lm1t.ref)
   lm1jk <- lm.sdf(composite ~ dsex + b017451, sdf, varMethod="jackknife")
+  expect_equal(coef(lm1t), coef(lm1jk))
   lm1jk$data <- NULL
   lm1jk$residuals <- head(lm1jk$residuals)
   lm1jk$PV.residuals <- head(lm1jk$PV.residuals)
   lm1jk$PV.fitted.values <- head(lm1jk$PV.fitted.values)
-  
+  lm1jk <- summary(lm1jk, src=TRUE)
   lm1jk.ref <- readRDS("lm1.rds")
   lm1jk$call <- lm1jk.ref$call <- NULL
+  lm1jk$formula <- NULL
   expect_equal(lm1jk, lm1jk.ref)
   # estimates should agree too
-  expect_equal(coef(lm1t), coef(lm1jk))
   skip_on_cran()
   
   lm2ta <- lm.sdf(composite ~ dsex + sdracem + yrsmath, sdf, varMethod="Taylor")
@@ -252,7 +255,7 @@ test_that("lm.sdf: Taylor series",{
   lm2t$PV.fitted.values <- head(lm2t$PV.fitted.values)
   lm2t.ref <- readRDS("lm2t.rds")
   expect_equal(lm2t, lm2t.ref)
-  lm2jk <- lm.sdf(composite ~ dsex + sdracem + yrsmath, sdf, varMethod="jackknife", relevel=list(dsex="Female"))
+  lm2jk <- lm.sdf(composite ~ dsex + sdracem + yrsmath, sdf, varMethod="jackknife", relevel=list(dsex="Female"), jrrIMax=1)
   lm2jk$data <- NULL
   lm2jk$residuals <- head(lm2jk$residuals)
   lm2jk$PV.residuals <- head(lm2jk$PV.residuals)
@@ -326,7 +329,15 @@ test_that("edsurveyTable with N=0", {
   
   es1 <- edsurveyTable(~b003501 + m815401, data = sdf, omittedLevels = FALSE, pctAggregationLevel = 0)
   expect_equal(nrow(es1$data), nrow(esDFtable))
-  
+
+})
+
+context("edsurveyTable with no rhs variable") 
+test_that("edsurveyTable with no rhs variable", {
+  skip_on_cran()
+  es <- edsurveyTable(composite ~ 1, data = sdf, returnVarEstInputs = TRUE)
+  esc <- capture.output(es)
+  expect_equal(esc, es_norhsREF)
 })
 
 
@@ -347,7 +358,8 @@ test_that("edsurveyTable2pdf",{
                                                         toCSV = "",
                                                         filename = "CONSOLE",
                                                         returnMeans = FALSE)),
-                     file = "es_2pdf.rds", update=FALSE)})
+                     file = "es_2pdf.rds", update=FALSE)
+})
 
 context("edsurveyTable: Taylor")
 test_that("edsurveyTable: Taylor",{
@@ -428,9 +440,9 @@ test_that("return VarEstInputs",{
   expect_known_value(list(g1$varEstInputs, g1$pctVarEstInputs), file="gap1_varest.rds", update=FALSE)
   g2 <- gap("b017451", sdf, dsex=="Male", targetLevel="Once every few weeks", returnVarEstInputs=TRUE)
   expect_known_value(list(g2$varEstInputs, g2$pctVarEstInputs), file="gap2_varest.rds", update=FALSE)
-  g3 <- gap("composite", sdf, dsex=="Male", returnVarEstInputs=TRUE, achievementLevel=c("Basic"))
+  g3 <- gap("composite", sdf, dsex=="Male", returnVarEstInputs=TRUE, achievementLevel=c("At or aboVe Bas"))
   expect_known_value(list(g3$varEstInputs, g3$pctVarEstInputs), file="gap3_varest.rds", update=FALSE)
-  g3d <- gap("composite", sdf, dsex=="Male", returnVarEstInputs=TRUE, achievementLevel=c("Basic"), achievementDiscrete=TRUE)
+  g3d <- gap("composite", sdf, dsex=="Male", returnVarEstInputs=TRUE, achievementLevel=c("At Basic"), achievementDiscrete=TRUE)
   expect_known_value(list(g3d$varEstInputs, g3d$pctVarEstInputs), file="gap3d_varest.rds", update=FALSE)
   g4 <- gap("composite", sdf, dsex=="Male", percentiles=c(50), returnVarEstInputs=TRUE)
   expect_known_value(list(g4$varEstInputs, g4$pctVarEstInputs), file="gap4_varest.rds", update=FALSE)
@@ -441,7 +453,7 @@ test_that("return VarEstInputs",{
   es1re <- edsurveyTable(composite ~ dsex + b017451, sdf, jrrIMax=1, returnVarEstInputs=TRUE, recode=list(dsex=list(from="Male", to="MALE")))
   expect_known_value(list(es1re$meanVarEstInputs, es1re$pctVarEstInputs), file="est_varest_recode.rds", update=FALSE)
   # add test per issue 671
-  glab <- gap("composite", sdf, dsex=="Male", dsex=="Female", achievementLevel=c("below Basic","Basic"), achievementDiscrete=TRUE)
+  glab <- gap("composite", sdf, dsex=="Male", dsex=="Female", achievementLevel=c("below Basic","At Bas"), achievementDiscrete=TRUE)
   expect_equal(glab$results$achievementLevel, c("below Basic", "At Basic"))
 })
 
@@ -459,11 +471,11 @@ test_that("gap", {
   g2pq$call <- g2p$call # the call is different, so fix that
   expect_known_value(g2pq, "gap_main_percentile.rds", update=FALSE)
   # gap achievement levels, discrete
-  expect_known_value(g1al <- gap("composite", sdf, dsex=="Male", dsex=="Female", achievementLevel="Proficient", achievementDiscrete=TRUE), "gap_AL1.rds", update=FALSE)
+  expect_known_value(g1al <- gap("composite", sdf, dsex=="Male", dsex=="Female", achievementLevel="Prof", achievementDiscrete=TRUE), "gap_AL1.rds", update=FALSE)
   
   # check use of achievementLevel in results, that results agree across discrete and cumulative
   ga1 <- gap("composite", sdf, dsex=="Male", dsex=="Female", achievementLevel="Advanced")
-  ga2 <- gap("composite", sdf, dsex=="Male", dsex=="Female", achievementLevel="Advanced", achievementDiscrete=TRUE)
+  ga2 <- gap("composite", sdf, dsex=="Male", dsex=="Female", achievementLevel="Adv", achievementDiscrete=TRUE)
   ga1$call <- NULL
   ga2$call <- NULL
   expect_equal(ga1, ga2)
@@ -471,7 +483,7 @@ test_that("gap", {
   expect_equal(ga2$results$achievementLevel, "At Advanced")
   
   gp1 <- gap("composite", sdf, dsex=="Male", dsex=="Female", achievementLevel="Proficient")
-  gp2 <- gap("composite", sdf, dsex=="Male", dsex=="Female", achievementLevel="Proficient", achievementDiscrete=TRUE)
+  gp2 <- gap("composite", sdf, dsex=="Male", dsex=="Female", achievementLevel="Prof", achievementDiscrete=TRUE)
   
   # cumulative should equal sum of discrete
   expect_equal(gp2$results$estimateA + ga1$results$estimateA, gp1$results$estimateA)
@@ -544,20 +556,19 @@ test_that("sdf correlation", {
 context("In cor, variables as class character return errors")
 test_that("In cor, variables as class", {
   skip_on_cran()
-  df=getData(sdf, c("b017451", "sdracem","origwt"),addAttributes = TRUE)
+  df <- getData(sdf, c("b017451", "sdracem","origwt"),addAttributes = TRUE)
   df$sdracem <- as.character(df$sdracem)
   expect_error(cor.sdf("b017451", "sdracem",df,method="Pearson"))
-}
-)
-
+})
 
 context("Reordering a variable manually vs through cor.sdf")
 test_that("Reordering a variable manually vs through cor.sdf", {
   skip_on_cran()
   gddat <- getData(sdf, c("b017451", "sdracem","origwt"), addAttributes = TRUE)
-  gddat$sdracem <- factor(gddat$sdracem,levels=c("White","Hispanic","Black","Asian/Pacific Island","Amer Ind/Alaska Natv","Other"))
-  cor3 <- cor.sdf("b017451","sdracem", sdf, method="Pearson", weightVar="origwt", reorder=list(sdracem=c("White","Hispanic","Black","Asian/Pacific Island","Amer Ind/Alaska Natv","Other")))
-  cor4 <- cor.sdf("b017451","sdracem", gddat, method="Pearson", weightVar="origwt")
+  # cast sdracem as a character and then reorder based on that
+  gddat$sdracem <- lfactor(as.character(gddat$sdracem), levels=c(1, 2, 3, 4, 5, 6), labels=c("White", "Hispanic", "Black", "Asian/Pacific Island", "Amer Ind/Alaska Natv", "Other"))
+  cor3 <- cor.sdf("b017451", "sdracem", sdf, method="Pearson", weightVar="origwt", reorder=list(sdracem=c("White","Hispanic","Black","Asian/Pacific Island","Amer Ind/Alaska Natv","Other")))
+  cor4 <- cor.sdf("b017451", "sdracem", gddat, method="Pearson", weightVar="origwt")
   expect_equal(cor3,cor4)
   
   gddat$sdracem[gddat$sdracem=="Hispanic"] <- "White"
@@ -565,6 +576,12 @@ test_that("Reordering a variable manually vs through cor.sdf", {
   cor1Pe <- cor.sdf("b017451","sdracem", sdf, method="Pearson", weightVar="origwt",recode = list(sdracem=list(from="Hispanic", to="White")))
   cor2Pe <- cor.sdf("b017451","sdracem", gddat, method="Pearson", weightVar="origwt")
   expect_equal(cor1Pe,cor2Pe)
+  # here lfacor not condensed
+  cor3Pe <- cor.sdf("b017451","sdracem", sdf, method="Pearson", weightVar="origwt",recode = list(sdracem=list(from="Hispanic", to="White")), condenseLevels=FALSE)
+  expect_equal(cor3Pe$correlation, -0.00299202137069835)
+  #
+  cor4Pe <- cor.sdf("b017451","sdracem", gddat, method="Pearson", weightVar="origwt", condenseLevels=FALSE)
+  expect_equal(cor4Pe$correlation, -0.00232480033396954)
   
   cor1Sp <- cor.sdf("b017451","sdracem", sdf, method="Spearman", weightVar="origwt",recode = list(sdracem=list(from="Hispanic", to="White")))
   cor2Sp <- cor.sdf("b017451","sdracem", gddat, method="Spearman", weightVar="origwt")
@@ -576,20 +593,27 @@ test_that("Reordering a variable manually vs through cor.sdf", {
   
   sdf_dnf <- EdSurvey:::subset(sdf, sdracem==5 | sdracem==3 | sdracem==1,verbose=FALSE)
   cc1_pear <- cor.sdf("b017451", "sdracem", sdf_dnf, method="Pearson", weightVar="origwt", recode = list(sdracem=list(from=3, to=1)))
-  cc1_spear <- cor.sdf("b017451", "sdracem", sdf_dnf, method="Spearman", weightVar="origwt", recode = list(sdracem=list(from=3, to=1)))
-  cc1_polyc <- cor.sdf("b017451", "sdracem", sdf_dnf, method="Polychoric", weightVar="origwt", recode = list(sdracem=list(from=3, to=1)))
   cc2_pear <- cor.sdf("b017451", "sdracem", sdf_dnf, method="Pearson", weightVar="origwt", recode = list(sdracem=list(from="Hispanic", to="White")))
-  cc2_spear <- cor.sdf("b017451", "sdracem", sdf_dnf, method="Spearman", weightVar="origwt", recode = list(sdracem=list(from="Hispanic", to="White")))
-  cc2_polyc <- cor.sdf("b017451", "sdracem", sdf_dnf, method="Polychoric", weightVar="origwt", recode = list(sdracem=list(from="Hispanic", to="White")))
   expect_equal(cc1_pear,cc2_pear)
+  cc1_spear <- cor.sdf("b017451", "sdracem", sdf_dnf, method="Spearman", weightVar="origwt", recode = list(sdracem=list(from=3, to=1)))
+  cc2_spear <- cor.sdf("b017451", "sdracem", sdf_dnf, method="Spearman", weightVar="origwt", recode = list(sdracem=list(from="Hispanic", to="White")))
   expect_equal(cc1_spear,cc2_spear)
+  cc1_polyc <- cor.sdf("b017451", "sdracem", sdf_dnf, method="Polychoric", weightVar="origwt", recode = list(sdracem=list(from=3, to=1)))
+  cc2_polyc <- cor.sdf("b017451", "sdracem", sdf_dnf, method="Polychoric", weightVar="origwt", recode = list(sdracem=list(from="Hispanic", to="White")))
   expect_equal(cc1_polyc,cc2_polyc)
+})
+
+context("cor.sdf no level condensation")
+test_that("cor.sdf no level condensation", {
+  skip_on_cran()
+  cor_nocondense <- cor.sdf(x="c046501", y="c044006", data=sdf, condenseLevels = FALSE)
+  cor_nocondenseC <- capture.output(cor_nocondense)
+  expect_equal(cor_nocondenseC, cor_nocondenseREF)
 })
 
 context("unweighted cor works")
 test_that("unweighted cor works", {
   skip_on_cran()
-  # in some ways this is maybe more of a test of getData
   b1a <- cor.sdf("m815401", "b017451",method="Pearson", sdf,weightVar = "origwt")
   b1b <- cor.sdf("m815401", "b017451",method="Pearson", sdf,weightVar = NULL)
   expect_equal(b1a$correlation,b1b$correlation, tolerance=0.02, scale=1)
@@ -677,4 +701,129 @@ test_that("glm", {
   co <- capture.output(summary(logit1))
   expect_equal(co, logit1REF)
   
+})
+
+context("wald test")
+test_that("wald test works", {
+  # glm example
+  skip_on_cran()
+  myLogit <- logit.sdf(dsex ~ b017451 + b003501, data = sdf, returnNumberOfPSU=TRUE)
+  wt_glm <- waldTest(model = myLogit, coefficients = 2:5)
+  wt1 <- capture.output(wt_glm)
+  expect_equal(wt1, wt1REF)
+  
+  # lm example
+  fit <- lm.sdf(composite ~ dsex + b017451, data = sdf, returnNumberOfPSU=TRUE)
+  wt_lm <- waldTest(model = fit, coefficients = "b017451")
+  wt2 <- capture.output(wt_lm)
+  expect_equal(wt2, wt2REF)
+
+  # lm example with Taylor
+  fit <- lm.sdf(composite ~ dsex + b017451, data = sdf, varMethod="Taylor", returnNumberOfPSU=TRUE)
+  wt_lm <- waldTest(model = fit, coefficients = "b017451")
+  wt3 <- capture.output(wt_lm)
+  expect_equal(wt3, wt3REF)
+  
+  # lesdf example should return error for waldTest because strata and PSU vars needed
+  gddat <- getData(data=sdf,
+                   varnames=c("composite", "dsex", "b017451","b003501", "origwt"),
+                   addAttributes = TRUE)
+  myLogit2 <- logit.sdf(dsex ~ b017451 + b003501, data = gddat, returnVarEstInputs = T)
+  expect_error(waldTest(myLogit2, coefficients = 2:5))
+
+  # lesdf this example should work, including the PSU and stratum vars
+  gddat <- getData(data=sdf,
+                   varnames=c("composite", "dsex", "b017451","b003501", "origwt", getPSUVar(sdf), getStratumVar(sdf)),
+                   addAttributes = TRUE)
+  myLogit <- logit.sdf(dsex ~ b017451 + b003501, data = gddat, returnVarEstInputs = T)
+  wt_lesdf <- waldTest(myLogit, coefficients = 2:5)
+  wt4 <- capture.output(wt_lesdf)
+  expect_equal(wt4, wt4REF)
+  
+})
+
+context('edsurvey with $ method')
+test_that("edsurvey with $ method",{
+  # $ method work for existing attributes
+  expect_equal(sdf$country,"USA")
+  # $ method return a vector
+  expect_equal(class(sdf$dsex), c("lfactor","factor"))
+  # that vector has data
+  dsexTab <- structure(c(Male = 8486L, Female = 8429L), .Dim = 2L,
+                       .Dimnames = structure(list(c("Male", "Female")), .Names = ""),
+                       class = "table")
+  expect_equal(table(sdf$dsex), dsexTab)
+  
+  # $ method return a data.frame
+  expect_equal(class(sdf$composite),"data.frame")
+})
+
+context('levelsSDF with multiple recodes')
+test_that("levelsSDF with multiple recodes",{
+  # $ method work for existing attributes
+  df <- recode.sdf(sdf, recode = list(t088301=list(from=c("Yes, available","Yes, I have access"),
+                                                   to=c("Yes")),
+                                    t088301=list(from=c("No, have no access"),
+                                                 to=c("No"))))
+  df <- recode.sdf(df, recode = list(pared=list(from=c("Did not finish H.S.","Graduated H.S."),
+                                                to=c("Graduated High School"))))
+
+  levelsSDFoutput <- c("Levels for Variable 't088301' (Lowest level first):", "    8. Omitted", 
+  "    0. Multiple", "    9. Yes", "    10. No")
+  colsdf <- capture.output(levelsSDF("t088301",df))
+  expect_equal(levelsSDFoutput, colsdf)
+})
+
+context('dplyr integration')
+test_that("dplyr integration",{
+  skip_on_cran()
+  skip_if_not_installed("dplyr")
+  require(dplyr)
+  x <- sdf %>%
+     getData(varnames=c("composite", "geometry", "dsex", "b017451","c052601", "origwt"), addAttributes = TRUE) %>% 
+     mutate(avg_5 = (as.numeric(mrpcm1) + as.numeric(mrpcm2) + as.numeric(mrpcm3) + as.numeric(mrpcm4) + as.numeric(mrpcm5))/5) %>%
+     rebindAttributes(sdf) %>%
+     lm.sdf(composite - geometry ~ avg_5, data=.)
+  co <- capture.output(summary(x))
+  expect_equal(co, dplO)
+})
+
+context('use returnNumberOfPSU=TRUE') 
+test_that("use returnNumberOfPSU", {
+  skip_on_cran()
+  # percentile
+  pctPSU <- percentile("composite", percentiles = c(10,50), data = sdf, returnNumberOfPSU = TRUE)
+  expect_equal(attr(pctPSU,'nPSU'), 124)
+  
+  # lm.sdf
+  lmPSU <- lm.sdf(composite ~ dsex, data=sdf, returnNumberOfPSU = TRUE)
+  expect_equal(lmPSU$nPSU,124)
+  
+  # gap
+  gapPSU <- gap("composite",data=sdf, groupA = dsex %in% "Male", groupB = dsex %in% "Female", returnNumberOfPSU = TRUE)
+  expect_equal(capture.output(gapPSU), gapPSUREF)
+})
+
+
+context('summary2')
+test_that('summary2', {
+  skip_on_cran()
+  # Weighted with PV
+  sPV_w <- capture.output(summary2(sdf,'composite'))
+  expect_equal(sPV_w, sPV_wREF)
+  
+  # Unweighted
+  sPV <- capture.output(summary2(sdf,'composite', weightVar = NULL))
+  expect_equal(sPV, sPVREF)
+  
+  # Weighted discrete
+  sDiscrete_w <- capture.output(summary2(sdf,'dsex'))
+  expect_equal(sDiscrete_w, sDiscrete_wREF)
+  
+  # Unweighted discrete
+  withr::with_options(list(digits=4),
+               sDiscrete <- capture.output(summary2(sdf,'dsex', weightVar = NULL))
+               )
+  expect_equal(sDiscrete, sDiscreteREF)
+
 })

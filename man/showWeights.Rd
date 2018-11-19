@@ -15,7 +15,7 @@ replicate weights associated with each full sample weight;
 otherwise, prints only the full sample weights}
 }
 \description{
-Prints a summary of the weights in an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
+Prints a summary of the weights in an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 }
 \examples{
 # read in the example data (generated, not real student data)

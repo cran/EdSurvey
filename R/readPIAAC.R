@@ -4,7 +4,7 @@
 #'              returns an \code{edsurvey.data.frame} with 
 #'              information about the file and data.
 #'              
-#' @param path a character value to the full directory to the PIAAC .csv files and Microsoft Excel codebook.
+#' @param path a character value to the full directory to the PIAAC .csv files and Microsoft Excel codebook
 #' @param countries a character vector of the country/countries to include using the 
 #'        three-digit ISO country code. A list of country codes can be found in the PIAAC codebook or \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}.
 #'        If files are downloaded using \code{\link{downloadPIAAC}}, a country dictionary text file can be
@@ -24,12 +24,11 @@
 #' 
 #' @example man/examples/readPIAAC.R
 #' @references
-#'  OECD. (2016). \emph{Technical report of the survey of adult skills (PIAAC) (2nd ed.)}. \emph{\url{http://www.oecd.org/skills/piaac/PIAAC_Technical_Report_2nd_Edition_Full_Report.pdf}}
+#'  Organisation for Economic Co-operation and Development. (2016). \emph{Technical report of the survey of adult skills (PIAAC)} (2nd ed.). Paris, France: Author. Retrieved from \emph{\url{http://www.oecd.org/skills/piaac/PIAAC_Technical_Report_2nd_Edition_Full_Report.pdf}}
 #' @importFrom data.table fread fwrite
-#' @import magrittr
 #' @importFrom readxl read_excel
-#' @importFrom readr read_csv
-#' @importFrom readr cols
+#' @importFrom readr read_csv cols
+#' @importFrom stringr str_replace_all
 #' @export
 readPIAAC <- function(path, 
                       countries, 
@@ -50,7 +49,7 @@ readPIAAC <- function(path,
   ffname <- file.path(filepath,"processed-codebook.meta")
   if(forceRead || !file.exists(ffname)) {
     if (verbose) {
-      cat("Processing codebook ... \n")
+      cat("Processing codebook.\n")
     }
     ff <- processFileFormatReturnFF(filepath)
   } else {
@@ -62,7 +61,7 @@ readPIAAC <- function(path,
                           })
     if (is.null(cacheFile) || cacheMetaReqUpdate(cacheFile$cacheFileVer,"PIAAC")) {
       if (verbose) {
-        cat("Processing codebook ... \n")
+        cat("Processing codebook.\n")
       }
       ff <- processFileFormatReturnFF(filepath)
       forceRead <- TRUE
@@ -126,7 +125,7 @@ readPIAAC <- function(path,
                                         data = processedData$dataList$student,
                                         dataSch = processedData$dataList$school,
                                         dataTch = processedData$dataList$teacher,
-                                        dataListMeta <- processedData$dataListMeta,
+                                        dataListMeta = processedData$dataListMeta,
                                         weights = processedData$weights,
                                         pvvars = processedData$pvvars,
                                         subject = processedData$subject,
@@ -141,8 +140,8 @@ readPIAAC <- function(path,
                                         fileFormatTeacher = processedData$fileFormatTeacher,
                                         survey = processedData$survey,
                                         country = processedData$country,
-                                        psuVar = "vemethodn",
-                                        stratumVar = "varunit",
+                                        psuVar = ifelse(as.numeric(processedData$cacheFile$method) == 1,"JK1","varunit"),
+                                        stratumVar = ifelse(as.numeric(processedData$cacheFile$method) == 1,"JK1","varstrat"),
                                         jkSumMultiplier = processedData$jkSumMultiplier)
   }
   
@@ -176,8 +175,7 @@ processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
   
   if(!forceRead) {
     if (verbose) {
-      cat("Found cached data for country code ", dQuote(countryCode))
-      cat("\n")  
+      cat(paste0("Found cached data for country code ", dQuote(countryCode),".\n"))
     }
     dataList$student <- getCSVLaFConnection(file.path(filepath,txtCacheFile),ff)
     cacheFile <- readRDS(file.path(filepath,metaCacheFile[1]))
@@ -185,18 +183,17 @@ processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
                 cacheFile = cacheFile))
   }
   if (verbose) {
-    cat("Processing data for country code ", dQuote(countryCode))
-    cat("\n")
+    cat("Processing data for country code ", dQuote(countryCode),".\n")
   }
   fname = list.files(filepath,pattern = paste0(countryCode,".*\\.csv"), full.names = FALSE, ignore.case = TRUE)
   if(length(fname) == 0) {
-    stop(paste0(countryCode, " data is not available in the specified folder."))
+    stop("Missing PIAAC data file(s) for country (",countryCode, ") in the path ",sQuote(filepath),".")
   }
   if(length(fname) > 1) {
-    stop(paste0(countryCode,": there are more than 1 csv files. Used the first one. "))
+    stop(paste0(countryCode,": there is more than one csv files."))
   }
   fname <- fname[1]
-  dat <- readr::read_csv(file.path(filepath,fname), col_types = cols(.default = "c"))
+  dat <- read_csv(file.path(filepath,fname), col_types = cols(.default = "c"))
   colnames(dat) <- toupper(colnames(dat))
   
   # checking whether any missing columns in the data file
@@ -217,7 +214,7 @@ processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
       names(replv) <- sapply(repl, function(x) {
         x[1]
       })
-      dat[[ci]] <- stringr::str_replace_all(dat[[ci]],replv)
+      dat[[ci]] <- str_replace_all(dat[[ci]],replv)
     }
     
     
@@ -231,7 +228,7 @@ processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
     }
   }
   # write out processed csv files
-  data.table::fwrite(dat,file.path(filepath,gsub("\\.csv$",".txt",fname)), col.names = FALSE, na = "")
+  fwrite(dat,file.path(filepath,gsub("\\.csv$",".txt",fname)), col.names = FALSE, na = "")
   
   # return output
   dataList$student <- getCSVLaFConnection(file.path(filepath,gsub("\\.csv",".txt",fname)),
@@ -243,13 +240,9 @@ processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
   # source: http://www.oecd.org/skills/piaac/PIACTOOLS_16OCT_for_web.pdf
   vemethodn <- unique(dat[,"VEMETHODN"])
   if (length(vemethodn) > 1) {
-    warning("There are more than 1 variance method. Use the first one.")
+    warning("There is more than one variance method. Using the first one.")
     vemethodn = vemethodn[1]
   }
-  # if (length(reps) > 1) {
-  #   warning("There are more than 1 variance method. Use the first one.")
-  #   reps = reps[1]
-  # }
   if(vemethodn == 2) {
     jkSumMultiplier <- 1.0
   } else if (vemethodn == 1) {
@@ -268,11 +261,11 @@ processFileFormatReturnFF <- function(filepath) {
   ffname <- list.files(filepath,pattern = "codebook.*\\.xls", ignore.case = T, full.names = F)
   ffname <- file.path(filepath,ffname)
   if (!file.exists(ffname) || length(ffname) == 0) {
-    stop(paste0("The codebook excel file does not exist. It is recommended that users use downloadPIAAC to get all necessary files for the database."))
+    stop(paste0("The codebook Excel file does not exist. It is recommended that users use downloadPIAAC to get all necessary files for the database."))
   }
   codebook <- list()
-  codebook$variable <- readxl::read_excel(ffname, sheet = 1)
-  codebook$value <- readxl::read_excel(ffname, sheet = 2)
+  codebook$variable <- read_excel(ffname, sheet = 1)
+  codebook$value <- read_excel(ffname, sheet = 2)
   
   # retrieve variable information
   ff <- data.frame(variableName = toupper(codebook$variable$Name), 
@@ -589,7 +582,7 @@ ABW	Aruba
   ZAF	South Africa
   ZMB	Zambia
   ZWE	Zimbabwe"
-  dict <- data.table::fread(text, sep = "\t", verbose = FALSE)
+  dict <- fread(text, sep = "\t", verbose = FALSE)
   return(dict$Country[dict$CODE == toupper(countryCode)][1])
 }
 

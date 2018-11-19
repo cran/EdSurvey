@@ -19,7 +19,7 @@ an object of the same class as the \code{data} argument, with the name of
         the plausible value updated from \code{oldVar} to \code{newVar}
 }
 \description{
-Changes the name used to refer to a set of plausible values from \code{oldVar} to \code{newVar} in an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
+Changes the name used to refer to a set of plausible values from \code{oldVar} to \code{newVar} in an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 }
 \examples{
 # read in the example data (generated, not real student data)

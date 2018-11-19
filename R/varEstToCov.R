@@ -15,9 +15,9 @@
 #'                present in each \code{data.frame}. When the same as 
 #'                \code{varEstA}, the covariance is within one result.
 #' @param varA a character that names the statistic in the \code{varEstA}
-#'             argument for which a covariance is required.
+#'             argument for which a covariance is required
 #' @param varB a character that names the statistic in the \code{varEstB}
-#'             argument for which a covariance is required.
+#'             argument for which a covariance is required
 #' @param jkSumMultiplier when the jackknife variance estimation method---or
 #'                        balanced repeated replication (BRR) 
 #'                        method---multiplies the final jackknife variance estimate by a value, 
@@ -32,13 +32,13 @@
 #' \code{varB} must contain exactly one variable name.
 #'
 #' The method used to compute the covariance is in
-#' the
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
-#'  section \dQuote{Estimation of Covariances.}
+#' the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+#' in the section \dQuote{Estimation of Covariances.}
 #'
-#' The method used to compute the degrees of freedom is in the
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
-#' section \dQuote{Estimation of Degrees of Freedom.}
+#' The method used to compute the degrees of freedom is in the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+#' in the section \dQuote{Estimation of Degrees of Freedom.}
 #'
 #' @return
 #' a numeric value; the jackknife covariance estimate
@@ -48,32 +48,32 @@
 #' @export
 varEstToCov <- function(varEstA, varEstB=varEstA, varA, varB=varA, jkSumMultiplier) {
   if(! varA %in% unique(varEstA$JK$variable)) {
-    stop(paste0("Could not find ", sQuote("varA"), " value of ", dQuote(varA) ," in varEstA$JK$variable. Existing values include ", paste(unique(varEstA$JK$variable), collapse=", "), "."))
+    stop(paste0("Could not find ", sQuote("varA"), " value of ", dQuote(varA) ," in varEstA$JK$variable. Existing values include ", pasteItems(unique(varEstA$JK$variable)), "."))
   }
   if(! varB %in% unique(varEstB$JK$variable)) {
-    stop(paste0("Could not find ", sQuote("varB"), " value of ", dQuote(varB) ," in varEstB$JK$variable. Existing values include ", paste(unique(varEstB$JK$variable), collapse=", "), "."))
+    stop(paste0("Could not find ", sQuote("varB"), " value of ", dQuote(varB) ," in varEstB$JK$variable. Existing values include ", pasteItems(unique(varEstB$JK$variable)), "."))
   }
   if(!is.null(varEstA$PV) & !is.null(varEstB$PV)) {
     if(! varA %in% unique(varEstA$PV$variable)) {
-      stop(paste0("Could not find ", sQuote("varA"), " value of ", dQuote(varA) ," in varEstA$PV$variable. Existing values include ", paste(unique(varEstA$PV$variable), collapse=", "), "."))
+      stop(paste0("Could not find ", sQuote("varA"), " value of ", dQuote(varA) ," in varEstA$PV$variable. Existing values include ", pasteItems(unique(varEstA$PV$variable)), "."))
     }
     if(! varB %in% unique(varEstB$PV$variable)) {
-      stop(paste0("Could not find ", sQuote("varB"), " value of ", dQuote(varB) ," in varEstB$PV$variable. Existing values include ", paste(unique(varEstB$PV$variable), collapse=", "), "."))
+      stop(paste0("Could not find ", sQuote("varB"), " value of ", dQuote(varB) ," in varEstB$PV$variable. Existing values include ", pasteItems(unique(varEstB$PV$variable)), "."))
     }
   }
   mergeVar <- c("PV", "JKreplicate")
   if(any(!mergeVar %in% names(varEstA$JK))) {
-    stop(paste0("Merge vars missing from varEstA$JK ", paste(mergeVar[!mergeVar %in% names(varEstA$JK)], collapse=", ")))
+    stop(paste0("Merge vars missing from varEstA$JK ", pasteItems(mergeVar[!mergeVar %in% names(varEstA$JK)]), "."))
   }
   if(any(!mergeVar %in% names(varEstB$JK))) {
-    stop(paste0("Merge vars missing from varEstB$JK ", paste(mergeVar[!mergeVar %in% names(varEstB$JK)], collapse=", ")))
+    stop(paste0("Merge vars missing from varEstB$JK ", pasteItems(mergeVar[!mergeVar %in% names(varEstB$JK)]), "."))
   }
   JK <- merge(subset(varEstA$JK, variable==varA),
               subset(varEstB$JK, variable==varB),
               by=mergeVar, all.x=FALSE, all.y=FALSE,
               suffixes=c(".A", ".B"))
   if(nrow(JK) < 1) {
-    stop("Could not find appropiriate values in JK results to calculate covariance.")
+    stop("Could not find appropriate values in JK results to calculate covariance.")
   }
   JK$cov <- jkSumMultiplier * JK$value.A * JK$value.B
   CovJK <- sum(JK$cov) / length(unique(JK$PV))
@@ -81,10 +81,10 @@ varEstToCov <- function(varEstA, varEstB=varEstA, varA, varB=varA, jkSumMultipli
   if(!is.null(varEstA$PV) & !is.null(varEstB$PV)) {
     mergeVar <- c("PV")
     if(sum(!mergeVar %in% names(varEstA$PV)) > 0) {
-      stop(paste0("Merge vars missing from varEstA$PV ", paste(mergeVar[!mergeVar %in% names(varEstA$PV)], collapse=", ")))
+      stop(paste0("Merge vars missing from varEstA$PV ", pasteItems(mergeVar[!mergeVar %in% names(varEstA$PV)]), "."))
     }
     if(sum(!mergeVar %in% names(varEstB$PV)) > 0) {
-      stop(paste0("Merge vars missing from varEstB$PV ", paste(mergeVar[!mergeVar %in% names(varEstB$PV)], collapse=", ")))
+      stop(paste0("Merge vars missing from varEstB$PV ", pasteItems(mergeVar[!mergeVar %in% names(varEstB$PV)]), "."))
     }
     PV <- merge(subset(varEstA$PV, variable==varA),
                 subset(varEstB$PV, variable==varB),

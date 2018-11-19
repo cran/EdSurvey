@@ -9,7 +9,7 @@ edsurveyTable2pdf(data, formula, caption = NULL, filename = "",
 }
 \arguments{
 \item{data}{an \code{edsurveyTable}. See Value 
-in \code{\link[EdSurvey]{edsurveyTable}}}
+in \code{\link[EdSurvey]{edsurveyTable}}.}
 
 \item{formula}{a formula of the form \code{LHS ~ RHS} to cast the \code{edsurveyTable} 
 results from long format to wide format. This formula takes the form 
@@ -21,12 +21,12 @@ If length is two, the second item is the "short caption" used when LaTeX generat
 a \code{List of Tables}. 
 Set to \code{NULL} to suppress the caption. Default value is \code{NULL}.}
 
-\item{filename}{a character string containing file names and paths. By default (\code{filename = ""}),
+\item{filename}{a character string containing filenames and paths. By default (\code{filename = ""}),
 table will be saved in the working directory (\code{getwd()}). 
 Use \code{filename = "CONSOLE"} to 
 print LaTeX code in R console without generating a PDF file.}
 
-\item{toCSV}{a character string containing file names and paths of \code{.csv} table output.
+\item{toCSV}{a character string containing filenames and paths of \code{.csv} table output.
 \code{""} indicates no \code{.csv} output. \code{toCSV} is 
 independent to \code{filename}, so both
 a csv file and PDF file would be generated if both \code{filename} 
@@ -51,8 +51,8 @@ Rounding to a negative number of digits means rounding to a power of 10,
 so, for example, \code{estDigits = -2} rounds estimates to the nearest hundred.
 }
 \note{
-For more details, see vignette on "Producing \code{LaTeX} Tables From \code{edsurveyTable} 
-Results With \code{edsurveyTable2pdf}".
+For more details, see the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-LaTeXtables.pdf}{Producing \code{LaTeX} Tables From \code{edsurveyTable} Results With \code{edsurveyTable2pdf}}.
 }
 \examples{
 \dontrun{
@@ -81,7 +81,6 @@ edsurveyTable2pdf(est1,
                   b017451~dsex, 
                   "C:/example table.pdf",
                   returnMeans = FALSE)
-
 }
 }
 \author{

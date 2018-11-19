@@ -1,5 +1,5 @@
-# @author Paul Bailey and Ahmad Emad
-# NOT EXPORTED
+#' @rdname edsurvey-class
+#' @export
 getAttributes <- function(data, attribute = NULL) {
   # return attributes in a uniform way for either an edesurvey.data.frame or
   # a light.edsurvey.data.frame

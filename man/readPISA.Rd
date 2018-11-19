@@ -8,8 +8,8 @@ readPISA(path, database = "INT", countries, cognitive = "score",
   forceReread = FALSE, verbose = TRUE)
 }
 \arguments{
-\item{path}{a character value to the full directory of the PISA extracted fixed-width file
-and SPSS control files (.txt).}
+\item{path}{a character vector to the full directory path(s) to the PISA extracted fixed-width files
+and SPSS control files (.txt)}
 
 \item{database}{a character to indicate a selected database. Must be one of \code{INT} (general database that most people use), \code{CBA} (computer-based database in PISA 2012 only), or \code{FIN} (financial literacy database in PISA 2012 only). 
 Defaults to \code{INT}.}
@@ -39,7 +39,7 @@ Opens a connection to a PISA data file and
              information about the file and data.
 }
 \details{
-Reads in the unzipped files downloaded from the PISA database using the OECD Repository (\url{http://www.oecd.org/skills/piaac/}). Users can use \code{\link{downloadPISA}} to
+Reads in the unzipped files downloaded from the PISA database using the OECD Repository (\url{http://www.oecd.org/pisa/}). Users can use \code{\link{downloadPISA}} to
        download all required files. 
        Student questionnaire files (with weights and plausible values) are used as main files, which are then
        merged with cognitive, school, and parent files (if available).
@@ -63,7 +63,7 @@ edsurveyTable(read ~ st04q01 + st20q01, data = sgp2012)
 
 }
 \references{
-OECD. (2017). \emph{PISA 2015 technical report}. Paris, France: OECD Publishing. Retrieved from \emph{\url{http://www.oecd.org/pisa/data/2015-technical-report/}}
+Organisation for Economic Co-operation and Development. (2017). \emph{PISA 2015 technical report}. Paris, France: Author. Retrieved from \emph{\url{http://www.oecd.org/pisa/data/2015-technical-report/}}
 }
 \seealso{
 \code{\link{getData}} and \code{\link{downloadPISA}}

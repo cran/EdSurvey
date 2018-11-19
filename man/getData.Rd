@@ -56,7 +56,9 @@ coded as \code{NA}.}
 \item{addAttributes}{a logical value set to \code{TRUE} to get a
 \code{data.frame} that can be used in calls to
 other functions that usually would take an
-\code{edsurvey.data.frame}.}
+\code{edsurvey.data.frame}. This \code{data.frame} is also called \code{light.edsurvey.data.frame}.
+See Details section in \code{\link{edsurvey.data.frame}} for
+more information on \code{light.edsurvey.data.frame}.}
 
 \item{returnJKreplicates}{a logical value indicating if JK replicate weights
 should be returned. Defaults to \code{TRUE}.}
@@ -68,7 +70,7 @@ variables. When \code{addAttributes} is \code{TRUE}, returns a
 \code{light.edsurvey.data.frame}.
 }
 \description{
-Reads in selected columns to a \code{data.frame} or an
+Reads in selected columns to a \code{data.frame} or a
              \code{light.edsurvey.data.frame}. On an \code{edsurvey.data.frame},
              the data are stored on disk.
 }
@@ -88,8 +90,8 @@ the \code{EdSurvey} package (e.g., \code{lm.sdf}), and the class is a
 Note that if both \code{formula} and \code{varnames} are populated, the
 variables on both will be included.
 
-See the
-\href{https://www.air.org/sites/default/files/EdSurvey-getData.pdf}{getData vignette}
+See the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-getData.pdf}{getData}
 for long-form documentation on this function.
 }
 \examples{

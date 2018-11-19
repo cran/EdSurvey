@@ -5,17 +5,16 @@
 \alias{logit.sdf}
 \alias{probit.sdf}
 \alias{glm}
-\alias{logit.sdf}
-\alias{probit.sdf}
 \title{EdSurvey Generalized Linear Models}
 \usage{
 glm.sdf(formula, family = binomial(link = "logit"), data,
   weightVar = NULL, relevels = list(), jrrIMax = 1,
   omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
-  returnVarEstInputs = FALSE)
+  returnNumberOfPSU=FALSE, returnVarEstInputs = FALSE)
 
-logit.sdf(formula, data, weightVar = NULL, relevels = list(), jrrIMax = 1,
-  omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
+logit.sdf(formula, data, weightVar = NULL, relevels = list(),
+  jrrIMax = 1, omittedLevels = TRUE, defaultConditions = TRUE,
+  recode = NULL, returnNumberOfPSU = FALSE,
   returnVarEstInputs = FALSE)
 
 probit.sdf(formula, data, weightVar = NULL, relevels = list(),
@@ -67,6 +66,9 @@ to subset the data. Use \code{print} on an
 \item{recode}{a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
 \code{recode=} \code{list(}\code{var1=} \code{list(from=} \code{c("a",} \code{"b",} \code{"c"),} \code{to=}\code{"d"))}. See Examples.}
 
+\item{returnNumberOfPSU}{a logical value set to \code{TRUE} to return the number of 
+primary sampling units (PSU)}
+
 \item{returnVarEstInputs}{a logical value set to \code{TRUE} to return the
 inputs to the jackknife and imputation variance
 estimates. This is intended to allow for
@@ -82,11 +84,12 @@ An \code{edsurveyGlm} with the following elements:
    \item{Vimp}{the estimated variance due to uncertainty in the scores (plausible values variables)}
    \item{Vjrr}{the estimated variance due to sampling}
    \item{M}{the number of plausible values}
+   \item{nPSU}{the number of PSUs used in calculation}
    \item{varm}{the variance estimates under the various plausible values}
    \item{coefm}{the values of the coefficients under the various plausible values}
    \item{coefmat}{the coefficient matrix (typically produced by the summary of a model)}
    \item{weight}{the name of the weight variable}
-   \item{npv}{the number of plausible values.}
+   \item{npv}{the number of plausible values}
    \item{njk}{the number of jackknife replicates used}
    \item{varMethod}{always \code{jackknife}}
    \item{varEstInputs}{when \code{returnVarEstInputs} is \code{TRUE},
@@ -104,15 +107,15 @@ Fits a logit or probit that
 This function implements an estimator that correctly handles left-hand side
 variables that are logical, allows for survey sampling weights, and estimates
 variances using the jackknife replication method.
-The
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}
+The vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
 describes estimation of the reported statistics. 
 
 The coefficients are estimated
 using the sample weights according to the section
 \dQuote{Estimation of Weighted Means When Plausible Values Are Not Present}
-or the section titled
-\dQuote{Estimation of Weighted Means When Plausible Values Are Present}
+or the section 
+\dQuote{Estimation of Weighted Means When Plausible Values Are Present,}
 depending on if there are assessment variables or variables with plausible values
 in them.
 
@@ -128,11 +131,11 @@ they give the same results as a call to \code{glm.sdf} with the binomial family
 and the link function named in the function call (logit or probit).
 By default, \code{glm} fits a logistic regression when \code{family} is not set, 
 so the two are expected to give the same results in that case.
-Other types of generalized linear model are not currently supported.
+Other types of generalized linear models are not supported.
 
 \subsection{Variance estimation of coefficients}{
-  All variance estimation methods are shown in the
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}.
+  All variance estimation methods are shown in the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.
   When the predicted
   value does not have plausible values, the variance of the coefficients
   is estimated according to the section
@@ -151,7 +154,7 @@ Other types of generalized linear model are not currently supported.
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
 # By default uses jackknife variance method using replicate weights
-table(sdf[,"b013801"])
+table(sdf$b013801)
 logit1 <- logit.sdf(I(b013801 \%in\% c("26-100", ">100")) ~ dsex + b017451, data=sdf)
 # use summary to get detailed results
 summary(logit1)

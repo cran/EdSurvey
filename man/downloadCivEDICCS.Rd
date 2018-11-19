@@ -2,15 +2,21 @@
 % Please edit documentation in R/downloadICCS.R
 \name{downloadCivEDICCS}
 \alias{downloadCivEDICCS}
-\title{Instructions for Downloading and Unzipping CivED or ICCS files}
+\title{Instructions for Downloading and Unzipping CivED or ICCS Files}
 \usage{
-downloadCivEDICCS(year = c(1999, 2009))
+downloadCivEDICCS(years = c(1999, 2009))
 }
 \arguments{
-\item{year}{an integer vector indicating the study year. Valid years are 1999 and 2009.}
+\item{years}{an integer vector indicating the study year. Valid years are 1999 and 2009.}
 }
 \description{
 Provides instructions to download CivED or ICCS data to be processed in \code{readCivEDICCS}.
+}
+\examples{
+\dontrun{
+#view instructions to manually download study data
+downloadCivEDICCS()
+}
 }
 \seealso{
 \code{\link{readCivEDICCS}}

@@ -9,7 +9,7 @@
 #'          
 #'          Note that the returned object will contain attributes only from the first \code{light.edsurvey.data.frame} object in the call to
 #'          \code{cbind.light.edsurvey.data.frame}.
-#' @param ... one or more objects of class \code{vector}, \code{data.frame}, \code{matrix}, or \code{light.edsurvey.data.frame}. 
+#' @param ... one or more objects of class \code{vector}, \code{data.frame}, \code{matrix}, or \code{light.edsurvey.data.frame}
 #' @param deparse.level integer determining under which circumstances column and row names are built from the actual arguments. See \link[base:cbind]{cbind}.
 #' @return  a matrix-like object like \code{matrix} or \code{data.frame}. Returns a \code{light.edsurvey.data.frame} if there is 
 #'          at least one \code{light.edsurvey.data.frame} in the list of arguments.

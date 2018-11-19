@@ -3,7 +3,6 @@
 \name{print.gap}
 \alias{print.gap}
 \alias{print.gapList}
-\alias{print.gapList}
 \title{Gap Analysis Printing}
 \usage{
 \method{print}{gap}(x, ..., printPercentage = TRUE)
@@ -11,9 +10,9 @@
 \method{print}{gapList}(x, ..., printPercentage = TRUE)
 }
 \arguments{
-\item{x}{an R object representing a \code{gap} of class \code{gap} or \code{gapList}.}
+\item{x}{an R object representing a \code{gap} of class \code{gap} or \code{gapList}}
 
-\item{...}{these arguments are not passed anywhere and are included only for compatibility.}
+\item{...}{these arguments are not passed anywhere and are included only for compatibility}
 
 \item{printPercentage}{a logical value set to \code{TRUE} to request printing 
 of the percentage in the groups. Defaults to \code{TRUE}.}

@@ -4,18 +4,22 @@
 \alias{downloadTIMSSAdv}
 \title{Download and Unzip TIMSS Advanced Files}
 \usage{
-downloadTIMSSAdv(years = c(1995, 2008, 2015), root, cache = FALSE)
+downloadTIMSSAdv(root, years = c(1995, 2008, 2015), cache = FALSE,
+  verbose = TRUE)
 }
 \arguments{
-\item{years}{an integer vector of the assessment years to download. Valid years are 1995, 2008, and 2015.}
-
 \item{root}{a character string indicating the directory where the TIMSS Advanced
-data should be stored. Note that files are placed in a
-subdirectory named TIMSSAdv[year].}
+data should be stored. Files are placed in a
+subdirectory named TIMSSAdv/[year].}
+
+\item{years}{an integer vector of the assessment years to download. Valid years are 1995, 2008, and 2015.}
 
 \item{cache}{a logical value set to process and cache the text (.txt) version of files.
 This takes a very long time but saves time for future uses of 
 the data. Default value is \code{FALSE}.}
+
+\item{verbose}{a logical value to either print or suppress status message output.
+The default value is \code{TRUE}.}
 }
 \description{
 Uses an Internet connection to download TIMSS Advanced data.
@@ -24,11 +28,15 @@ Uses an Internet connection to download TIMSS Advanced data.
 }
 \examples{
 \dontrun{
-  # root argument will vary by operating system conventions
-  downloadTIMSSAdv(year=c(2008, 2015), root = "C:/")
-  
-  # cache=TRUE will download then process the datafiles
-  downloadPIRLS(year=2015, root = "C:/", cache = TRUE)
+#root argument will vary by operating system conventions
+downloadTIMSSAdv(year=c(2008, 2015), root = "C:/")
+
+#cache=TRUE will download then process the datafiles
+downloadTIMSSAdv(year=2015, root = "C:/", cache = TRUE)
+
+#set verbose=FALSE for silent output
+#if year not specified, download all years
+downloadTIMSSAdv(root="C:/", verbose = FALSE)
 }
 }
 \seealso{

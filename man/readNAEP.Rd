@@ -19,7 +19,7 @@ Default value is \code{composite} if not specified.}
 \item{omittedLevels}{a character vector indicating which factor levels/labels
 should be excluded. When set to the default value of \code{c('Multiple',NA,'Omitted')}, adds the vector to the \code{edsurvey.data.frame}.}
 
-\item{frPath}{a character value indicating the location of the \code{fr2} parameter layout file included with the data companion to parse the specified \code{filepath} data file.}
+\item{frPath}{a character value indicating the location of the \code{fr2} parameter layout file included with the data companion to parse the specified \code{filepath} data file}
 }
 \value{
 An \code{edsurvey.data.frame} containing the following elements:

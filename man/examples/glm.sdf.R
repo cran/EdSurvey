@@ -3,7 +3,7 @@
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
 # By default uses jackknife variance method using replicate weights
-table(sdf[,"b013801"])
+table(sdf$b013801)
 logit1 <- logit.sdf(I(b013801 %in% c("26-100", ">100")) ~ dsex + b017451, data=sdf)
 # use summary to get detailed results
 summary(logit1)
