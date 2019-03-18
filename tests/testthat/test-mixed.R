@@ -4,8 +4,17 @@ require(EdSurvey)
 options(width = 500)
 options(useFancyQuotes=FALSE)
 
+if(!exists("edsurveyHome")) {
+  if (Sys.info()[['sysname']] == "Windows") {
+    edsurveyHome <- "C:/EdSurveyData/"
+  } else {
+    edsurveyHome <- "~/EdSurveyData/"
+  }
+}
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 sdf_subset <- subset(sdf, scrpsu < 500)
+
+usaINT2012 <- readPISA(paste0(edsurveyHome, "PISA/2012"), countries = "usa", verbose = FALSE)
 
 mixed1REF <- c("Call:", "mixed.sdf(formula = composite ~ dsex + b017451 + (1 | scrpsu), ", 
                "    data = sdf_subset, weightVars = c(\"origwt\", \"srwt01\"), nQuad = 5, ", 
@@ -29,6 +38,16 @@ mixed2REF <- c("Call:", "mixed.sdf(formula = I(composite >= 214) ~ (1 | scrpsu),
                "            Estimate Std. Error t value", "(Intercept)    4.100      0.998    4.11"
 )
 
+mixed3REF <- c("Call:", "mixed.sdf(formula = math ~ escs + (1 | schoolid), data = usaINT2012_subset, ", 
+               "    weightVars = c(\"w_fstuwt\", \"w_fschwt\"), nQuad = 5, verbose = 0, ", 
+               "    centerGroup = list(schoolid = ~escs), fast = TRUE)", "", 
+               "Formula: math ~ escs + (1 | schoolid)", "", "", "Plausible Values:  5", 
+               "Number of Groups: ", "  Group Var Observations Level", "1  schoolid          157     2", 
+               "2  Residual         2432     1", "", "Variance terms:", "                     variance Std. Error Std.Dev.", 
+               "schoolid:(Intercept)     1738        402       42", "Residual                 4784        234       69", 
+               "", "Fixed Effects:", "            Estimate Std. Error t value", 
+               "(Intercept)   473.07       6.56    72.1", "escs           24.07       2.17    11.1", 
+               "", "Intraclass Correlation= 0.266 ")
 context('mixed.sdf')
 test_that('mixed.sdf', {
   expect_warning(m1 <- mixed.sdf(composite ~ dsex + b017451 + (1|scrpsu), data=sdf_subset,
@@ -48,4 +67,16 @@ test_that('mixed.sdf logit', {
   options(digits=2)
   m2c <- capture.output(summary(m2))
   expect_equal(m2c, mixed2REF)
+})
+
+context('mixed.sdf centering')
+test_that('mixed.sdf centering', {
+  usaINT2012_subset <- subset(usaINT2012, st04q01 %in% "Female")
+  expect_warning(m3 <- mixed.sdf(math ~ escs + (1 | schoolid), data = usaINT2012_subset,
+                  weightVars = c("w_fstuwt","w_fschwt"), 
+                  centerGroup = list("schoolid" = ~ escs),
+                  fast = TRUE, verbose = 0, nQuad = 5))
+  options(digits=2)
+  m3c <- capture.output(summary(m3))
+  expect_equal(m3c, mixed3REF)
 })

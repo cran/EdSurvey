@@ -70,12 +70,12 @@ download_ePIRLS <- function(root, years=c(2016), cache=FALSE, verbose=TRUE) {
         # download
         tryCatch(download.file(d[di],file.path(yroot,bn), quiet = !verbose, cacheOK = FALSE),
                  error = function(e){
-                   stop(paste0("Error downloading file at URL: ", sQuote(d[di]),
-                               " Message: ", e))
+                   stop(paste0("Error downloading file at URL: ", sQuote(d[di]), ". ",
+                               "Message: ", e))
                  })
       } else {
         if(verbose==TRUE){
-          cat(paste0("Found downloaded ", year ," ePIRLS file ",bn,"\n"))
+          cat(paste0("Found downloaded ", year ," ePIRLS file ", sQuote(bn),".\n"))
         }
       }
       
@@ -83,14 +83,14 @@ download_ePIRLS <- function(root, years=c(2016), cache=FALSE, verbose=TRUE) {
       lst <- unzip(file.path(yroot,bn), list=TRUE) 
       
       if(verbose) {
-        cat(paste0("Unzipping ", year ," ePIRLS files from ",bn,"\n"))
+        cat(paste0("Unzipping ", year ," ePIRLS files from ", sQuote(bn),".\n"))
       }
       
       for(i in 1:nrow(lst)) {
         #check that the file is not present in root folder OR that the file sizes are different indicating a file change/corruption
         if(!file.exists(file.path(yroot, basename(lst$Name[i]))) | file.info(file.path(yroot, basename(lst$Name[i])))$size != lst$Length[i]) {
           if(verbose) {
-            cat(paste0("  unzipping ",lst$Name[i],"\n"))
+            cat(paste0("  Unzipping ",sQuote(lst$Name[i]),".\n"))
           }
           
           unzip(file.path(yroot,bn), files=lst$Name[i], exdir=yroot)
@@ -104,7 +104,7 @@ download_ePIRLS <- function(root, years=c(2016), cache=FALSE, verbose=TRUE) {
   }
   if(cache){
     if(verbose==TRUE){
-      cat("Caching ", year ," ePIRLS files\n")
+      cat("Caching ", year ," ePIRLS files.\n")
     }
     # reading in the data causes the cache to be written.
     notUsed <- read_ePIRLS(yroot, countries="*", verbose=verbose)

@@ -59,7 +59,7 @@ readPIRLS <- function(path,
   path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
   
   if(!all(dir.exists(path))){
-    stop(paste0("The argument ", sQuote("path"), " cannot be located: ", pasteItems(dQuote(path[!dir.exists(path)])),"."))
+    stop(paste0("The argument ", sQuote("path"), " cannot be located ", pasteItems(dQuote(path[!dir.exists(path)])),"."))
   }
   if(!is.logical(forceReread)){
     stop(paste0("The argument ", sQuote("forceReread"), " must be a logical value."))
@@ -86,8 +86,8 @@ readPIRLS <- function(path,
                           pattern=paste0("^", gradeL, "..", "(",paste(countries, collapse="|"), ")(",
                                          paste(getPIRLSYearCodes(), collapse = "|"), ")","\\.sav$"), full.names=TRUE, ignore.case = TRUE)
   if(length(filenames) == 0) {
-    stop(paste0("Could not find any PIRLS datafiles for countries: ", paste(countries, collapse=", "),
-                " in the following folder(s): ", pasteItems(dQuote(path)), "."))
+    stop(paste0("Could not find any PIRLS datafiles for countries ", paste(countries, collapse=", "),
+                " in the following folder(s) ", pasteItems(dQuote(path)), "."))
   }
   
   fSubPart <- tolower(substring(basename(filenames), 1, 8)) #includes a (4th grade), country code, and year code
@@ -155,22 +155,22 @@ readPIRLS <- function(path,
       
       #test for any missing files::also check for any duplicate or multiple files
       if (sum(hasMissing)>0 && hasData==TRUE && hasDataLiteracy==FALSE) {
-        stop(paste0("Missing PIRLS datafile(s) for country (", cntry, "): ", pasteItems(PIRLSfiles[hasMissing]),"."))
+        stop(paste0("Missing PIRLS datafile(s) for country (", cntry, ") ", pasteItems(PIRLSfiles[hasMissing]),"."))
       }
       if (sum(hasExcess)>0 && hasData==TRUE && hasDataLiteracy==FALSE){
-        stop(paste0("Excess/duplicate PIRLS datafile(s) for country (", cntry, "): ", pasteItems(PIRLSfiles[hasExcess]),"."))
+        stop(paste0("Excess/duplicate PIRLS datafile(s) for country (", cntry, ") ", pasteItems(PIRLSfiles[hasExcess]),"."))
       }
       if (sum(hasMissingLiteracy)>0 && hasData==FALSE && hasDataLiteracy==TRUE) {
-        stop(paste0("Missing PIRLS literacy datafile(s) for country (", cntry, "): ", pasteItems(PIRLSfiles[hasMissingLiteracy]),"."))
+        stop(paste0("Missing PIRLS literacy datafile(s) for country (", cntry, ") ", pasteItems(PIRLSfiles[hasMissingLiteracy]),"."))
       }
       if (sum(hasExcessLiteracy)>0 && hasData==FALSE && hasDataLiteracy==TRUE){
-        stop(paste0("Excess/duplicate PIRLS literacy datafile(s) for country (", cntry, "): ", pasteItems(PIRLSfiles[hasExcessLiteracy]),"."))
+        stop(paste0("Excess/duplicate PIRLS literacy datafile(s) for country (", cntry, ") ", pasteItems(PIRLSfiles[hasExcessLiteracy]),"."))
       }
       if ((sum(hasMissing)>0 || sum(hasMissingLiteracy)>0) && hasData==TRUE && hasDataLiteracy==TRUE) {
-        stop(paste0("Missing PIRLS datafile(s) for country (", cntry, "):", pasteItems(PIRLSfiles[hasMissing]), "; Literacy Files:", pasteItems(PIRLSfiles[hasMissingLiteracy]),"."))
+        stop(paste0("Missing PIRLS datafile(s) for country (", cntry, ") ", pasteItems(PIRLSfiles[hasMissing]), " literacy files ", pasteItems(PIRLSfiles[hasMissingLiteracy]),"."))
       }
       if ((sum(hasExcess)>0 || sum(hasExcessLiteracy)>0) && hasData==TRUE && hasDataLiteracy==TRUE){
-        stop(paste0("Excess/duplicate PIRLS datafile(s) for country (", cntry, "):", pasteItems(PIRLSfiles[hasExcess]), "; Literacy Files:", pasteItems(PIRLSfiles[hasExcessLiteracy]),"."))
+        stop(paste0("Excess/duplicate PIRLS datafile(s) for country (", cntry, ") ", pasteItems(PIRLSfiles[hasExcess]), " literacy files ", pasteItems(PIRLSfiles[hasExcessLiteracy]),"."))
       }
       
       #test if there are any files for this country/year combination, if not, we can skip this loop iteration as it does not exist
@@ -202,7 +202,7 @@ readPIRLS <- function(path,
             processedData <- tryCatch(do.call("processPIRLS", processArgs, quote = TRUE),
                                       error = function(e){
                                         stop(paste0("Unable to process PIRLS data for country code ", dQuote(cntry), 
-                                                    " having year code ", dQuote(yrCode) ," at folder path(s): ", pasteItems(dQuote(path)),
+                                                    " having year code ", dQuote(yrCode) ," at folder path(s) ", pasteItems(dQuote(path)),
                                                     ". Possible file corruption with source data.",
                                                     " Error message: ", e))
                                       })
@@ -229,7 +229,7 @@ readPIRLS <- function(path,
             processedData <- tryCatch(do.call("processPIRLS", processArgs, quote = TRUE),
                                       error = function(e){
                                         stop(paste0("Unable to process PIRLS literacy data for country code ", sQuote(cntry), 
-                                                    " having year code ", sQuote(yrCode) ," at folder path(s): ", paste(sQuote(path), collapse = " & "),
+                                                    " having year code ", sQuote(yrCode) ," at folder path(s) ", paste(sQuote(path), collapse = " & "),
                                                     ". Possible file corruption with source data.",
                                                     " Error message: ", e))
                                       })
@@ -257,7 +257,7 @@ readPIRLS <- function(path,
           processedData <- tryCatch(do.call("processPIRLSAndLiteracy", processArgs, quote = TRUE),
                                     error = function(e){
                                       stop(paste0("Unable to process PIRLS and literacy data for country code ", sQuote(cntry), 
-                                                  " having year code ", sQuote(yrCode) ," at folder path(s): ", paste(sQuote(path), collapse = " & "),
+                                                  " having year code ", sQuote(yrCode) ," at folder path(s) ", paste(sQuote(path), collapse = " & "),
                                                   ". Possible file corruption with source data.",
                                                   " Error message: ", e))
                                     })
@@ -438,7 +438,7 @@ processPIRLS <- function(dataFolderPath, countryCode, fnames, fileYrs, forceRere
   if(runProcessing==TRUE){
     
     if(verbose==TRUE){
-      cat(paste0("Processing data for country: ", dQuote(countryCode),".\n"))
+      cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
     }
   
     #SCHOOL LEVEL===================================================
@@ -603,7 +603,7 @@ processPIRLS <- function(dataFolderPath, countryCode, fnames, fileYrs, forceRere
     
   } else { #used the cache files
     if(verbose==TRUE){
-      cat(paste0("Found cached data for country code ", dQuote(countryCode),"\n"))
+      cat(paste0("Found cached data for country code ", dQuote(countryCode),".\n"))
     }
   } #end if(runProcessing==TRUE)
   
@@ -653,7 +653,7 @@ processPIRLSAndLiteracy <- function(dataFolderPath, countryCode, fnames, fnamesL
   if(runProcessing==TRUE){
     
     if(verbose==TRUE){
-      cat(paste0("Processing data for country: ", dQuote(countryCode),"\n"))
+      cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
     }
     
     #SCHOOL LEVEL===================================================
@@ -962,7 +962,7 @@ processPIRLSAndLiteracy <- function(dataFolderPath, countryCode, fnames, fnamesL
     
   } else { #used the cache files
     if(verbose==TRUE){
-      cat(paste0("Found cached data for country code ", dQuote(countryCode),"\n"))
+      cat(paste0("Found cached data for country code ", dQuote(countryCode),".\n"))
     }
   } #end if(runProcessing==TRUE)
   
@@ -982,23 +982,23 @@ exportPIRLSToCSV <- function(folderPath, exportPath, cntryCodes, ...){
         sdf  <- sdfList$datalist[[i]]
         cntry <- sdf$country
         
-        cat(paste(cntry, "Working.\n"))
+        cat(paste(cntry, "working.\n"))
         data <- getData(sdf, colnames(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
         
         
         write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-        cat(paste(cntry, "Completed.\n"))
+        cat(paste(cntry, "completed.\n"))
       }
     } else if (class(sdfList) == "edsurvey.data.frame"){
       
       sdf <- sdfList
       cntry <- sdf$country
       
-      cat(paste(cntry, "Working.\n"))
+      cat(paste(cntry, "working.\n"))
       data <- getData(sdf, colnames(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
       
       write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-      cat(paste(cntry, "Completed.\n"))
+      cat(paste(cntry, "completed.\n"))
     }
 
 }

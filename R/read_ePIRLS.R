@@ -60,7 +60,7 @@ read_ePIRLS <- function(path,
   path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
   
   if(!all(dir.exists(path))){
-    stop(paste0(sQuote("path"), " cannot be located: ", pasteItems(dQuote(path[!dir.exists(path)]))))
+    stop(paste0("The argument ", sQuote("path"), " cannot be located: ", pasteItems(dQuote(path[!dir.exists(path)])), "."))
   }
   if(!is.logical(forceReread)){
     stop(paste0("The argument ", sQuote("forceReread"), " must be a logical value."))
@@ -86,7 +86,7 @@ read_ePIRLS <- function(path,
                           pattern=paste0("^", gradeL, "..", "(",paste(countries, collapse="|"), ")(",
                                          paste(get_ePIRLSYearCodes(), collapse = "|"), ")","\\.sav$"), full.names=TRUE, ignore.case = TRUE)
   if(length(filenames) == 0) {
-    stop(paste0("Could not find any ePIRLS datafiles for countries: ", paste(countries, collapse=", "),
+    stop(paste0("Could not find any ePIRLS datafiles for countries ", paste(sQuote(countries), collapse=", "),
                 " in the following folder(s): ", pasteItems(dQuote(path)), "."))
   }
   
@@ -128,10 +128,10 @@ read_ePIRLS <- function(path,
       
       #test for any missing files::also check for any duplicate or multiple files
       if (sum(hasMissing)>0 && hasData==TRUE) {
-        stop(paste0("Missing ePIRLS datafile(s) for country ", dQuote(cntry), ": ", pasteItems(ePIRLSfiles[hasMissing])))
+        stop(paste0("Missing ePIRLS datafile(s) for country ", dQuote(cntry), " ", pasteItems(ePIRLSfiles[hasMissing]), "."))
       }
       if (sum(hasExcess)>0 && hasData==TRUE){
-        stop(paste0("Excess/duplicate ePIRLS datafile(s) for country ", dQuote(cntry), "): ", pasteItems(ePIRLSfiles[hasExcess])))
+        stop(paste0("Excess/duplicate ePIRLS datafile(s) for country ", dQuote(cntry), " ", pasteItems(ePIRLSfiles[hasExcess]), "."))
       }
       
       #test if there are any files for this country/year combination, if not, we can skip this loop iteration as it does not exist
@@ -163,9 +163,9 @@ read_ePIRLS <- function(path,
           processedData <- tryCatch(do.call("process_ePIRLS", processArgs, quote = TRUE),
                                     error = function(e){
                                       stop(paste0("Unable to process ePIRLS data for country code ", dQuote(cntry),
-                                                  " having year code ", dQuote(yrCode) ," at folder path(s): ", pasteItems(dQuote(path)),
+                                                  " having year code ", dQuote(yrCode) ," at folder path(s) ", pasteItems(dQuote(path)),
                                                   ". Possible file corruption with source data.",
-                                                  " Error Message: ", e))
+                                                  " Error message: ", e))
                                     })
         }
       }#end if(hasData==TRUE)
@@ -352,7 +352,7 @@ process_ePIRLS <- function(dataFolderPath, countryCode, fnames, fileYrs, forceRe
   if(runProcessing==TRUE){
     
     if(verbose==TRUE){
-      cat(paste0("Processing data for country: ", dQuote(countryCode),"\n"))
+      cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
     }
     
     #SCHOOL LEVEL===================================================
@@ -517,7 +517,7 @@ process_ePIRLS <- function(dataFolderPath, countryCode, fnames, fileYrs, forceRe
     
   } else { #used the cache files
     if(verbose==TRUE){
-      cat(paste0("Found cached data for country code ", dQuote(countryCode),"\n"))
+      cat(paste0("Found cached data for country code ", dQuote(tolower(countryCode)),".\n"))
     }
   } #end if(runProcessing==TRUE)
   
@@ -536,23 +536,23 @@ export_ePIRLSToCSV <- function(folderPath, exportPath, cntryCodes, ...){
       sdf  <- sdfList$datalist[[i]]
       cntry <- sdf$country
       
-      cat(paste(cntry, "Working.\n"))
+      cat(paste(cntry, "working.\n"))
       data <- getData(sdf, colnames(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
       
       
       write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-      cat(paste(cntry, "Completed\n"))
+      cat(paste(cntry, "completed.\n"))
     }
   } else if (class(sdfList) == "edsurvey.data.frame"){
     
     sdf <- sdfList
     cntry <- sdf$country
     
-    cat(paste(cntry, "Working.\n"))
+    cat(paste(cntry, "working.\n"))
     data <- getData(sdf, colnames(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
     
     write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-    cat(paste(cntry, "Completed.\n"))
+    cat(paste(cntry, "completed.\n"))
   }
   
 }

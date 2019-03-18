@@ -46,7 +46,7 @@ readICILS <- function(path,
   path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
   
   if(!all(dir.exists(path))){
-    stop(paste0("The argument ", sQuote("path"), " cannot be located: ", pasteItems(dQuote(path[!dir.exists(path)])),"."))
+    stop(paste0("The argument ", sQuote("path"), " cannot be located ", pasteItems(dQuote(path[!dir.exists(path)])),"."))
   }
   
   dataSet <- tolower(dataSet)
@@ -83,8 +83,8 @@ readICILS <- function(path,
                           pattern=paste0("^", gradeL, "..", "(",paste(countries, collapse="|"), ")(",
                                          paste(getICILSYearCodes(), collapse = "|"), ")","\\.sav$"), full.names=TRUE, ignore.case = TRUE)
   if(length(filenames) == 0) {
-    stop(paste0("Could not find any ICILS datafiles for countries: ", pasteItems(countries),
-                " in the following folder(s): ", pasteItems(path), "."))
+    stop(paste0("Could not find any ICILS datafiles for countries ", pasteItems(countries),
+                " in the following folder(s) ", pasteItems(path), "."))
   }
   
   fSubPart <- tolower(substring(basename(filenames), 1, 8)) #includes a (4th grade), country code, and year code
@@ -129,10 +129,10 @@ readICILS <- function(path,
       
       #test for any missing files other than the 'ash' or 'asr' file::also check for any duplicate or multiple files
       if (sum(hasMissing)>0 && sum(nchar(unlist(fnames)))>0) {
-        stop(paste0("Missing ICILS datafile(s) for country (", cntry, "): ", pasteItems(ICILSfiles[hasMissing]), " for dataset ", sQuote(dataSet),"."))
+        stop(paste0("Missing ICILS datafile(s) for country (", cntry, ") ", pasteItems(ICILSfiles[hasMissing]), " for dataset ", sQuote(dataSet),"."))
       }
       if (sum(hasExcess)>0 && sum(nchar(unlist(fnames)))>0){
-        stop(paste0("Excess/duplicate ICILS datafile(s) for country (", cntry, "): ", paste(ICILSfiles[hasExcess], collapse=", "), " for dataset ", sQuote(dataSet),"."))
+        stop(paste0("Excess/duplicate ICILS datafile(s) for country (", cntry, ") ", paste(ICILSfiles[hasExcess], collapse=", "), " for dataset ", sQuote(dataSet),"."))
       }
       
       #test if there are any files for this country/year combination, if not, we can skip this loop iteration as it does not exist
@@ -165,7 +165,7 @@ readICILS <- function(path,
           processedData <- tryCatch(do.call("processICILS.Student", processArgs, quote = TRUE),
                                     error = function(e){
                                       stop(paste0("Unable to process ICILS student data for country code ", sQuote(cntry), 
-                                                  " having year code ", sQuote(yrCode) ," at folder path(s): ", pasteItems(sQuote(path)),
+                                                  " having year code ", sQuote(yrCode) ," at folder path(s) ", pasteItems(sQuote(path)),
                                                   ". Possible file corruption with source data.",
                                                   " Error message: ", e))
                                     })
@@ -231,7 +231,7 @@ readICILS <- function(path,
           processedData <- tryCatch(do.call("processICILS.Teacher", processArgs, quote = TRUE),
                                     error = function(e){
                                       stop(paste0("Unable to process ICILS teacher data for country code ", sQuote(cntry), 
-                                                  " having year code ", sQuote(yrCode) ," at folder path(s): ", pasteItems(sQuote(path)),
+                                                  " having year code ", sQuote(yrCode) ," at folder path(s) ", pasteItems(sQuote(path)),
                                                   ". Possible file corruption with source data.",
                                                   " Error message: ", e))
                                     })
@@ -410,7 +410,7 @@ processICILS.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, f
   if(runProcessing==TRUE){
     
     if(verbose==TRUE){
-      cat(paste0("Processing data for country: ", dQuote(countryCode),".\n"))
+      cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
     }
     
     #SCHOOL LEVEL===================================================
@@ -454,7 +454,7 @@ processICILS.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, f
     
   } else { #used the cache files
     if(verbose==TRUE){
-      cat(paste0("Found cached data for country code ", dQuote(countryCode),"\n"))
+      cat(paste0("Found cached data for country code ", dQuote(countryCode),".\n"))
     }
   } #end if(runProcessing==TRUE)
   
@@ -575,18 +575,18 @@ exportICILSToCSV <- function(folderPath, exportPath, cntryCodes, dataSet, ...){
       
       
       write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-      cat(paste(cntry, "completed."), "\n")
+      cat(paste(cntry, "completed.\n"))
     }
   } else if (class(sdfList) == "edsurvey.data.frame"){
     
     sdf <- sdfList
     cntry <- sdf$country
     
-    cat(paste(cntry, "working."))
+    cat(paste(cntry, "working.\n"))
     data <- getData(sdf, colnames(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
     
     write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-    cat(paste(cntry, "completed."), "\n")
+    cat(paste(cntry, "completed.\n"))
   }
   
 }

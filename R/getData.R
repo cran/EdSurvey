@@ -92,13 +92,13 @@ getData <- function(data,
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
   sdf <- data
   data <- NULL
-  if(!inherits(varnames, c("NULL", "character"))) stop("the ", sQuote("varnames"), " argument must be either NULL or a character vector.")
-  if(!inherits(formula, c("NULL", "formula"))) stop("the ", sQuote("formula"), " argument must be either NULL or a formula.")
-  if(!is.logical(drop)) stop("the ", sQuote("drop"), " argument must be logical.")
-  if(!is.logical(dropUnusedLevels)) stop("the ", sQuote("dropUnusedLevels"), " argument must be logical.")
-  if(!is.logical(omittedLevels) & !is.vector(omittedLevels)) stop("the ", sQuote("omittedLevels"), " argument must be logical or a character vector.")
-  if(!is.logical(defaultConditions)) stop("the ", sQuote("defaultConditions"), " argument must be logical.")
-  if(!is.null(recode) & !is.list(recode)) stop(paste0("the ", sQuote("recode"), " argument must be a list."))
+  if(!inherits(varnames, c("NULL", "character"))) stop("The ", sQuote("varnames"), " argument must be either NULL or a character vector.")
+  if(!inherits(formula, c("NULL", "formula"))) stop("The ", sQuote("formula"), " argument must be either NULL or a formula.")
+  if(!is.logical(drop)) stop("The ", sQuote("drop"), " argument must be logical.")
+  if(!is.logical(dropUnusedLevels)) stop("The ", sQuote("dropUnusedLevels"), " argument must be logical.")
+  if(!is.logical(omittedLevels) & !is.vector(omittedLevels)) stop("The ", sQuote("omittedLevels"), " argument must be logical or a character vector.")
+  if(!is.logical(defaultConditions)) stop("The ", sQuote("defaultConditions"), " argument must be logical.")
+  if(!is.null(recode) & !is.list(recode)) stop(paste0("The ", sQuote("recode"), " argument must be a list."))
   if(is.null(varnames) & is.null(formula)) stop(paste0("At least one of ", sQuote("varnames"), " and ", sQuote("formula"), "must be not NULL."))
   
   # for edsurvey.data.frame.list, just return a list of results
@@ -140,7 +140,7 @@ getData <- function(data,
     # create a vector of bad recodes
     badRecodes <- recode[!varRecodes %in% colnames(sdf)]
     if(length(badRecodes)>0) { # if there are elements on the vector
-      warning(paste0("Recode variables ", paste(sQuote(badRecodes), collapse=", "), " not found in data set."))
+      warning(paste0("Recode variables ", paste(sQuote(badRecodes), collapse=", "), " not found in dataset."))
     }
     sdf <- recode.sdf(sdf, recode)
     recode <- NULL
@@ -158,7 +158,7 @@ getData <- function(data,
     if(!is.null(schoolMergeVarStudent)) {
       if(sum(!schoolMergeVarStudent %in% names(sdf$data))>0) {
         sdf <- closeLaFConnections(sdf)
-        stop(paste0("Merge variable(s) ", pasteItems(sQuote(schoolMergeVarStudent)), " not found in data set."))
+        stop(paste0("Merge variable(s) ", pasteItems(sQuote(schoolMergeVarStudent)), " not found in dataset."))
       }
     }
     
@@ -169,7 +169,7 @@ getData <- function(data,
     if(!is.null(schoolMergeVarSchool)) {
       if(sum(!schoolMergeVarSchool %in% names(sdf$dataSch))>0) {
         sdf <- closeLaFConnections(sdf)
-        stop(paste0("Merge variable(s) ", pasteItems(sQuote(schoolMergeVarSchool)), " not found in data set."))
+        stop(paste0("Merge variable(s) ", pasteItems(sQuote(schoolMergeVarSchool)), " not found in dataset."))
       }
     }
   } # end if(inherits(sdf, "edsurvey.data.frame") && !is.null(sdf$dataListMeta$student$school))
@@ -186,7 +186,7 @@ getData <- function(data,
     if(!is.null(teacherMergeVarStudent)) {
       if(sum(!teacherMergeVarStudent %in% names(sdf$data))>0) {
         sdf <- closeLaFConnections(sdf)
-        stop(paste0("Merge variable(s) ", pasteItems(sQuote(teacherMergeVarStudent)), " not found in data set."))
+        stop(paste0("Merge variable(s) ", pasteItems(sQuote(teacherMergeVarStudent)), " not found in dataset."))
       }
     }
     
@@ -197,7 +197,7 @@ getData <- function(data,
     if(!is.null(teacherMergeVarTeacher)) {
       if(sum(!teacherMergeVarTeacher %in% names(sdf$dataTch))>0) {
         sdf <- closeLaFConnections(sdf)
-        stop(paste0("Merge variable(s) ", pasteItems(sQuote(teacherMergeVarTeacher)), " not found in data set."))
+        stop(paste0("Merge variable(s) ", pasteItems(sQuote(teacherMergeVarTeacher)), " not found in dataset."))
       }
     }
   } # end if(inherits(sdf, "edsurvey.data.frame") && !is.null(sdf$dataListMeta$student$teacher))
@@ -449,7 +449,7 @@ getData <- function(data,
     
     #Give warning to user that 'totwgt' (student level weight) may give incorrect results when teacher data is merged
     if (sdf$survey %in% c("TIMSS", "PIRLS", "TIMSS Advanced", "CivED") && hasTeacherVars && any(varnamesTotal %in% c("totwgt"))) {
-      warning("Teacher Data has been Merged.  The student level 'totwgt' weight variable may not produce correct results in analysis.  See documentation.")
+      warning("Teacher data has been merged.  The student-level 'totwgt' weight variable may not produce correct results in analysis.  See documentation.")
     } #end  if (sdf$survey %in% c("TIMSS", "PIRLS", "TIMSS Advanced") && hasTeacherVars)
     
     #applying labels to the data file
@@ -773,7 +773,7 @@ getData <- function(data,
     # the user requested a light.edsurvey.data.frame
     # these have everything in attributes (as well as the data already being read in)
     if(nrow(data) == 0) {
-      warning("The requested data set has 0 rows.")
+      warning("The requested dataset has 0 rows.")
     }
     data <- data[,varnames, drop=drop]
     class(sdf) <- "list"
@@ -794,7 +794,7 @@ getData <- function(data,
     return(data)
   } # end if(addAttributes) 
   if(nrow(data) == 0) {
-    warning("The requested data set has 0 rows.")
+    warning("The requested dataset has 0 rows.")
   }
   data <- data[,varnames, drop=drop]
 
@@ -844,7 +844,7 @@ openLaFConnections <- function(sdf) {
                                     trim = sdf$data@options$trim,
                                     skip = sdf$data@options$skip)
       }else{
-        stop("Unexpected LaF object type provided.  Expects the LaF object type of 'fwf' or 'csv'")
+        stop(paste0("Unexpected LaF object type provided. Expects the LaF object type of ", sQuote("fwf"), " or ", sQuote("csv"), "."))
       }
       
       
@@ -869,7 +869,7 @@ openLaFConnections <- function(sdf) {
                                     trim = sdf$dataSch@options$trim,
                                     skip = sdf$dataSch@options$skip)
       }else{
-        stop("Unexpected LaF object type provided.  Expects the LaF object type of 'fwf' or 'csv'")
+        stop(paste0("Unexpected LaF object type provided. Expects the LaF object type of ", sQuote("fwf"), " or ", sQuote("csv"), "."))
       }
       
       sdf$dataSch <- newLaF
@@ -893,7 +893,7 @@ openLaFConnections <- function(sdf) {
                                     trim = sdf$dataTch@options$trim,
                                     skip = sdf$dataTch@options$skip)
       }else{
-        stop("Unexpected LaF object type provided.  Expects the LaF object type of 'fwf' or 'csv'")
+        stop(paste0("Unexpected LaF object type provided. Expects the LaF object type of ", sQuote("fwf"), " or ", sQuote("csv"), "."))
       }
       
       

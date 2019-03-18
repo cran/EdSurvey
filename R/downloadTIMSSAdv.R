@@ -65,25 +65,25 @@ downloadTIMSSAdv <- function(root, years=c(1995, 2008, 2015), cache=FALSE, verbo
       # download
       tryCatch(download.file(d[di], file.path(yroot,bn), quiet = !verbose, cacheOK = FALSE),
                error = function(e){
-                 stop(paste0("Error downloading file at URL: ", sQuote(d[di]),
-                             " Message: ", e))
+                 stop(paste0("Error downloading file at URL: ", sQuote(d[di]),". ",
+                             "Message: ", e))
                })
     } else {
       if(verbose==TRUE){
-        cat(paste0("Found downloaded ", year ," TIMSS Advanced file ",bn,"\n"))
+        cat(paste0("Found downloaded ", year ," TIMSS Advanced file ",sQuote(bn),".\n"))
       }
     }
     lst <- unzip(file.path(yroot,bn), list=TRUE) # just lists the files
     
     if(verbose==TRUE){
-      cat(paste0("Unzipping ", year ," TIMSS Advanced files from ",bn,"\n"))
+      cat(paste0("Unzipping ", year ," TIMSS Advanced files from ",sQuote(bn),".\n"))
     }
     
     for(i in 1:nrow(lst)) {
       if(!file.exists(file.path(yroot, basename(lst$Name[i]))) | file.info(file.path(yroot, basename(lst$Name[i])))$size != lst$Length[i]) {
         
         if(verbose==TRUE){
-          cat(paste0("  unzipping ",lst$Name[i],"\n"))
+          cat(paste0("  Unzipping ",sQuote(lst$Name[i]),".\n"))
         }
         
         unzip(file.path(yroot,bn), files=lst$Name[i], exdir = yroot)
@@ -96,7 +96,7 @@ downloadTIMSSAdv <- function(root, years=c(1995, 2008, 2015), cache=FALSE, verbo
   
   if(cache){
     if(verbose==TRUE){
-      cat("Caching ", year ," TIMSS Advanced files\n")
+      cat("Caching ", year ," TIMSS Advanced files.\n")
     }
     
     notUsed <- readTIMSSAdv(yroot, countries="*", subject = "math", verbose=verbose)

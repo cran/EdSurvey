@@ -45,7 +45,7 @@ cacheMetaReqUpdate <- function(cacheFileMetaVer, surveyName=NULL){
   surveyLookup[surveyLookup$survey=="ECLS_B", "cacheVer"] <- 1
   
   if(!any(surveyLookup$survey %in% surveyName)){
-    warning("Survey name not recognized while checking .meta version. Forcing cache .meta file to be updated.")
+    warning("Survey name not recognized while checking cache (.meta) version. Forcing cache (.meta) file to be updated.")
     return(TRUE) 
   }
   

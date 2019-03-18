@@ -62,7 +62,7 @@ readTIMSSAdv <- function(path,
   subject <- tolower(subject)
   
   if(!all(dir.exists(path))){
-    stop(paste0("The argument ", sQuote("path"), " cannot be located: ", pasteItems(dQuote(path[!dir.exists(path)])),"."))
+    stop(paste0("The argument ", sQuote("path"), " cannot be located ", pasteItems(dQuote(path[!dir.exists(path)])),"."))
   }
   
   if(!is.logical(forceReread)){
@@ -95,7 +95,7 @@ readTIMSSAdv <- function(path,
                                          paste(getTIMSSAdvYearCodes(), collapse = "|"), ")","\\.sav$"), full.names=TRUE, ignore.case = TRUE)
   if(length(filenames) == 0) {
     stop(paste0("Could not find any TIMSS Advanced datafiles for countries: ", pasteItems(dQuote(countries)),
-                " in the following folder(s): ", pasteItems(dQuote(path)), "."))
+                " in the following folder(s) ", pasteItems(dQuote(path)), "."))
   }
   
   fSubPart <- tolower(substring(basename(filenames), 1, 8)) #includes a (4th grade), country code, and year code
@@ -145,10 +145,10 @@ readTIMSSAdv <- function(path,
       
       #test for any missing files other than the 'ash' or 'asr' file::also check for any duplicate or multiple files
       if (sum(hasMissing)>0 && sum(nchar(unlist(fnames)))>0) {
-        stop(paste0("Missing TIMSS Advanced Datafile(s) for country (", cntry, "): ", pasteItems(dQuote(TIMSSAdvfiles[hasMissing]),".")))
+        stop(paste0("Missing TIMSS Advanced datafile(s) for country (", cntry, ") ", pasteItems(dQuote(TIMSSAdvfiles[hasMissing]),".")))
       }
       if (sum(hasExcess)>0 && sum(nchar(unlist(fnames)))>0){
-        stop(paste0("Excess/duplicate TIMSS Advanced datafile(s) for country (", cntry, "): ", pasteItems(dQuote(TIMSSAdvfiles[hasExcess])),"."))
+        stop(paste0("Excess/duplicate TIMSS Advanced datafile(s) for country (", cntry, ") ", pasteItems(dQuote(TIMSSAdvfiles[hasExcess])),"."))
       }
       
       #test if there are any files for this country/year combination, if not, we can skip this loop iteration as it does not exist
@@ -181,7 +181,7 @@ readTIMSSAdv <- function(path,
         processedData <- tryCatch(do.call("processTIMSSAdv", processArgs, quote = TRUE),
                                   error = function(e){
                                     stop(paste0("Unable to process TIMSS Advanced data for country code ", dQuote(cntry), 
-                                                " having year code ", dQuote(yrCode) ," at folder path(s): ", pasteItems(dQuote(path)),
+                                                " having year code ", dQuote(yrCode) ," at folder path(s) ", pasteItems(dQuote(path)),
                                                 ". Possible file corruption with source data.",
                                                 " Error message: ", e))
                                   })
@@ -381,7 +381,7 @@ processTIMSSAdv <- function(dataFolderPath, countryCode, fnames, fileYrs, subjec
   if(runProcessing==TRUE){
     
     if(verbose==TRUE){
-      cat(paste0("Processing data for country: ", dQuote(countryCode),".\n"))
+      cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
     }
     
     #SCHOOL LEVEL===================================================
@@ -538,7 +538,7 @@ processTIMSSAdv <- function(dataFolderPath, countryCode, fnames, fileYrs, subjec
     
   } else { #used the cache files
     if(verbose==TRUE){
-      cat(paste0("Found cached data for country code ", dQuote(countryCode),"\n"))
+      cat(paste0("Found cached data for country code ", dQuote(countryCode),".\n"))
     }
   } #end if(runProcessing==TRUE)
   
@@ -558,23 +558,23 @@ exportTIMSSAdvToCSV <- function(folderPath, exportPath, cntryCodes, subject, ...
       sdf  <- sdfList$datalist[[i]]
       cntry <- sdf$country
       
-      cat(paste(cntry, "Working.\n"))
+      cat(paste(cntry, "working.\n"))
       data <- getData(sdf, colnames(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
       
       
       write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-      cat(paste(cntry, "Completed.\n"))
+      cat(paste(cntry, "completed.\n"))
     }
   } else if (class(sdfList) == "edsurvey.data.frame"){
     
     sdf <- sdfList
     cntry <- sdf$country
 
-    cat(paste(cntry, "Working.\n"))
+    cat(paste(cntry, "working.\n"))
     data <- getData(sdf, colnames(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
     
     write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-    cat(paste(cntry, "Completed.\n"))
+    cat(paste(cntry, "completed.\n"))
   }
   
 }

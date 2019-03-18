@@ -75,7 +75,7 @@ readTIMSS <- function(path,
   path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
   
   if(!all(dir.exists(path))){
-    stop(paste0("The argument ", sQuote("path"), " cannot be located: ", pasteItems(dQuote(path[!dir.exists(path)])),"."))
+    stop(paste0("The argument ", sQuote("path"), " cannot be located ", pasteItems(dQuote(path[!dir.exists(path)])),"."))
   }
   
   includeNumeracy <- TRUE #include numeracy as default
@@ -114,8 +114,8 @@ readTIMSS <- function(path,
                                          paste(getTIMSSYearCodes(gradeLvl), collapse = "|"), ")","\\.sav$"), full.names=TRUE, ignore.case = TRUE)
   if(length(filenames) == 0) {
     stop(paste0("Could not find any TIMSS datafiles for ", sQuote("gradeLvl") , " of ", gradeLvl, 
-                " for countries: ", paste(countries, collapse=", "),
-                " in the following folder(s): ", paste(path, collapse=", "), "."))
+                " for countries ", paste(countries, collapse=", "),
+                " in the following folder(s) ", paste(path, collapse=", "), "."))
   }
   
   fSubPart <- tolower(substring(basename(filenames), 1, 8)) #includes a/b (4 or 8th grade), country code, and year code
@@ -204,22 +204,22 @@ readTIMSS <- function(path,
       
       #test for any missing files other than the 'ash' or 'asr' file::also check for any duplicate or multiple files
       if (sum(hasMissing)>0 && hasData==TRUE && hasDataNumeracy==FALSE) {
-        stop(paste0("Missing TIMSS Datafile(s) for Country (", cntry, "): ", paste(TIMSSfiles[hasMissing], collapse=", ")))
+        stop(paste0("Missing TIMSS datafile(s) for country (", cntry, ") ", paste(TIMSSfiles[hasMissing], collapse=", "), "."))
       }
       if (sum(hasExcess)>0 && hasData==TRUE && hasDataNumeracy==FALSE){
-        stop(paste0("Excess/Duplicate TIMSS Datafile(s) for Country (", cntry, "): ", paste(TIMSSfiles[hasExcess], collapse=", ")))
+        stop(paste0("Excess/duplicate TIMSS datafile(s) for country (", cntry, ") ", paste(TIMSSfiles[hasExcess], collapse=", "), "."))
       }
       if (sum(hasMissingNumeracy)>0 && hasData==FALSE && hasDataNumeracy==TRUE) {
-        stop(paste0("Missing TIMSS Numeracy Datafile(s) for Country (", cntry, "): ", paste(TIMSSfiles[hasMissingNumeracy], collapse=", ")))
+        stop(paste0("Missing TIMSS numeracy datafile(s) for country (", cntry, "): ", paste(TIMSSfiles[hasMissingNumeracy], collapse=", "), "."))
       }
       if (sum(hasExcessNumeracy)>0 && hasData==FALSE && hasDataNumeracy==TRUE){
-        stop(paste0("Excess/Duplicate TIMSS Numeracy Datafile(s) for Country (", cntry, "): ", paste(TIMSSfiles[hasExcessNumeracy], collapse=", ")))
+        stop(paste0("Excess/duplicate TIMSS numeracy datafile(s) for country (", cntry, "): ", paste(TIMSSfiles[hasExcessNumeracy], collapse=", "), "."))
       }
       if ((sum(hasMissing)>0 || sum(hasMissingNumeracy)>0) && hasData==TRUE && hasDataNumeracy==TRUE) {
-        stop(paste0("Missing TIMSS Datafile(s) for Country (", cntry, ") 4th Grade Files:", paste(TIMSSfiles[hasMissing], collapse=", "), "; Numeracy Files:", paste(TIMSSfiles[hasMissingNumeracy], collapse=", ")))
+        stop(paste0("Missing TIMSS datafile(s) for country (", cntry, ") 4th grade files ", paste(TIMSSfiles[hasMissing], collapse=", "), " numeracy files ", paste(TIMSSfiles[hasMissingNumeracy], collapse=", "), "."))
       }
       if ((sum(hasExcess)>0 || sum(hasExcessNumeracy)>0) && hasData==TRUE && hasDataNumeracy==TRUE){
-        stop(paste0("Excess/Duplicate TIMSS Datafile(s) for Country (", cntry, ") 4th Grade Files:", paste(TIMSSfiles[hasExcess], collapse=", "), "; Numeracy Files:", paste(TIMSSfiles[hasExcessNumeracy], collapse=", ")))
+        stop(paste0("Excess/duplicate TIMSS datafile(s) for country (", cntry, ") 4th grade files ", paste(TIMSSfiles[hasExcess], collapse=", "), " numeracy files ", paste(TIMSSfiles[hasExcessNumeracy], collapse=", "), "."))
       }
       
       
@@ -253,9 +253,9 @@ readTIMSS <- function(path,
             processedData <- tryCatch(do.call("processTIMSSGr4", processArgs, quote = TRUE),
                                       error = function(e){
                                         stop(paste0("Unable to process TIMSS 4th grade data for country code ", sQuote(cntry), 
-                                                      " having year code ", sQuote(yrCode) ," at folder path(s): ", paste(sQuote(path), collapse = " & "),
+                                                      " having year code ", sQuote(yrCode) ," at folder path(s) ", paste(sQuote(path), collapse = " & "),
                                                       ". Possible file corruption with source data.",
-                                                      " Error Message: ", e))
+                                                      " Error message: ", e))
                                       })
           }
           
@@ -280,10 +280,10 @@ readTIMSS <- function(path,
             processArgs[["forceReread"]] <- TRUE #try it again reprocessing the data
             processedData <- tryCatch(do.call("processTIMSSGr4", processArgs, quote = TRUE),
                                       error = function(e){
-                                        stop(paste0("Unable to process TIMSS Numeracy data for country code ", sQuote(cntry), 
-                                                    " having year code ", sQuote(yrCodeNumeracy) ," at folder path(s): ", paste(sQuote(path), collapse = " & "),
+                                        stop(paste0("Unable to process TIMSS numeracy data for country code ", sQuote(cntry), 
+                                                    " having year code ", sQuote(yrCodeNumeracy) ," at folder path(s) ", paste(sQuote(path), collapse = " & "),
                                                     ". Possible file corruption with source data.",
-                                                    " Error Message: ", e))
+                                                    " Error message: ", e))
                                       })
           }
         }
@@ -308,10 +308,10 @@ readTIMSS <- function(path,
             processArgs[["forceReread"]] <- TRUE #try it again reprocessing the data
             processedData <- tryCatch(do.call("processTIMSS4AndNumeracy", processArgs, quote = TRUE),
                                       error = function(e){
-                                        stop(paste0("Unable to process TIMSS combined 4th grade and Numeracy data for country code ", sQuote(cntry), 
-                                                    " having year code ", sQuote(paste0(yrCode, yrCodeNumeracy)) ," at folder path(s): ", paste(sQuote(path), collapse = " & "),
+                                        stop(paste0("Unable to process TIMSS combined 4th grade and numeracy data for country code ", sQuote(cntry), 
+                                                    " having year code ", sQuote(paste0(yrCode, yrCodeNumeracy)) ," at folder path(s) ", paste(sQuote(path), collapse = " & "),
                                                     ". Possible file corruption with source data.",
-                                                    " Error Message: ", e))
+                                                    " Error message: ", e))
                                       })
           }
         }
@@ -336,9 +336,9 @@ readTIMSS <- function(path,
           processedData <- tryCatch(do.call("processTIMSSGr8", processArgs, quote = TRUE),
                                     error = function(e){
                                       stop(paste0("Unable to process TIMSS 8th grade data for country code ", sQuote(cntry), 
-                                                  " having year code ", sQuote(yrCode) ," at folder path(s): ", paste(sQuote(path), collapse = " & "),
+                                                  " having year code ", sQuote(yrCode) ," at folder path(s) ", paste(sQuote(path), collapse = " & "),
                                                   ". Possible file corruption with source data.",
-                                                  " Error Message: ", e))
+                                                  " Error message: ", e))
                                     })
         }
       }#end if(gradeLvl == 4)
@@ -548,7 +548,7 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
   if(runProcessing==TRUE){
     
     if(verbose==TRUE){
-      cat(paste0("Processing data for country: ", dQuote(countryCode),".\n"))
+      cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
     }
     
     #SCHOOL LEVEL===================================================
@@ -713,7 +713,7 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
     #===============================================================
   } else {
     if(verbose==TRUE){
-      cat(paste0("Found cached data for country code ", dQuote(countryCode),"\n"))
+      cat(paste0("Found cached data for country code ", dQuote(countryCode),".\n"))
     }
   }#end if(runProcessing==TRUE)
   
@@ -766,7 +766,7 @@ processTIMSSGr8 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
   if(runProcessing==TRUE){
     
     if(verbose==TRUE){
-      cat(paste0("Processing Data for Country: ", dQuote(countryCode),"\n"))
+      cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
     }
     
     #SCHOOL LEVEL===================================================
@@ -1260,23 +1260,23 @@ exportTIMSSToCSV <- function(folderPath, exportPath, cntryCodes, gradeLvl, ...){
       sdf  <- sdfList$datalist[[i]]
       cntry <- sdf$country
       
-      cat(paste(cntry, "Working.\n"))
+      cat(paste(cntry, "working.\n"))
       data <- getData(sdf, colnames(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
       
       
       write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-      cat(paste(cntry, "Completed.\n"))
+      cat(paste(cntry, "completed.\n"))
     }
   } else if (class(sdfList) == "edsurvey.data.frame"){
     
     sdf <- sdfList
     cntry <- sdf$country
     
-    cat(paste(cntry, "Working.\n"))
+    cat(paste(cntry, "working.\n"))
     data <- getData(sdf, colnames(sdf), dropUnusedLevels = FALSE, omittedLevels = FALSE)
     
     write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
-    cat(paste(cntry, "Completed.\n"))
+    cat(paste(cntry, "completed.\n"))
   }
   
 }
@@ -1325,7 +1325,7 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
   if(runProcessing==TRUE){
     
     if(verbose==TRUE){
-      cat(paste0("Processing data for country: ", dQuote(countryCode),".\n"))
+      cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
     }
     
     #SCHOOL LEVEL===================================================
@@ -1608,7 +1608,7 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
     #===============================================================
   } else {
     if(verbose==TRUE){
-      cat(paste0("Found cached data for country code ", dQuote(countryCode),"\n"))
+      cat(paste0("Found cached data for country code ", dQuote(countryCode),".\n"))
     }
   }#end if(runProcessing==TRUE)
   

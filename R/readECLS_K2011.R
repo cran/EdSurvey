@@ -44,7 +44,7 @@ readECLS_K2011 <- function(path = getwd(),
   if(!all(validateData==TRUE)){
     missingVars <- names(validateData==TRUE)
     if(length(missingVars)>0){
-      stop(paste0("Cannot find specified data file: ", sQuote(missingVars), " in path: ", sQuote(path)))
+      stop(paste0("Cannot find specified data file ", sQuote(missingVars), " in path ", sQuote(path), "."))
     }
   }
   
@@ -52,7 +52,7 @@ readECLS_K2011 <- function(path = getwd(),
     missingVars <- names(layoutData==TRUE)
     
     if(length(missingVars)>0){
-      stop(paste0("Cannot find specified layout file: ", sQuote(missingVars), " in path: ", sQuote(path)))
+      stop(paste0("Cannot find specified layout file ", sQuote(missingVars), " in path ", sQuote(path), "."))
     }
   }
   
@@ -76,8 +76,8 @@ readECLS_K2011 <- function(path = getwd(),
     processArgs[["forceReread"]] <- TRUE #try it again reprocessing the data
     processedData <- tryCatch(do.call("processECLS_K2011", processArgs, quote = TRUE),
                               error = function(e){
-                                stop(paste0("Unable to process ECLS_K 2011 data. Possible file corruption with source data.",
-                                            " Error Message: ", e))
+                                stop(paste0("Unable to process ECLS_K 2011 data. Possible file corruption with source data. ",
+                                            "Error message: ", e))
                               })
   }
   
@@ -168,7 +168,7 @@ processECLS_K2011 <- function (files,
       }
       fileFormat <- parseSPSSFileFormat(files$layoutFile)
     }else{
-      stop(paste0("File Layout file must either be an ASCII (.txt) layout file, or an SPSS (.sps) syntax file"))
+      stop(paste0("File layout file must be either an ASCII (.txt) layout file or an SPSS (.sps) syntax file."))
     }
     
     #record index is for multi-lined .dat file processing
@@ -221,7 +221,7 @@ processECLS_K2011 <- function (files,
     for(rci in 1:length(rowChunks)){
       
       if(verbose==TRUE){
-        cat(paste0("Processing data, number of columns: ", nrow(fileFormat), ", rows: ", min(rowChunks[[rci]]), " to ", max(rowChunks[[rci]]), " of ", maxRows, "\n"))
+        cat(paste0("Processing data, number of columns ", nrow(fileFormat), ", rows ", min(rowChunks[[rci]]), " to ", max(rowChunks[[rci]]), " of ", maxRows, ".\n"))
       }
       
       dataChunk <- dataLAF[rowChunks[[rci]], ] #get the rows of our specific row chunk
@@ -393,11 +393,11 @@ buildECLSK2011WeightList <- function(fileFormat){
                 grep(paste0(testJKprefix, "str"), varNames, ignore.case = TRUE, value = TRUE))
     
     if(length(psuVar)!=1){
-      stop(paste0("Cannot find primary sampling unit variable for weight: ", tempVar ))
+      stop(paste0("Cannot find primary sampling unit variable for weight ", sQuote(tempVar), "." ))
     }
     
     if(length(psuVar)!=1){
-      stop(paste0("Cannot find stratum variable for weight: ", tempVar ))
+      stop(paste0("Cannot find stratum variable for weight ", sQuote(tempVar), "."))
     }
     
     if(length(ujkz)>0){
@@ -951,11 +951,11 @@ buildECLSKWeightList <- function(fileFormat){
     strVar <- unique(strVar)
     
     if(length(psuVar)!=1){
-      stop(paste0("Cannot find primary sampling unit variable for weight: ", tempVar ))
+      stop(paste0("Cannot find primary sampling unit variable for weight ", sQuote(tempVar), "."))
     }
     
     if(length(psuVar)!=1){
-      stop(paste0("Cannot find stratum variable for weight: ", tempVar ))
+      stop(paste0("Cannot find stratum variable for weight ", sQuote(tempVar), "."))
     }
     
     if(length(ujkz)>0){

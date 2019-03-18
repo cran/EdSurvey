@@ -75,12 +75,12 @@ downloadPIRLS <- function(root, years=c(2001, 2006, 2011, 2016), cache=FALSE, ve
       # download
       tryCatch(download.file(d[di],file.path(yroot,bn), quiet = !verbose, cacheOK = FALSE),
                error = function(e){
-                 stop(paste0("Error downloading file at URL: ", sQuote(d[di]),
-                             " Message: ", e))
+                 stop(paste0("Error downloading file at URL: ", sQuote(d[di]), ". ",
+                             "Message: ", e))
                })
     } else {
       if(verbose==TRUE){
-        cat(paste0("Found downloaded ", year ," PIRLS file ",bn,"\n"))
+        cat(paste0("Found downloaded ", year ," PIRLS file ",sQuote(bn),".\n"))
       }
     }
     
@@ -88,14 +88,14 @@ downloadPIRLS <- function(root, years=c(2001, 2006, 2011, 2016), cache=FALSE, ve
     lst <- unzip(file.path(yroot,bn), list=TRUE) # just lists the files
     
     if(verbose==TRUE){
-      cat(paste0("Unzipping ", year ," PIRLS files from ",bn,"\n"))
+      cat(paste0("Unzipping ", year ," PIRLS files from ",sQuote(bn),".\n"))
     }
     
     for(i in 1:nrow(lst)) {
       if(!file.exists(file.path(yroot, basename(lst$Name[i]))) | file.info(file.path(yroot, basename(lst$Name[i])))$size != lst$Length[i]) {
         
         if(verbose==TRUE){
-          cat(paste0("  unzipping ",lst$Name[i],"\n"))
+          cat(paste0("  Unzipping ",sQuote(lst$Name[i]),".\n"))
         }
         
         
@@ -109,7 +109,7 @@ downloadPIRLS <- function(root, years=c(2001, 2006, 2011, 2016), cache=FALSE, ve
   
   if(cache){
     if(verbose==TRUE){
-      cat("Caching ", year ," PIRLS files\n")
+      cat("Caching ", year ," PIRLS files.\n")
     }
     
     notUsed <- readPIRLS(yroot, countries="*", verbose=verbose)

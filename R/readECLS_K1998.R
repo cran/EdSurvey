@@ -51,7 +51,7 @@ readECLS_K1998 <- function(path = getwd(),
   if(!all(validateData==TRUE)){
     missingVars <- names(validateData==TRUE)
     if(length(missingVars)>0){
-      stop(paste0("Cannot find specified data file: ", sQuote(missingVars), " in path: ", sQuote(path)))
+      stop(paste0("Cannot find specified data file ", sQuote(missingVars), " in path ", sQuote(path), "."))
     }
   }
   
@@ -59,7 +59,7 @@ readECLS_K1998 <- function(path = getwd(),
     missingVars <- names(layoutData==TRUE)
     
     if(length(missingVars)>0){
-      stop(paste0("Cannot find specified layout file: ", sQuote(missingVars), " in path: ", sQuote(path)))
+      stop(paste0("Cannot find specified layout file ", sQuote(missingVars), " in path ", sQuote(path), "."))
     }
   }
   
@@ -83,8 +83,8 @@ readECLS_K1998 <- function(path = getwd(),
     processArgs[["forceReread"]] <- TRUE #try it again reprocessing the data
     processedData <- tryCatch(do.call("processECLS_K1998", processArgs, quote = TRUE),
                               error = function(e){
-                                stop(paste0("Unable to process ECLS_K data. Possible file corruption with source data.",
-                                            " Error Message: ", e))
+                                stop(paste0("Unable to process ECLS_K data. Possible file corruption with source data. ",
+                                            "Error message: ", e))
                               })
   }
   
@@ -168,7 +168,7 @@ processECLS_K1998 <- function (files,
       }
       fileFormat <- parseSPSSFileFormat(files$layoutFile)
     }else{
-      stop(paste0("File Layout file must either be an ASCII (.txt) layout file, or an SPSS (.sps) syntax file."))
+      stop(paste0("File layout file must be either an ASCII (.txt) layout file or an SPSS (.sps) syntax file."))
     }
     
     #must open with all columns as character fields first:: For numeric values they use a '.' marker in the FWF datafile so we will need to convert those before converting to numeric
@@ -183,7 +183,7 @@ processECLS_K1998 <- function (files,
     for(rci in 1:length(rowChunks)){
       
       if(verbose==TRUE){
-        cat(paste0("Processing Data, n columns: ", nrow(fileFormat), ", rows: ", min(rowChunks[[rci]]), " to ", max(rowChunks[[rci]]), " of ", maxRows, ".\n"))
+        cat(paste0("Processing Data, n columns ", nrow(fileFormat), ", rows ", min(rowChunks[[rci]]), " to ", max(rowChunks[[rci]]), " of ", maxRows, ".\n"))
       }
       
       dataChunk <- dataLAF[rowChunks[[rci]], ] #get the rows of our specific row chunk

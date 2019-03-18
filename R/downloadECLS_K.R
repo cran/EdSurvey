@@ -71,12 +71,12 @@ downloadECLS_K <- function(root, years=c(1998, 2011), cache=FALSE, verbose=TRUE)
       # download
       tryCatch(download.file(d[di],file.path(yroot,bn), quiet = !verbose, cacheOK = FALSE),
                error = function(e){
-                 stop(paste0("Error downloading file at URL: ", sQuote(d[di]),
-                             " Message: ", e))
+                 stop(paste0("Error downloading file at URL: ", sQuote(d[di]), ". ",
+                             "Message: ", e))
                })
     } else {
       if(verbose){
-        cat(paste0("Found downloaded ", year ," ECLS_K file ",bn,"\n"))
+        cat(paste0("Found downloaded ", year ," ECLS_K file ",sQuote(bn),".\n"))
       }
     }
     
@@ -85,14 +85,14 @@ downloadECLS_K <- function(root, years=c(1998, 2011), cache=FALSE, verbose=TRUE)
       lst <- unzip(file.path(yroot,bn), list=TRUE) # just lists the files
       
       if(verbose){
-        cat(paste0("Unzipping ", year ," ECLS_K files from ",bn,"\n"))
+        cat(paste0("Unzipping ", year ," ECLS_K files from ",sQuote(bn),".\n"))
       }
       
       for(i in 1:nrow(lst)) {
         #check that the file is not present in root folder OR that the file sizes are different indicating a file change/corruption
         if(!file.exists(file.path(yroot, basename(lst$Name[i]))) | file.info(file.path(yroot, basename(lst$Name[i])))$size != lst$Length[i]) {
           if(verbose) {
-            cat(paste0("  unzipping ",lst$Name[i],"\n"))
+            cat(paste0("  Unzipping ",sQuote(lst$Name[i]),".\n"))
           }
           unzip(file.path(yroot,bn), files=lst$Name[i], exdir = yroot)
           if(basename(lst$Name[i]) != lst$Name[i]) {
@@ -105,7 +105,7 @@ downloadECLS_K <- function(root, years=c(1998, 2011), cache=FALSE, verbose=TRUE)
   
   if(cache) {
     if(verbose){
-      cat("Caching ", year ," ECLS_K files\n")
+      cat("Caching ", year ," ECLS_K files.\n")
     }
     
     if(year==2011) {

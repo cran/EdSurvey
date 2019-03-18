@@ -1,6 +1,6 @@
 Package: EdSurvey
-Version: 2.2.2
-Date: 2018-11-19
+Version: 2.2.3
+Date: 2019-03-18
 Title: Analysis of NCES Education Survey and Assessment Data
 Author: Paul Bailey [aut, cre], Ren C'deBaca [ctb], Ahmad Emad [aut], Huade Huo [aut],  Michael Lee [aut], Yuqi Liao [aut], Alex Lishinski [aut], Trang Nguyen [aut], Qingshu Xie [aut], Jiao Yu [aut], Ting Zhang [aut]
 Maintainer: Paul Bailey <pbailey@air.org>
@@ -23,6 +23,6 @@ Note: This publication was prepared for NCES under Contract No.
         does not imply endorsement by the U.S. Government.
 Encoding: UTF-8
 NeedsCompilation: no
-Packaged: 2018-11-19 16:07:58 UTC; pbailey
+Packaged: 2019-03-18 15:15:10 UTC; pbailey
 Repository: CRAN
-Date/Publication: 2018-11-19 17:10:13 UTC
+Date/Publication: 2019-03-18 16:23:28 UTC
