@@ -28,7 +28,7 @@ table(df2)
 df2 <- getData(data=sdf, varnames=c("dsex", "b017451"), omittedLevels = FALSE)
 table(df2)
 
-# the variable "c052601" is from the school-level data file; merging is handled automatically
+# the variable "c052601" is from the school-level data file; merging is handled automatically.
 # returns a light.edsurvey.data.frame using addAttributes=TRUE argument
 gddat <- getData(data=sdf, 
                  varnames=c("composite", "dsex", "b017451","c052601"),

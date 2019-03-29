@@ -13,7 +13,7 @@
 #' \code{names} and \code{row.names}) from \code{attributeData}
 #'
 #' @example man/examples/rebindAttributes.R
-#' @author Trang Nguyen and Paul Bailey
+#' @author Paul Bailey and Trang Nguyen
 #' @export
 rebindAttributes <- function(data, attributeData) {
   checkDataClass(attributeData, c("edsurvey.data.frame", "light.edsurvey.data.frame"), argument="attributeData")

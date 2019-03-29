@@ -4,19 +4,21 @@
 #' a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
 #' using character string matching.
 #'
-#' @param string     a character string to search for in the database connection object (\code{data}).
-#'                   Note that the function will search the student, school,
-#'                   and teacher datasets (if applicable) for a matching character string in the codebook.
+#' @param string     a vector of character strings to search for in the database connection object (\code{data}).
+#'                   Note that the function will search the codebook
+#'                   for a matching character string using regular expressions. When a
+#'                   string has several elements, all must be present for a 
+#'                   variable to be returned.
 #' @param data       an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
 #'                   an \code{edsurvey.data.frame.list}
 #' @param fileFormat a character string indicating the data source to search for variables.
-#'                   The default \code{NULL} argument searches the student, school, and teacher codebooks.
+#'                   The default \code{NULL} argument searches all codebooks.
 #' @param levels     a logical value; set to \code{TRUE} to return a snapshot of the levels in
 #'                   an \code{edsurvey.data.frame}
 #' @return           a \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}} that shows the variable names, labels,
 #'                   and levels (if applicable) from an \code{edsurvey.data.frame} or a \code{light.edsurvey.data.frame} based on a matching character string
 #'
-#' @author Michael Lee
+#' @author Michael Lee and Paul Bailey
 #' @example \man\examples\searchSDF.R
 #' @export
 searchSDF <- function(string, data, fileFormat = NULL, levels = FALSE) {
@@ -26,126 +28,92 @@ searchSDF <- function(string, data, fileFormat = NULL, levels = FALSE) {
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
   sdf <- data
   data <- NULL
-  if (is.null(fileFormat)) {
+  # get the dataList
+  if (inherits(sdf, c("edsurvey.data.frame"))) {
+    dataList <- sdf$dataList
+  } else {
+    warning(paste0("Searched for string(s) ", paste(sQuote(string), collapse=", "),
+                   " only in this light.edsurvey.data.frame. To search the full data set, change ", 
+                   paste0(sQuote("data")), " argument to the edsurvey.data.frame."))
+    dataList <- attributes(sdf)$dataList
+  }
+
+  if(is.null(fileFormat)) {
     # bind and search fileFormats in both student and school if not defined
-    if (inherits(sdf, c("edsurvey.data.frame"))) {
-      labelsFile <- rbind(sdf$fileFormat, sdf$fileFormatSchool, sdf$fileFormatTeacher)
-      vars <- labelsFile[grepl(string, labelsFile$variableName, ignore.case = TRUE) | 
-                        grepl(string, labelsFile$Labels, ignore.case = TRUE),] 
-    } else {
-      warning(paste0("Searched for string ", sQuote(string),
-                     " only in this light.edsurvey.data.frame. To search the full data set, change ", 
-                     paste0(sQuote("data")), " argument to the edsurvey.data.frame."))
-      labelsFile <- rbind(attributes(sdf)$fileFormat, attributes(sdf)$fileFormatSchool, attributes(sdf)$fileFormatTeacher)
-      labelsFile <- labelsFile[(labelsFile$variableName %in% toupper(colnames(sdf))), ]
-      vars <- labelsFile[grepl(string, labelsFile$variableName, ignore.case = TRUE) | 
-                        grepl(string, labelsFile$Labels, ignore.case = TRUE),] 
+    labelsFile <- do.call('rbind', lapply(dataList, function(dl){dl$fileFormat}))
+    # remove irrelevant columns from light.edsurvey.data.frame
+    if (!inherits(sdf, c("edsurvey.data.frame"))) {
+      labelsFile <- labelsFile[(toupper(labelsFile$variableName) %in% toupper(colnames(sdf))), ]
     }
   } else {
     # fileFormat is defined (must be either student or school) and subset based on a string
-    tolower(fileFormat)
-    if (!fileFormat %in% c("school" ,"student", "teacher")) {
-      stop(paste0("The ", sQuote("fileFormat"), " argument must either be ", dQuote("student"), " or ", dQuote("school"), " or ", dQuote("teacher"),"."))
+    if(length(fileFormat) != 1) {
+      stop(paste0("The ", sQuote("fileFormat"), " argument must have exactly one level."))
     }
-    
-    if (inherits(sdf, c("edsurvey.data.frame"))) {
-      # sdf is an edsurvey.data.frame, so fileFormat is subset using sdf$fileFormat
-      if (fileFormat == "student") {
-        vars <- sdf$fileFormat[grepl(string, sdf$fileFormat$variableName, ignore.case = TRUE) | 
-                              grepl(string, sdf$fileFormat$Labels, ignore.case = TRUE),]
-      }
-      if (fileFormat == "school") {
-        if (is.null(sdf$fileFormatSchool)) {
-          stop(paste0("The argument ", sQuote("data"), " does not contain a school file."))
-        } else {
-          vars <- sdf$fileFormatSchool[grepl(string, sdf$fileFormatSchool$variableName, ignore.case = TRUE) |
-                                      grepl(string, sdf$fileFormatSchool$Labels, ignore.case = TRUE),]
-        }
-      }
-      if (fileFormat == "teacher") {
-        if (is.null(sdf$fileFormatTeacher)) {
-          stop(paste0(sQuote("data"), " does not contain a teacher file."))
-        } else {
-          vars <- sdf$fileFormatTeacher[grepl(string, sdf$fileFormatTeacher$variableName, ignore.case = TRUE) |
-                                        grepl(string, sdf$fileFormatTeacher$Labels, ignore.case = TRUE),]
-        }
-      }
-    } else {
-      if (fileFormat == "student") {
-        # sdf is a light.edsurvey.data.frame, so fileFormat is subset using
-        vars <- attributes(sdf)$fileFormat[grepl(string, attributes(sdf)$fileFormat$variableName, ignore.case = TRUE) |
-                                          grepl(string, attributes(sdf)$fileFormat$Labels, ignore.case = TRUE),]
-      }
-      if (fileFormat == "school") {
-        if (is.null(attributes(sdf)$fileFormatSchool)) {
-          stop(paste0("The argument ", sQuote("data"), " does not contain a school file."))
-        } else {
-          vars <- attributes(sdf)$fileFormatSchool[grepl(string, attributes(sdf)$fileFormatSchool$variableName, ignore.case = TRUE) |
-                                                  grepl(string, attributes(sdf)$fileFormatSchool$Labels, ignore.case = TRUE),]
-        }
-      }
-      if (fileFormat == "teacher") {
-        if (is.null(attributes(sdf)$fileFormatTeacher)) {
-          stop(paste0(sQuote("data"), " does not contain a school file."))
-        } else {
-          vars <- attributes(sdf)$fileFormatTeacher[grepl(string, attributes(sdf)$fileFormatTeacher$variableName, ignore.case = TRUE) |
-                                                    grepl(string, attributes(sdf)$fileFormatTeacher$Labels, ignore.case = TRUE),]
-        }
-      }
+    fileFormat <- tolower(fileFormat)
+    if(!fileFormat %in% tolower(names(dataList))) {
+      stop(paste0("The ", sQuote("fileFormat"), " argument must either be one of ", paste(dQuote(names(dataList)), collapse=" or "),"."))
     }
+    names(dataList) <- tolower(names(dataList))
+    labelsFile <- (dataList[[fileFormat]])$fileFormat
+  } # end else for if(is.null(fileFormat))
+  for(si in string) {
+    # apply each string
+    labelsFile <- labelsFile[grepl(si, labelsFile$variableName, ignore.case = TRUE) | 
+                             grepl(si, labelsFile$Labels, ignore.case = TRUE),] 
   }
   
-  if (is.data.frame(vars) & nrow(vars) == 0) {
+  if (is.data.frame(labelsFile) & nrow(labelsFile) == 0) {
     # return a warning if there are no variables in the fileFormat that match the string
     # searched
-    warning(paste0("There are no variables containing the string ", dQuote(string), " in this edsurvey.data.frame or light.edsurvey.data.frame."))
+    strg <- ifelse(length(string) > 1, "strings", "string")
+    warning(paste0("There are no variables containing the ", strg, " ", pasteItems(sQuote(string)), " in this edsurvey.data.frame or light.edsurvey.data.frame."))
     return(NULL)
-  } else {
-    # return variables that match the string searched
-    vars$variableName <- tolower(vars$variableName)
-    vars$Levels <- NA
-    if (levels == TRUE) {
-      # return levels of each of the variables
-      if (string == "") {
-        stop(paste0("The argument ", sQuote("string"), " must be nonempty to return variable levels."))
-      }
-      varsData <- vars[, c("variableName", "Labels", "labelValues", "Levels")]
-      if ("light.edsurvey.data.frame" %in% class(sdf) == TRUE) {
-        varsData <- varsData[varsData$variableName %in% colnames(sdf), ]
-      }
-      # remove douplicates such as linking variables
-      varsData <- varsData[!duplicated(varsData$variableName),]
-      for (i in 1:length(varsData$variableName)) {
-        # return levels of each of the variables; involves splitting and appending levels from the
-        # fileFormat file some variable don't have levels and are read in as ''
-        if (varsData$labelValues[[i]] != "") {
-          varLevels <- levelsSDF(varsData$variableName[[i]], sdf)
-          varLevels <- unlist(varLevels, use.names = FALSE)
-          varLevels <- gsub(pattern = "=", replacement = ". ", varLevels)
-          varLevelsSplit <- c()
-          for (ii in 1:length(varLevels)) {
-            x <- varLevels[[ii]]
-            varLevelsSplit <- c(varLevelsSplit, x)
-          }
-          varLevelsSplitPaste <- paste(varLevelsSplit, collapse = "; ")
-          varsData$Levels[[i]] <- varLevelsSplitPaste
-        } else {
-          varsData$Levels[[i]] <- paste0(NA)
-        }
-      }
-      varsData <- varsData[, c("variableName", "Labels", "Levels")]
-      class(varsData) <- c("searchSDF", "data.frame")
-    } else {
-      # variable levels aren't returned
-      vars$variableName <- tolower(vars$variableName)
-      varsData <- vars[, c("variableName", "Labels")]
-      varsData <- data.frame(varsData, stringsAsFactors = FALSE, row.names = NULL)
-      # remove douplicates such as linking variables
-      varsData <- varsData[!duplicated(varsData$variableName),]
-    }
-    varsData[] <- lapply(varsData, as.character)
-    varsData
   }
+  # return variables that match the string searched
+  labelsFile$variableName <- tolower(labelsFile$variableName)
+  labelsFile$Levels <- NA
+  if (levels == TRUE) {
+    # return levels of each of the variables
+    if (length(string) == 1 & string == "") {
+      stop(paste0("The argument ", sQuote("string"), " must be nonempty to return variable levels."))
+    }
+    # create a dataframe with file formatting information for selected variables 
+    varsData <- labelsFile[, c("variableName", "Labels", "labelValues", "Levels")]
+    if ("light.edsurvey.data.frame" %in% class(sdf) == TRUE) {
+      varsData <- varsData[varsData$variableName %in% colnames(sdf), ]
+    }
+    # remove duplicates such as linking variables
+    varsData <- varsData[!duplicated(varsData$variableName),]
+    for (i in 1:length(varsData$variableName)) {
+      # return levels of each of the variables; involves splitting and appending levels from the
+      # fileFormat file. Note that some variable don't have levels and are read in as ''
+      if (varsData$labelValues[[i]] != "") {
+        varLevels <- levelsSDF(varsData$variableName[[i]], sdf)
+        varLevels <- unlist(varLevels, use.names = FALSE)
+        varLevels <- gsub(pattern = "=", replacement = ". ", varLevels)
+        varLevelsSplit <- c()
+        for (ii in 1:length(varLevels)) {
+          x <- varLevels[[ii]]
+          varLevelsSplit <- c(varLevelsSplit, x)
+        }
+        varLevelsSplitPaste <- paste(varLevelsSplit, collapse = "; ")
+        varsData$Levels[[i]] <- varLevelsSplitPaste
+      } else {
+        varsData$Levels[[i]] <- paste0(NA)
+      }
+    } # end for (i in 1:length(varsData$variableName))
+    varsData <- varsData[, c("variableName", "Labels", "Levels")]
+    class(varsData) <- c("searchSDF", "data.frame")
+  } else { # end if (levels == TRUE)
+    # variable levels aren't returned
+    labelsFile$variableName <- tolower(labelsFile$variableName)
+    varsData <- labelsFile[, c("variableName", "Labels")]
+    varsData <- data.frame(varsData, stringsAsFactors = FALSE, row.names = NULL)
+    # remove duplicates such as linking variables
+    varsData <- varsData[!duplicated(varsData$variableName),]
+  } # end else for if (levels == TRUE)
+  varsData[] <- lapply(varsData, as.character)
   return(varsData)
 }
 

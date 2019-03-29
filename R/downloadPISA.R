@@ -1,4 +1,4 @@
-#' @title Download and Unzips PISA Files
+#' @title Download and Unzip PISA Files
 #'
 #' @description Uses a connection to download PISA data to a
 #'              computer. Data come from the OECD website. 
@@ -6,10 +6,12 @@
 #' @param root a character string indicating the directory where the PISA data should
 #'             be stored. Files are placed in a folder named PISA/[year].
 #' @param years an integer vector of the assessment years to download. Valid years are 2000, 2003,
-#'              2006, 2009, and 2012.
+#'              2006, 2009, 2012, and 2015.
 #' @param database a character vector to indicate which database to download from. For 2012,
-#'              three databases are available (INT = International, CBA = Computer-Based Assessment, and
-#'              FIN = Financial Literacy). Defaults to \code{INT}.
+#'              three databases are available (\code{INT} = International, \code{CBA} = Computer-Based Assessment, and
+#'              \code{FIN} = Financial Literacy). For other years, only \code{INT} is available (for example, if PISA 
+#'              2015 financial literacy is to be downloaded, the database argument should be set to \code{INT}).
+#'              Defaults to \code{INT}.
 #' @param cache a logical value set to process and cache the text (.txt) version of files.
 #'              This takes a very long time but saves time for future uses of 
 #'              the data. Default value is \code{FALSE}.
@@ -22,25 +24,21 @@
 #'
 #'          \code{options(HTTPUserAgent="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/53.0")}. 
 #' @seealso \code{\link{readPISA}}, \ifelse{latex}{\code{download.file}}{\code{\link[utils]{download.file}}}, \ifelse{latex}{\code{options}}{\code{\link[base]{options}}}
-#' @author Trang Nguyen
+#' @author Yuqi Liao, Paul Bailey, and Trang Nguyen
 #' @example man/examples/downloadPISA.R
 #' @importFrom utils unzip
 #' @export
-downloadPISA <- function(root, years=c(2000,2003,2006,2009,2012), database=c("INT","CBA","FIN"), cache=FALSE, verbose=TRUE) {
+downloadPISA <- function(root, years=c(2000, 2003, 2006, 2009, 2012, 2015), database=c("INT","CBA","FIN"), cache=FALSE, verbose=TRUE) {
   # valid years for PISA
-  validYears <- c(2000,2003,2006,2009,2012)
+  validYears <- c(2000, 2003, 2006, 2009, 2012, 2015)
   years <- as.numeric(years)
   if (missing(database)) {
     # if database is not specified, default to be INT because usually users do not want to download all databases
-    database <- database[1]
+    database <- "INT"
   }
   for (y in years) {
     if(verbose) {
       cat(paste0("\nProcessing PISA data for year ", y, "\n"))
-    }
-    if (y == 2015) {
-      warning("There is no PISA 2015 fixed-width file from OECD. Files are not downloaded.")
-      next
     }
     if (!y %in% validYears) {
       warning(sQuote(y), " is not a valid year. PISA had data for the following year: ", paste0(validYears, sep = " "))
@@ -61,6 +59,7 @@ downloadPISA <- function(root, years=c(2000,2003,2006,2009,2012), database=c("IN
     for (d in database) {
       collected_files <- pisaURLDat(y,d)
       if (length(collected_files) == 0) {
+        warning("Database ",sQuote(d), " is not available for year ", sQuote(y))
         next
       }
       if(verbose) {
@@ -117,6 +116,12 @@ downloadPISA <- function(root, years=c(2000,2003,2006,2009,2012), database=c("IN
 
 pisaURLDat <- function(year, database = "INT") {
   text <- "year	database	type	url
+2015	INT	data	http://vs-web-fs-1.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_QQQ.zip
+2015	INT	data	http://vs-web-fs-1.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_SCH_QQQ.zip
+2015	INT	data	http://vs-web-fs-1.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_COG.zip
+2015	INT	data	http://vs-web-fs-1.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_QTM.zip
+2015	INT	data	http://vs-web-fs-1.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_FLT.zip
+2015	INT	data	http://vs-web-fs-1.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_CPS.zip
 2012	INT	data	http://www.oecd.org/pisa/pisaproducts/INT_STU12_DEC03.zip
 2012	INT	data	http://www.oecd.org/pisa/pisaproducts/INT_SCQ12_DEC03.zip
 2012	INT	data	http://www.oecd.org/pisa/pisaproducts/INT_PAQ12_DEC03.zip

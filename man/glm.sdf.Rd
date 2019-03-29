@@ -8,18 +8,20 @@
 \title{EdSurvey Generalized Linear Models}
 \usage{
 glm.sdf(formula, family = binomial(link = "logit"), data,
-  weightVar = NULL, relevels = list(), jrrIMax = 1,
+  weightVar = NULL, relevels = list(), 
+  varMethod=c("jackknife", "Taylor"), jrrIMax = 1,
   omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
   returnNumberOfPSU=FALSE, returnVarEstInputs = FALSE)
 
 logit.sdf(formula, data, weightVar = NULL, relevels = list(),
-  jrrIMax = 1, omittedLevels = TRUE, defaultConditions = TRUE,
-  recode = NULL, returnNumberOfPSU = FALSE,
-  returnVarEstInputs = FALSE)
+  varMethod = c("jackknife", "Taylor"), jrrIMax = 1,
+  omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
+  returnNumberOfPSU = FALSE, returnVarEstInputs = FALSE)
 
 probit.sdf(formula, data, weightVar = NULL, relevels = list(),
-  jrrIMax = 1, omittedLevels = TRUE, defaultConditions = TRUE,
-  recode = NULL, returnVarEstInputs = FALSE)
+  varMethod = c("jackknife", "Taylor"), jrrIMax = 1,
+  omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
+  returnVarEstInputs = FALSE)
 }
 \arguments{
 \item{formula}{a \ifelse{latex}{\code{formula}}{\code{\link[stats]{formula}}} for the
@@ -40,10 +42,13 @@ The \code{weightVar} must be one of the weights for the
 \code{edsurvey.data.frame}. If \code{NULL}, uses the default
 for the \code{edsurvey.data.frame}.}
 
-\item{relevels}{a list; used when the user wants to change the contrasts from the
+\item{relevels}{a list; used to change the contrasts from the
 default treatment contrasts to the treatment contrasts with a chosen omitted
 group. The name of each element should be the variable name, and the value 
 should be the group to be omitted.}
+
+\item{varMethod}{a character set to \dQuote{jackknife} or \dQuote{Taylor} that indicates the variance
+estimation method to be used. See Details.}
 
 \item{jrrIMax}{the \eqn{V_{jrr}} term (see Details) can be estimated with
 any positive number of plausible values and is estimated on 
@@ -67,7 +72,7 @@ to subset the data. Use \code{print} on an
 \code{recode=} \code{list(}\code{var1=} \code{list(from=} \code{c("a",} \code{"b",} \code{"c"),} \code{to=}\code{"d"))}. See Examples.}
 
 \item{returnNumberOfPSU}{a logical value set to \code{TRUE} to return the number of 
-primary sampling units (PSU)}
+primary sampling units (PSUs)}
 
 \item{returnVarEstInputs}{a logical value set to \code{TRUE} to return the
 inputs to the jackknife and imputation variance
@@ -81,7 +86,7 @@ An \code{edsurveyGlm} with the following elements:
    \item{formula}{the formula used to fit the model}
    \item{coef}{the estimates of the coefficients}
    \item{se}{the standard error estimates of the coefficients}
-   \item{Vimp}{the estimated variance due to uncertainty in the scores (plausible values variables)}
+   \item{Vimp}{the estimated variance due to uncertainty in the scores (plausible value variables)}
    \item{Vjrr}{the estimated variance due to sampling}
    \item{M}{the number of plausible values}
    \item{nPSU}{the number of PSUs used in calculation}
@@ -106,7 +111,7 @@ Fits a logit or probit that
 \details{
 This function implements an estimator that correctly handles left-hand side
 variables that are logical, allows for survey sampling weights, and estimates
-variances using the jackknife replication method.
+variances using jackknife replication or Taylor series.
 The vignette titled
 \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
 describes estimation of the reported statistics. 
@@ -137,15 +142,30 @@ Other types of generalized linear models are not supported.
   All variance estimation methods are shown in the vignette titled
 \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.
   When the predicted
-  value does not have plausible values, the variance of the coefficients
+  value does not have plausible values and \code{varMethod} is set to
+  \code{jackknife}, the variance of the coefficients
   is estimated according to the section
 \dQuote{Estimation of Standard Errors of Weighted Means When
         Plausible Values Are Not Present, Using the Jackknife Method.}
 
-  When plausible values are present, the
+  When plausible values are present and \code{varMethod} is set to
+  \code{jackknife}, the
   variance of the coefficients is estimated according to the section
 \dQuote{Estimation of Standard Errors of Weighted Means When
         Plausible Values Are Present, Using the Jackknife Method.}
+
+  When the predicted
+  value does not have plausible values and \code{varMethod} is set to
+  \code{Taylor}, the variance of the coefficients
+  is estimated according to the section
+\dQuote{Estimation of Standard Errors of Weighted Means When
+        Plausible Values Are Not Present, Using the Taylor Series Method.}
+
+  When plausible values are present and \code{varMethod} is set to
+  \code{Taylor}, the
+  variance of the coefficients is estimated according to the section
+\dQuote{Estimation of Standard Errors of Weighted Means When
+        Plausible Values Are Present, Using the Taylor Series Method.}
 }
 }
 \examples{
@@ -158,11 +178,18 @@ table(sdf$b013801)
 logit1 <- logit.sdf(I(b013801 \%in\% c("26-100", ">100")) ~ dsex + b017451, data=sdf)
 # use summary to get detailed results
 summary(logit1)
+
+# Taylor series variance estimation
+logit1t <- logit.sdf(I(b013801 \%in\% c("26-100", ">100")) ~ dsex + b017451, data=sdf,
+                     varMethod="Taylor")
+summary(logit1t)
+
 logit2 <- logit.sdf(I(composite >= 300) ~ dsex + b013801, data=sdf)
 summary(logit2)
 
 logit3 <- glm.sdf(I(composite >= 300) ~ dsex + b013801, data=sdf, 
                   family=quasibinomial(link="logit"))
+
 summary(logit3)
 }
 }

@@ -5,30 +5,26 @@
 #'
 #' @param formula    a \ifelse{latex}{\code{Formula}}{\code{\link[Formula]{Formula}}} for the
 #'                   linear model. See \ifelse{latex}{\code{Formula}}{\code{\link[Formula]{Formula}}};
-#'                   left hand side (LHS) variables are separated with 
+#'                   left-hand side variables are separated with 
 #'                   vertical pipes (\code{|}). See Examples.
 #' @param data       an \code{edsurvey.data.frame} or \code{edsurvey.data.frame.list}
 #' @param weightVar  character indicating the weight variable to use (see Details).
 #'                   The \code{weightVar} must be one of the weights for the
 #'                   \code{edsurvey.data.frame}. If \code{NULL}, uses the default
 #'                   for the \code{edsurvey.data.frame}.
-#' @param jrrIMax    when using the jackknife variance estimation method, the \eqn{V_{jrr}} term
-#'                   (see Details) can be estimated with
-#'                   any positive number of plausible values and is estimated on the first of
-#'                   the lower
-#'                   of the number of available plausible values and \code{jrrIMax}. When
-#'                   \code{jrrIMax} is set to \code{Inf}, all of the plausible values will be used.
-#'                   Higher values of \code{jrrIMax} lead to longer computing times and more
-#'                   accurate variance estimates.
-#' @param relevels   a list. Used when the user wants to change the contrasts from the
+#' @param jrrIMax    when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+#'                   sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
+#'                   term (see Details) can be estimated with any number of plausible values, and values larger than the number of 
+#'                   plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+#'                   Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.
+#' @param relevels   a list. Used to change the contrasts from the
 #'                   default treatment contrasts to treatment contrasts with a chosen omitted
-#'                   group.
-#'                   To do this, the user puts an element on the list named the same name as
-#'                   a variable
-#'                   to change contrasts on
+#'                   group (the reference group).
+#'                   To do this, the user puts an element on the list with the same name as
+#'                   a variable to change contrasts on,
 #'                   and then makes the value for that list element equal to the value
 #'                   that should
-#'                   be the omitted group. (See Examples.)
+#'                   be the omitted group (the reference group).
 #' @param omittedLevels a logical value. When set to the default value of \code{TRUE}, drops
 #'                      those levels of all factor variables that are specified
 #'                      in \code{edsurvey.data.frame}. Use \code{print} on an
@@ -44,13 +40,13 @@
 #'                           estimates. This is intended to allow for
 #'                           computation of covariances between estimates.
 #' @param estMethod a character value indicating which estimation method to use.
-#'                  Default is 'OLS', other option is 'GLS'.
+#'                  Default is 'OLS'; other option is 'GLS'.
 #' 
 #' @details    
 #'                
-#' This function implements an estimator that correctly handles multiple left hand
+#' This function implements an estimator that correctly handles multiple left-hand
 #' side variables that are either numeric or plausible values, allows for survey 
-#' sampling weights and estimates variances using the jackknife replication method.
+#' sampling weights, and estimates variances using the jackknife replication method.
 #' The vignette titled \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics} describes estimation of the reported statistics. 
 #' 
 #' The \bold{coefficients} are estimated using the sample weights according to the section 
@@ -86,7 +82,7 @@
 #'    \item{formula}{the formula used to fit the model}
 #'    \item{coef}{the estimates of the coefficients}
 #'    \item{se}{the standard error estimates of the coefficients}
-#'    \item{Vimp}{the estimated variance due to uncertainty in the scores (plausible values variables)}
+#'    \item{Vimp}{the estimated variance due to uncertainty in the scores (plausible value variables)}
 #'    \item{Vjrr}{the estimated variance due to sampling}
 #'    \item{M}{the number of plausible values}
 #'    \item{varm}{the variance estimates under the various plausible values}
@@ -103,7 +99,7 @@
 #'    \item{residuals}{residuals for each of the PV models}
 #'    \item{fitted.values}{model fitted values}
 #'    \item{residCov}{residual covariance matrix for dependent variables}
-#'    \item{residPV}{residuals for each dependent variables}
+#'    \item{residPV}{residuals for each dependent variable}
 #'    \item{inputs}{coefficient estimation input matrices}
 #'    \item{n0}{full data n}
 #'    \item{nUsed}{n used for model}

@@ -7,15 +7,17 @@
 searchSDF(string, data, fileFormat = NULL, levels = FALSE)
 }
 \arguments{
-\item{string}{a character string to search for in the database connection object (\code{data}).
-Note that the function will search the student, school,
-and teacher datasets (if applicable) for a matching character string in the codebook.}
+\item{string}{a vector of character strings to search for in the database connection object (\code{data}).
+Note that the function will search the codebook
+for a matching character string using regular expressions. When a
+string has several elements, all must be present for a 
+variable to be returned.}
 
 \item{data}{an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
 an \code{edsurvey.data.frame.list}}
 
 \item{fileFormat}{a character string indicating the data source to search for variables.
-The default \code{NULL} argument searches the student, school, and teacher codebooks.}
+The default \code{NULL} argument searches all codebooks.}
 
 \item{levels}{a logical value; set to \code{TRUE} to return a snapshot of the levels in
 an \code{edsurvey.data.frame}}
@@ -36,6 +38,13 @@ sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"
 # search both the student and school files by a character string
 searchSDF(string="book", data=sdf)
 
+# use the `|` (OR) operator to search several strings simultaneously
+searchSDF(string="book|home|value", data=sdf)
+
+# use a vector of strings to search for variables that contain multiple strings,
+# such as both "book" and "home"
+searchSDF(string=c("book","home"), data=sdf)
+
 # search only the student files by a character string
 searchSDF(string="algebra", data=sdf, fileFormat="student")
 
@@ -47,5 +56,5 @@ ddf <- searchSDF(string="value", data=sdf, levels=TRUE)
 ddf
 }
 \author{
-Michael Lee
+Michael Lee and Paul Bailey
 }

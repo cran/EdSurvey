@@ -9,29 +9,29 @@ readECLS_K2011(path = getwd(), filename = "childK4p.dat",
   verbose = TRUE)
 }
 \arguments{
-\item{path}{a character value to the full directory path(s) to the ECLS-K 2010-2011 extracted fixed-with-format (.dat) set of data files}
+\item{path}{a character value to the full directory path(s) to the ECLS-K 2010-11 extracted fixed-with-format (.dat) set of data files}
 
 \item{filename}{a character value of the name of the fixed-width-file (.dat) data file in the specified \code{path} to be read}
 
-\item{layoutFilename}{a character value of the filename of either the ASCII text (.txt) layout file of the \code{filename} within the specified \code{path}, 
+\item{layoutFilename}{a character value of the filename of either the ASCII text (.txt) layout file of the \code{filename} within the specified \code{path},
 OR a character value of the  filename of the SPSS syntax (.sps) layout file of the \code{filename} within the specified \code{path}}
 
-\item{forceReread}{a logical value to force re-reading of all processed data. 
+\item{forceReread}{a logical value to force rereading of all processed data.
 The default value of \code{FALSE} will speed up the read function by using existing read-in data already processed.}
 
 \item{verbose}{a logical value that will determine if you want verbose output while the \code{readECLS-K2011} function is running to indicate processing progress.
 The default value is \code{TRUE}.}
 }
 \value{
-an \code{edsurvey.data.frame} for the ECLS-K 2010-2011 longitudinal dataset
+an \code{edsurvey.data.frame} for the ECLS-K 2010-11 longitudinal dataset
 }
 \description{
 Opens a connection to an ECLS-K 2011 data file and
-             returns an \code{edsurvey.data.frame} with 
+             returns an \code{edsurvey.data.frame} with
              information about the file and data.
 }
 \details{
-Reads in the unzipped files downloaded from the ECLS-K 2010-2011 longitudinal database.
+Reads in the unzipped files downloaded from the ECLS-K 2010-11 longitudinal database.
 }
 \examples{
 \dontrun{

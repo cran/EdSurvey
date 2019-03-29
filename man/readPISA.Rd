@@ -8,43 +8,43 @@ readPISA(path, database = "INT", countries, cognitive = "score",
   forceReread = FALSE, verbose = TRUE)
 }
 \arguments{
-\item{path}{a character vector to the full directory path(s) to the PISA extracted fixed-width files
-and SPSS control files (.txt)}
+\item{path}{a character vector to the full directory path(s) to the PISA-extracted fixed-width files
+and SPSS control files (.txt).}
 
-\item{database}{a character to indicate a selected database. Must be one of \code{INT} (general database that most people use), \code{CBA} (computer-based database in PISA 2012 only), or \code{FIN} (financial literacy database in PISA 2012 only). 
+\item{database}{a character to indicate a selected database. Must be one of \code{INT} (general database that most people use), \code{CBA} (computer-based database in PISA 2012 only), or \code{FIN} (financial literacy database in PISA 2012 only).
 Defaults to \code{INT}.}
 
-\item{countries}{a character vector of the country/countries to include using the 
+\item{countries}{a character vector of the country/countries to include using the
 three-digit ISO country code. A list of country codes can be found in the PISA codebook or \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}.
 If files are downloaded using \code{\link{downloadPISA}}, a country dictionary text file can be
 found in the filepath.}
 
-\item{cognitive}{one of \code{none}, \code{score}, or \code{response}. Default is \code{score}. The PISA database often has three student files: student questionnaire, cognitive item 
-response, and scored cognitive item response. The first file is used as the main student file with student background information. Users can choose whether to merge \code{score} or 
+\item{cognitive}{one of \code{none}, \code{score}, or \code{response}. Default is \code{score}. The PISA database often has three student files: student questionnaire, cognitive item
+response, and scored cognitive item response. The first file is used as the main student file with student background information. Users can choose whether to merge \code{score} or
 \code{response} data into the main file or not (if \code{none}).}
 
 \item{forceReread}{a logical value to force rereading of all processed data. Defaults to \code{FALSE}.
 Setting \code{forceReread} to be \code{TRUE} will cause PISA data to be reread and increase processing time.}
 
-\item{verbose}{a logical value that will determine if you want verbose output while the function is running to indicate the progress.
+\item{verbose}{a logical value that will determine if you want verbose output while the function is running to indicate progress.
 Defaults to \code{TRUE}.}
 }
 \value{
-an \code{edsurvey.data.frame} for a single specified country or 
-  an \code{edsurvey.data.frame.list} if multiple countries specified
+an \code{edsurvey.data.frame} for a single specified country or
+  an \code{edsurvey.data.frame.list} if multiple countries are specified
 }
 \description{
 Opens a connection to a PISA data file and
-             returns an \code{edsurvey.data.frame} with 
+             returns an \code{edsurvey.data.frame} with
              information about the file and data.
 }
 \details{
 Reads in the unzipped files downloaded from the PISA database using the OECD Repository (\url{http://www.oecd.org/pisa/}). Users can use \code{\link{downloadPISA}} to
-       download all required files. 
+       download all required files.
        Student questionnaire files (with weights and plausible values) are used as main files, which are then
        merged with cognitive, school, and parent files (if available).
-        
-        The average first-time processing time for one year and one database for all countries is 10--15 minutes. If \code{forceReread} is set
+
+        The average first-time processing time for 1 year and one database for all countries is 10--15 minutes. If \code{forceReread} is set
         to be \code{FALSE}, the next time this function is called will only take 5--10 seconds.
 }
 \examples{
@@ -63,7 +63,7 @@ edsurveyTable(read ~ st04q01 + st20q01, data = sgp2012)
 
 }
 \references{
-Organisation for Economic Co-operation and Development. (2017). \emph{PISA 2015 technical report}. Paris, France: Author. Retrieved from \emph{\url{http://www.oecd.org/pisa/data/2015-technical-report/}}
+OECD. (2017). \emph{PISA 2015 technical report}. Paris, France: OECD Publishing. Retrieved from \emph{\url{http://www.oecd.org/pisa/data/2015-technical-report/}}
 }
 \seealso{
 \code{\link{getData}} and \code{\link{downloadPISA}}

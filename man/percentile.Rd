@@ -22,17 +22,12 @@ typically a subject scale or subscale}
 \item{weightVar}{a character indicating the weight variable to use.
 (See Details.)}
 
-\item{jrrIMax}{a numeric value; when using the jackknife variance estimation
-method, the \eqn{V_{jrr}} term
-(see Details) can be estimated with any positive number
-of plausible values and is 
-estimated on the lower of the number of
-available plausible values and 
-\code{jrrIMax}. When \code{jrrIMax} is set to \code{Inf},
-all plausible values will 
-be used. Higher values of \code{jrrIMax} lead to longer
-computing times and more
-accurate variance estimates.}
+\item{jrrIMax}{a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+  sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
+  term (see the Details section of
+\code{\link{lm.sdf}} to see the definition of \eqn{V_{jrr}}) can be estimated with any number of plausible values, and values larger than the number of 
+  plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+  Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
 
 \item{varMethod}{a character set to \code{jackknife} or \code{Taylor}
 that indicates the variance estimation method used when 
@@ -41,7 +36,7 @@ variance estimation method is always
 used to calculate the standard error.}
 
 \item{alpha}{a numeric value between 0 and 1 indicating the confidence level.
-An \code{alpha} value of 0.05 would indicate a 95 percent 
+An \code{alpha} value of 0.05 would indicate a 95\% 
 confidence interval and is the default.}
 
 \item{omittedLevels}{a logical value. When set to the default value of
@@ -71,13 +66,13 @@ computation
 of covariances between estimates.}
 
 \item{returnNumberOfPSU}{a logical value set to \code{TRUE} to return the number of 
-primary sampling units (PSU)}
+primary sampling units (PSUs)}
 }
 \value{
 The return type depends on whether the class of the \code{data} argument is an
 \code{edsurvey.data.frame} or an \code{edsurvey.data.frame.list}.
 
-\subsection{the data argument is an edsurvey.data.frame}{
+\subsection{The data argument is an edsurvey.data.frame}{
   When the \code{data} argument is an \code{edsurvey.data.frame},
   \code{percentile} returns an S3 object of class \code{percentile}.
   This is a \code{data.frame} with typical attributes (\code{names},
@@ -104,7 +99,7 @@ The return type depends on whether the class of the \code{data} argument is an
   }
 }
 
-\subsection{the data argument is an edsurvey.data.frame.list}{
+\subsection{The data argument is an edsurvey.data.frame.list}{
   When the \code{data} argument is an \code{edsurvey.data.frame.list},
   \code{percentile} returns an S3 object of class \code{percentileList}.
   This is a data.frame with a \code{call} attribute.
@@ -113,7 +108,7 @@ The return type depends on whether the class of the \code{data} argument is an
   section, but there also are columns from the \code{edsurvey.data.frame.list}.
   
   \describe{
-    \item{covs}{A column for each column in the \code{covs} value of the
+    \item{covs}{a column for each column in the \code{covs} value of the
                 \code{edsurvey.data.frame.list}.
                 See Examples.}
   }
@@ -145,9 +140,9 @@ sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"
 # get the median of the composite
 percentile("composite", 50, sdf)
 
-\dontrun{
 # get several percentiles
 percentile("composite", c(0,1,25,50,75,99,100), sdf)
+\dontrun{
 # build an edsurvey.data.frame.list
 sdfA <- subset(sdf, scrpsu \%in\% c(5,45,56))
 sdfB <- subset(sdf, scrpsu \%in\% c(75,76,78))
@@ -159,7 +154,7 @@ sdfl <- edsurvey.data.frame.list(list(sdfA, sdfB, sdfC, sdfD),
                                            "B locations",
                                            "C locations",
                                            "D locations"))
-# this shows how these datasets will be described
+# this shows how these datasets will be described:
 sdfl$covs
 
 percentile("composite", 50, sdfl)

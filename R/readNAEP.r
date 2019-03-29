@@ -175,21 +175,14 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
     defaultConditions <- NULL
   }
   
-  #build the linking criteria so the user doesn't need to provide it::only if we have school level data
-  if(!is.null(dataSchLaf)){
-    dataListMeta <- list(student = list(school = "scrpsu^sscrpsu"), school = list())
-  }else{
-    dataListMeta <- NULL
-  }
-  
   
   # build the result list and return
   edsurvey.data.frame(userConditions = list(),
                       defaultConditions = list(defaultConditions),
-                      data = dataLaf,
-                      dataSch = dataSchLaf,
-                      dataTch = NULL,
-                      dataListMeta = dataListMeta,
+                      dataList = buildNAEP_dataList(dataLaf,
+                                                    labelsFile,
+                                                    dataSchLaf,
+                                                    schLabelsFile),
                       weights = weights,
                       pvvars = pvs,
                       subject = f[["Subject"]],
@@ -198,10 +191,7 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
                       dataType = f[["Data_Type"]],
                       gradeLevel = f[["Grade_Level"]],
                       achievementLevels = levels,
-                      omittedLevels = list(omittedLevels),
-                      fileFormat = labelsFile,
-                      fileFormatSchool = schLabelsFile,
-                      fileFormatTeacher = NULL,
+                      omittedLevels = omittedLevels,
                       survey = "NAEP",
                       country = "USA",
                       psuVar = "jkunit",
@@ -363,3 +353,36 @@ ignoreCaseFileName <- function(f) {
   }
   ff
 }
+
+#builds the NAEP dataList object
+buildNAEP_dataList <- function(stuLaf, stuFF, schLaf, schFF){
+  
+  dataList <- list()
+  
+  #build the list hierarchical based on the order in which the data levels would be merged in getData
+  dataList[["Student"]] <- dataListItem(lafObject = stuLaf,
+                                        fileFormat = stuFF,
+                                        levelLabel = "Student",
+                                        forceMerge = TRUE,
+                                        parentMergeLevels=NULL,
+                                        parentMergeVars = NULL,
+                                        mergeVars = NULL,
+                                        ignoreVars = NULL,
+                                        isDimLevel = TRUE)
+  
+  #school datafile won't always be present, only add it if applicable
+  if(!is.null(schLaf)){
+      dataList[["School"]] <- dataListItem(lafObject = schLaf,
+                                           fileFormat = schFF,
+                                           levelLabel = "School",
+                                           forceMerge = FALSE,
+                                           parentMergeLevels = c("Student"),
+                                           parentMergeVars = c("scrpsu"),
+                                           mergeVars = c("sscrpsu"),
+                                           ignoreVars = NULL,
+                                           isDimLevel = FALSE)
+  }
+  
+  return(dataList)
+}
+

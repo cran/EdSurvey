@@ -49,12 +49,7 @@ table(getData(data=dsdf, varnames="dsex"))
 
 # returns data, but uses substantial memory
 \dontrun{
-sdf[1:3, "origwt"]
 head(sdf[c("origwt","m145101")])
-sdf[1:3, c("origwt","m145101")]
-sdf[1:3,]
-head(sdf[,14])
-head(sdf[,10:14])
 
 # subset an edsurvey.data.frame.list
 sdfA <- subset(sdf, scrpsu %in% c(5,45,56))

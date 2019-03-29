@@ -5,7 +5,7 @@ require(WeMix)
 options(width = 500)
 options(useFancyQuotes=FALSE)
 context("PISA data reads in correctly")
-#source("REF-4-pisa.R") # has REF output in it
+source("REF-4-pisa.R") # has REF output in it
 
 if(!exists("edsurveyHome")) {
   if (Sys.info()[['sysname']] == "Windows") {
@@ -22,26 +22,28 @@ if (!dir.exists(edsurveyHome)) {
 # Test =================
 # Check multiple-path read-in
 test_that("PISA multiple path read-in", {
-  multiESDFL <- readPISA(paste0(edsurveyHome,c("PISA/2009","PISA/2012")), countries="usa",verbose=FALSE)
+  multiESDFL <- readPISA(paste0(edsurveyHome,c("PISA/2009", "PISA/2012", "PISA/2015")), countries="usa",verbose=FALSE)
   expect_is(multiESDFL,"edsurvey.data.frame.list")
   expect_equal(colnames(multiESDFL$covs), c("subject","year","country"))
-  expect_equal(length(multiESDFL$datalist),2)
+  expect_equal(length(multiESDFL$datalist), 3)
 })
  
 # 1. Check data read-in
 test_that("PISA data reads in correctly", {
-  expect_silent(downloadPISA(root=edsurveyHome, year=c(2006, 2009, 2012), cache=FALSE, verbose = FALSE))
+  expect_silent(downloadPISA(root=edsurveyHome, year=c(2006, 2009, 2012, 2015), cache=FALSE, verbose = FALSE))
   expect_silent(downloadPISA(root=edsurveyHome, year=2012, database="CBA", cache=FALSE, verbose = FALSE))
+  expect_silent(suppressWarnings(usaINT2015 <<- readPISA(paste0(edsurveyHome, "PISA/2015"), countries = "usa", verbose = FALSE)))
   expect_silent(suppressWarnings(usaINT2012 <<- readPISA(paste0(edsurveyHome, "PISA/2012"), countries = "usa", verbose = FALSE)))
   expect_silent(suppressWarnings(qcnCBA2012 <<- readPISA(paste0(edsurveyHome, "PISA/2012"), database = "CBA", countries = "qcn", verbose = FALSE))) # Shanghai
   expect_silent(suppressWarnings(jpn2009 <<- readPISA(paste0(edsurveyHome, "PISA/2009"), countries = "jpn", verbose = FALSE)))
   expect_silent(suppressWarnings(aus2006 <<- readPISA(paste0(edsurveyHome, "PISA/2006"), countries = "aus", verbose = FALSE)))
 
-
+  expect_is(usaINT2015,"edsurvey.data.frame")
   expect_is(usaINT2012,"edsurvey.data.frame")
   expect_is(qcnCBA2012,"edsurvey.data.frame")
   expect_is(jpn2009,"edsurvey.data.frame")
   expect_is(aus2006,"edsurvey.data.frame")
+  expect_equal(dim(usaINT2015),c(5712,3715))
   expect_equal(dim(usaINT2012),c(4978,1262))
   expect_equal(dim(qcnCBA2012),c(5177,1345))
   expect_equal(dim(jpn2009),c(6088,981))
@@ -86,6 +88,7 @@ test_that("PISA showPlausibleValues and showWeights verbose output agrees", {
 
 context("PISA getData")
 test_that("PISA getData", {
+  expect_known_value(gd0 <- getData(usaINT2015,c("st004d01t", "st001d01t")), file = "PISAgd0.rds", update = FALSE)
   expect_known_value(gd1 <- getData(usaINT2012,c("st04q01","st20q01")), file = "PISAgd1.rds", update = FALSE)
   expect_known_value(gd2 <- getData(qcnCBA2012,c("st04q01","st20q01")), file = "PISAgd2.rds", update = FALSE)
   expect_known_value(gd3 <- getData(jpn2009,c("s514q03","bookid")), file = "PISAgd3.rds", update = FALSE)

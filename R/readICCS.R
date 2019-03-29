@@ -301,14 +301,6 @@ readCivEDICCS <- function(path,
                                     })
         }
         
-        processedData$data <- processedData$dataList$student
-        processedData$dataSch <- processedData$dataList$school
-        processedData$dataTch <- NULL
-        
-        processedData$fileFormat <- processedData$dataListFF$student
-        processedData$fileFormatSchool <- processedData$dataListFF$school
-        processedData$fileFormatTeacher <- NULL
-        
         processedData$achievementLevels <- c("395", "479", "563")
         names(processedData$achievementLevels) <- c("Level 1", "Level 2", "Level 3")
         
@@ -369,13 +361,6 @@ readCivEDICCS <- function(path,
                                     })
         }
         
-        processedData$data <- processedData$dataList$student
-        processedData$dataSch <- processedData$dataList$school
-        processedData$dataTch <- NULL
-        
-        processedData$fileFormat <- processedData$dataListFF$student
-        processedData$fileFormatSchool <- processedData$dataListFF$school
-        processedData$fileFormatTeacher <- NULL
         
         processedData$achievementLevels <- NULL #no achievement levels
         
@@ -435,14 +420,6 @@ readCivEDICCS <- function(path,
                                                   " Error message: ", e))
                                     })
         }
-        
-        processedData$data <- processedData$dataList$student
-        processedData$dataSch <- processedData$dataList$school
-        processedData$dataTch <- processedData$dataList$teacher
-        
-        processedData$fileFormat <- processedData$dataListFF$student
-        processedData$fileFormatSchool <- processedData$dataListFF$school
-        processedData$fileFormatTeacher <- processedData$dataListFF$teacher
         
         processedData$achievementLevels <- NULL #no achievement levels
         
@@ -509,14 +486,6 @@ readCivEDICCS <- function(path,
                                     })
         }
         
-        processedData$data <- processedData$dataList$student
-        processedData$dataSch <- processedData$dataList$school
-        processedData$dataTch <- NULL
-        
-        processedData$fileFormat <- processedData$dataListFF$student
-        processedData$fileFormatSchool <- processedData$dataListFF$school
-        processedData$fileFormatTeacher <- NULL
-        
         processedData$achievementLevels <- NULL #no achievement levels
         
         processedData$dataType <- "Teacher"
@@ -551,10 +520,13 @@ readCivEDICCS <- function(path,
       
       procCountryData[[iProcCountry]] <- edsurvey.data.frame(userConditions = processedData$userConditions,
                                                              defaultConditions = processedData$defaultConditions,
-                                                             data = processedData$dataList$student,
-                                                             dataSch = processedData$dataList$school,
-                                                             dataTch = processedData$dataList$teacher,
-                                                             dataListMeta <- processedData$dataListMeta,
+                                                             dataList = buildICCS_dataList(dataSet, hasICCSData, hasCivEDData,
+                                                                                           processedData$dataList$student,
+                                                                                           processedData$dataListFF$student,
+                                                                                           processedData$dataList$school,
+                                                                                           processedData$dataListFF$school,
+                                                                                           processedData$dataList$teacher,
+                                                                                           processedData$dataListFF$teacher),
                                                              weights = processedData$weights,
                                                              pvvars = processedData$pvvars,
                                                              subject = processedData$subject,
@@ -564,9 +536,6 @@ readCivEDICCS <- function(path,
                                                              gradeLevel = processedData$gradeLevel,
                                                              achievementLevels = processedData$achievementLevels,
                                                              omittedLevels = processedData$omittedLevels,
-                                                             fileFormat = processedData$fileFormat,
-                                                             fileFormatSchool = processedData$fileFormatSchool,
-                                                             fileFormatTeacher = processedData$fileFormatTeacher,
                                                              survey = processedData$survey,
                                                              country = processedData$country,
                                                              psuVar = processedData$psuVar,
@@ -1696,4 +1665,115 @@ testBadCivED_Labels <- function(spssDF, cntry){
   }
   
   return(data.frame(cntryVal, varNames, lblVars, dataVars))
+}
+
+#build the ICCS Datalist.  
+#dataSet is either 'teacher' or 'student'
+#hasICCSData and hasCivEDData are logicals, only one of which will be TRUE
+buildICCS_dataList <- function(dataSet, hasICCSData, hasCivEDData, stuLaf, stuFF, schLaf, schFF, tchLaf, tchFF){
+  
+  dataList <- list()
+  
+  #build the list hierarchical based on the order in which the data levels would be merged in getData
+  if(hasICCSData==TRUE && dataSet=="student"){
+    dataList[["Student"]] <- dataListItem(lafObject = stuLaf,
+                                          fileFormat = stuFF,
+                                          levelLabel = "Student",
+                                          forceMerge = TRUE,
+                                          parentMergeLevels = NULL,
+                                          parentMergeVars = NULL,
+                                          mergeVars = NULL,
+                                          ignoreVars = NULL,
+                                          isDimLevel = TRUE)
+    
+    dataList[["School"]] <- dataListItem(lafObject = schLaf,
+                                         fileFormat = schFF,
+                                         levelLabel = "School",
+                                         forceMerge = FALSE,
+                                         parentMergeLevels = c("Student", "Student"),
+                                         parentMergeVars = c("idcntry", "idstud"),
+                                         mergeVars = c("idcntry", "idstud"),
+                                         ignoreVars = names(schLaf)[names(schLaf) %in% names(stuLaf)],
+                                         isDimLevel = FALSE)
+  }
+  
+  if(hasICCSData==TRUE && dataSet=="teacher"){
+    #use the student LAF and student FF here as a product of the processing, it's really the teacher data
+    dataList[["Teacher"]] <- dataListItem(lafObject = stuLaf,
+                                          fileFormat = stuFF,
+                                          levelLabel = "Teacher",
+                                          forceMerge = TRUE,
+                                          parentMergeLevels = NULL,
+                                          parentMergeVars = NULL,
+                                          mergeVars = NULL,
+                                          ignoreVars = NULL,
+                                          isDimLevel = TRUE)
+    
+    dataList[["School"]] <- dataListItem(lafObject = schLaf,
+                                         fileFormat = schFF,
+                                         levelLabel = "School",
+                                         forceMerge = FALSE,
+                                         parentMergeLevels = c("Teacher", "Teacher"),
+                                         parentMergeVars = c("idcntry", "idschool"),
+                                         mergeVars = c("idcntry", "idschool"),
+                                         ignoreVars = names(schLaf)[names(schLaf) %in% names(stuLaf)],
+                                         isDimLevel = FALSE)
+  }
+  
+  if(hasCivEDData==TRUE && dataSet=="student"){
+    dataList[["Student"]] <- dataListItem(lafObject = stuLaf,
+                                          fileFormat = stuFF,
+                                          levelLabel = "Student",
+                                          forceMerge = TRUE,
+                                          parentMergeLevels = NULL,
+                                          parentMergeVars = NULL,
+                                          mergeVars = NULL,
+                                          ignoreVars = NULL,
+                                          isDimLevel = FALSE)
+    
+    dataList[["School"]] <- dataListItem(lafObject = schLaf,
+                                         fileFormat = schFF,
+                                         levelLabel = "School",
+                                         forceMerge = FALSE,
+                                         parentMergeLevels = c("Student", "Student"),
+                                         parentMergeVars = c("idcntry", "idschool"),
+                                         mergeVars = c("idcntry", "idschool"),
+                                         ignoreVars = names(schLaf)[names(schLaf) %in% names(stuLaf)],
+                                         isDimLevel = FALSE)
+    
+    dataList[["Teacher"]] <- dataListItem(lafObject = tchLaf,
+                                         fileFormat = tchFF,
+                                         levelLabel = "Teacher",
+                                         forceMerge = FALSE,
+                                         parentMergeLevels = c("Student", "Student"),
+                                         parentMergeVars = c("idcntry", "idstud"),
+                                         mergeVars = c("idcntry", "idstud"),
+                                         ignoreVars = names(tchLaf)[names(tchLaf) %in% names(stuLaf)],
+                                         isDimLevel = TRUE)
+  }
+  
+  if(hasCivEDData==TRUE && dataSet=="teacher"){
+    #use the student LAF and student FF here as a product of the processing, it's really the teacher data
+    dataList[["Teacher"]] <- dataListItem(lafObject = stuLaf,
+                                          fileFormat = stuFF,
+                                          levelLabel = "Teacher",
+                                          forceMerge = TRUE,
+                                          parentMergeLevels = NULL,
+                                          parentMergeVars = NULL,
+                                          mergeVars = NULL,
+                                          ignoreVars = NULL,
+                                          isDimLevel = TRUE)
+    
+    dataList[["School"]] <- dataListItem(lafObject = schLaf,
+                                         fileFormat = schFF,
+                                         levelLabel = "School",
+                                         forceMerge = FALSE,
+                                         parentMergeLevels = c("Teacher", "Teacher"),
+                                         parentMergeVars = c("idcntry", "idschool"),
+                                         mergeVars = c("idcntry", "idschool"),
+                                         ignoreVars = names(schLaf)[names(schLaf) %in% names(stuLaf)],
+                                         isDimLevel = FALSE)
+  }
+
+  return(dataList)
 }

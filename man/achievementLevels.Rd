@@ -17,7 +17,7 @@ scale or subscale is omitted, the default subject scale or subscale is
 used. You can find the default composite scale and all subscales using the 
 function \code{\link{showPlausibleValues}}.}
 
-\item{aggregateBy}{character vector specifying variables to aggregate achievement levels by. The percentage
+\item{aggregateBy}{character vector specifying variables by which to aggregate achievement levels. The percentage
 column sums up to 100 for all levels of all variables specified here. When set to the 
 default of \code{NULL}, the percentage column sums up to 100 for all 
 levels of all variables specified in \code{achievementVars}.}
@@ -40,12 +40,12 @@ replicate weights will be automatically included.
 When this argument is \code{NULL}, the function uses the default.
 Use \code{\link{showWeights}} to find the default.}
 
-\item{jrrIMax}{numeric value. When using the jackknife variance estimation method, the \eqn{V_{jrr}} term
-(see Details) can be estimated with any positive number of plausible values and is 
-estimated on the first of the lower of the number of available plausible values and 
-\code{jrrIMax}. When \code{jrrIMax} is set to \code{Inf}, all plausible values will 
-be used. Higher values of \code{jrrIMax} lead to longer computing times and more
-accurate variance estimates.}
+\item{jrrIMax}{a numeric value. When using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+  sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
+  term (see the Details section of
+\code{\link{lm.sdf}} for the definition of \eqn{V_{jrr}}) can be estimated with any number of plausible values, and values larger than the number of 
+  plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+  Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
 
 \item{omittedLevels}{a logical value. When set to the default value (\code{TRUE}), 
 it drops those levels in all factor variables that are specified in \code{achievementVars} 
@@ -61,7 +61,7 @@ conditions.}
 \code{recode} \code{=} \code{list(var1=} \code{list(from=c("a",} \code{"b",} \code{"c"),} \code{to ="d"))}. See Examples.}
 
 \item{returnNumberOfPSU}{a logical value set to \code{TRUE} to return the number of 
-primary sampling units (PSU)}
+primary sampling units (PSUs)}
 
 \item{returnVarEstInputs}{a logical value set to \code{TRUE} to return the
 inputs to the jackknife and imputation variance
@@ -80,7 +80,7 @@ and one row for each level of each variable in \code{achievementVars}}
                             See the vignette titled \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.}
 \item{\code{N}}{the number of observations in the incoming data (the
                  number of rows when \code{omittedLevels} and
-                 \code{defaultConditions} are set to \code{FALSE}).}
+                 \code{defaultConditions} are set to \code{FALSE})}
 \item{\code{wtdN}}{the weighted number of observations in the data}
 \item{\code{nPSU}}{the number of primary sampling units (PSUs) at or above each achievement level aggregated as specified by \code{aggregateBy}. Only returned with \code{returnNumberOfPSU=TRUE}.}
 }

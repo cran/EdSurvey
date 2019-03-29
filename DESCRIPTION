@@ -1,6 +1,6 @@
 Package: EdSurvey
-Version: 2.2.3
-Date: 2019-03-18
+Version: 2.3.2
+Date: 2019-03-29
 Title: Analysis of NCES Education Survey and Assessment Data
 Author: Paul Bailey [aut, cre], Ren C'deBaca [ctb], Ahmad Emad [aut], Huade Huo [aut],  Michael Lee [aut], Yuqi Liao [aut], Alex Lishinski [aut], Trang Nguyen [aut], Qingshu Xie [aut], Jiao Yu [aut], Ting Zhang [aut]
 Maintainer: Paul Bailey <pbailey@air.org>
@@ -8,7 +8,7 @@ Depends: R (>= 3.3.0), car, lfactors (>= 1.0.3)
 Imports: data.table (>= 1.11.4), Formula, glm2, haven, LaF, lme4, MASS,
         Matrix, methods, NAEPprimer, RColorBrewer, readr, rvest,
         stringi, stringr, tibble, readxl, xml2, xtable, wCorr, WeMix
-        (>= 2.1.0)
+        (>= 2.1.0), quantreg
 URL: https://www.air.org/project/nces-data-r-project-edsurvey
 Description: Read in and analysis functions for education survey and assessment data from the National Center for Education Statistics (NCES) <https://nces.ed.gov/>, including National Assessment of Educational Progress (NAEP) data <https://nces.ed.gov/nationsreportcard/> and data from the International Assessment Database: OECD <http://www.oecd.org/>, including PISA, TALIS, PIAAC, and IEA <http://www.iea.nl/>, including TIMSS, TIMSS Advanced, PIRLS, ICCS, ICILS, and CivEd.
 License: GPL-2
@@ -16,13 +16,13 @@ VignetteBuilder: knitr
 Suggests: dplyr, knitr, testthat, withr
 LazyData: true
 ByteCompile: true
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1
 Note: This publication was prepared for NCES under Contract No.
         ED-IES-12-D-0002 with the American Institutes for Research.
         Mention of trade names, commercial products, or organizations
         does not imply endorsement by the U.S. Government.
 Encoding: UTF-8
 NeedsCompilation: no
-Packaged: 2019-03-18 15:15:10 UTC; pbailey
+Packaged: 2019-03-29 21:10:23 UTC; pbailey
 Repository: CRAN
-Date/Publication: 2019-03-18 16:23:28 UTC
+Date/Publication: 2019-03-29 22:00:03 UTC

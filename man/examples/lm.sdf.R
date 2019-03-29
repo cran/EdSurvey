@@ -6,10 +6,13 @@ sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprime
 lm1 <- lm.sdf(composite ~ dsex + b017451, data=sdf)
 lm1
 
-# for more detailed results use summary
+# The summary function displays detailed results
 summary(lm1)
 
-# to specify a variance method, use varMethod
+# To show standardized regression coefficients
+summary(lm1, src=TRUE)
+
+# To specify a variance method, use varMethod
 lm2 <- lm.sdf(composite ~ dsex + b017451, data=sdf, varMethod="Taylor")
 lm2
 summary(lm2)

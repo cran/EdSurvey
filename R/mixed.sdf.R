@@ -125,7 +125,15 @@ mixed.sdf <- function(formula,
                       fast=FALSE,
                       ...) {
   call <- match.call()
-  
+  if(!missing(nQuad) & is.null(family)) {
+    warning(paste0("The ", sQuote("nQuad"), " argument is deprecated for linear models."))
+  }
+  if(!missing(tolerance) & is.null(family)) {
+    warning(paste0("The ", sQuote("tolerance"), " argument is deprecated."))
+  }
+  if(!missing(fast)) {
+    warning(paste0("The ", sQuote("fast"), " argument is deprecated."))
+  }
   # if users specify an edsurvey.data.frame or light.edsurvey.data.frame,
   # weightVars will be defined for each supported survey if not provided.
   # for each survey supported by edsurvey
@@ -183,9 +191,9 @@ mixed.sdf <- function(formula,
   rawN <- nrow(edf)
   
   # drop zero-weight case
-  for (wgt in weightVars) {
-    if (any(edf[,wgt])) {
-      warning("Removing rows with 0 or NA weight from analysis.")
+  for(wgt in weightVars) {
+    if(any(!(!is.na(edf[,wgt]) & edf[,wgt] > 0))) {
+      warning("Removing ",sum(!(!is.na(edf[,wgt]) & edf[,wgt] > 0))," rows with 0 or NA weight on ",dQuote(wgt)," from analysis.")
       edf <- edf[!is.na(edf[,wgt]) & edf[,wgt] > 0,]
     }
   }
@@ -227,14 +235,11 @@ mixed.sdf <- function(formula,
     }
   }
   
-  
-  
   # Get Group names
   formula <- update(formula, as.formula(paste0(yvar0," ~ .")))
   
   # start by getting the lme4 parsed formula
   lformula <- lFormula(formula=formula, data=edf)
- 
   
   # get the group names (ie level 2+ variables) from the formula
   # get the unparsed group names, this could include, e.g. a:b
@@ -257,12 +262,7 @@ mixed.sdf <- function(formula,
     stop(paste0("The model requires ", length(groupNames) + 1, " weights."))
   }
   
-  
   level <- length(groupNames) + 1
-  
-  if (level > 2) {
-    stop("3-level model not implemented.")  
-  }
   
   # Construct standardized weights called 'pwt1' for level 1 weights and 'pwt2' for level 2 weights
   # The standardization method varies across different surveys
@@ -287,7 +287,7 @@ mixed.sdf <- function(formula,
       edf$pwt1 <- edf[,weightVars[1]] / edf[,weightVars[2]]
       edf$pwt2 <- edf[,weightVars[2]]
     } else { # For other survey data in edsurvey, users need to specify their own weights
-      warning(paste0("EdSurvey currently does not specify weight transformation rules for ",survey,". Raw weights were used for the analysis. "))
+      warning(paste0("EdSurvey currently does not specify weight transformation rules for ",survey,". Raw weights were used for the analysis."))
       edf$pwt1 <- edf[,weightVars[1]]
       edf$pwt2 <- edf[,weightVars[2]]
     }
@@ -360,7 +360,7 @@ mixed.sdf <- function(formula,
                                      }
                                    })
       results[[value]] <- model 
-      #use summary to extract variances 
+      #use summary to extract variances
       model_sum <- summary.WeMixResults(model)
       variances[[value]] <- c(model_sum$coef[,2]^2 , model_sum$vars[,2]^2)
     }
@@ -425,12 +425,16 @@ mixed.sdf <- function(formula,
   return(res)
 }
 
+
+
 # helper function
 run_mix <- function(nQuad,call,formula,edf,verbose,tolerance,family,center_group,center_grand, fast, ...){
   
   verboseAll <- ifelse(verbose==2,TRUE,FALSE) #set verbosity for WeMix to true if overall verbosity is 2
   if (!is.null(nQuad)) {
-    message(sQuote("nQuad"), " argument is specified so ", sQuote("tolerance"), " argument will not be used. It's recommended that users try incrementing ", sQuote("nQuad"), " to check whether the estimates are stable. ")
+    if(verbose > 0) {
+      message(sQuote("nQuad"), " argument is specified so ", sQuote("tolerance"), " argument will not be used. It's recommended that users try incrementing ", sQuote("nQuad"), " to check whether the estimates are stable. ")
+    }
     res <- mix(formula, data=edf, weights=c("pwt1","pwt2"), verbose = verboseAll, nQuad = nQuad,family=family,center_group=center_group,center_grand=center_grand, fast=fast, ...)
     call$tolerance <- NULL
     res$call <- call

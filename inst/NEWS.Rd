@@ -1,6 +1,23 @@
 \name{NEWS}
 \title{NEWS for EdSurvey}
 
+\section{Changes in version 2.3.0}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item The \code{rq.sdf} function adds quantile regression to the package. See the \code{rq.sdf} documentation for more information.
+      \item The functions \code{getStratumVar} and \code{getPSUVar} were added to give users stratum and PSU variables for longitudinal surveys.
+      \item The \code{summary2} function now accepts a vector of variables.
+      \item The \code{searchSDF} function now accepts a vector \code{string} input so that results can be filtered.
+      \item The formula for degrees of freedom when Taylor series variance estimation is used has been updated. The new formula is derived in the statistics vignette. See \url{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}.
+    }
+  }
+  \subsection{NEW DATA}{
+    \itemize{
+      \item PISA 2015 is now supported.
+    }
+  }
+}
+
 \section{Changes in version 2.2.0}{
   \subsection{NEW FEATURES}{
     \itemize{

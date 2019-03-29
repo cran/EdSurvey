@@ -25,17 +25,17 @@
 #'                   replicate weights will be automatically included.
 #'                   When this argument is \code{NULL}, the function uses the default.
 #'                   Use \code{\link{showWeights}} to find the default.
-#' @param jrrIMax integer indicating the maximum number of plausible values to
-#'                 include when calculating
-#'                 the variance term \eqn{V_{jrr}} (see the Details section of
-#'                 \code{\link{lm.sdf}} to see the definition of \eqn{V_{jrr}}). The default is \code{Inf} and results in
-#'                 all available plausible values being used in generating \eqn{V_{jrr}}.
-#'                 Setting this to 1 will make code execution faster but less accurate.
+#' @param jrrIMax    a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+#'                   sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
+#'                   term (see the Details section of
+#'                 \code{\link{lm.sdf}} to see the definition of \eqn{V_{jrr}}) can be estimated with any number of plausible values, and values larger than the number of 
+#'                   plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+#'                   Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.
 #' @param pctAggregationLevel the percentage variable sums up to 100 for the first
 #'                              \code{pctAggregationLevel} columns.
-#'                              So when set to \code{0}, the \code{PCT} column adds up to one
+#'                              So, when set to \code{0}, the \code{PCT} column adds up to 1
 #'                              across the entire sample.
-#'                              When set to \code{1}, the \code{PCT} column adds up to one
+#'                              When set to \code{1}, the \code{PCT} column adds up to 1
 #'                              within each level of the first variable on the
 #'                              right-hand side of the formula; when set to \code{2},
 #'                              then the percentage
@@ -138,7 +138,15 @@ edsurveyTable <- function(formula,
   
   # Test class of incoming data 
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
-  
+
+  varMethod <- substr(tolower(varMethod[[1]]), 0, 1)
+  if(!varMethod %in% c("j", "t")) {
+    stop(paste0("The argument ", sQuote("varMethod"), " must be one of ", dQuote("Taylor"), " or ", dQuote("jackknife"), "."))
+  }
+  if(varMethod == "t" & returnVarEstInputs) {
+    stop(paste0("The argument ", sQuote("returnVarEstInputs"), " must be ", dQuote("FALSE"), " when varMethod is ", dQuote("Taylor"), "."))
+  }
+
   if(inherits(data, "edsurvey.data.frame.list")) {
     #res2 is a temporary variable that holds the list of results
     res2 <- list()
@@ -222,7 +230,7 @@ calcEdsurveyTable <- function(formula,
                               pctAggregationLevel=NULL,
                               returnMeans=TRUE,
                               returnSepct=TRUE,
-                              varMethod=c("jackknife", "Taylor"),
+                              varMethod=c("jackknife", "Taylor", "j", "t"),
                               drop=FALSE,
                               omittedLevels=TRUE, 
                               defaultConditions=TRUE,
@@ -249,9 +257,17 @@ calcEdsurveyTable <- function(formula,
   } else {
     wgt <- weightVar
   }
+  if(min(nchar(wgt)) == 0) {
+    # no weight
+    stop(paste0("There is no default weight variable for ",getAttributes(data,"survey")," data, so the argument ",sQuote("weightVar"), " must be specified."))
+  }
+
   
   # use just the first character, j or t
-  varMethod <- substr(tolower(varMethod0 <- match.arg(varMethod)), 0, 1)
+  varMethod <- substr(tolower(varMethod[[1]]), 0, 1)
+  if(!varMethod %in% c("j", "t")) {
+    stop(paste0("The argument ", sQuote("varMethod"), " must be one of ", dQuote("Taylor"), " or ", dQuote("jackknife"), "."))
+  }
   
   # fill in default subject scale / sub scale
   zeroLengthLHS <- attr(terms(formula), "response") == 0
@@ -348,7 +364,11 @@ calcEdsurveyTable <- function(formula,
     warning("Removing rows with 0 weight from analysis.")
     edf <- edf[edf[,wgt] > 0,]
   }
-
+  
+  for (var in rhs_vars){
+    edf <- edf[!is.na(edf[var]),]
+  }
+  
   if (nrow(edf) == 0) {
     stop("The requested data has 0 rows, so crosstab analysis cannot be done.")
   }
@@ -416,6 +436,7 @@ calcEdsurveyTable <- function(formula,
     # this makes the n sizes and RHS variables in a table
     n <- ftable(edf[,rhs_vars, drop=FALSE])
     res <- data.frame(n)
+
     #if length(rhs_vars) is 1, then the names do not get assigned correctly. Fix that.
     names(res) <- c(rhs_vars, "N") # does nothing unless length(rhs_vars)==1
     # fastAgg is similar to aggregate, but fast.
@@ -647,7 +668,7 @@ calcEdsurveyTable <- function(formula,
           fi <- formula(paste0(yvar, " ~ 1"))
           lst <- list(fi, dsdf,
                       weightVar=wgt, jrrIMax=jrrIMax,
-                      varMethod=varMethod0,
+                      varMethod=varMethod,
                       omittedLevels=FALSE, # taken care of above
                       returnVarEstInputs=returnVarEstInputs)
           lmi <- tryCatch(do.call(lm.sdf, lst),
@@ -808,9 +829,9 @@ typeOfVariable <- function(var, data) {
       }
     }))
   }
-  fileFormat <- do.call('rbind', list(data$fileFormat,
-                                      data$fileFormatSchool,
-                                      data$fileFormatTeacher))
+  
+  fileFormat <- do.call('rbind', lapply(data$dataList, 
+                                        function(dl){dl$fileFormat}))
   sapply(var, function(v) {
     if (hasPlausibleValue(v,data)) {
       return("continuous")

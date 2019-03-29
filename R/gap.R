@@ -6,10 +6,10 @@
 #' @param variable a character indicating the variable to be compared,
 #'                 potentially with a subject scale or subscale
 #' @param data     an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
-#' @param groupA   an expression or character expression that defines a  condition for subset.
+#' @param groupA   an expression or character expression that defines a condition for the subset.
 #'                 This subset will be compared to \code{groupB}. If not specified, it will define
 #'                 a whole sample as in \code{data}. 
-#' @param groupB   an expression or character expression that defines a  condition for subset.
+#' @param groupB   an expression or character expression that defines a condition for the subset.
 #'                 This subset will be compared to \code{groupA}. If not specified, it will define
 #'                 a whole sample as in \code{data}. If set to \code{NULL}, estimates for the second group 
 #'                 will be dropped.
@@ -19,7 +19,7 @@
 #'                    the gap at the percentile given is calculated.
 #' @param targetLevel a character string. When specified, calculates the gap in
 #'                    the percentage of students at
-#'                    \code{targetLevel} in \code{variable}. This is useful for
+#'                    \code{targetLevel} in the \code{variable} argument. This is useful for
 #'                    comparing the gap in the percentage of students at a
 #'                    survey response level.
 #' @param achievementLevel the achievement level(s) at which percentages
@@ -37,17 +37,12 @@
 #'                            included in the percentage.
 #' @param weightVar a character indicating the weight variable to use.
 #'                  See Details.
-#' @param jrrIMax   a numeric value; when using the jackknife variance estimation
-#'                  method, the \eqn{V_{jrr}} term
-#'                  (see Details) can be estimated with any positive number
-#'                  of plausible values and is 
-#'                  estimated on the lower of the number of
-#'                  available plausible values and 
-#'                  \code{jrrIMax}. When \code{jrrIMax} is set to \code{Inf},
-#'                  all plausible values will 
-#'                  be used. Higher values of \code{jrrIMax} lead to longer
-#'                  computing times and more
-#'                  accurate variance estimates.
+#' @param jrrIMax    a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+#'                   sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
+#'                   term (see the Details section of
+#'                 \code{\link{lm.sdf}} to see the definition of \eqn{V_{jrr}}) can be estimated with any number of plausible values, and values larger than the number of 
+#'                   plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+#'                   Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.
 #' @param varMethod  a character set to \code{jackknife} or \code{Taylor}
 #'                   that indicates the variance estimation method
 #'                   to be used
@@ -68,11 +63,11 @@
 #'               \code{list(from} \code{=} \code{c("a",} \code{"b",}
 #'               \code{"c"),} \code{to} \code{=} \code{"d"))}.
 #'               See Examples.
-#' @param referenceDataIndex a numeric used only when \code{data} is an
+#' @param referenceDataIndex a numeric used only when the \code{data} argument is an
 #'                           \code{edsurvey.data.frame.list},
 #'                           indicating which dataset is the reference
 #'                           dataset that other datasets are compared with. 
-#'                           Defaults to one.
+#'                           Defaults to 1.
 #' @param returnVarEstInputs a logical value; set to \code{TRUE} to return the
 #'                           inputs to the jackknife and imputation variance
 #'                           estimates. This is intended to allow for the
@@ -86,7 +81,8 @@
 #'                           (\emph{n}-size) of observations included in groups A and B
 #'                           in the percentage object
 #' @param returnNumberOfPSU a logical value set to \code{TRUE} to return the number of 
-#'                          primary sampling units (PSU) used in calculation.
+#'                          primary sampling units (PSUs) used in the calculation
+#' @param noCov set the covariances to zero in result.
 #' @details This function calculates the gap between \code{groupA} and \code{groupB} (which 
 #' may be omitted to indicate the full sample). The gap is
 #' calculated for one of four statistics:
@@ -123,7 +119,7 @@
 #' that shows the percentage in \code{groupA} and \code{groupB}, and an object
 #' that shows the gap called \code{results}. 
 #'
-#' The labels includes the following elements:
+#' The labels include the following elements:
 #' \describe{
 #'   \item{definition}{the definitions of the groups}
 #'   \item{nFullData}{the n-size for the full dataset (before applying the definition)}
@@ -174,7 +170,7 @@
 #'                            minus \code{pctB}}
 #'     \item{diffABpValue}{the \emph{p}-value associated with the \emph{t}-test used
 #'                         for the hypothesis test that \code{diffAB}
-#'                         is zero.}
+#'                         is zero}
 #'     \item{dofAB}{degrees of freedom used in calculating
 #'                       \code{diffABpValue}}
 #'   }
@@ -236,7 +232,7 @@
 #'     \item{covAA}{the covariance of \code{pctA} in the reference data and
 #'                  \code{pctA} on this row. Used in
 #'                  calculating \code{diffAAse}.}
-#'     \item{diffAAse}{the standard error for \code{diffAA}.}
+#'     \item{diffAAse}{the standard error for \code{diffAA}}
 #'     \item{diffAApValue}{the \emph{p}-value associated with the \emph{t}-test used
 #'                         for the hypothesis test that \code{diffAA}
 #'                         is zero}
@@ -272,7 +268,7 @@
 #'     \item{covAA}{the covariance of \code{meanA} in the reference data and
 #'                  \code{meanA} on this row. Used in
 #'                  calculating \code{diffAAse}.}
-#'     \item{diffAAse}{the standard error for \code{diffAA}.}
+#'     \item{diffAAse}{the standard error for \code{diffAA}}
 #'     \item{diffAApValue}{the \emph{p}-value associated with the \emph{t}-test used
 #'                         for the hypothesis test that \code{diffAA}
 #'                         is zero}
@@ -322,7 +318,8 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
                 returnVarEstInputs=FALSE,
                 returnSimpleDoF=FALSE,
                 returnSimpleN=FALSE,
-                returnNumberOfPSU=FALSE) {
+                returnNumberOfPSU=FALSE,
+                noCov=FALSE) {
   if(is.character(substitute(groupA))) {
     groupA <- parse(text=groupA)[[1]]
   }
@@ -378,7 +375,6 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
       pctdf0$covABAB <- 0
       pctdf0$dofABAB <- Inf
     }
-    
     
     # make sure refi gets calculated first
     llvec <- unique(c(refi,1:ll))
@@ -441,7 +437,6 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
         resilist[[i]] <- resi
       }
     } # end for(i in llvec)
-    
     
     # Extract results and compute AA or BB statistics
     lstats <- max(lpct,lal)
@@ -739,7 +734,8 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
                       returnVarEstInputs=FALSE,
                       returnSimpleDoF=FALSE,
                       returnSimpleN=FALSE,
-                      returnNumberOfPSU=FALSE) {
+                      returnNumberOfPSU=FALSE,
+                      noCov=FALSE) {
   if(is.character(substitute(groupA))) {
     groupA <- parse(text=groupA)[[1]]
   }
@@ -759,6 +755,10 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
   } else {
     wgt <- weightVar
   } # End of if/else: is.null(weightVar)
+  if(min(nchar(wgt)) == 0) {
+    # no weight
+    stop(paste0("There is no default weight variable for ",getAttributes(data,"survey")," data, so the argument ",sQuote("weightVar"), " must be specified."))
+  }
   
   varEstInputs <- NULL
   type <- "mu" # mean is the default
@@ -781,7 +781,6 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     }
     type <- "eq"
   }
-  
   # make the data with just groupA
   if (all(as.character(substitute(groupA)) == "default")) {
     dataA <- data
@@ -815,7 +814,7 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     # gap in mean
     calllm <- c(list(formula(paste0(variable, " ~ 1")),varMethod=varMethod),
                 callv,
-                list(returnVarEstInputs=TRUE)) # necessary for covariance est
+                list(returnVarEstInputs=varMethod=="j")) # necessary for covariance est
     calllmA <- c(calllm, list(data=dataA))
     meanA <- do.call(lm.sdf, calllmA)
     coefA <- meanA$coefmat
@@ -831,12 +830,11 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
       SEs <- list(estimateAse=coefA[1,2])
     }
     
-    
     # prepare varEstInputs
     # make varEstInputs$JK
     maJK <- subset(meanA$varEstInputs$JK, variable=="(Intercept)")
     maJK$variable <- "A"
-    if (!skipB) {
+    if (!skipB & varMethod == "j") {
       mbJK <- subset(meanB$varEstInputs$JK, variable=="(Intercept)")
       mbJK$variable <- "B"
       # calculate the difference
@@ -849,7 +847,6 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     } else {
       varEstJK <- maJK
     }
-    
     # make varEstInputs$PV
     if(!is.null(meanA$varEstInput$PV)) {
       maPV <- subset(meanA$varEstInputs$PV, variable=="(Intercept)")
@@ -865,16 +862,22 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
         mdPV$variable.A <- mdPV$variable.B <- NULL
         varEstPV <- rbind(maPV, mbPV, mdPV)
       } else {
+        # only group A
         varEstPV <- maPV
       }
-    } else {
+    } else { # end if(!is.null(meanA$varEstInput$PV))
+      # no PVs, so no error from them
       varEstPV <- NULL
+    } # end else for if(!is.null(meanA$varEstInput$PV))
+    if(varMethod=="j") {
+      # make varEstInputs
+      row.names(varEstJK) <- NULL
+      row.names(varEstPV) <- NULL
+      varEstInputs <- list(JK=varEstJK, PV=varEstPV)
+    } else {
+      varEstInputs <- NULL
     }
-    # make varEstInputs
-    row.names(varEstJK) <- NULL
-    row.names(varEstPV) <- NULL
-    varEstInputs <- list(JK=varEstJK, PV=varEstPV)
-  }
+  } # end if(type == "mu")
   if(type == "pct") {
     # gap at a percentile
     # here the length of percentiles is always one
@@ -882,7 +885,7 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
                       percentiles=percentiles,
                       varMethod=varMethod),
                  callv,
-                 returnVarEstInputs=TRUE)
+                 returnVarEstInputs=varMethod=="j")
     callpctA <- c(callpct, list(data=dataA))
     meanA <- do.call(percentile, callpctA)
     resA <- meanA$estimate
@@ -896,63 +899,59 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
       SEs <- list(estimateAse = meanA$se)
     }
     
-    maJK <- attributes(meanA)$varEstInputs$JK
-    maJK$Level <- maJK$variable
-    maJK$variable <- "A"
-    if (!skipB) {
-      mbJK <- attributes(meanB)$varEstInputs$JK
-      mbJK$Level <- mbJK$variable
-      mbJK$variable <- "B"
-      # calculate the difference
-      mdJK <- merge(maJK, mbJK, by=c("PV", "JKreplicate","Level"), suffixes=c(".A", ".B"))
-      mdJK$variable <- "A-B"
-      mdJK$value <- mdJK$value.A - mdJK$value.B
-      mdJK$value.A <- mdJK$value.B <- NULL
-      mdJK$variable.A <- mdJK$variable.B <- NULL
-      varEstJK <- rbind(maJK, mbJK, mdJK)
-    } else {
-      varEstJK <- maJK
+    if(varMethod=="j") {
+      maJK <- attributes(meanA)$varEstInputs$JK
+      maJK$Level <- maJK$variable
+      maJK$variable <- "A"
+      if (!skipB & varMethod=="j") {
+        mbJK <- attributes(meanB)$varEstInputs$JK
+        mbJK$Level <- mbJK$variable
+        mbJK$variable <- "B"
+        # calculate the difference
+        mdJK <- merge(maJK, mbJK, by=c("PV", "JKreplicate","Level"), suffixes=c(".A", ".B"))
+        mdJK$variable <- "A-B"
+        mdJK$value <- mdJK$value.A - mdJK$value.B
+        mdJK$value.A <- mdJK$value.B <- NULL
+        mdJK$variable.A <- mdJK$variable.B <- NULL
+        varEstJK <- rbind(maJK, mbJK, mdJK)
+      } else {
+        varEstJK <- maJK
+      }
+    
+      # make varEstInputs$PV
+      maPV <- attributes(meanA)$varEstInputs$PV
+      maPV$Level <- maPV$variable
+      maPV$variable <- "A"
+    
+      if (!skipB) {
+        mbPV <- attributes(meanB)$varEstInputs$PV
+        mbPV$Level <- mbPV$variable
+        mbPV$variable <- "B"
+        # calculate the difference
+        mdPV <- merge(maPV, mbPV, by=c("PV","Level"), suffixes=c(".A", ".B"))
+        mdPV$variable <- "A-B"
+        mdPV$value <- mdPV$value.A - mdPV$value.B
+        mdPV$value.A <- mdPV$value.B <- NULL
+        mdPV$variable.A <- mdPV$variable.B <- NULL
+        varEstPV <- rbind(maPV, mbPV, mdPV)
+      } else {
+        varEstPV <- maPV
+      }
+    
+      # make varEstInputs
+      row.names(varEstJK) <- NULL
+      row.names(varEstPV) <- NULL
+      varEstInputs <- list(JK=varEstJK, PV=varEstPV)
+    } else { # end if(varMethod=="j")
+      varEstInputs <- NULL
     }
-    
-    # make varEstInputs$PV
-    maPV <- attributes(meanA)$varEstInputs$PV
-    maPV$Level <- maPV$variable
-    maPV$variable <- "A"
-    
-    if (!skipB) {
-      mbPV <- attributes(meanB)$varEstInputs$PV
-      mbPV$Level <- mbPV$variable
-      mbPV$variable <- "B"
-      # calculate the difference
-      mdPV <- merge(maPV, mbPV, by=c("PV","Level"), suffixes=c(".A", ".B"))
-      mdPV$variable <- "A-B"
-      mdPV$value <- mdPV$value.A - mdPV$value.B
-      mdPV$value.A <- mdPV$value.B <- NULL
-      mdPV$variable.A <- mdPV$variable.B <- NULL
-      varEstPV <- rbind(maPV, mbPV, mdPV)
-    } else {
-      varEstPV <- maPV
-    }
-    
-    # make varEstInputs
-    row.names(varEstJK) <- NULL
-    row.names(varEstPV) <- NULL
-    varEstInputs <- list(JK=varEstJK, PV=varEstPV)
   } # end if (type == 'pct')
   if(type == "AL") {
     # gap in percent at or above an achievement level
     callal <- c(list(achievementVars=variable,
-                     returnVarEstInputs=TRUE,
+                     returnVarEstInputs=varMethod=="j",
                      returnCumulative = !achievementDiscrete),
                 callv)
-    # if(!achievementDiscrete) { 
-    #   # the call will return a discrete, but the only level will be the one in question
-    #   # this will make it cumulative.
-    #   dataA$pvvars[[variable]]$achievementLevel <- getAttributes(dataA,"pvvars")[[variable]]$achievementLevel[achievementLevel]
-    #   if (!skipB) {
-    #     dataB$pvvars[[variable]]$achievementLevel <- getAttributes(dataB,"pvvars")[[variable]]$achievementLevel[achievementLevel]
-    #   }
-    # }
     als <- getAttributes(data, "achievementLevels") # get a full achievementLevels
     callalA <- c(callal, list(data=dataA))
     meanA <- do.call(achievementLevels, callalA)
@@ -1046,82 +1045,80 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
         SEs <- list(estimateAse=meanA$cumulative$StandardError[lA])
       }
     }
-    
+    # used inside next if, but also outside
+    statisticsLevelOut <- meanA$discrete$Level[lA]
     # get Cov
-    
-    if (achievementDiscrete){
-      maJK <- subset(meanA$discVarEstInputs$JK, variable %in% meanA$discrete$Level[lA])
-      maJK$Level <- maJK$variable
-      maJK$variable <- "A"
+    if(varMethod=="j") {
+      if (achievementDiscrete){
+        maJK <- subset(meanA$discVarEstInputs$JK, variable %in% meanA$discrete$Level[lA])
+        maJK$Level <- maJK$variable
+        maJK$variable <- "A"
+        if (!skipB) {
+          mbJK <- subset(meanB$discVarEstInputs$JK, variable %in% meanB$discrete$Level[lB])
+          mbJK$Level <- mbJK$variable
+          mbJK$variable <- "B"
+        }
+      } # end if(achievementDiscrete)
+      else {
+        maJK <- subset(meanA$cumVarEstInputs$JK, variable %in% meanA$cumulative$Level[lA])
+        maJK$Level <- maJK$variable
+        maJK$variable <- "A"
+        if (!skipB & varMethod=="j") {
+          mbJK <- subset(meanB$cumVarEstInputs$JK, variable %in% meanB$cumulative$Level[lB])
+          mbJK$Level <- mbJK$variable
+          mbJK$variable <- "B"
+        } 
+      } # end else if(achievementDiscrete)
       if (!skipB) {
-        mbJK <- subset(meanB$discVarEstInputs$JK, variable %in% meanB$discrete$Level[lB])
-        mbJK$Level <- mbJK$variable
-        mbJK$variable <- "B"
+        mdJK <- merge(maJK, mbJK, by=c("PV", "JKreplicate","Level"), suffixes=c(".A", ".B"))
+        mdJK$variable <- "A-B"
+        mdJK$value <- mdJK$value.A - mdJK$value.B
+        mdJK$value.A <- mdJK$value.B <- NULL
+        mdJK$variable.A <- mdJK$variable.B <- NULL
+        varEstJK <- rbind(maJK, mbJK, mdJK)
+      } else {
+        varEstJK <- maJK
       }
-    } # end if(achievementDiscrete)
-    else {
-      maJK <- subset(meanA$cumVarEstInputs$JK, variable %in% meanA$cumulative$Level[lA])
-      maJK$Level <- maJK$variable
-      maJK$variable <- "A"
+      # make varEstInputs$PV
+      if (achievementDiscrete){
+        maPV <- subset(meanA$discVarEstInputs$PV, variable %in% meanA$discrete$Level[lA])
+        maPV$Level <- maPV$variable
+        maPV$variable <- "A"
+        if (!skipB) {
+          mbPV <- subset(meanB$discVarEstInputs$PV, variable %in% meanB$discrete$Level[lB])
+          mbPV$Level <- mbPV$variable
+          mbPV$variable <- "B"
+        }  
+      } # end if(achievementDiscrete)
+      else {
+        statisticsLevelOut <- meanA$cumulative$Level[lA]
+        maPV <- subset(meanA$cumVarEstInputs$PV, variable %in% meanA$cumulative$Level[lA])
+        maPV$Level <- maPV$variable
+        maPV$variable <- "A"
+        if (!skipB & varMethod=="j") {
+          mbPV <- subset(meanB$cumVarEstInputs$PV, variable %in% meanB$cumulative$Level[lB])
+          mbPV$Level <- mbPV$variable
+          mbPV$variable <- "B"
+        }
+      } # end else if(achievementDiscrete)
+      # calculate the difference
       if (!skipB) {
-        mbJK <- subset(meanB$cumVarEstInputs$JK, variable %in% meanB$cumulative$Level[lB])
-        mbJK$Level <- mbJK$variable
-        mbJK$variable <- "B"
+        mdPV <- merge(maPV, mbPV, by=c("PV","Level"), suffixes=c(".A", ".B"))
+        mdPV$variable <- "A-B"
+        mdPV$value <- mdPV$value.A - mdPV$value.B
+        mdPV$value.A <- mdPV$value.B <- NULL
+        mdPV$variable.A <- mdPV$variable.B <- NULL
+        varEstPV <- rbind(maPV, mbPV, mdPV)
+      } else {
+        varEstPV <- maPV
       }
-    } # end else if(achievementDiscrete)
-    
-    # calculate the difference
-    if (!skipB) {
-      mdJK <- merge(maJK, mbJK, by=c("PV", "JKreplicate","Level"), suffixes=c(".A", ".B"))
-      mdJK$variable <- "A-B"
-      mdJK$value <- mdJK$value.A - mdJK$value.B
-      mdJK$value.A <- mdJK$value.B <- NULL
-      mdJK$variable.A <- mdJK$variable.B <- NULL
-      varEstJK <- rbind(maJK, mbJK, mdJK)
-    } else {
-      varEstJK <- maJK
+      # make varEstInputs
+      row.names(varEstJK) <- NULL
+      row.names(varEstPV) <- NULL
+      varEstInputs <- list(JK=varEstJK, PV=varEstPV)
+    } else { # end if(varMethod=="j")
+      varEstInputs <- NULL
     }
-    # make varEstInputs$PV
-    if (achievementDiscrete){
-      statisticsLevelOut <- meanA$discrete$Level[lA]
-      maPV <- subset(meanA$discVarEstInputs$PV, variable %in% meanA$discrete$Level[lA])
-      maPV$Level <- maPV$variable
-      maPV$variable <- "A"
-      if (!skipB) {
-        mbPV <- subset(meanB$discVarEstInputs$PV, variable %in% meanB$discrete$Level[lB])
-        mbPV$Level <- mbPV$variable
-        mbPV$variable <- "B"
-      }  
-    } # end if(achievementDiscrete)
-    else {
-      statisticsLevelOut <- meanA$cumulative$Level[lA]
-      maPV <- subset(meanA$cumVarEstInputs$PV, variable %in% meanA$cumulative$Level[lA])
-      maPV$Level <- maPV$variable
-      maPV$variable <- "A"
-      if (!skipB) {
-        mbPV <- subset(meanB$cumVarEstInputs$PV, variable %in% meanB$cumulative$Level[lB])
-        mbPV$Level <- mbPV$variable
-        mbPV$variable <- "B"
-      }
-    } # end else if(achievementDiscrete)
-    
-    # calculate the difference
-    if (!skipB) {
-      mdPV <- merge(maPV, mbPV, by=c("PV","Level"), suffixes=c(".A", ".B"))
-      mdPV$variable <- "A-B"
-      mdPV$value <- mdPV$value.A - mdPV$value.B
-      mdPV$value.A <- mdPV$value.B <- NULL
-      mdPV$variable.A <- mdPV$variable.B <- NULL
-      varEstPV <- rbind(maPV, mbPV, mdPV)
-    } else {
-      varEstPV <- maPV
-    }
-    
-    # make varEstInputs
-    row.names(varEstJK) <- NULL
-    row.names(varEstPV) <- NULL
-    varEstInputs <- list(JK=varEstJK, PV=varEstPV)
-    
   } # end if (type == "AL")
   groupA_0 <- FALSE
   groupB_0 <- FALSE
@@ -1133,7 +1130,7 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
                             returnSepct = TRUE,
                             varMethod=varMethod,
                             drop = FALSE,
-                            returnVarEstInputs=TRUE))
+                            returnVarEstInputs=varMethod=="j"))
     calleqA <- c(calleq, list(data=dataA))
     meanA <- do.call(edsurveyTable, calleqA)
     
@@ -1155,21 +1152,21 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     }
     
     # make varEstInputs$JK
-    if (!groupA_0) {
+    if (!groupA_0 & varMethod=="j") {
       maJK <- meanA$pctVarEstInputs$JK[meanA$pctVarEstInputs$JK$variable == paste0(variable,"=", targetLevel),]
       maJK$variable <- "A"
     } else  {
       maJK <- NULL
     }
     if (!skipB) {
-      if (!groupB_0) {
+      if (!groupB_0 & varMethod=="j") {
         mbJK <- meanB$pctVarEstInputs$JK[meanB$pctVarEstInputs$JK$variable == paste0(variable,"=", targetLevel),]
         mbJK$variable <- "B"
       } else {
         mbJK <- NULL
       }
       # calculate the difference
-      if (!groupA_0 & !groupB_0) {
+      if (!groupA_0 & !groupB_0 & varMethod=="j") {
         mdJK <- merge(maJK, mbJK, by=c("PV", "JKreplicate"), suffixes=c(".A", ".B"))
         mdJK$variable <- "A-B"
         mdJK$value <- mdJK$value.A - mdJK$value.B
@@ -1192,7 +1189,6 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     }
     
   } # end if (type == "eq")
-  
   # Compute difference statistics (diffAB, covAB, pooledse, pooleddf)
   if (!skipB) {
     diff <- unname(resA - resB) # unname removes the name (Intercept) that otherwise ends up in the retruned value
@@ -1242,6 +1238,10 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
       }
       
     } # end if (!is.null(varEstInputs))
+    if(noCov) {
+      cov <- 0*cov
+      JRdf <- ifelse(groupA_0 | groupB_0, NA, (SEs[[1]]^2 + SEs[[2]]^2)^2 / (SEs[[1]]^4/JRdfA + SEs[[2]]^4/JRdfB)) 
+    }
     diffSE <- mapply(function(a,b,c) {
       unname(sqrt(a^2 + b^2 - 2 * c))
     }, SEs[[1]],SEs[[2]],cov)
@@ -1261,7 +1261,7 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
       # Get stratum and PSU variable
       stratumVar <- getAttributes(data,"stratumVar")
       psuVar <- getAttributes(data,"psuVar")
-      if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% names(data$data))) {
+      if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% colnames(data))) { #names(data$data) changed to colnames(data)::Tom
         vn <- unique(c(vn, stratumVar, psuVar))
       } else {
         warning("Stratum and PSU variable are required for this call and are not on the incoming data. Ignoring returnNumberOfPSU=TRUE.")
@@ -1297,7 +1297,6 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     }))
     seA <- 100 * sqrt(getAttributes(data, "jkSumMultiplier") * sum( (pctJK[,1] - pctA)^2 ))
     seB <- 100 * sqrt(getAttributes(data, "jkSumMultiplier") * sum( (pctJK[,2] - pctB)^2 ))
-    #covAB <- 100 * 100 * sum( (pctJK[,1] - pctA) * (pctJK[,2] - pctB) )
     varJK <- data.frame(PV=rep(0, 3*nrow(pctJK)),
                         JKreplicate=rep(1:nrow(pctJK),3),
                         variable=rep(c("A", "B", "A-B"), each=nrow(pctJK)),
@@ -1308,10 +1307,18 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     )
     # there is no PV here because weights are not imputed
     pctVarEstInputs <- list(JK=varJK, PV=NULL)
-    covAB <- varEstToCov(pctVarEstInputs, varA="A", varB="B", jkSumMultiplier=getAttributes(data, "jkSumMultiplier"))
-    pctDoFA <- DoFCorrection(pctVarEstInputs, varA="A", method="JR")
-    pctDoFB <- DoFCorrection(pctVarEstInputs, varA="B", method="JR")
-    pctJRdf <- DoFCorrection(pctVarEstInputs, varA="A-B", method="JR")
+    if(noCov) {
+      covAB <- rep(0, length(seA))
+      pctDoFA <- DoFCorrection(pctVarEstInputs, varA="A", method="JR")
+      pctDoFB <- DoFCorrection(pctVarEstInputs, varA="B", method="JR")
+      # Satterthwaite approximation
+      pctJRdf <- (seA^2 + seB^2)^2 / (seA^4/pctDoFA + seB^4/pctDoFB)
+    } else {
+      covAB <- varEstToCov(pctVarEstInputs, varA="A", varB="B", jkSumMultiplier=getAttributes(data, "jkSumMultiplier"))
+      pctDoFA <- DoFCorrection(pctVarEstInputs, varA="A", method="JR")
+      pctDoFB <- DoFCorrection(pctVarEstInputs, varA="B", method="JR")
+      pctJRdf <- DoFCorrection(pctVarEstInputs, varA="A-B", method="JR")
+    }
     # end covAB calculation
     pctA <- 100 * pctA
     pctB <- 100 * pctB
@@ -1371,7 +1378,6 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
                                    diffABse=seAB,
                                    diffABpValue=pdiffp,
                                    dofAB=pctJRdf))
-   
     
     lst <- list(results=vec,
                 labels=list(A=substitute(groupA),B=substitute(groupB),
@@ -1385,7 +1391,7 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
       lst$labels$nPSUA <- nrow(unique(dA[,c(stratumVar,psuVar)]))
       lst$labels$nPSUB <- nrow(unique(dB[,c(stratumVar,psuVar)]))
     }
-  } else {
+  } else { # end if(!skipB)
     wgtl <- getAttributes(data,"weights")[[wgt]]
     JRdfA <- ifelse(groupA_0,NA,length(wgtl$jksuffixes))
     if (!is.null(varEstInputs)) {
@@ -1433,8 +1439,6 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     # setup non-data call variables    
     callv <- list(varnames=vn,
                   drop=FALSE,
-                  #schoolMergeVarSchool=schoolMergeVarSchool,
-                  #schoolMergeVarStudent=schoolMergeVarStudent,
                   omittedLevels=omittedLevels,
                   recode=NULL) # recode is already done in line 335
     if(!missing(defaultConditions)) {
@@ -1602,7 +1606,7 @@ parseVars <- function(ccall,x) {
     if(class(ccall[[i]]) %in% c("name")) {
       ccall_c <- as.character(ccall[[i]])
       # if it is not in the data and is in the parent.frame, it might be a variable.
-      if(ccall_c %in% names(x$data) ) {
+      if(ccall_c %in% colnames(x) ) {  #orignally:: if(ccall_c %in% names(x$data) ) { TOM FINK::dataList update
         if (ccall[[i]] == "%in%" || is.function(ccall[[i]])) {
           # do nothing
         } else {
@@ -1673,7 +1677,7 @@ gmatchAttr <- function(strings, achievementLevelNames) {
   }
   # finalize formatting for errors
   error <- ifelse(nchar(error) > 0, paste0(" matched to ", error), "")
-  error <- ifelse(nchar(out) == 0, "No Match", error)
+  error <- ifelse(nchar(out) == 0, " no match", error)
   # if there is an error, format it and throw it
   if(any(nchar(error) > nchar(out))) {
     evars <- nchar(error)>0

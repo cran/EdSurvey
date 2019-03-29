@@ -6,7 +6,7 @@ require(EdSurvey)
 #  setwd(system.file("testRDs", package = "EdSurvey"))
 # }
 options(width = 500)
-#source("REF-1-lesdf.R") # has REF output in it
+source("REF-1-lesdf.R") # has REF output in it
 
 context("read LESDF")
 test_that("read LESDF",{
@@ -75,7 +75,7 @@ test_that("getData addAttributesTRUE returns a LESDF", {
 
 context("getData ignores defaultConditions when applied twice")
 test_that("getData ignores defaultConditions when applied twice", {
-  #skip_on_cran()
+  skip_on_cran()
   lsdf1 <- getData(sdf, c("composite", "dsex", "b017451", "origwt"), addAttributes=TRUE, defaultConditions=FALSE)
   expect_equal(lsdf1, suppressWarnings(lsdf2 <- getData(lsdf1, c("composite", "dsex", "b017451", "origwt"))))
   expect_equal(lsdf1, suppressWarnings(lsdf3 <- getData(lsdf1, c("composite", "dsex", "b017451", "origwt"), defaultConditions=FALSE)))
@@ -169,7 +169,7 @@ test_that("LESDF Simple functions", {
 
 context("LESDF gap")
 test_that("LESDF gap",{
-  #skip_on_cran()
+  skip_on_cran()
   g1 <- gap("composite", sdf, dsex=="Male", dsex=="Female")
   # omittedLevels must be set to FALSE or rows will be deleted because of other columns
   # using omitted levels 
@@ -183,7 +183,7 @@ test_that("LESDF gap",{
 
 context("LESDF achievementLevels")
 test_that("LESDF achievementLevels",{
-  #skip_on_cran()
+  skip_on_cran()
   lsdf1l <- getData(sdf, c("composite", "origwt"), addAttributes=TRUE)
   expect_known_value(test1l <- achievementLevels(returnCumulative = TRUE, data=lsdf1l), file="aLevels_test1.rds", update=FALSE)
   a1 <- achievementLevels(c("composite","dsex", "b017451"),
@@ -212,7 +212,7 @@ test_that("LESDF achievementLevels",{
 
 context("LESDF cor.sdf")
 test_that("LESDF cor.sdf",{
-  #skip_on_cran()
+  skip_on_cran()
   b3 <- cor.sdf("m815401", "b017451",method="Pearson", sdf,weightVar = "origwt")
   lsdf2 <- getData(sdf,c("m815401","m815701", "b017451","origwt"), addAttributes=TRUE, omittedLevels = FALSE)
   b4 <- cor.sdf("m815401", "b017451",method="Pearson", lsdf2,weightVar = "origwt", omittedLevels=TRUE) # dropUnusedLevels nolonger revealed, not set
@@ -237,7 +237,7 @@ test_that("LESDF cor.sdf",{
 
 context("LESDF lm.sdf")
 test_that("LESDF lm.sdf",{
-  #skip_on_cran()
+  skip_on_cran()
 	sdfoutput <- capture.output(print(sm1 <- summary(lm.sdf(composite ~ dsex + b017451,sdf, jrrIMax=Inf))))
 	gdoutput <- capture.output(print(sm2 <- summary(lm.sdf(composite ~ dsex + b017451,lsdf, jrrIMax=Inf))))
 	expect_equal(sdfoutput, gdoutput)
@@ -250,7 +250,7 @@ test_that("LESDF lm.sdf",{
 
 context("LESDF print")
 test_that("LESDF print",{
-  #skip_on_cran()
+  skip_on_cran()
 	sdfoutput <- capture.output(print(sm1 <- lm.sdf(composite ~ dsex + b017451,sdf, jrrIMax=Inf)))
 	gdoutput <- capture.output(print(sm2 <- lm.sdf(composite ~ dsex + b017451,lsdf, jrrIMax=Inf)))
 	expect_equal(gdoutput, sdfoutput)
@@ -290,7 +290,7 @@ test_that("LESDF lm.sdf correctly returns errors",{
 	sm1 <- subset(sm1, dsex == "Female")
 	expect_error(suppressWarnings(lm.sdf(composite ~ dsex + b017451,sm1, jrrIMax=Inf)))
   #LESDF lm.sdf function returns error with contradicting subset and relevel
-  #skip_on_cran()
+  skip_on_cran()
 	sm1 <- getData(sdf, c(all.vars(composite ~ dsex + b017451), "origwt"), addAttributes=TRUE)
 	# no error with relevel calls 
 	expect_is(lm.sdf(composite ~ dsex + b017451, relevels = list(dsex="Male"),sm1, jrrIMax=Inf), "edsurveyLm")

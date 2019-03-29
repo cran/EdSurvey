@@ -51,14 +51,18 @@ rename.sdf <- function(x,
       defaultTaylorVar <- FALSE
     }
     if (inherits(x,"edsurvey.data.frame")) {
-      varnames <-  names(x$data)
+      varnames <-  colnames(x) #names(x$data)
     } else {
       varnames <- colnames(x)
     }
-    fileFormat <- getAttributes(x,"fileFormat")
-    fileFormatSchool <- getAttributes(x, "fileFormatSchool")
-    fileFormatTeacher <- getAttributes(x,"fileFormatTeacher")
-    dataListMeta <- getAttributes(x,"dataListMeta")
+    
+    #grab the dataList and needed objects within the dataList
+    dataList <- getAttributes(x,"dataList")
+    lafObj <- lapply(dataList, function(dl){dl$lafObject})
+    fileFormat <- lapply(dataList, function(dl){dl$fileFormat})
+    parentMergeVars <- lapply(dataList, function(dl){dl$parentMergeVars})
+    mergeVars <- lapply(dataList, function(dl){dl$mergeVars})
+    ignoreVars <- lapply(dataList, function(dl){dl$ignoreVars})
     
     for (vari in 1:length(oldnames)) {
       # to avoid duplicates after the operation
@@ -71,19 +75,9 @@ rename.sdf <- function(x,
           newnames[vari] <- paste0(newnames[vari],"_2")
         }
       }
-      ## change the name in fileformat
+      ##get specific name of old variable
       varn <- oldnames[vari]
-      if(varn %in% fileFormat$variableName) {
-        fileFormat$variableName[fileFormat$variableName == varn] <- newnames[vari]
-      }
       
-      if(varn %in% fileFormatSchool$variableName) {
-        fileFormatSchool$variableName[fileFormatSchool$variableName == varn] <- newnames[vari]
-      }
-      
-      if(varn %in% fileFormatTeacher$variableName) {
-        fileFormatTeacher$variableName[fileFormatTeacher$variableName == varn] <- newnames[vari]
-      }
       # change variable name in userConditions list
       if (!is.null(userConditions) && length(userConditions) > 0) {
         for (i in 1:length(userConditions)) {
@@ -101,7 +95,6 @@ rename.sdf <- function(x,
         if (oldnames[vari] %in% names(pvvars)) {
           names(pvvars)[names(pvvars) == oldnames[vari]] <- newnames[vari]
           attr(pvvars,'default') <- gsub(paste0("\\b", oldnames[vari],"\\b"), newnames[vari], attr(pvvars,'default'))
-          next
         }
       }
       
@@ -112,7 +105,6 @@ rename.sdf <- function(x,
         if (oldnames[vari] %in% varnames) {
           varnames[varnames == oldnames[vari]] <- newnames[vari]
         }
-        next
       }
       
       # change stratumVar and psuVar
@@ -136,11 +128,20 @@ rename.sdf <- function(x,
       }
       
       if(!oldnames[vari] %in% varnames) {
-        warning(paste0(oldnames[vari]," is not in the data.\n"))
-        next
+        #warning(paste0(oldnames[vari]," is not in the data.\n"))
+        #next
       }
       
-      ## change the names in names(x)
+      ## change name in LaF Objects as well as the LaF 'column_names' attribute which is used when the file connection is open/closed
+      if(!is.null(lafObj) && length(lafObj) > 0){
+        for(i in 1:length(lafObj)){
+          if(varn %in% names(lafObj[[i]])){
+            names(lafObj[[i]])[names(lafObj[[i]]) == oldnames[vari]] <- newnames[vari]
+            attr(lafObj[[i]],"column_names") <- names(lafObj[[i]]) #ensure the column_names is changed as well or if connection reopened/closed the col name will be lost!
+          }
+        }
+      }
+      
       varnames[varnames == oldnames[vari]] <- newnames[vari]
       
       # if the name is one of the plausible values
@@ -150,27 +151,63 @@ rename.sdf <- function(x,
         }  
       }
       
-      ## change link id
-      if(!is.null(dataListMeta)) {
-        dataListMeta$student$school <- gsub(paste0("\\b",oldnames[vari],"\\b"),newnames[vari],dataListMeta$student$school)
-        dataListMeta$student$teacher <- gsub(paste0("\\b",oldnames[vari],"\\b"),newnames[vari],dataListMeta$student$teacher)
+      #
+      if(!is.null(fileFormat) && length(fileFormat) > 0){
+        for(i in 1:length(fileFormat)){
+          if(varn %in% fileFormat[[i]]$variableName){
+            fileFormat[[i]]$variableName[fileFormat[[i]]$variableName == varn] <- newnames[vari]
+          }
+        }
       }
+      
+      ## update parentMergeVars
+      if(!is.null(parentMergeVars) && length(parentMergeVars) > 0){
+        for(i in 1:length(parentMergeVars)){
+          parentMergeVars[[i]] <- gsub(paste0("\\b",oldnames[vari],"\\b"),newnames[vari],parentMergeVars[[i]])
+        }
+      }
+      
+      #update the mergeVars
+      if(!is.null(mergeVars) && length(mergeVars) > 0){
+        for(i in 1:length(mergeVars)){
+          mergeVars[[i]] <- gsub(paste0("\\b",oldnames[vari],"\\b"),newnames[vari],mergeVars[[i]])
+        }
+      }
+      
+      #update the ignoreVars
+      if(!is.null(ignoreVars) && length(ignoreVars) > 0){
+        for(i in 1:length(ignoreVars)){
+          ignoreVars[[i]] <- gsub(paste0("\\b",oldnames[vari],"\\b"),newnames[vari],ignoreVars[[i]])
+        }
+      }
+      
     } # end (for(vari in 1:length(oldnames)))
     
     # replace all of attributes
     if (inherits(x, "light.edsurvey.data.frame")) {
       names(x) <- varnames
-    } else {
-      names(x$data) <- varnames
     }
     
+    #update dataList from our modified object copies
+    newDataList <- x$dataList
+    
+    if(!is.null(newDataList) && length(newDataList)>0){
+      for(i in 1:length(newDataList)){
+        newDataList[[i]]$lafObject <- lafObj[[i]]
+        names(newDataList[[i]]$lafObject) <- names(lafObj[[i]])
+        
+        newDataList[[i]]$fileFormat <- fileFormat[[i]]
+        newDataList[[i]]$parentMergeVars <- parentMergeVars[[i]]
+        newDataList[[i]]$mergeVars <- mergeVars[[i]]
+        newDataList[[i]]$ignoreVars <- ignoreVars[[i]]
+      }
+    }
+    
+    #update return object attributes from our modified object copies
     if (!is.null(userConditions)) { x <- setAttributes(x,"userConditions", userConditions)}
     if (!is.null(pvvars)) { x <- setAttributes(x,"pvvars", pvvars) }
     if (!is.null(weights)) { x <- setAttributes(x, "weights", weights) }
-    if (!is.null(fileFormat)) { x <- setAttributes(x,"fileFormat", fileFormat) }
-    if (!is.null(fileFormatSchool)) { x <- setAttributes(x, "fileFormatSchool", fileFormatSchool) }
-    if (!is.null(fileFormatTeacher)) { x <- setAttributes(x,"fileFormatTeacher", fileFormatTeacher) }
-    if (!is.null(dataListMeta)) { x <- setAttributes(x,"dataListMeta",dataListMeta) }
+    if (!is.null(newDataList)) { x <- setAttributes(x,"dataList", newDataList) }
     
     return(x)
   } else if (inherits(x,"edsurvey.data.frame.list")) {

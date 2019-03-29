@@ -146,21 +146,6 @@ readTALIS <- function(path,
       }
       processedData$userConditions <- list()
       processedData$defaultConditions <- NULL
-      if (dataLevel == "teacher") {
-        processedData$data <- processedData$dataList$teacher
-        processedData$dataSch <- processedData$dataList$school
-      } else if (dataLevel == "school") {
-        processedData$data <- processedData$dataList$school
-        processedData$dataSch <- NULL
-      }
-      processedData$dataTch <- NULL#data is already dataTch
-      
-      if (dataLevel == "teacher") {
-        processedData$dataListMeta <- list(student = processedData$dataListMeta$teacher,
-                                           school = processedData$dataListMeta$school)
-      } else {
-        processedData$dataListMeta <- list()
-      }
       
       # Set up weights
       uklz <- unique(processedData$dataListFF$teacher[,"pvWT"])
@@ -191,22 +176,16 @@ readTALIS <- function(path,
       processedData$gradeLevel <- convertISCEDcode(isced)
       processedData$achievementLevels <- NULL
       processedData$omittedLevels <- c("OMITTED",NA,"OMITTED OR VALID","(Missing)")
-      if (dataLevel == "teacher") {
-        processedData$fileFormat <- processedData$dataListFF$teacher
-        processedData$fileFormatSchool <- processedData$dataListFF$school
-      } else {
-        processedData$fileFormat <- processedData$dataListFF$school
-        processedData$fileFormatSchool <- NULL
-      }
-      processedData$fileFormatTeacher <- NULL
+
       processedData$survey <- "TALIS"
       processedData$country <- cacheFile$countryDict$country.name[cacheFile$countryDict$cntry == toupper(cntry)]
       sdf[[cntry]] <- edsurvey.data.frame(userConditions = processedData$userConditions,
                                           defaultConditions = processedData$defaultConditions,
-                                          data = processedData$data,
-                                          dataSch = processedData$dataSch,
-                                          dataTch = processedData$dataTch,
-                                          dataListMeta <- processedData$dataListMeta,
+                                          dataList = buildTALIS_dataList(dataLevel,
+                                                                         processedData$dataList$school, 
+                                                                         processedData$dataListFF$school,
+                                                                         processedData$dataList$teacher,
+                                                                         processedData$dataListFF$teacher),
                                           weights = processedData$weights,
                                           pvvars = processedData$pvvars,
                                           subject = processedData$subject,
@@ -216,14 +195,12 @@ readTALIS <- function(path,
                                           gradeLevel = processedData$gradeLevel,
                                           achievementLevels = processedData$achievementLevels,
                                           omittedLevels = processedData$omittedLevels,
-                                          fileFormat = processedData$fileFormat,
-                                          fileFormatSchool = processedData$fileFormatSchool,
-                                          fileFormatTeacher = processedData$fileFormatTeacher,
                                           survey = processedData$survey,
                                           country = processedData$country,
                                           psuVar = NULL,
                                           stratumVar = NULL,
-                                          jkSumMultiplier = 0.04) # see Reference (TALIS 2013 Chapter 9)
+                                          jkSumMultiplier = 0.04, # see Reference (TALIS 2013 Chapter 9)
+                                          reqDecimalConversion = FALSE)
     }
     
   } # end for(filepath in path)
@@ -514,4 +491,46 @@ Austria,40,AUT
 getCSVLaFConnection <- function(datFP, ff) {
   LaF::laf_open_csv(datFP, column_types = ff$dataType, 
                     column_names = tolower(ff$variableName))
+}
+
+#builds the TALIS dataList object
+buildTALIS_dataList <- function(dataLevel, schoolLaf, schoolFF, teacherLaf, teacherFF){
+  
+  dataList <- list()
+  
+  #build the list hierarchical based on the order in which the data levels would be merged in getData
+  #teacher data is main dataset with schools below it if both datasets available
+  if (dataLevel=="teacher"){
+    dataList[["Teacher"]] <- dataListItem(lafObject = teacherLaf,
+                                          fileFormat = teacherFF,
+                                          levelLabel = "Teacher",
+                                          forceMerge = TRUE,
+                                          parentMergeLevels = NULL,
+                                          parentMergeVars = NULL,
+                                          mergeVars = NULL,
+                                          ignoreVars = NULL, #student file variables will take precedence over teacher variables of same name
+                                          isDimLevel = TRUE)
+    
+    dataList[["School"]] <- dataListItem(lafObject = schoolLaf,
+                                         fileFormat = schoolFF,
+                                         levelLabel = "School",
+                                         forceMerge = FALSE,
+                                         parentMergeLevels = c("Teacher", "Teacher"),
+                                         parentMergeVars = c("idcntry", "idschool"),
+                                         mergeVars = c("idcntry", "idschool"),
+                                         ignoreVars = names(schoolLaf)[names(schoolLaf) %in% names(teacherLaf)], #student file variables will take precedence over school variables of same name
+                                         isDimLevel = FALSE)
+  }else{ #school level specified by user
+    dataList[["School"]] <- dataListItem(lafObject = schoolLaf,
+                                         fileFormat = schoolFF,
+                                         levelLabel = "School",
+                                         forceMerge = TRUE,
+                                         parentMergeLevels = NULL,
+                                         parentMergeVars = NULL,
+                                         mergeVars = NULL,
+                                         ignoreVars = NULL, #student file variables will take precedence over school variables of same name
+                                         isDimLevel = TRUE)
+  }
+  
+  return(dataList)
 }

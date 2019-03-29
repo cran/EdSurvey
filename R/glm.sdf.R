@@ -26,10 +26,12 @@
 #'                   The \code{weightVar} must be one of the weights for the
 #'                   \code{edsurvey.data.frame}. If \code{NULL}, uses the default
 #'                   for the \code{edsurvey.data.frame}.
-#' @param relevels   a list; used when the user wants to change the contrasts from the
+#' @param relevels   a list; used to change the contrasts from the
 #'                   default treatment contrasts to the treatment contrasts with a chosen omitted
 #'                   group. The name of each element should be the variable name, and the value 
 #'                   should be the group to be omitted.
+#' @param varMethod  a character set to \dQuote{jackknife} or \dQuote{Taylor} that indicates the variance
+#'                   estimation method to be used. See Details.
 #' @param omittedLevels a logical value. When set to the default value of \code{TRUE}, drops
 #'                      those levels of all factor variables that are specified
 #'                      in \code{edsurvey.data.frame}. Use \code{print} on an
@@ -41,7 +43,7 @@
 #' @param recode a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
 #'               \code{recode=} \code{list(}\code{var1=} \code{list(from=} \code{c("a",} \code{"b",} \code{"c"),} \code{to=}\code{"d"))}. See Examples.
 #' @param returnNumberOfPSU a logical value set to \code{TRUE} to return the number of 
-#'                          primary sampling units (PSU)
+#'                          primary sampling units (PSUs)
 #' @param returnVarEstInputs a logical value set to \code{TRUE} to return the
 #'                           inputs to the jackknife and imputation variance
 #'                           estimates. This is intended to allow for
@@ -51,7 +53,7 @@
 #' @details
 #' This function implements an estimator that correctly handles left-hand side
 #' variables that are logical, allows for survey sampling weights, and estimates
-#' variances using the jackknife replication method.
+#' variances using jackknife replication or Taylor series.
 #' The vignette titled
 #' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
 #' describes estimation of the reported statistics. 
@@ -82,15 +84,30 @@
 #'   All variance estimation methods are shown in the vignette titled
 #' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.
 #'   When the predicted
-#'   value does not have plausible values, the variance of the coefficients
+#'   value does not have plausible values and \code{varMethod} is set to
+#'   \code{jackknife}, the variance of the coefficients
 #'   is estimated according to the section
 #' \dQuote{Estimation of Standard Errors of Weighted Means When
 #'         Plausible Values Are Not Present, Using the Jackknife Method.}
 #'
-#'   When plausible values are present, the
+#'   When plausible values are present and \code{varMethod} is set to
+#'   \code{jackknife}, the
 #'   variance of the coefficients is estimated according to the section
 #' \dQuote{Estimation of Standard Errors of Weighted Means When
 #'         Plausible Values Are Present, Using the Jackknife Method.}
+#'
+#'   When the predicted
+#'   value does not have plausible values and \code{varMethod} is set to
+#'   \code{Taylor}, the variance of the coefficients
+#'   is estimated according to the section
+#' \dQuote{Estimation of Standard Errors of Weighted Means When
+#'         Plausible Values Are Not Present, Using the Taylor Series Method.}
+#'
+#'   When plausible values are present and \code{varMethod} is set to
+#'   \code{Taylor}, the
+#'   variance of the coefficients is estimated according to the section
+#' \dQuote{Estimation of Standard Errors of Weighted Means When
+#'         Plausible Values Are Present, Using the Taylor Series Method.}
 #' }
 #' 
 #' @aliases logit.sdf probit.sdf glm
@@ -101,7 +118,7 @@
 #'    \item{formula}{the formula used to fit the model}
 #'    \item{coef}{the estimates of the coefficients}
 #'    \item{se}{the standard error estimates of the coefficients}
-#'    \item{Vimp}{the estimated variance due to uncertainty in the scores (plausible values variables)}
+#'    \item{Vimp}{the estimated variance due to uncertainty in the scores (plausible value variables)}
 #'    \item{Vjrr}{the estimated variance due to sampling}
 #'    \item{M}{the number of plausible values}
 #'    \item{nPSU}{the number of PSUs used in calculation}
@@ -129,7 +146,8 @@
 #' @export glm.sdf
 #' @usage 
 #' glm.sdf(formula, family = binomial(link = "logit"), data,
-#'   weightVar = NULL, relevels = list(), jrrIMax = 1,
+#'   weightVar = NULL, relevels = list(), 
+#'   varMethod=c("jackknife", "Taylor"), jrrIMax = 1,
 #'   omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
 #'   returnNumberOfPSU=FALSE, returnVarEstInputs = FALSE)
 #'
@@ -138,13 +156,13 @@ glm.sdf <- function(formula,
                     data,
                     weightVar=NULL,
                     relevels=list(),
+                    varMethod=c("jackknife", "Taylor"),
                     jrrIMax=1,
                     omittedLevels=TRUE,
                     defaultConditions=TRUE,
                     recode=NULL,
                     returnNumberOfPSU=FALSE,
                     returnVarEstInputs=FALSE) {
-  varMethod <- "jackknife"
   call <- match.call()
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
   # if data is an edsurvey.data.frame.list, simply return a list with results
@@ -159,6 +177,7 @@ glm.sdf <- function(formula,
                         data=data,
                         weightVar=weightVar,
                         relevels=relevels,
+                        varMethod=varMethod,
                         jrrIMax=jrrIMax,
                         omittedLevels=omittedLevels,
                         defaultConditions=defaultConditions,
@@ -177,6 +196,7 @@ logit.sdf <- function(formula,
                       data,
                       weightVar=NULL,
                       relevels=list(),
+                      varMethod=c("jackknife", "Taylor"),
                       jrrIMax=1,
                       omittedLevels=TRUE,
                       defaultConditions=TRUE,
@@ -197,6 +217,7 @@ logit.sdf <- function(formula,
                         data=data,
                         weightVar=weightVar,
                         relevels=relevels,
+                        varMethod=varMethod,
                         jrrIMax=jrrIMax,
                         omittedLevels=omittedLevels,
                         defaultConditions=defaultConditions,
@@ -215,6 +236,7 @@ probit.sdf <- function(formula,
                        data,
                        weightVar=NULL,
                        relevels=list(),
+                       varMethod=c("jackknife", "Taylor"),
                        jrrIMax=1,
                        omittedLevels=TRUE,
                        defaultConditions=TRUE,
@@ -234,6 +256,7 @@ probit.sdf <- function(formula,
                         data=data,
                         weightVar=weightVar,
                         relevels=relevels,
+                        varMethod=varMethod,
                         jrrIMax=jrrIMax,
                         omittedLevels=omittedLevels,
                         defaultConditions=defaultConditions,
@@ -250,6 +273,7 @@ calc.glm.sdf <- function(formula,
                          data,
                          weightVar=NULL,
                          relevels=list(),
+                         varMethod=c("jackknife", "Taylor"),
                          jrrIMax=1,
                          omittedLevels=TRUE,
                          defaultConditions=TRUE,
@@ -262,6 +286,7 @@ calc.glm.sdf <- function(formula,
   if(is.null(call)) {
     call <- match.call()
   }
+  varMethod <- substr(tolower(match.arg(varMethod)), 0, 1)
   if(!family$family %in% c("binomial", "quasibinomial")) {
     stop("Only fits binomial models.")
   }
@@ -280,7 +305,6 @@ calc.glm.sdf <- function(formula,
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
   
   # varMethod always jackknife
-  varMethod <- "j"
   
   # if the weight var is not set, use the default
   if(is.null(weightVar)) {
@@ -319,7 +343,7 @@ calc.glm.sdf <- function(formula,
     # Get stratum and PSU variable
     stratumVar <- getAttributes(data, "stratumVar")
     psuVar <- getAttributes(data, "psuVar")
-    if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% names(data$data))) {
+    if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% colnames(data))) {
       getDataVarNames <- unique(c(getDataVarNames,stratumVar,psuVar))
     } else {
       warning(paste0("Stratum and PSU variable are required for this call and are not on the incoming data. Resetting ", dQuote("returnNumberOfPSU"), " to ", sQuote("FALSE"), "."))
@@ -481,7 +505,7 @@ calc.glm.sdf <- function(formula,
     jrrIMax <- min(jrrIMax, length(yvars))
     if(varMethod=="t") {
       jrrIMax <- length(yvars)
-    } 
+    }
     
     # varm is the variance matrix by coefficient and PV (for V_jrr)
     varm <- matrix(NA, nrow=jrrIMax, ncol=length(coef(lm0)))
@@ -556,7 +580,103 @@ calc.glm.sdf <- function(formula,
         coefm[pvi,] <- co0
       } # End while loop: pvi < length(yvars)
     } else { # End of if statment: varMethod == "j"
-      stop("Taylor series variance estimation not supported in this function.")
+      # Taylor series variance esimation, no Plausible Values
+      X <- sparse.model.matrix(frm, edf)
+      # sampling weights
+      Wsamp <- Diagonal(n=nrow(edf),edf[,wgt,drop=TRUE])
+      dofNum <- matrix(0, nrow=length(coef(lm0)), ncol=length(yvars))
+      dofDenom <- matrix(0, nrow=length(coef(lm0)), ncol=length(yvars))
+      # variances are calculated iteratively for all each y variable
+      lms <- lapply(1:length(yvars), function(mm) {
+        edf$yvar0 <- as.numeric(edf[,yvars[mm]])
+        y <- edf[,yvars[mm]]
+        suppressWarnings(lmi <- glm2(frm, data=edf, weights=w, family=family, mustart=c2, epsilon=1e-14))
+        coef <- b <- co0 <- coef(lmi)
+        D <- vcov(lmi)
+        eta <- predict(lmi, type="link")
+        pred <- predict(lmi, type="response")
+        # precision weights
+        # in the notation of McCullagh and Nelder, this is d(mu)/d(eta)
+        # evaluated at the (latent) predicted values (eta)
+        mu.eta <- family$mu.eta(eta)
+        Wprec <- Diagonal(n=nrow(edf), mu.eta^2 /((1-pred)*pred))
+        D2 <- solve(t(X) %*% Wsamp %*% Wprec %*% X)
+        # this is the partial of the likelihood at the unit level
+        uhij <- (y-pred)/(pred*(1-pred)) * as.matrix(X) * mu.eta
+        for(bi in 1:length(b)) { # for each coefficient
+          coln <- colnames(uhij)[bi]
+          # get the stratum/PSU based sum
+          edf$bb <- uhij[,bi] * edf[,wgt]
+          resi <- aggregate(formula(paste0("bb ~ ", psuVar, " + ", stratumVar)), edf, sum)
+          # and the average of the same across strata
+          resj <- aggregate(formula(paste0("bb ~ ", stratumVar)),resi,function(x) { mean(x)})
+          # fix the names up for merges
+          names(resi)[3] <- coln
+          names(resj)[2] <- paste0("uh_",coln)
+          if(bi==1) { # initiate uhi
+            uhi <- resi
+          } else{
+            uhi <- merge(uhi,resi, by=c(psuVar, stratumVar), all=TRUE)
+          }
+          uhi <- merge(uhi, resj, by=c(stratumVar), all=TRUE)
+          uhi[,paste0("dx",bi)] <- uhi[,coln] - uhi[,paste0("uh_",coln)]
+        } # End of for loop: bi in 1:length(b)
+        # this will be the variance-covariance matrix for this plausible value
+        vv <- matrix(0,nrow=length(b), ncol=length(b))
+        # this, roughly, calculates the z vectors and Z matrix
+        sa <-  lapply(unique(uhi[,stratumVar]), function(ii) {
+          vvj <- matrix(0,nrow=length(b), ncol=length(b))
+          # get the number of PSUs in this stratum
+          unkj <- unique(uhi[uhi[,stratumVar] == ii, psuVar, drop=TRUE])
+          if(length(unkj)>1) { # cannot estimate variance of single unit
+            sb <- lapply(unkj, function(jj) {
+              v <- as.numeric(t(uhi[uhi[,stratumVar]==ii & uhi[,psuVar]==jj, paste0("dx",1:length(b)), drop=FALSE]))
+              vvj <<- vvj + v %*% t(v)
+            })
+            vvj <- vvj * ( (length(unkj)) / ( length(unkj) - 1) )
+            # see statistics vignette, this is (D %*% Z_j %*% D)_ii, the diagonal vector
+            num <- diag(D %*% vvj %*% D) 
+            dofNum[,mm] <<- dofNum[,mm] + num
+            dofDenom[,mm] <<- dofDenom[,mm] + num^2
+            vv <<- vv + vvj
+          } # End of if statment:  if(length(unkj)>1)
+        }) # End of Lappy Loop: lapply(unique(uhi$repgrp1), function(ii)
+        M <- vv
+        vc <- D %*% M %*% D
+        varM[[mm]] <<- as.matrix(vc)
+        varm[mm,] <<- as.numeric(diag(vc))
+        coefm[mm,] <<- as.numeric(b)
+      })
+      M <- length(yvars)
+      # imputaiton variance / variance due to uncertaintly about PVs
+      
+      coefm0 <- t(t(coefm) - apply(coefm, 2, mean))
+      # calculate van Buuren B
+      B <- (1/(M-1))* Reduce("+", # add up the matrix results of the sapply
+                             sapply(1:nrow(coefm), function(q) {
+                               # within each PV set, calculate the outer product
+                               # (2.19 of Van Buuren)
+                               outer(coefm0[q,],coefm0[q,])
+                             }, simplify=FALSE)
+                            )
+      madeB <- TRUE
+      # \bar{U} from 2.18 in var Buuren 
+      Ubar <- (1/length(varM)) * Reduce("+", varM)
+
+      Vimp <- (M+1)/M * apply(coefm, 2, var)
+
+      coef <- apply(coefm, 2, mean)
+      # variance due to sampling
+      Vjrr <- apply(varm[1:jrrIMax,,drop=FALSE], 2, mean)
+      V <- Vimp + Vjrr
+      coefmPV <- t( t(coefm) - apply(coefm, 2, mean))
+      #reshape coefmPV so it is like varEstInputs expects it
+      dfl <- lapply(1:ncol(coefmPV), function(coli) {
+        data.frame(PV=1:nrow(coefmPV),
+                   variable=rep(names(coef(lm0))[coli], nrow(coefmPV)),
+                   value=coefmPV[,coli])
+      })
+      coefmPV <- do.call(rbind, dfl)
     } # End of if/else statment: varMethod == "j"
     
     # number of PVs
@@ -635,7 +755,73 @@ calc.glm.sdf <- function(formula,
       coefm <- NULL # no coefficients matrix by PV
 
     } else { # end if(varMethod == "j")
-      stop("Taylor series variance estimation not supported in this function.")
+      # Taylor series variance esimation, no PVs
+      coef <- b <- co0 <- coef(lm0)
+      D <- vcov(lm0)
+      eta <- predict(lm0, type="link")
+      pred <- predict(lm0, type="response")
+      y <- edf$yvar0
+      X <- sparse.model.matrix(frm, edf)
+      # sampling weights
+      Wsamp <- Diagonal(n=nrow(edf),edf[,wgt,drop=TRUE])
+      # precision weights
+      # in the notation of McCullagh and Nelder, this is d(mu)/d(eta)
+      # evaluated at the (latent) predicted values (eta)
+      mu.eta <- family$mu.eta(eta)
+      Wprec <- Diagonal(n=nrow(edf), mu.eta^2 /((1-pred)*pred))
+      D2 <- solve(t(X) %*% Wsamp %*% Wprec %*% X)
+      # this is the partial of the likelihood at the unit level
+      uhij <- (y-pred)/(pred*(1-pred)) * as.matrix(X) * mu.eta
+      for(bi in 1:length(b)) { # for each coefficient
+        coln <- colnames(uhij)[bi]
+        # get the stratum/PSU based sum
+        edf$bb <- uhij[,bi] * edf[,wgt]
+        resi <- aggregate(formula(paste0("bb ~ ", psuVar, " + ", stratumVar)), edf, sum)
+        # and the average of the same across strata
+        resj <- aggregate(formula(paste0("bb ~ ", stratumVar)),resi,function(x) { mean(x)})
+        names(resi)[3] <- coln
+        names(resj)[2] <- paste0("uh_",coln)
+        if(bi==1) {
+          uhi <- resi
+        } else{
+          uhi <- merge(uhi,resi, by=c(psuVar, stratumVar), all=TRUE)
+        }
+        uhi <- merge(uhi, resj, by=c(stratumVar), all=TRUE)
+        uhi[,paste0("dx",bi)] <- uhi[,coln] - uhi[,paste0("uh_",coln)]
+      } # End of for loop: bi in 1:length(b)
+      # this will be the variance-covariance matrix for this plausible value
+      vv <- matrix(0,nrow=length(b), ncol=length(b))
+      dofNum <- rep(0,length(b))
+      dofDenom <- rep(0,length(b))
+      # this, roughly, calculates the z vectors and Z matrix
+      sa <-  lapply(unique(uhi[,stratumVar]), function(ii) {
+        vvj <- matrix(0,nrow=length(b), ncol=length(b))
+            unkj <- unique(uhi[uhi[,stratumVar] == ii, psuVar, drop=TRUE])
+        if(length(unkj)>1) { # cannot estimate variance of single unit
+          sb <- lapply(unkj, function(jj) {
+            # sum of z vectors within stratum for various PSUs
+            v <- as.numeric(t(uhi[uhi[,stratumVar]==ii & uhi[,psuVar]==jj, paste0("dx",1:length(b)), drop=FALSE]))
+            vvj <<- vvj + v %*% t(v)
+          })
+          vvj <- vvj * ( (length(unkj)) / ( length(unkj) - 1) )
+          # for DoF calculation, this is (D Z_j D)_ii, hence the diag
+          num <- diag(D %*% vvj %*% D)
+          dofNum <<- dofNum + num
+          dofDenom <<- dofDenom + num^2
+          vv <<- vv + vvj
+        } # End of if statment:  if(length(unkj)>1)
+      }) # End of Lappy Loop: lapply(unique(uhi$repgrp1), function(ii)
+      M <- vv
+      vc <- D %*% M %*% D
+      # get R-squared
+      Vjrr <- as.numeric(diag(vc))
+      M <- 1
+      Vimp <- 0
+      varm <- NULL
+      coefm <- NULL
+      # this is the VC matrix, store it for vcov to recover
+      Ubar <- as.matrix(vc)
+      B <- 0 * Ubar # no PVs
     } # end else for if(varMethod == "j")
   } # end else for if(any(pvy))
   
@@ -676,7 +862,12 @@ calc.glm.sdf <- function(formula,
                         se=se,
                         t=coef/se)
   if(varMethod=="t") {
-    coefmat$dof <- dofNum^2/dofDenom
+    m <- length(wgtl$jksuffixes)
+    if(inherits(dofNum, "matrix")) {
+      coefmat$dof <- apply((3.16 - 2.77/sqrt(m)) * dofNum^2/dofDenom, 1, mean)
+    } else {
+      coefmat$dof <- (3.16 - 2.77/sqrt(m)) * dofNum^2/dofDenom
+    }
   } else {
     coefmat$dof <- sapply(names(coef), function(cn) {
       DoFCorrection(varEstA=varEstInputs, varA=cn, method="JR")

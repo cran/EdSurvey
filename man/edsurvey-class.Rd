@@ -8,12 +8,11 @@
 \alias{setAttributes}
 \title{EdSurvey Class Constructors}
 \usage{
-edsurvey.data.frame(userConditions, defaultConditions, data, dataSch,
-  dataTch, dataListMeta, weights, pvvars, subject, year, assessmentCode,
-  dataType, gradeLevel, achievementLevels, omittedLevels, fileFormat,
-  fileFormatSchool, fileFormatTeacher, survey, country, psuVar, stratumVar,
+edsurvey.data.frame(userConditions, defaultConditions, dataList = list(),
+  weights, pvvars, subject, year, assessmentCode, dataType, gradeLevel,
+  achievementLevels, omittedLevels, survey, country, psuVar, stratumVar,
   jkSumMultiplier, recodes = NULL, validateFactorLabels = FALSE,
-  forceLower = TRUE)
+  forceLower = TRUE, reqDecimalConversion = TRUE)
 
 \method{$}{edsurvey.data.frame}(x, i)
 
@@ -26,17 +25,7 @@ setAttributes(data, attribute, value)
 
 \item{defaultConditions}{a list of default conditions that are often set for each survey}
 
-\item{data}{in the \code{edsurvey.data.frame} constructor, this is an \code{LaF} object
-that connects to the main data, often at the student level. For
-\code{getAttributes} and \code{setAttributes}, this argument is
-an \code{edsurvey.data.frame} or \code{light.edusrvey.data.frame}.}
-
-\item{dataSch}{an \code{LaF} object that connects to the school-level data (optional)}
-
-\item{dataTch}{an \code{LaF} object that connects to the teacher-level data (optional)}
-
-\item{dataListMeta}{a list that stores variables that can be used to link school-level and teacher-level
-data to the main data. See Details.}
+\item{dataList}{a list of \code{dataListItem} objects to model the data structure of the survey}
 
 \item{weights}{a list that stores information regarding weight variables. See Details.}
 
@@ -50,20 +39,14 @@ data to the main data. See Details.}
 Can be \dQuote{National} or \dQuote{International}.}
 
 \item{dataType}{a character that indicates the unit level of the main data.
-Examples include dQuote{Student}, \dQuote{teacher}, \dQuote{school},
+Examples include \dQuote{Student}, \dQuote{teacher}, \dQuote{school},
 \dQuote{Adult Data}.}
 
 \item{gradeLevel}{a character that indicates grade level of the given data}
 
-\item{achievementLevels}{a list of achievement level categories and cutpoints}
+\item{achievementLevels}{a list of achievement-level categories and cutpoints}
 
 \item{omittedLevels}{a list of default omitted levels for the given data}
-
-\item{fileFormat}{a \code{data.frame} that stores codebook information for the main data. See Details.}
-
-\item{fileFormatSchool}{a \code{data.frame} that stores codebook information for the school-level data (if exists). See Details.}
-
-\item{fileFormatTeacher}{a \code{data.frame} that stores codebook information for the teacher-level data (if exists). See Details.}
 
 \item{survey}{a character that indicates the name of the survey}
 
@@ -71,7 +54,7 @@ Examples include dQuote{Student}, \dQuote{teacher}, \dQuote{school},
 
 \item{psuVar}{a character that indicates the PSU sampling unit variable. Ignored when weights have psuVar defined.}
 
-\item{stratumVar}{a character indicates the stratum variable. Ignored with weights have stratumVar defined.}
+\item{stratumVar}{a character that indicates the stratum variable. Ignored when weights have stratumVar defined.}
 
 \item{jkSumMultiplier}{a numeric value of the jackknife coefficient (used in calculating the jackknife replication estimation)}
 
@@ -81,9 +64,13 @@ Examples include dQuote{Student}, \dQuote{teacher}, \dQuote{school},
 
 \item{forceLower}{a Boolean; when set to \code{TRUE}, will automatically lowercase variable names}
 
+\item{reqDecimalConversion}{a Boolean; when set to \code{TRUE}, a \code{getData} call will multiply the raw file value by a decimal multiplier}
+
 \item{x}{an \code{edsurvey.data.frame}}
 
 \item{i}{a character, the column name to extract}
+
+\item{data}{an \code{edsurvey.data.frame}}
 
 \item{attribute}{a character, name of an attribute to get or set}
 
@@ -94,13 +81,8 @@ An object of class \code{edsurvey.data.frame} with the following elements:
 
 \emph{Elements that store data connections and data codebooks}
 \describe{
-   \item{data}{an \code{LaF} object containing a connection to the student dataset on disk}
-   \item{dataSch}{an \code{LaF} object containing a connection to the school dataset on disk if exists. If not, will be \code{NULL}.}
-   \item{dataTch}{an \code{LaF} object containing a connection to the teacher dataset on disk if exists. If not, will be \code{NULL}.}
-   \item{fileFormat}{a \code{data.frame} containing the format of the file in the \code{data} parameter. See Details.}
-   \item{fileFormatSchool}{a \code{data.frame} containing the format of the file in the \code{dataSch} parameter. See Details.}
-   \item{fileFormatTeacher}{a \code{data.frame} containing the format of the file in the \code{dataTch} parameter. See Details.}
-}   
+   \item{dataList}{a \code{list} object containing the surveys \code{dataListItem} objects}
+}
 \emph{Elements that store sample design and default subsetting information of the given survey data}
 \describe{
    \item{userConditions}{a list containing all user conditions, set using the \code{subset.edsurvey.data.frame} method}
@@ -125,7 +107,7 @@ An object of class \code{edsurvey.data.frame} with the following elements:
 \description{
 Two new classes in EdSurvey are described in this section: the \code{edsurvey.data.frame}
              and \code{light.edsurvey.data.frame}. The \code{edsurvey.data.frame}
-             class stores metadata about survey data and data is stored on the
+             class stores metadata about survey data, and data are stored on the
              disk (via the \code{LaF} package), allowing GB of data to be used easily on a machine otherwise
              inappropriate for manipulating large datasets.
              The \code{light.edsurvey.data.frame} is typically generated
@@ -139,21 +121,8 @@ Two new classes in EdSurvey are described in this section: the \code{edsurvey.da
              implements the \code{$} function to extract a variable.
 }
 \details{
-The \code{dataListMeta} argument is a list with an element \code{student} that is also a list. 
-Each element of the \code{student} list is another dataset name 
-(\code{teacher} or \code{school}) that indicates the variables used to link
-the student file to those files. The merge variables are 
-shown with a caret character (\dQuote{\code{^}}) between them. The first variable
-is the name of the merge variable on the student file, and the second variable
-is the name of the merge variable on the school file. When multiple variables
-are used to merge, a semicolon can separate pairs of variables; e.g.,
-\code{student=list(school="varA^varY;varB^varZ")} would indicate that the student file 
-can be merged to the school file using the \code{varA} and \code{varB}
-variables from the student file to merge it to \code{varY} and \code{varZ},
-respectively, on the school file.
-
 The \code{weight} list has an element named after each weight variable name
-that is a list with elements \code{jkbase} and \code{jksuffixes}. The 
+that is a list with elements \code{jkbase} and \code{jksuffixes}. The
 \code{jkbase} variable is a single character indicating the jackknife replicate
 weight base name, while \code{jksuffixes} is a vector with one element for each
 jackknife replicate weight. When the two are pasted together, they should form
@@ -166,42 +135,23 @@ which can be left blank. A weight must define only one of \code{psuVar}
 and \code{stratumVar}.
 
 The \code{pvvars} list has an element for each subject or subscale score
-that has plausible values. Each element is a list with a \code{varnames} 
-element that indicates the column names of the plausible values and an 
-\code{achievementLevel} argument that is a named vector of the achievement
-level cut points. 
-
-The \code{fileFormat} arguments are data frames that have the following columns:
-\describe{
-\item{variableName}{name of the variable. Changed to lower case by the
-                    constructor if \code{forceLower=TRUE}.}
-\item{Start}{start column of the data}
-\item{End}{end column of the data}
-\item{Width}{number of characters wide the data is}
-\item{Decimal}{power of 10 that the data should be divided by}
-\item{Labels}{brief description of the variable}
-\item{labelValues}{an caret (\dQuote{\code{^}}) delimited list of label
-                   value pairs, each of which is equal delimited (\dQuote{\code{=}})
-                   as \code{code=value}. For example, the string \dQuote{1=true^2=false^3=invalid}
-                   would result in values of 1 being labeled \dQuote{true}, values
-                   2 being labeled \dQuote{false}, and values of 3 being labeled \dQuote{invalid}.}
-\item{dataType}{one of \dQuote{character}, \dQuote{numeric}, or \dQuote{integer}}
-\item{Weights}{Boolean set to \code{TRUE} to indicate that the column is
-               a full sample (not replicate) weight column}
-}
+that has plausible values. Each element is a list with a \code{varnames}
+element that indicates the column names of the plausible values and an
+\code{achievementLevel} argument that is a named vector of the 
+achievement-level cutpoints.
 }
 \section{EdSurvey Classes}{
 
 \code{edsurvey.data.frame} is an object that stores connection to data on the
 disk along with important survey sample design information.
- 
+
 \code{edsurvey.data.frame.list} is a list of \code{edsurvey.data.frame}
 objects. It is often used in trend or cross-regional analysis in the
 \code{\link{gap}} function. See \code{\link{edsurvey.data.frame.list}} for
 more information on how to create an \code{edsurvey.data.frame.list}. Users
 can also refer to the vignette titled
 \href{https://www.air.org/sites/default/files/EdSurvey-Trend.pdf}{Using EdSurvey for Trend Analysis}
-for examples. 
+for examples.
 
 Besides \code{edsurvey.data.frame} class, \code{EdSurvey} package also
 implements \code{light.edsurvey.data.frame} class, which can be used by both
@@ -211,12 +161,12 @@ survey and sample design information (i.e., plausible values and weights), which
 will be used for variance estimation in analytical functions. Because it is
 also a base R \code{data.frame}, users can also apply base R functions for
 data manipulation.
- vignette titled
+See vignette titled
 \href{https://www.air.org/sites/default/files/EdSurvey-getData.pdf}{getData}
 for more examples.
 
 Many functions will remove attributes from a data frame, such as
-a \code{light.edsurvey.data.frame}, and the 
+a \code{light.edsurvey.data.frame}, and the
 \code{\link{rebindAttributes}} function can add them back.
 
 Users can get a \code{light.edsurvey.data.frame} object by using
@@ -234,9 +184,9 @@ Users can extract a column from an \code{edsurvey.data.frame} object using \code
 Users can use \code{getAttributes} method to extract any of the attributes of
 an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}. Note that
 a \code{light.edsurvey.data.frame} will not have attributes related to data connection
-because data has already been read in memory.
+because data have already been read in memory.
 
-If users want to update an attribute (i.e., \code{omittedLevels}), users can
+If users want to update an attribute (i.e., \code{omittedLevels}), they can
 use the \code{setAttributes} method.
 }
 

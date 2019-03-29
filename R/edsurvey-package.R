@@ -19,8 +19,11 @@
 #' \code{\link{achievementLevels}},
 #' \code{\link{cor.sdf}},
 #' \code{\link{edsurveyTable}},
+#' \code{\link{summary2}},
 #' \code{\link{lm.sdf}}, 
 #' \code{\link{logit.sdf}},
+#' \code{\link{mixed.sdf}},
+#' \code{\link{rq.sdf}},
 #' \code{\link{percentile}}, and
 #' \code{\link{gap}}
 #' can then be used to analyze data.

@@ -2,7 +2,7 @@ require(testthat)
 require(EdSurvey)
 options(width = 500)
 options(useFancyQuotes=FALSE)
-#source("REF-2-esdfl.R") # has REF output in it
+source("REF-2-esdfl.R") # has REF output in it
 
 context("read ESDFL")
 test_that("read ESDFL",{
@@ -36,14 +36,13 @@ test_that("ESDFL cor", {
   c1 <- cor.sdf("b017451", "b003501", sdfA,
 						    method="Pearson",
 						    weightVar="origwt")
+  c3 <- cor.sdf("b017451", "b003501", sdfC,
+						    method="Pearson",
+						    weightVar="origwt")
   c1234 <- cor.sdf("b017451", "b003501", sdfl,
 						       method="Pearson",
 						       weightVar="origwt")
   expect_equal(c1,c1234[[1]])
-  skip_on_cran()
-  c3 <- cor.sdf("b017451", "b003501", sdfC,
-                method="Pearson",
-                weightVar="origwt")
   expect_equal(c3,c1234[[3]])
 })
 
@@ -103,13 +102,13 @@ test_that("ESDFL error handling",{
 
 context("ESDFL gap")
 test_that("ESDFL gap",{
+  skip_on_cran()
 	g1 <- gap("composite", sdfl, dsex=="Male", dsex=="Female", returnSimpleDoF=TRUE)
 	# check that the columns output for just one agree between esdfl and sdf
 	g2 <- gap("composite", sdfC, dsex=="Male", dsex=="Female", returnSimpleDoF=TRUE)
   mnames <- names(g2$results)
   mnames <- mnames[mnames %in% names(g1$results)]
   expect_equal(unlist(g2$results[mnames]), unlist(g1$results[3,mnames]))
-  skip_on_cran()
   # also check that the overall output has not changed.targetLevel="Male"
 	expect_known_value(g1, "gap_esdfl_mean.rds", update=FALSE)
   # percentile
@@ -154,6 +153,24 @@ test_that("ESDFL helper functions",{
   expect_equal(sw1, c(swA, swB, swC, swD))
 })
 
+
+context("ESDFL cor")
+test_that("ESDFL cor", {
+  skip_on_cran()
+  c1 <- cor.sdf("b017451", "b003501", sdfA,
+						    method="Pearson",
+						    weightVar="origwt")
+  c3 <- cor.sdf("b017451", "b003501", sdfC,
+						    method="Pearson",
+						    weightVar="origwt")
+  c1234 <- cor.sdf("b017451", "b003501", sdfl,
+						       method="Pearson",
+						       weightVar="origwt")
+  expect_equal(c1,c1234[[1]])
+  expect_equal(c3,c1234[[3]])
+})
+
+
 context("ESDFL subset and print")
 test_that("ESDFL subset and print",{
   sdfl2 <- subset(sdfl, dsex=="Male")
@@ -184,7 +201,6 @@ test_that("ESDFL subset and print",{
 
 context("ESDFL lm.sdf")
 test_that("ESDFL lm.sdf",{
-  skip_on_cran()
   # jrrIMax is required to make sure U isn't singular
   et1 <- lm.sdf(composite ~ b017451 + dsex, sdfl, jrrIMax=Inf)
   # lm maps to lm.sdf when data is an edsurvey.data.frame.list
@@ -206,7 +222,6 @@ test_that("ESDFL lm.sdf",{
 context("ESDFL percentile")
 test_that("ESDFL percentile",{
   expect_known_value(pct3 <- percentile("composite", 50, sdfl), "pct3.rds", update=FALSE)
-  skip_on_cran()
   pct3C <- percentile("composite", 50, sdfC)
   expect_equal(unlist(pct3C[,,drop=TRUE]), unlist(pct3[3,names(pct3C),drop=TRUE]))
 })

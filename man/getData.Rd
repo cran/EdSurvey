@@ -51,7 +51,7 @@ Can be set as \code{recode} \code{=} \code{list(var1}
 
 \item{includeNaLabel}{a logical value to indicate if \code{NA} (missing) values are
 returned as literal \code{NA} values or as factor levels
-coded as \code{NA}.}
+coded as \code{NA}}
 
 \item{addAttributes}{a logical value set to \code{TRUE} to get a
 \code{data.frame} that can be used in calls to
@@ -64,9 +64,9 @@ more information on \code{light.edsurvey.data.frame}.}
 should be returned. Defaults to \code{TRUE}.}
 }
 \value{
-When \code{addAttributes} is \code{FALSE}, returns a
+When \code{addAttributes} is \code{FALSE}, \code{getData} returns a
 \code{data.frame} containing data associated with requested
-variables. When \code{addAttributes} is \code{TRUE}, returns a
+variables. When \code{addAttributes} is \code{TRUE}, \code{getData} returns a
 \code{light.edsurvey.data.frame}.
 }
 \description{
@@ -83,7 +83,7 @@ the necessary variables.
 
 When \code{getData} is called, it returns a \code{data.frame}. When the
 \code{addAttributes} argument is set to \code{TRUE}, that \code{data.frame}
-has several attributes added to make it usable by the functions in 
+has several attributes added to make it usable by the functions in
 the \code{EdSurvey} package (e.g., \code{lm.sdf}), and the class is a
 \code{light.edsurvey.data.frame}.
 
@@ -125,7 +125,7 @@ table(df2)
 df2 <- getData(data=sdf, varnames=c("dsex", "b017451"), omittedLevels = FALSE)
 table(df2)
 
-# the variable "c052601" is from the school-level data file; merging is handled automatically
+# the variable "c052601" is from the school-level data file; merging is handled automatically.
 # returns a light.edsurvey.data.frame using addAttributes=TRUE argument
 gddat <- getData(data=sdf, 
                  varnames=c("composite", "dsex", "b017451","c052601"),

@@ -1,7 +1,7 @@
 #' @title Summary Codebook
 #'
-#' @description Retrieves variable names, variable labels, and value labels for an \code{edsurvey.data.frame}, \code{light.edsurvey.data.frame},
-#' or \code{edsurvey.data.frame.list}.
+#' @description Retrieves variable names, variable labels, and value labels for an \code{edsurvey.data.frame},
+#' \code{light.edsurvey.data.frame}, or \code{edsurvey.data.frame.list}.
 #'
 #' @param data            an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
 #'                        an \code{edsurvey.data.frame.list}
@@ -17,7 +17,7 @@
 #'                        value levels (if applicable), and the file format data source from an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame},
 #'                        or an \code{edsurvey.data.frame.list}
 #'
-#' @author Michael Lee
+#' @author Michael Lee and Paul Bailey
 #' @example \man\examples\showCodebook.R
 #' @export
 showCodebook <- function(data, fileFormat = NULL, labelLevels = FALSE, includeRecodes = FALSE) {
@@ -30,9 +30,9 @@ showCodebook <- function(data, fileFormat = NULL, labelLevels = FALSE, includeRe
 
   # bind all fileFormats into a list object
   if (inherits(sdf, c("edsurvey.data.frame"))) {
-    dataList <- list(fileFormat = sdf$fileFormat, fileFormatSchool = sdf$fileFormatSchool, fileFormatTeacher = sdf$fileFormatTeacher)
-    } else {
-    dataList <- list(fileFormat = attributes(sdf)$fileFormat, fileFormatSchool = attributes(sdf)$fileFormatSchool, fileFormatTeacher = attributes(sdf)$fileFormatTeacher)
+    dataList <- sdf$dataList
+  } else {
+    dataList <- attributes(sdf)$dataList
   }
 
   # include only the data fileFormats that exist in the data connection
@@ -42,38 +42,20 @@ showCodebook <- function(data, fileFormat = NULL, labelLevels = FALSE, includeRe
   vars <- data.frame()
   # if fileFormat is NULL, retrieve all available fileFormats from connection via getAttributes and append
   if (is.null(fileFormat)) {
-
     for(i in 1:length(dataList)) {
-      vars <- rbind(vars, data.frame(getAttributes(sdf, names(dataList)[i]), fileFormat = names(dataList)[i]))
+      vars <- rbind(vars, data.frame(dataList[[i]]$fileFormat, fileFormat = names(dataList)[i]))
     }
-
   } else {
     # fileFormat is defined (must be a combination of student, school, or teacher)
-    tolower(fileFormat)
-
-    if (!all(fileFormat %in% c("school" ,"student", "teacher"))) {
-      stop(paste0("The ", sQuote("fileFormat"), " argument must either be ", dQuote("student"), " or ", dQuote("school"), " or ", dQuote("teacher"),"."))
+    fileFormat <- tolower(fileFormat)
+    if (!all(fileFormat %in% tolower(names(dataList)))) {
+      stop(paste0("The ", sQuote("fileFormat"), " argument must either be one or more of ", paste(dQuote(names(dataList)), collapse=" or "),"."))
     }
+    names(dataList) <- tolower(names(dataList))
 
-    # replace names of values accepted in "fileFormat" argument with those used in the attributes of the data connection
-    fileFormat <- gsub("school", "fileFormatSchool", fileFormat)
-    fileFormat <- gsub("teacher", "fileFormatTeacher", fileFormat)
-    fileFormat <- gsub("student", "fileFormat", fileFormat)
-    fileFormatOrig <- fileFormat
-    fileFormat <- fileFormat[fileFormat %in% names(dataList)]
-
-    # return a warning if there is no fileFormat attribute information available for this data
-    if(length(fileFormat) == 0) {
-      stop(paste0("The ", sQuote("fileFormat"), " selected contains no codebook information available for this data."))
-    }
-
-    # return a warning if there is no fileFormat attribute information available for a specified format listed in fileFormat argument
-    if (any(!fileFormatOrig %in% names(dataList))) {
-      warning(paste0("The ", pasteItems(fileFormatOrig[which(!fileFormatOrig %in% names(dataList))]), " codebook is not present on this ", class(sdf)[1], "; returning only ", pasteItems(fileFormatOrig[which(fileFormatOrig %in% names(dataList))]), "."))
-    }
     # retrieve all available fileFormats from connection via getAttributes and append
     for(i in 1:length(fileFormat)) {
-      vars <- rbind(vars, data.frame(getAttributes(sdf, fileFormat[i]), fileFormat = fileFormat[i]))
+      vars <- rbind(vars, data.frame(dataList[[fileFormat[i]]]$fileFormat, fileFormat = fileFormat[i]))
     }
   }
   

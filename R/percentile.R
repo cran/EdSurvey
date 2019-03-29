@@ -12,24 +12,19 @@
 #'                  \code{edsurvey.data.frame.list}
 #' @param weightVar a character indicating the weight variable to use.
 #'                  (See Details.)
-#' @param jrrIMax   a numeric value; when using the jackknife variance estimation
-#'                  method, the \eqn{V_{jrr}} term
-#'                  (see Details) can be estimated with any positive number
-#'                  of plausible values and is 
-#'                  estimated on the lower of the number of
-#'                  available plausible values and 
-#'                  \code{jrrIMax}. When \code{jrrIMax} is set to \code{Inf},
-#'                  all plausible values will 
-#'                  be used. Higher values of \code{jrrIMax} lead to longer
-#'                  computing times and more
-#'                  accurate variance estimates.
+#' @param jrrIMax    a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+#'                   sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
+#'                   term (see the Details section of
+#'                 \code{\link{lm.sdf}} to see the definition of \eqn{V_{jrr}}) can be estimated with any number of plausible values, and values larger than the number of 
+#'                   plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+#'                   Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.
 #' @param varMethod a character set to \code{jackknife} or \code{Taylor}
 #'                  that indicates the variance estimation method used when 
 #'                  constructing the confidence intervals. The jackknife
 #'                  variance estimation method is always
 #'                  used to calculate the standard error.
 #' @param alpha a numeric value between 0 and 1 indicating the confidence level.
-#'              An \code{alpha} value of 0.05 would indicate a 95 percent 
+#'              An \code{alpha} value of 0.05 would indicate a 95\% 
 #'              confidence interval and is the default.
 #' @param omittedLevels a logical value. When set to the default value of
 #'                      \code{TRUE}, drops those levels of 
@@ -54,7 +49,7 @@
 #'                           computation
 #'                           of covariances between estimates.
 #' @param returnNumberOfPSU a logical value set to \code{TRUE} to return the number of 
-#'                          primary sampling units (PSU)                         
+#'                          primary sampling units (PSUs)                         
 #' @details Percentiles, their standard errors, and confidence intervals
 #'          are calculated according to the vignette titled
 #' \href{https://www.air.org/sites/default/files/EdSurvey-Percentiles.pdf}{Methods Used for Estimating Percentiles}.
@@ -68,7 +63,7 @@
 #' The return type depends on whether the class of the \code{data} argument is an
 #' \code{edsurvey.data.frame} or an \code{edsurvey.data.frame.list}.
 #'
-#' \subsection{the data argument is an edsurvey.data.frame}{
+#' \subsection{The data argument is an edsurvey.data.frame}{
 #'   When the \code{data} argument is an \code{edsurvey.data.frame},
 #'   \code{percentile} returns an S3 object of class \code{percentile}.
 #'   This is a \code{data.frame} with typical attributes (\code{names},
@@ -95,7 +90,7 @@
 #'   }
 #' }
 #' 
-#' \subsection{the data argument is an edsurvey.data.frame.list}{
+#' \subsection{The data argument is an edsurvey.data.frame.list}{
 #'   When the \code{data} argument is an \code{edsurvey.data.frame.list},
 #'   \code{percentile} returns an S3 object of class \code{percentileList}.
 #'   This is a data.frame with a \code{call} attribute.
@@ -104,7 +99,7 @@
 #'   section, but there also are columns from the \code{edsurvey.data.frame.list}.
 #'   
 #'   \describe{
-#'     \item{covs}{A column for each column in the \code{covs} value of the
+#'     \item{covs}{a column for each column in the \code{covs} value of the
 #'                 \code{edsurvey.data.frame.list}.
 #'                 See Examples.}
 #'   }
@@ -128,7 +123,8 @@ percentile <- function(variable, percentiles, data,
                 defaultConditions=TRUE,
                 recode=NULL,
                 returnVarEstInputs=FALSE,
-                returnNumberOfPSU=FALSE) {
+                returnNumberOfPSU=FALSE
+                ) {
   # check incoming variables
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
   varMethod <- substr(tolower(varMethod[[1]]), 0,1)
@@ -146,7 +142,8 @@ percentile <- function(variable, percentiles, data,
   if (all(percentiles >= 0 & percentiles <= 1) & any(percentiles != 0)) {
     warning("All values in the ",sQuote("percentiles"), " argument are between 0 and 1. Note that the function uses a 0-100 scale.")
   }
-
+  # only one implemented method for now
+  pctMethod <- "unbiased"
   # deal with the possibility that data is an edsurvey.data.frame.list
   if(inherits(data, "edsurvey.data.frame.list")) {
     ll <- length(data$datalist)
@@ -206,6 +203,10 @@ percentile <- function(variable, percentiles, data,
     } else {
       wgt <- weightVar
     } # End of if/else: is.null(weightVar)
+    if(min(nchar(wgt)) == 0) {
+      # no weight
+      stop(paste0("There is no default weight variable for ",getAttributes(data,"survey")," data, so the argument ",sQuote("weightVar"), " must be specified."))
+    }
 
     # 1) get data for this variable and weight
     taylorVars <- NULL
@@ -218,7 +219,7 @@ percentile <- function(variable, percentiles, data,
       # Get stratum and PSU variable
       stratumVar <- getAttributes(data,"stratumVar")
       psuVar <- getAttributes(data,"psuVar")
-      if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% names(data$data))) {
+      if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% colnames(data))) { #names(data$data) changed to colnames(data)::Tom
         getDataVarNames <- unique(c(getDataVarNames, stratumVar, psuVar))
       } else {
         warning("Warning: Stratum and PSU variable are required for this call and are not on the incoming data. Ignoring returnNumberOfPSU=TRUE.")
@@ -291,7 +292,7 @@ percentile <- function(variable, percentiles, data,
       # the percentile of each point,
       # using percentile method recomended by Hyndman and Fan (1996)
       # see percentile vignette for details.
-      xpw$p <- 100 * (pmax(1,nn/WW * cumsum(xpw$w)) - 1/3) / (nn + 1/3)
+      xpw$p <- pctp(nn, WW, xpw$w, pctMethod)
       # this does not cover the entire 0 to 100 interval, so add points on the end
       # to allow that.
       # NOTE: w is nolonger useful, so do not worry that it is arbitrary for the first
@@ -303,7 +304,7 @@ percentile <- function(variable, percentiles, data,
       # 3) identify requested points
       # pctf finds the points. the sapply does it for each value in percentiles
       r[vari, ] <- sapply(1:length(percentiles), function(peri) {
-                    pctf(percentiles[peri], xpw) 
+                    pctf(percentiles[peri], xpw, pctMethod) 
                   })
       # get the smaller of n above the cutoff or n below
       # subtract one to account for edge data at the end.
@@ -327,9 +328,9 @@ percentile <- function(variable, percentiles, data,
                           xpw$w <- c(0,edf[ord,jkw[jki]],0)
                           WW <- sum(xpw$w)
                           nn <- nrow(xpw) - 2
-                          xpw$p <- c(0, 100 * (pmax(1,nn/WW * cumsum(xpw$w[-c(1,nrow(xpw))])) - 1/3) / (nn + 1/3), 100)
+                          xpw$p <- c(0, pctp(nn, WW, xpw$w[-c(1,nrow(xpw))], pctMethod), 100)
                           # estimate the percentile with the new weights
-                          pctf(p, xpw)
+                          pctf(p, xpw, pctMethod)
                         })
                         rpr <- jkrp - rp
                         #if difference rpr is very small round to 0 for DOF correctness 
@@ -549,14 +550,14 @@ percentile <- function(variable, percentiles, data,
       xpw <- xpw[ord <- order(xpw$x),]  # keep order as ord for use in sapply later
       WW <- sum(xpw$w)
       nn <- nrow(xpw) - 2
-      xpw$p <- 100 * (pmax(1,nn/WW * cumsum(xpw$w)) - 1/3) / (nn + 1/3)
+      xpw$p <- pctp(nn, WW, xpw$w, pctMethod)
       xpw <- rbind(xpw[1,], xpw, xpw[nrow(xpw),])
       xpw$p[1] <- 0
       xpw$p[nrow(xpw)] <- 100
 
       ci <- sapply(1:length(percentiles), function(peri) {
-              c(pctf(latent_ci[peri,1],xpw),
-                pctf(latent_ci[peri,2],xpw))
+              c(pctf(latent_ci[peri,1],xpw, pctMethod),
+                pctf(latent_ci[peri,2],xpw, pctMethod))
       })
       ci_ <- c(ci_, list(t(ci)))
     }
@@ -592,7 +593,7 @@ percentile <- function(variable, percentiles, data,
 # helper function that gets percentiles from interpolated values
 # NOT EXPORTED
 # p the desired percentile
-pctf <- function(p, xpw) {
+pctf <- function(p, xpw, pctMethod) {
   p <- min( max(p,0) , 100) # enforce 0 to 100 range
   # k + 1 (or, in short hand kp1)
   # which.max returns the index of the first value of TRUE
@@ -609,6 +610,13 @@ pctf <- function(p, xpw) {
   gamma <- (p-pk)/(pkp1 - pk)
   #interpolate between k and k+1
   return((1-gamma) * xpw$x[k] + gamma * xpw$x[kp1])
+}
+
+pctp <- function(nn, WW, w, pctMethod) {
+  if(pctMethod == "unbiased") { 
+    return(100 * (pmax(1,nn/WW * cumsum(w)) - 1/3) / (nn + 1/3))
+  }
+  return(100 * cumsum(w)/WW)
 }
 
 #' @method print percentile

@@ -95,9 +95,6 @@ readPIAAC <- function(path,
     processedData$userConditions <- list()
     processedData$defaultConditions <- NULL
     processedData$data <- processedData$dataList$student
-    processedData$dataSch <- NULL
-    processedData$dataTch <- NULL                            
-    processedData$dataListMeta <- NULL
     
     # Set up weights ===================================================================
     uklz = processedData$cacheFile$reps
@@ -115,17 +112,14 @@ readPIAAC <- function(path,
     processedData$omittedLevels <- c("(Missing)", "DON'T KNOW", "NOT STATED OR INFERRED","VALID SKIP","REFUSED",
                                      "DON'T KNOW/REFUSED",'NO RESPONSE','NOT REACHED/NOT ATTEMPTED','ALL ZERO RESPONSE',NA)
     processedData$fileFormat <- ff
-    processedData$fileFormatSchool <- NULL
-    processedData$fileFormatTeacher <- NULL
+
     processedData$survey <- "PIAAC"
     processedData$country <- countryDictPIAAC(cntry)
     processedData$jkSumMultiplier <- processedData$cacheFile$jkSumMultiplier
     sdf[[cntry]] <- edsurvey.data.frame(userConditions = processedData$userConditions,
                                         defaultConditions = processedData$defaultConditions,
-                                        data = processedData$dataList$student,
-                                        dataSch = processedData$dataList$school,
-                                        dataTch = processedData$dataList$teacher,
-                                        dataListMeta = processedData$dataListMeta,
+                                        dataList = buildPIAAC_dataList(processedData$dataList$student,
+                                                                       processedData$fileFormat),
                                         weights = processedData$weights,
                                         pvvars = processedData$pvvars,
                                         subject = processedData$subject,
@@ -135,14 +129,12 @@ readPIAAC <- function(path,
                                         gradeLevel = processedData$gradeLevel,
                                         achievementLevels = processedData$achievementLevels,
                                         omittedLevels = processedData$omittedLevels,
-                                        fileFormat = processedData$fileFormat,
-                                        fileFormatSchool = processedData$fileFormatSchool,
-                                        fileFormatTeacher = processedData$fileFormatTeacher,
                                         survey = processedData$survey,
                                         country = processedData$country,
                                         psuVar = ifelse(as.numeric(processedData$cacheFile$method) == 1,"JK1","varunit"),
                                         stratumVar = ifelse(as.numeric(processedData$cacheFile$method) == 1,"JK1","varstrat"),
-                                        jkSumMultiplier = processedData$jkSumMultiplier)
+                                        jkSumMultiplier = processedData$jkSumMultiplier,
+                                        reqDecimalConversion = FALSE)
   }
   
   if(length(sdf) > 1) {
@@ -613,4 +605,23 @@ Numeracy,176,Level 1,num
     names(ret$achievementLevels[[s]]) <- ifelse(is.na(dict$level[dict$domain == s]),"Not Defined", dict$level[dict$domain == s])
   }
   return(ret)
+}
+
+#builds the PIRLS dataList object
+buildPIAAC_dataList <- function(studentLaf, studentFF){
+  
+  dataList <- list()
+  
+  #build the list hierarchical based on the order in which the data levels would be merged in getData
+  dataList[["Student"]] <- dataListItem(lafObject = studentLaf,
+                                        fileFormat = studentFF,
+                                        levelLabel = "Student",
+                                        forceMerge = TRUE,
+                                        parentMergeLevels = NULL,
+                                        parentMergeVars = NULL,
+                                        mergeVars = NULL,
+                                        ignoreVars = NULL,
+                                        isDimLevel = TRUE)
+  
+  return(dataList)
 }

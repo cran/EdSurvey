@@ -2,9 +2,9 @@
 % Please edit documentation in R/downloadPISA.R
 \name{downloadPISA}
 \alias{downloadPISA}
-\title{Download and Unzips PISA Files}
+\title{Download and Unzip PISA Files}
 \usage{
-downloadPISA(root, years = c(2000, 2003, 2006, 2009, 2012),
+downloadPISA(root, years = c(2000, 2003, 2006, 2009, 2012, 2015),
   database = c("INT", "CBA", "FIN"), cache = FALSE, verbose = TRUE)
 }
 \arguments{
@@ -12,11 +12,13 @@ downloadPISA(root, years = c(2000, 2003, 2006, 2009, 2012),
 be stored. Files are placed in a folder named PISA/[year].}
 
 \item{years}{an integer vector of the assessment years to download. Valid years are 2000, 2003,
-2006, 2009, and 2012.}
+2006, 2009, 2012, and 2015.}
 
 \item{database}{a character vector to indicate which database to download from. For 2012,
-three databases are available (INT = International, CBA = Computer-Based Assessment, and
-FIN = Financial Literacy). Defaults to \code{INT}.}
+three databases are available (\code{INT} = International, \code{CBA} = Computer-Based Assessment, and
+\code{FIN} = Financial Literacy). For other years, only \code{INT} is available (for example, if PISA 
+2015 financial literacy is to be downloaded, the database argument should be set to \code{INT}).
+Defaults to \code{INT}.}
 
 \item{cache}{a logical value set to process and cache the text (.txt) version of files.
 This takes a very long time but saves time for future uses of 
@@ -42,14 +44,14 @@ The function uses \ifelse{latex}{\code{download.file}}{\code{\link[utils]{downlo
 # Download PISA 2012 data (for all three databases)
 downloadPISA(years = 2012, database = c("INT","CBA","FIN"), root="C:/")
 
-# Download PISA 2009 and 2012 data (International Database only) 
-# to C:/PISA/2009 and C:/PISA/2012 folder respectively
-downloadPISA(years = c(2009,2012), root="C:/")  
+# Download PISA 2009, 2012, and 2015 data (International Database only) 
+# to C:/PISA/2009, C:/PISA/2012, and C:/PISA/2015 folders, respectively
+downloadPISA(years = c(2009,2012,2015), root="C:/")  
 }
 }
 \seealso{
 \code{\link{readPISA}}, \ifelse{latex}{\code{download.file}}{\code{\link[utils]{download.file}}}, \ifelse{latex}{\code{options}}{\code{\link[base]{options}}}
 }
 \author{
-Trang Nguyen
+Yuqi Liao, Paul Bailey, and Trang Nguyen
 }

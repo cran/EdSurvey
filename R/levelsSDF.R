@@ -24,13 +24,12 @@ levelsSDF <- function(varnames, data) {
   # check recode attribute in userConditions, and only include those recodes that are applicable to varnames called in levelsSDF
   userConditions <- getAttributes(data, "userConditions")
   recode <- userConditions[which(names(userConditions) %in% "recode")]
-  recodeVars <- lapply(recode, unlist(names))
-  recodeVars <- unique(unlist(recodeVars,use.names = FALSE))
-  recode <- recode[ toupper(recodeVars) %in% toupper(varnames)]
 
   if (length(recode) > 0) {
     recode <- unlist(recode, recursive = FALSE)
     names(recode) <- tolower(gsub("^recode.","",names(recode)))
+    # Keep only recodes that among varnames
+    recode <- recode[names(recode) %in% varnames]
   }
 
   if (inherits(data, c("light.edsurvey.data.frame"))) {
@@ -40,7 +39,8 @@ levelsSDF <- function(varnames, data) {
     labelsFile$labelValues <- gsub("\\; ", "^", labelsFile$labelValues)
   } else {
     varnames <- toupper(varnames)
-    labelsFile <- rbind(data$fileFormat, data$fileFormatSchool, data$fileFormatTeacher)
+    labelsFile <- do.call('rbind', lapply(data$dataList, 
+                                          function(dl){dl$fileFormat}))
   }
   labelsFile$variableName <- toupper(labelsFile$variableName)
   vars <- subset(labelsFile, labelsFile$variableName %in% varnames)

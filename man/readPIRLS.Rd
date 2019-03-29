@@ -10,15 +10,15 @@ readPIRLS(path, countries, forceReread = FALSE, verbose = TRUE)
 \item{path}{a character value to the full directory to the PIRLS extracted SPSS (.sav) set of data}
 
 \item{countries}{a character vector of the country/countries to include using
-the three-digit ISO country code.  
+the three-digit ISO country code.
 A list of country codes can be found on Wikipedia at
 \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes},
 or other online sources. Consult the \emph{PIRLS User Guide} to help determine what countries
 are included within a specific testing year of PIRLS.
 To select all countries, use a wildcard value of \strong{\code{*}}.}
 
-\item{forceReread}{a logical value to force rereading of all processed data. 
-The default value of \code{FALSE} will speed up the \code{readPIRLS} function by 
+\item{forceReread}{a logical value to force rereading of all processed data.
+The default value of \code{FALSE} will speed up the \code{readPIRLS} function by
 using existing read-in data already processed.}
 
 \item{verbose}{a logical value to either print or suppress status message output.
@@ -29,30 +29,30 @@ an \code{edsurvey.data.frame} for a single specified country or an \code{edsurve
 }
 \description{
 Opens a connection to a PIRLS data file and
-             returns an \code{edsurvey.data.frame} with 
+             returns an \code{edsurvey.data.frame} with
              information about the file and data.
 }
 \details{
-Reads in the unzipped files downloaded from the PIRLS international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}. 
+Reads in the unzipped files downloaded from the PIRLS international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}.
          Data files require the SPSS data file (.sav) format using the default filenames.
 
-A PIRLS \code{edsurvey.data.frame} includes three distinct data levels: 
+A PIRLS \code{edsurvey.data.frame} includes three distinct data levels:
          \itemize{
               \item student
               \item school
               \item teacher
          }
-          
+
          When the \code{getData} function is called using a PIRLS \code{edsurvey.data.frame},
-         the requested data variables are inspected, and it handles any necessary data merges automatically. 
+         the requested data variables are inspected, and it handles any necessary data merges automatically.
          Note that the \code{school} data will always be returned merged to the \code{student}
          data, even if only \code{school} variables are requested.
          Only if \code{teacher} variables are requested by the \code{getData} call, will cause \code{teacher} data to be merged.
          Many \code{students} can be linked to many \code{teachers}, which varies widely between countries.
 
-Please note that calling the \code{dim} function for a PIRLS \code{edsurvey.data.frame} will result in 
+Please note that calling the \code{dim} function for a PIRLS \code{edsurvey.data.frame} will result in
          the row count as if the \code{teacher} dataset was merged.
-         This row count will be considered the \code{full data N} of the \code{edsurvey.data.frame}, even if no \code{teacher} data were included in an analysis.  
+         This row count will be considered the \code{full data N} of the \code{edsurvey.data.frame}, even if no \code{teacher} data were included in an analysis.
          The column count returned by \code{dim} will be the count of unique column variables across all three data levels.
 }
 \examples{

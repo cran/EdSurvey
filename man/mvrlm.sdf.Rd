@@ -11,7 +11,7 @@ mvrlm.sdf(formula, data, weightVar = NULL, relevels = list(),
 \arguments{
 \item{formula}{a \ifelse{latex}{\code{Formula}}{\code{\link[Formula]{Formula}}} for the
 linear model. See \ifelse{latex}{\code{Formula}}{\code{\link[Formula]{Formula}}};
-left hand side (LHS) variables are separated with 
+left-hand side variables are separated with 
 vertical pipes (\code{|}). See Examples.}
 
 \item{data}{an \code{edsurvey.data.frame} or \code{edsurvey.data.frame.list}}
@@ -21,24 +21,20 @@ The \code{weightVar} must be one of the weights for the
 \code{edsurvey.data.frame}. If \code{NULL}, uses the default
 for the \code{edsurvey.data.frame}.}
 
-\item{relevels}{a list. Used when the user wants to change the contrasts from the
+\item{relevels}{a list. Used to change the contrasts from the
 default treatment contrasts to treatment contrasts with a chosen omitted
-group.
-To do this, the user puts an element on the list named the same name as
-a variable
-to change contrasts on
+group (the reference group).
+To do this, the user puts an element on the list with the same name as
+a variable to change contrasts on,
 and then makes the value for that list element equal to the value
 that should
-be the omitted group. (See Examples.)}
+be the omitted group (the reference group).}
 
-\item{jrrIMax}{when using the jackknife variance estimation method, the \eqn{V_{jrr}} term
-(see Details) can be estimated with
-any positive number of plausible values and is estimated on the first of
-the lower
-of the number of available plausible values and \code{jrrIMax}. When
-\code{jrrIMax} is set to \code{Inf}, all of the plausible values will be used.
-Higher values of \code{jrrIMax} lead to longer computing times and more
-accurate variance estimates.}
+\item{jrrIMax}{when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
+term (see Details) can be estimated with any number of plausible values, and values larger than the number of 
+plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
 
 \item{omittedLevels}{a logical value. When set to the default value of \code{TRUE}, drops
 those levels of all factor variables that are specified
@@ -59,7 +55,7 @@ estimates. This is intended to allow for
 computation of covariances between estimates.}
 
 \item{estMethod}{a character value indicating which estimation method to use.
-Default is 'OLS', other option is 'GLS'.}
+Default is 'OLS'; other option is 'GLS'.}
 }
 \value{
 An \code{edsurvey.mvrlm} with elements:
@@ -67,7 +63,7 @@ An \code{edsurvey.mvrlm} with elements:
    \item{formula}{the formula used to fit the model}
    \item{coef}{the estimates of the coefficients}
    \item{se}{the standard error estimates of the coefficients}
-   \item{Vimp}{the estimated variance due to uncertainty in the scores (plausible values variables)}
+   \item{Vimp}{the estimated variance due to uncertainty in the scores (plausible value variables)}
    \item{Vjrr}{the estimated variance due to sampling}
    \item{M}{the number of plausible values}
    \item{varm}{the variance estimates under the various plausible values}
@@ -84,7 +80,7 @@ An \code{edsurvey.mvrlm} with elements:
    \item{residuals}{residuals for each of the PV models}
    \item{fitted.values}{model fitted values}
    \item{residCov}{residual covariance matrix for dependent variables}
-   \item{residPV}{residuals for each dependent variables}
+   \item{residPV}{residuals for each dependent variable}
    \item{inputs}{coefficient estimation input matrices}
    \item{n0}{full data n}
    \item{nUsed}{n used for model}
@@ -96,9 +92,9 @@ Fits a multivariate linear model that uses weights and variance
              estimates appropriate for the \code{edsurvey.data.frame}.
 }
 \details{
-This function implements an estimator that correctly handles multiple left hand
+This function implements an estimator that correctly handles multiple left-hand
 side variables that are either numeric or plausible values, allows for survey 
-sampling weights and estimates variances using the jackknife replication method.
+sampling weights, and estimates variances using the jackknife replication method.
 The vignette titled \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics} describes estimation of the reported statistics. 
 
 The \bold{coefficients} are estimated using the sample weights according to the section 
@@ -131,34 +127,34 @@ For more information on the specifics of multivariate regression, see the vignet
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
-# Use | symbol to separate dependent variables in the left hand side of formula
+# Use | symbol to separate dependent variables in the left-hand side of formula
 mvrlm.fit <- mvrlm.sdf(algebra | geometry ~ dsex + m072801, jrrIMax = 5, data = sdf)
 
 # print method returns coefficients, as does coef method
 mvrlm.fit
 coef(mvrlm.fit)
 
-# for more detailed results use summary:
+# for more detailed results, use summary:
 summary(mvrlm.fit)
 
-# Details of model can also be accessed through components of the returned object, for example:
+# Details of model can also be accessed through components of the returned object; for example:
 
-# coefficients (1 column per dependent variable)
+# coefficients (one column per dependent variable)
 mvrlm.fit$coef
 # coefficient table with standard errors and p-values (1 table per dependent variable)
 mvrlm.fit$coefmat
-# R-squared values (1 per dependent variable)
+# R-squared values (one per dependent variable)
 mvrlm.fit$r.squared
 # Residual covariance matrix
 mvrlm.fit$residCov
 
-# Model residuals and other details are available as well
+# Model residuals and other details are available as well.
 
 # show the structure of the residuals objects
 str(mvrlm.fit$residuals)
 str(mvrlm.fit$residPV)
 
-# dependent variables can have plausible values or not (or a combination)
+# dependent variables can have plausible values or not (or a combination).
 
 mvrlm.fit <- mvrlm.sdf(composite | mrps22 ~ dsex + m072801, data = sdf, jrrIMax = 5)
 summary(mvrlm.fit)
@@ -169,13 +165,13 @@ summary(mvrlm.fit)
 mvrlm.fit <- mvrlm.sdf(mrps51 | mrps22 ~ dsex + m072801, data = sdf, jrrIMax = 5)
 summary(mvrlm.fit)
 
-# Hypotheses about coefficient restrictions can also be tested using the Wald test
+# Hypotheses about coefficient restrictions can also be tested using the Wald test.
 
 mvr <- mvrlm.sdf(algebra | geometry ~ dsex + m072801, data = sdf)
 
 hypothesis <- c("geometry_dsexFemale = 0", "algebra_dsexFemale = 0")
 
-# test statistics based on the F and Chi-squared distribution are available
+# test statistics based on the F and chi-squared distribution are available.
 linearHypothesis(mvr, hypothesis = hypothesis, test = "F")
 linearHypothesis(mvr, hypothesis = hypothesis, test = "Chisq")
 

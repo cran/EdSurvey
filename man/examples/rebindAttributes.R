@@ -20,7 +20,7 @@ PISA2012_ledf <- ledf %>%
   ungroup() %>%
   rebindAttributes(PISA2012) # could also be called with ledf
 class(PISA2012_ledf) 
-# again a light.edsurvey.data.frame
+# again, a light.edsurvey.data.frame
 lma <- lm.sdf(math ~ avg_3,data=PISA2012_ledf)
 summary(lma)
 

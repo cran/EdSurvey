@@ -34,18 +34,18 @@ replicate weights will be automatically included.
 When this argument is \code{NULL}, the function uses the default.
 Use \code{\link{showWeights}} to find the default.}
 
-\item{jrrIMax}{integer indicating the maximum number of plausible values to
-include when calculating
-the variance term \eqn{V_{jrr}} (see the Details section of
-\code{\link{lm.sdf}} to see the definition of \eqn{V_{jrr}}). The default is \code{Inf} and results in
-all available plausible values being used in generating \eqn{V_{jrr}}.
-Setting this to 1 will make code execution faster but less accurate.}
+\item{jrrIMax}{a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+  sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
+  term (see the Details section of
+\code{\link{lm.sdf}} to see the definition of \eqn{V_{jrr}}) can be estimated with any number of plausible values, and values larger than the number of 
+  plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+  Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
 
 \item{pctAggregationLevel}{the percentage variable sums up to 100 for the first
 \code{pctAggregationLevel} columns.
-So when set to \code{0}, the \code{PCT} column adds up to one
+So, when set to \code{0}, the \code{PCT} column adds up to 1
 across the entire sample.
-When set to \code{1}, the \code{PCT} column adds up to one
+When set to \code{1}, the \code{PCT} column adds up to 1
 within each level of the first variable on the
 right-hand side of the formula; when set to \code{2},
 then the percentage

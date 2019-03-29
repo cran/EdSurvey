@@ -1,6 +1,6 @@
 
-R version 3.5.1 (2018-07-02) -- "Feather Spray"
-Copyright (C) 2018 The R Foundation for Statistical Computing
+R version 3.5.3 (2019-03-11) -- "Great Truth"
+Copyright (C) 2019 The R Foundation for Statistical Computing
 Platform: x86_64-w64-mingw32/x64 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -27,7 +27,7 @@ Loading required package: carData
 Loading required package: lfactors
 lfactors v1.0.4
 
-EdSurvey v2.2.3
+EdSurvey v2.3.2
 
 
 Attaching package: 'EdSurvey'
@@ -395,7 +395,7 @@ Multiple R-squared: 0.0224
 > flush(stderr()); flush(stdout())
 > 
 > ### Name: downloadPISA
-> ### Title: Download and Unzips PISA Files
+> ### Title: Download and Unzip PISA Files
 > ### Aliases: downloadPISA
 > 
 > ### ** Examples
@@ -404,9 +404,9 @@ Multiple R-squared: 0.0224
 > ##D # Download PISA 2012 data (for all three databases)
 > ##D downloadPISA(years = 2012, database = c("INT","CBA","FIN"), root="C:/")
 > ##D 
-> ##D # Download PISA 2009 and 2012 data (International Database only) 
-> ##D # to C:/PISA/2009 and C:/PISA/2012 folder respectively
-> ##D downloadPISA(years = c(2009,2012), root="C:/")  
+> ##D # Download PISA 2009, 2012, and 2015 data (International Database only) 
+> ##D # to C:/PISA/2009, C:/PISA/2012, and C:/PISA/2015 folders, respectively
+> ##D downloadPISA(years = c(2009,2012,2015), root="C:/")  
 > ## End(Not run)
 > 
 > 
@@ -852,7 +852,7 @@ dsex     2 or 3 times a week Every day Omitted Multiple
   Male                  1535      1291     316        7
   Female                1827      1841     259        2
 > 
-> # the variable "c052601" is from the school-level data file; merging is handled automatically
+> # the variable "c052601" is from the school-level data file; merging is handled automatically.
 > # returns a light.edsurvey.data.frame using addAttributes=TRUE argument
 > gddat <- getData(data=sdf, 
 +                  varnames=c("composite", "dsex", "b017451","c052601"),
@@ -862,19 +862,19 @@ dsex     2 or 3 times a week Every day Omitted Multiple
 > # look at the first few lines
 > head(gddat)
     dsex              b017451         c052601 mrpcm1 mrpcm2 mrpcm3 mrpcm4
-2   Male            Every day 6 to 10 percent 318.01 303.68 296.61 328.97
-3 Female    About once a week 6 to 10 percent 288.43 283.93 280.45 290.03
-4 Female            Every day 6 to 10 percent 342.72 338.03 329.48 352.46
-5   Male            Every day 6 to 10 percent 348.76 321.79 327.87 333.35
-7 Female Once every few weeks 6 to 10 percent 278.44 245.08 263.00 277.50
-8   Male  2 or 3 times a week 6 to 10 percent 327.95 338.59 328.07 334.07
+1   Male            Every day 6 to 10 percent 318.01 303.68 296.61 328.97
+2 Female    About once a week 6 to 10 percent 288.43 283.93 280.45 290.03
+3 Female            Every day 6 to 10 percent 342.72 338.03 329.48 352.46
+4   Male            Every day 6 to 10 percent 348.76 321.79 327.87 333.35
+6 Female Once every few weeks 6 to 10 percent 278.44 245.08 263.00 277.50
+7   Male  2 or 3 times a week 6 to 10 percent 327.95 338.59 328.07 334.07
   mrpcm5
-2 315.70
-3 286.23
-4 342.26
-5 327.32
-7 285.04
-8 320.02
+1 315.70
+2 286.23
+3 342.26
+4 327.32
+6 285.04
+7 320.02
 > 
 > 
 > 
@@ -946,11 +946,18 @@ dsex     2 or 3 times a week Every day Omitted Multiple
 > ##D logit1 <- logit.sdf(I(b013801 %in% c("26-100", ">100")) ~ dsex + b017451, data=sdf)
 > ##D # use summary to get detailed results
 > ##D summary(logit1)
+> ##D 
+> ##D # Taylor series variance estimation
+> ##D logit1t <- logit.sdf(I(b013801 %in% c("26-100", ">100")) ~ dsex + b017451, data=sdf,
+> ##D                      varMethod="Taylor")
+> ##D summary(logit1t)
+> ##D 
 > ##D logit2 <- logit.sdf(I(composite >= 300) ~ dsex + b013801, data=sdf)
 > ##D summary(logit2)
 > ##D 
 > ##D logit3 <- glm.sdf(I(composite >= 300) ~ dsex + b013801, data=sdf, 
 > ##D                   family=quasibinomial(link="logit"))
+> ##D 
 > ##D summary(logit3)
 > ## End(Not run)
 > 
@@ -1089,10 +1096,13 @@ Levels for Variable 't088301' (Lowest level first):
 > ##D lm1 <- lm.sdf(composite ~ dsex + b017451, data=sdf)
 > ##D lm1
 > ##D 
-> ##D # for more detailed results use summary
+> ##D # The summary function displays detailed results
 > ##D summary(lm1)
 > ##D 
-> ##D # to specify a variance method, use varMethod
+> ##D # To show standardized regression coefficients
+> ##D summary(lm1, src=TRUE)
+> ##D 
+> ##D # To specify a variance method, use varMethod
 > ##D lm2 <- lm.sdf(composite ~ dsex + b017451, data=sdf, varMethod="Taylor")
 > ##D lm2
 > ##D summary(lm2)
@@ -1216,34 +1226,34 @@ Levels for Variable 't088301' (Lowest level first):
 > ##D # read in the example data (generated, not real student data)
 > ##D sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 > ##D 
-> ##D # Use | symbol to separate dependent variables in the left hand side of formula
+> ##D # Use | symbol to separate dependent variables in the left-hand side of formula
 > ##D mvrlm.fit <- mvrlm.sdf(algebra | geometry ~ dsex + m072801, jrrIMax = 5, data = sdf)
 > ##D 
 > ##D # print method returns coefficients, as does coef method
 > ##D mvrlm.fit
 > ##D coef(mvrlm.fit)
 > ##D 
-> ##D # for more detailed results use summary:
+> ##D # for more detailed results, use summary:
 > ##D summary(mvrlm.fit)
 > ##D 
-> ##D # Details of model can also be accessed through components of the returned object, for example:
+> ##D # Details of model can also be accessed through components of the returned object; for example:
 > ##D 
-> ##D # coefficients (1 column per dependent variable)
+> ##D # coefficients (one column per dependent variable)
 > ##D mvrlm.fit$coef
 > ##D # coefficient table with standard errors and p-values (1 table per dependent variable)
 > ##D mvrlm.fit$coefmat
-> ##D # R-squared values (1 per dependent variable)
+> ##D # R-squared values (one per dependent variable)
 > ##D mvrlm.fit$r.squared
 > ##D # Residual covariance matrix
 > ##D mvrlm.fit$residCov
 > ##D 
-> ##D # Model residuals and other details are available as well
+> ##D # Model residuals and other details are available as well.
 > ##D 
 > ##D # show the structure of the residuals objects
 > ##D str(mvrlm.fit$residuals)
 > ##D str(mvrlm.fit$residPV)
 > ##D 
-> ##D # dependent variables can have plausible values or not (or a combination)
+> ##D # dependent variables can have plausible values or not (or a combination).
 > ##D 
 > ##D mvrlm.fit <- mvrlm.sdf(composite | mrps22 ~ dsex + m072801, data = sdf, jrrIMax = 5)
 > ##D summary(mvrlm.fit)
@@ -1254,13 +1264,13 @@ Levels for Variable 't088301' (Lowest level first):
 > ##D mvrlm.fit <- mvrlm.sdf(mrps51 | mrps22 ~ dsex + m072801, data = sdf, jrrIMax = 5)
 > ##D summary(mvrlm.fit)
 > ##D 
-> ##D # Hypotheses about coefficient restrictions can also be tested using the Wald test
+> ##D # Hypotheses about coefficient restrictions can also be tested using the Wald test.
 > ##D 
 > ##D mvr <- mvrlm.sdf(algebra | geometry ~ dsex + m072801, data = sdf)
 > ##D 
 > ##D hypothesis <- c("geometry_dsexFemale = 0", "algebra_dsexFemale = 0")
 > ##D 
-> ##D # test statistics based on the F and Chi-squared distribution are available
+> ##D # test statistics based on the F and chi-squared distribution are available.
 > ##D linearHypothesis(mvr, hypothesis = hypothesis, test = "F")
 > ##D linearHypothesis(mvr, hypothesis = hypothesis, test = "Chisq")
 > ##D 
@@ -1293,9 +1303,33 @@ n used: 16915
  percentile estimate       se       df confInt.ci_lower confInt.ci_upper nsmall
          50 277.4799 1.126471 17.98894         275.7192          279.188   8418
 > 
+> # get several percentiles
+> percentile("composite", c(0,1,25,50,75,99,100), sdf)
+Percentile
+Call: percentile(variable = "composite", percentiles = c(0, 1, 25, 
+    50, 75, 99, 100), data = sdf)
+full data n: 17606
+n used: 16915
+
+Warning in print.percentile(x) :
+  Some degrees of freedom less than or equal to 2, indicating non-finite variance. These estimates should be treated with caution.
+ percentile estimate        se       df confInt.ci_lower confInt.ci_upper
+          0 126.1100 9.0655380  0.00000         126.1100         135.8825
+          1 185.9506 3.3800198 11.16195         179.4209         190.6413
+         25 251.9620 1.0164588 15.00887         249.7360         253.9889
+         50 277.4799 1.1264710 17.98894         275.7192         279.1880
+         75 301.1861 0.9142612 25.15841         299.4230         302.8992
+         99 355.0531 1.2769482 18.66944         352.5289         358.7604
+        100 404.1840 7.2932651  0.00000         387.5929         404.1840
+ nsmall
+    0.0
+  165.2
+ 4190.0
+ 8418.0
+ 4139.8
+  143.2
+    0.0
 > ## Not run: 
-> ##D # get several percentiles
-> ##D percentile("composite", c(0,1,25,50,75,99,100), sdf)
 > ##D # build an edsurvey.data.frame.list
 > ##D sdfA <- subset(sdf, scrpsu %in% c(5,45,56))
 > ##D sdfB <- subset(sdf, scrpsu %in% c(75,76,78))
@@ -1307,11 +1341,58 @@ n used: 16915
 > ##D                                            "B locations",
 > ##D                                            "C locations",
 > ##D                                            "D locations"))
-> ##D # this shows how these datasets will be described
+> ##D # this shows how these datasets will be described:
 > ##D sdfl$covs
 > ##D 
 > ##D percentile("composite", 50, sdfl)
 > ##D percentile("composite", c(25, 50, 75), sdfl)
+> ## End(Not run)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("readBB_2001")
+> ### * readBB_2001
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: readBB_2001
+> ### Title: Connect to B&B 2000-2001 Data
+> ### Aliases: readBB_2001
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D setwd("C:/B&B2001/ecbw/B01")
+> ##D 
+> ##D dervFP <- file.path(getwd(), "Data", "B01DER.dat")
+> ##D wgtFP <- file.path(getwd(), "Data", "B01WT.dat")
+> ##D mstFP <- file.path(getwd(), "master.txt")
+> ##D 
+> ##D #with verbose output as default
+> ##D bb2001 <- readBB_2001(dervFP, wgtFP, mstFP)
+> ##D 
+> ##D #silent output
+> ##D bb2001 <- readBB_2001(dervFP, wgtFP, mstFP, verbose=FALSE)
+> ## End(Not run)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("readBB_2012")
+> ### * readBB_2012
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: readBB_2012
+> ### Title: Connect to B&B 2008-2012 Data
+> ### Aliases: readBB_2012
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D #using default filenames
+> ##D bb <- readBB_2012(path = "C:/BB/2012")
 > ## End(Not run)
 > 
 > 
@@ -1675,7 +1756,7 @@ Achievement Levels:
 > ##D   ungroup() %>%
 > ##D   rebindAttributes(PISA2012) # could also be called with ledf
 > ##D class(PISA2012_ledf) 
-> ##D # again a light.edsurvey.data.frame
+> ##D # again, a light.edsurvey.data.frame
 > ##D lma <- lm.sdf(math ~ avg_3,data=PISA2012_ledf)
 > ##D summary(lma)
 > ##D 
@@ -1744,6 +1825,29 @@ Achievement Levels:
 > 
 > 
 > cleanEx()
+> nameEx("rq.sdf")
+> ### * rq.sdf
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: rq.sdf
+> ### Title: EdSurvey Quantile Regression Models
+> ### Aliases: rq.sdf rq
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # read in the example data (generated, not real student data)
+> ##D sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+> ##D 
+> ##D # conduct quantile regression at a given tau value (by default, tau is set to be 0.5) 
+> ##D rq1 <- rq.sdf(composite ~ dsex + b017451, data=sdf, tau = 0.8)
+> ##D summary(rq1)
+> ## End(Not run)
+> 
+> 
+> 
+> cleanEx()
 > nameEx("searchSDF")
 > ### * searchSDF
 > 
@@ -1764,6 +1868,28 @@ Achievement Levels:
 1      b013801                                Books in home
 2      t088804 Computer activities: Use a gradebook program
 3      t091503     G8Math:How often use Geometry sketchbook
+> 
+> # use the `|` (OR) operator to search several strings simultaneously
+> searchSDF(string="book|home|value", data=sdf)
+   variableName                                            Labels
+1       b013801                                     Books in home
+2       b017001                                 Newspaper in home
+3       b017101                                  Computer at home
+4       b018201        Language other than English spoken in home
+5       b017451                        Talk about studies at home
+6       m086101                             Read value from graph
+7       m020001 Apply place value                            (R1)
+8       m143601                      Solve for x given value of n
+9       m142301                              Identify place value
+10      t088804      Computer activities: Use a gradebook program
+11      t088805  Computer activities: Post homework,schedule info
+12      t091503          G8Math:How often use Geometry sketchbook
+> 
+> # use a vector of strings to search for variables that contain multiple strings,
+> # such as both "book" and "home"
+> searchSDF(string=c("book","home"), data=sdf)
+  variableName        Labels
+1      b013801 Books in home
 > 
 > # search only the student files by a character string
 > searchSDF(string="algebra", data=sdf, fileFormat="student")
@@ -2498,309 +2624,309 @@ Levels (Lowest level first):
 300                                                                                                       1=Less than 1 percent; 2=1 to 5 percent; 3=6 to 10 percent; 4=11 to 25 percent; 5=More than 25 percent; 6=Not grouped by abil; 8=Omitted; 0=Multiple
 301                                                                                                                                                                                                                                                           
 302                                                                                                                                             1=None; 2=1 to 5 percent; 3=6 to 10 percent; 4=11 to 20 percent; 5=More than 20 percent; 8=Omitted; 0=Multiple
-          fileFormat
-1         fileFormat
-2         fileFormat
-3         fileFormat
-4         fileFormat
-5         fileFormat
-6         fileFormat
-7         fileFormat
-8         fileFormat
-9         fileFormat
-10        fileFormat
-11        fileFormat
-12        fileFormat
-13        fileFormat
-14        fileFormat
-15        fileFormat
-16        fileFormat
-17        fileFormat
-18        fileFormat
-19        fileFormat
-20        fileFormat
-21        fileFormat
-22        fileFormat
-23        fileFormat
-24        fileFormat
-25        fileFormat
-26        fileFormat
-27        fileFormat
-28        fileFormat
-29        fileFormat
-30        fileFormat
-31        fileFormat
-32        fileFormat
-33        fileFormat
-34        fileFormat
-35        fileFormat
-36        fileFormat
-37        fileFormat
-38        fileFormat
-39        fileFormat
-40        fileFormat
-41        fileFormat
-42        fileFormat
-43        fileFormat
-44        fileFormat
-45        fileFormat
-46        fileFormat
-47        fileFormat
-48        fileFormat
-49        fileFormat
-50        fileFormat
-51        fileFormat
-52        fileFormat
-53        fileFormat
-54        fileFormat
-55        fileFormat
-56        fileFormat
-57        fileFormat
-58        fileFormat
-59        fileFormat
-60        fileFormat
-61        fileFormat
-62        fileFormat
-63        fileFormat
-64        fileFormat
-65        fileFormat
-66        fileFormat
-67        fileFormat
-68        fileFormat
-69        fileFormat
-70        fileFormat
-71        fileFormat
-72        fileFormat
-73        fileFormat
-74        fileFormat
-75        fileFormat
-76        fileFormat
-77        fileFormat
-78        fileFormat
-79        fileFormat
-80        fileFormat
-81        fileFormat
-82        fileFormat
-83        fileFormat
-84        fileFormat
-85        fileFormat
-86        fileFormat
-87        fileFormat
-88        fileFormat
-89        fileFormat
-90        fileFormat
-91        fileFormat
-92        fileFormat
-93        fileFormat
-94        fileFormat
-95        fileFormat
-96        fileFormat
-97        fileFormat
-98        fileFormat
-99        fileFormat
-100       fileFormat
-101       fileFormat
-102       fileFormat
-103       fileFormat
-104       fileFormat
-105       fileFormat
-106       fileFormat
-107       fileFormat
-108       fileFormat
-109       fileFormat
-110       fileFormat
-111       fileFormat
-112       fileFormat
-113       fileFormat
-114       fileFormat
-115       fileFormat
-116       fileFormat
-117       fileFormat
-118       fileFormat
-119       fileFormat
-120       fileFormat
-121       fileFormat
-122       fileFormat
-123       fileFormat
-124       fileFormat
-125       fileFormat
-126       fileFormat
-127       fileFormat
-128       fileFormat
-129       fileFormat
-130       fileFormat
-131       fileFormat
-132       fileFormat
-133       fileFormat
-134       fileFormat
-135       fileFormat
-136       fileFormat
-137       fileFormat
-138       fileFormat
-139       fileFormat
-140       fileFormat
-141       fileFormat
-142       fileFormat
-143       fileFormat
-144       fileFormat
-145       fileFormat
-146       fileFormat
-147       fileFormat
-148       fileFormat
-149       fileFormat
-150       fileFormat
-151       fileFormat
-152       fileFormat
-153       fileFormat
-154       fileFormat
-155       fileFormat
-156       fileFormat
-157       fileFormat
-158       fileFormat
-159       fileFormat
-160       fileFormat
-161       fileFormat
-162       fileFormat
-163       fileFormat
-164       fileFormat
-165       fileFormat
-166       fileFormat
-167       fileFormat
-168       fileFormat
-169       fileFormat
-170       fileFormat
-171       fileFormat
-172       fileFormat
-173       fileFormat
-174       fileFormat
-175       fileFormat
-176       fileFormat
-177       fileFormat
-178       fileFormat
-179       fileFormat
-180       fileFormat
-181       fileFormat
-182       fileFormat
-183       fileFormat
-184       fileFormat
-185       fileFormat
-186       fileFormat
-187       fileFormat
-188       fileFormat
-189       fileFormat
-190       fileFormat
-191       fileFormat
-192       fileFormat
-193       fileFormat
-194       fileFormat
-195       fileFormat
-196       fileFormat
-197       fileFormat
-198       fileFormat
-199       fileFormat
-200       fileFormat
-201       fileFormat
-202       fileFormat
-203       fileFormat
-204       fileFormat
-205       fileFormat
-206       fileFormat
-207       fileFormat
-208       fileFormat
-209       fileFormat
-210       fileFormat
-211       fileFormat
-212       fileFormat
-213       fileFormat
-214       fileFormat
-215       fileFormat
-216       fileFormat
-217       fileFormat
-218       fileFormat
-219       fileFormat
-220       fileFormat
-221       fileFormat
-222       fileFormat
-223       fileFormat
-224       fileFormat
-225       fileFormat
-226       fileFormat
-227       fileFormat
-228       fileFormat
-229       fileFormat
-230       fileFormat
-231       fileFormat
-232       fileFormat
-233       fileFormat
-234       fileFormat
-235       fileFormat
-236       fileFormat
-237       fileFormat
-238       fileFormat
-239       fileFormat
-240       fileFormat
-241       fileFormat
-242       fileFormat
-243       fileFormat
-244       fileFormat
-245       fileFormat
-246       fileFormat
-247       fileFormat
-248       fileFormat
-249       fileFormat
-250       fileFormat
-251       fileFormat
-252       fileFormat
-253       fileFormat
-254       fileFormat
-255       fileFormat
-256       fileFormat
-257       fileFormat
-258       fileFormat
-259       fileFormat
-260       fileFormat
-261       fileFormat
-262       fileFormat
-263       fileFormat
-264       fileFormat
-265       fileFormat
-266       fileFormat
-267       fileFormat
-268       fileFormat
-269       fileFormat
-270       fileFormat
-271       fileFormat
-272       fileFormat
-273       fileFormat
-274       fileFormat
-275       fileFormat
-276       fileFormat
-277       fileFormat
-278       fileFormat
-279       fileFormat
-280       fileFormat
-281       fileFormat
-282       fileFormat
-283       fileFormat
-284       fileFormat
-285       fileFormat
-286       fileFormat
-287       fileFormat
-288       fileFormat
-289       fileFormat
-290       fileFormat
-291       fileFormat
-292       fileFormat
-293       fileFormat
-294       fileFormat
-295       fileFormat
-296       fileFormat
-297       fileFormat
-298       fileFormat
-299       fileFormat
-300       fileFormat
-301 fileFormatSchool
-302 fileFormatSchool
+    fileFormat
+1      student
+2      student
+3      student
+4      student
+5      student
+6      student
+7      student
+8      student
+9      student
+10     student
+11     student
+12     student
+13     student
+14     student
+15     student
+16     student
+17     student
+18     student
+19     student
+20     student
+21     student
+22     student
+23     student
+24     student
+25     student
+26     student
+27     student
+28     student
+29     student
+30     student
+31     student
+32     student
+33     student
+34     student
+35     student
+36     student
+37     student
+38     student
+39     student
+40     student
+41     student
+42     student
+43     student
+44     student
+45     student
+46     student
+47     student
+48     student
+49     student
+50     student
+51     student
+52     student
+53     student
+54     student
+55     student
+56     student
+57     student
+58     student
+59     student
+60     student
+61     student
+62     student
+63     student
+64     student
+65     student
+66     student
+67     student
+68     student
+69     student
+70     student
+71     student
+72     student
+73     student
+74     student
+75     student
+76     student
+77     student
+78     student
+79     student
+80     student
+81     student
+82     student
+83     student
+84     student
+85     student
+86     student
+87     student
+88     student
+89     student
+90     student
+91     student
+92     student
+93     student
+94     student
+95     student
+96     student
+97     student
+98     student
+99     student
+100    student
+101    student
+102    student
+103    student
+104    student
+105    student
+106    student
+107    student
+108    student
+109    student
+110    student
+111    student
+112    student
+113    student
+114    student
+115    student
+116    student
+117    student
+118    student
+119    student
+120    student
+121    student
+122    student
+123    student
+124    student
+125    student
+126    student
+127    student
+128    student
+129    student
+130    student
+131    student
+132    student
+133    student
+134    student
+135    student
+136    student
+137    student
+138    student
+139    student
+140    student
+141    student
+142    student
+143    student
+144    student
+145    student
+146    student
+147    student
+148    student
+149    student
+150    student
+151    student
+152    student
+153    student
+154    student
+155    student
+156    student
+157    student
+158    student
+159    student
+160    student
+161    student
+162    student
+163    student
+164    student
+165    student
+166    student
+167    student
+168    student
+169    student
+170    student
+171    student
+172    student
+173    student
+174    student
+175    student
+176    student
+177    student
+178    student
+179    student
+180    student
+181    student
+182    student
+183    student
+184    student
+185    student
+186    student
+187    student
+188    student
+189    student
+190    student
+191    student
+192    student
+193    student
+194    student
+195    student
+196    student
+197    student
+198    student
+199    student
+200    student
+201    student
+202    student
+203    student
+204    student
+205    student
+206    student
+207    student
+208    student
+209    student
+210    student
+211    student
+212    student
+213    student
+214    student
+215    student
+216    student
+217    student
+218    student
+219    student
+220    student
+221    student
+222    student
+223    student
+224    student
+225    student
+226    student
+227    student
+228    student
+229    student
+230    student
+231    student
+232    student
+233    student
+234    student
+235    student
+236    student
+237    student
+238    student
+239    student
+240    student
+241    student
+242    student
+243    student
+244    student
+245    student
+246    student
+247    student
+248    student
+249    student
+250    student
+251    student
+252    student
+253    student
+254    student
+255    student
+256    student
+257    student
+258    student
+259    student
+260    student
+261    student
+262    student
+263    student
+264    student
+265    student
+266    student
+267    student
+268    student
+269    student
+270    student
+271    student
+272    student
+273    student
+274    student
+275    student
+276    student
+277    student
+278    student
+279    student
+280    student
+281    student
+282    student
+283    student
+284    student
+285    student
+286    student
+287    student
+288    student
+289    student
+290    student
+291    student
+292    student
+293    student
+294    student
+295    student
+296    student
+297    student
+298    student
+299    student
+300    student
+301     school
+302     school
 > 
 > # return codebook information for the student file, excluding variable value levels,
 > # including recoded variables
@@ -3409,306 +3535,306 @@ Levels (Lowest level first):
 299                                                                                          Less than 1 percent; 1 to 5 percent; 6 to 10 percent; 11 to 25 percent; More than 25 percent; Not grouped by abil; Omitted; Multiple
 300                                                                                          Less than 1 percent; 1 to 5 percent; 6 to 10 percent; 11 to 25 percent; More than 25 percent; Not grouped by abil; Omitted; Multiple
     fileFormat
-1   fileFormat
-2   fileFormat
-3   fileFormat
-4   fileFormat
-5   fileFormat
-6   fileFormat
-7   fileFormat
-8   fileFormat
-9   fileFormat
-10  fileFormat
-11  fileFormat
-12  fileFormat
-13  fileFormat
-14  fileFormat
-15  fileFormat
-16  fileFormat
-17  fileFormat
-18  fileFormat
-19  fileFormat
-20  fileFormat
-21  fileFormat
-22  fileFormat
-23  fileFormat
-24  fileFormat
-25  fileFormat
-26  fileFormat
-27  fileFormat
-28  fileFormat
-29  fileFormat
-30  fileFormat
-31  fileFormat
-32  fileFormat
-33  fileFormat
-34  fileFormat
-35  fileFormat
-36  fileFormat
-37  fileFormat
-38  fileFormat
-39  fileFormat
-40  fileFormat
-41  fileFormat
-42  fileFormat
-43  fileFormat
-44  fileFormat
-45  fileFormat
-46  fileFormat
-47  fileFormat
-48  fileFormat
-49  fileFormat
-50  fileFormat
-51  fileFormat
-52  fileFormat
-53  fileFormat
-54  fileFormat
-55  fileFormat
-56  fileFormat
-57  fileFormat
-58  fileFormat
-59  fileFormat
-60  fileFormat
-61  fileFormat
-62  fileFormat
-63  fileFormat
-64  fileFormat
-65  fileFormat
-66  fileFormat
-67  fileFormat
-68  fileFormat
-69  fileFormat
-70  fileFormat
-71  fileFormat
-72  fileFormat
-73  fileFormat
-74  fileFormat
-75  fileFormat
-76  fileFormat
-77  fileFormat
-78  fileFormat
-79  fileFormat
-80  fileFormat
-81  fileFormat
-82  fileFormat
-83  fileFormat
-84  fileFormat
-85  fileFormat
-86  fileFormat
-87  fileFormat
-88  fileFormat
-89  fileFormat
-90  fileFormat
-91  fileFormat
-92  fileFormat
-93  fileFormat
-94  fileFormat
-95  fileFormat
-96  fileFormat
-97  fileFormat
-98  fileFormat
-99  fileFormat
-100 fileFormat
-101 fileFormat
-102 fileFormat
-103 fileFormat
-104 fileFormat
-105 fileFormat
-106 fileFormat
-107 fileFormat
-108 fileFormat
-109 fileFormat
-110 fileFormat
-111 fileFormat
-112 fileFormat
-113 fileFormat
-114 fileFormat
-115 fileFormat
-116 fileFormat
-117 fileFormat
-118 fileFormat
-119 fileFormat
-120 fileFormat
-121 fileFormat
-122 fileFormat
-123 fileFormat
-124 fileFormat
-125 fileFormat
-126 fileFormat
-127 fileFormat
-128 fileFormat
-129 fileFormat
-130 fileFormat
-131 fileFormat
-132 fileFormat
-133 fileFormat
-134 fileFormat
-135 fileFormat
-136 fileFormat
-137 fileFormat
-138 fileFormat
-139 fileFormat
-140 fileFormat
-141 fileFormat
-142 fileFormat
-143 fileFormat
-144 fileFormat
-145 fileFormat
-146 fileFormat
-147 fileFormat
-148 fileFormat
-149 fileFormat
-150 fileFormat
-151 fileFormat
-152 fileFormat
-153 fileFormat
-154 fileFormat
-155 fileFormat
-156 fileFormat
-157 fileFormat
-158 fileFormat
-159 fileFormat
-160 fileFormat
-161 fileFormat
-162 fileFormat
-163 fileFormat
-164 fileFormat
-165 fileFormat
-166 fileFormat
-167 fileFormat
-168 fileFormat
-169 fileFormat
-170 fileFormat
-171 fileFormat
-172 fileFormat
-173 fileFormat
-174 fileFormat
-175 fileFormat
-176 fileFormat
-177 fileFormat
-178 fileFormat
-179 fileFormat
-180 fileFormat
-181 fileFormat
-182 fileFormat
-183 fileFormat
-184 fileFormat
-185 fileFormat
-186 fileFormat
-187 fileFormat
-188 fileFormat
-189 fileFormat
-190 fileFormat
-191 fileFormat
-192 fileFormat
-193 fileFormat
-194 fileFormat
-195 fileFormat
-196 fileFormat
-197 fileFormat
-198 fileFormat
-199 fileFormat
-200 fileFormat
-201 fileFormat
-202 fileFormat
-203 fileFormat
-204 fileFormat
-205 fileFormat
-206 fileFormat
-207 fileFormat
-208 fileFormat
-209 fileFormat
-210 fileFormat
-211 fileFormat
-212 fileFormat
-213 fileFormat
-214 fileFormat
-215 fileFormat
-216 fileFormat
-217 fileFormat
-218 fileFormat
-219 fileFormat
-220 fileFormat
-221 fileFormat
-222 fileFormat
-223 fileFormat
-224 fileFormat
-225 fileFormat
-226 fileFormat
-227 fileFormat
-228 fileFormat
-229 fileFormat
-230 fileFormat
-231 fileFormat
-232 fileFormat
-233 fileFormat
-234 fileFormat
-235 fileFormat
-236 fileFormat
-237 fileFormat
-238 fileFormat
-239 fileFormat
-240 fileFormat
-241 fileFormat
-242 fileFormat
-243 fileFormat
-244 fileFormat
-245 fileFormat
-246 fileFormat
-247 fileFormat
-248 fileFormat
-249 fileFormat
-250 fileFormat
-251 fileFormat
-252 fileFormat
-253 fileFormat
-254 fileFormat
-255 fileFormat
-256 fileFormat
-257 fileFormat
-258 fileFormat
-259 fileFormat
-260 fileFormat
-261 fileFormat
-262 fileFormat
-263 fileFormat
-264 fileFormat
-265 fileFormat
-266 fileFormat
-267 fileFormat
-268 fileFormat
-269 fileFormat
-270 fileFormat
-271 fileFormat
-272 fileFormat
-273 fileFormat
-274 fileFormat
-275 fileFormat
-276 fileFormat
-277 fileFormat
-278 fileFormat
-279 fileFormat
-280 fileFormat
-281 fileFormat
-282 fileFormat
-283 fileFormat
-284 fileFormat
-285 fileFormat
-286 fileFormat
-287 fileFormat
-288 fileFormat
-289 fileFormat
-290 fileFormat
-291 fileFormat
-292 fileFormat
-293 fileFormat
-294 fileFormat
-295 fileFormat
-296 fileFormat
-297 fileFormat
-298 fileFormat
-299 fileFormat
-300 fileFormat
+1      student
+2      student
+3      student
+4      student
+5      student
+6      student
+7      student
+8      student
+9      student
+10     student
+11     student
+12     student
+13     student
+14     student
+15     student
+16     student
+17     student
+18     student
+19     student
+20     student
+21     student
+22     student
+23     student
+24     student
+25     student
+26     student
+27     student
+28     student
+29     student
+30     student
+31     student
+32     student
+33     student
+34     student
+35     student
+36     student
+37     student
+38     student
+39     student
+40     student
+41     student
+42     student
+43     student
+44     student
+45     student
+46     student
+47     student
+48     student
+49     student
+50     student
+51     student
+52     student
+53     student
+54     student
+55     student
+56     student
+57     student
+58     student
+59     student
+60     student
+61     student
+62     student
+63     student
+64     student
+65     student
+66     student
+67     student
+68     student
+69     student
+70     student
+71     student
+72     student
+73     student
+74     student
+75     student
+76     student
+77     student
+78     student
+79     student
+80     student
+81     student
+82     student
+83     student
+84     student
+85     student
+86     student
+87     student
+88     student
+89     student
+90     student
+91     student
+92     student
+93     student
+94     student
+95     student
+96     student
+97     student
+98     student
+99     student
+100    student
+101    student
+102    student
+103    student
+104    student
+105    student
+106    student
+107    student
+108    student
+109    student
+110    student
+111    student
+112    student
+113    student
+114    student
+115    student
+116    student
+117    student
+118    student
+119    student
+120    student
+121    student
+122    student
+123    student
+124    student
+125    student
+126    student
+127    student
+128    student
+129    student
+130    student
+131    student
+132    student
+133    student
+134    student
+135    student
+136    student
+137    student
+138    student
+139    student
+140    student
+141    student
+142    student
+143    student
+144    student
+145    student
+146    student
+147    student
+148    student
+149    student
+150    student
+151    student
+152    student
+153    student
+154    student
+155    student
+156    student
+157    student
+158    student
+159    student
+160    student
+161    student
+162    student
+163    student
+164    student
+165    student
+166    student
+167    student
+168    student
+169    student
+170    student
+171    student
+172    student
+173    student
+174    student
+175    student
+176    student
+177    student
+178    student
+179    student
+180    student
+181    student
+182    student
+183    student
+184    student
+185    student
+186    student
+187    student
+188    student
+189    student
+190    student
+191    student
+192    student
+193    student
+194    student
+195    student
+196    student
+197    student
+198    student
+199    student
+200    student
+201    student
+202    student
+203    student
+204    student
+205    student
+206    student
+207    student
+208    student
+209    student
+210    student
+211    student
+212    student
+213    student
+214    student
+215    student
+216    student
+217    student
+218    student
+219    student
+220    student
+221    student
+222    student
+223    student
+224    student
+225    student
+226    student
+227    student
+228    student
+229    student
+230    student
+231    student
+232    student
+233    student
+234    student
+235    student
+236    student
+237    student
+238    student
+239    student
+240    student
+241    student
+242    student
+243    student
+244    student
+245    student
+246    student
+247    student
+248    student
+249    student
+250    student
+251    student
+252    student
+253    student
+254    student
+255    student
+256    student
+257    student
+258    student
+259    student
+260    student
+261    student
+262    student
+263    student
+264    student
+265    student
+266    student
+267    student
+268    student
+269    student
+270    student
+271    student
+272    student
+273    student
+274    student
+275    student
+276    student
+277    student
+278    student
+279    student
+280    student
+281    student
+282    student
+283    student
+284    student
+285    student
+286    student
+287    student
+288    student
+289    student
+290    student
+291    student
+292    student
+293    student
+294    student
+295    student
+296    student
+297    student
+298    student
+299    student
+300    student
                                                                                                                                                                                                                 labelValueRecodes
 1                                                                                                                                                                                                                                
 2                                                                                                                                                                                                          Age 09; Age 13; Age 17
@@ -4620,309 +4746,309 @@ Levels (Lowest level first):
 300                                                                                          Less than 1 percent; 1 to 5 percent; 6 to 10 percent; 11 to 25 percent; More than 25 percent; Not grouped by abil; Omitted; Multiple
 301                                                                                                                                                                                                                              
 302                                                                                                                              None; 1 to 5 percent; 6 to 10 percent; 11 to 20 percent; More than 20 percent; Omitted; Multiple
-          fileFormat
-1         fileFormat
-2         fileFormat
-3         fileFormat
-4         fileFormat
-5         fileFormat
-6         fileFormat
-7         fileFormat
-8         fileFormat
-9         fileFormat
-10        fileFormat
-11        fileFormat
-12        fileFormat
-13        fileFormat
-14        fileFormat
-15        fileFormat
-16        fileFormat
-17        fileFormat
-18        fileFormat
-19        fileFormat
-20        fileFormat
-21        fileFormat
-22        fileFormat
-23        fileFormat
-24        fileFormat
-25        fileFormat
-26        fileFormat
-27        fileFormat
-28        fileFormat
-29        fileFormat
-30        fileFormat
-31        fileFormat
-32        fileFormat
-33        fileFormat
-34        fileFormat
-35        fileFormat
-36        fileFormat
-37        fileFormat
-38        fileFormat
-39        fileFormat
-40        fileFormat
-41        fileFormat
-42        fileFormat
-43        fileFormat
-44        fileFormat
-45        fileFormat
-46        fileFormat
-47        fileFormat
-48        fileFormat
-49        fileFormat
-50        fileFormat
-51        fileFormat
-52        fileFormat
-53        fileFormat
-54        fileFormat
-55        fileFormat
-56        fileFormat
-57        fileFormat
-58        fileFormat
-59        fileFormat
-60        fileFormat
-61        fileFormat
-62        fileFormat
-63        fileFormat
-64        fileFormat
-65        fileFormat
-66        fileFormat
-67        fileFormat
-68        fileFormat
-69        fileFormat
-70        fileFormat
-71        fileFormat
-72        fileFormat
-73        fileFormat
-74        fileFormat
-75        fileFormat
-76        fileFormat
-77        fileFormat
-78        fileFormat
-79        fileFormat
-80        fileFormat
-81        fileFormat
-82        fileFormat
-83        fileFormat
-84        fileFormat
-85        fileFormat
-86        fileFormat
-87        fileFormat
-88        fileFormat
-89        fileFormat
-90        fileFormat
-91        fileFormat
-92        fileFormat
-93        fileFormat
-94        fileFormat
-95        fileFormat
-96        fileFormat
-97        fileFormat
-98        fileFormat
-99        fileFormat
-100       fileFormat
-101       fileFormat
-102       fileFormat
-103       fileFormat
-104       fileFormat
-105       fileFormat
-106       fileFormat
-107       fileFormat
-108       fileFormat
-109       fileFormat
-110       fileFormat
-111       fileFormat
-112       fileFormat
-113       fileFormat
-114       fileFormat
-115       fileFormat
-116       fileFormat
-117       fileFormat
-118       fileFormat
-119       fileFormat
-120       fileFormat
-121       fileFormat
-122       fileFormat
-123       fileFormat
-124       fileFormat
-125       fileFormat
-126       fileFormat
-127       fileFormat
-128       fileFormat
-129       fileFormat
-130       fileFormat
-131       fileFormat
-132       fileFormat
-133       fileFormat
-134       fileFormat
-135       fileFormat
-136       fileFormat
-137       fileFormat
-138       fileFormat
-139       fileFormat
-140       fileFormat
-141       fileFormat
-142       fileFormat
-143       fileFormat
-144       fileFormat
-145       fileFormat
-146       fileFormat
-147       fileFormat
-148       fileFormat
-149       fileFormat
-150       fileFormat
-151       fileFormat
-152       fileFormat
-153       fileFormat
-154       fileFormat
-155       fileFormat
-156       fileFormat
-157       fileFormat
-158       fileFormat
-159       fileFormat
-160       fileFormat
-161       fileFormat
-162       fileFormat
-163       fileFormat
-164       fileFormat
-165       fileFormat
-166       fileFormat
-167       fileFormat
-168       fileFormat
-169       fileFormat
-170       fileFormat
-171       fileFormat
-172       fileFormat
-173       fileFormat
-174       fileFormat
-175       fileFormat
-176       fileFormat
-177       fileFormat
-178       fileFormat
-179       fileFormat
-180       fileFormat
-181       fileFormat
-182       fileFormat
-183       fileFormat
-184       fileFormat
-185       fileFormat
-186       fileFormat
-187       fileFormat
-188       fileFormat
-189       fileFormat
-190       fileFormat
-191       fileFormat
-192       fileFormat
-193       fileFormat
-194       fileFormat
-195       fileFormat
-196       fileFormat
-197       fileFormat
-198       fileFormat
-199       fileFormat
-200       fileFormat
-201       fileFormat
-202       fileFormat
-203       fileFormat
-204       fileFormat
-205       fileFormat
-206       fileFormat
-207       fileFormat
-208       fileFormat
-209       fileFormat
-210       fileFormat
-211       fileFormat
-212       fileFormat
-213       fileFormat
-214       fileFormat
-215       fileFormat
-216       fileFormat
-217       fileFormat
-218       fileFormat
-219       fileFormat
-220       fileFormat
-221       fileFormat
-222       fileFormat
-223       fileFormat
-224       fileFormat
-225       fileFormat
-226       fileFormat
-227       fileFormat
-228       fileFormat
-229       fileFormat
-230       fileFormat
-231       fileFormat
-232       fileFormat
-233       fileFormat
-234       fileFormat
-235       fileFormat
-236       fileFormat
-237       fileFormat
-238       fileFormat
-239       fileFormat
-240       fileFormat
-241       fileFormat
-242       fileFormat
-243       fileFormat
-244       fileFormat
-245       fileFormat
-246       fileFormat
-247       fileFormat
-248       fileFormat
-249       fileFormat
-250       fileFormat
-251       fileFormat
-252       fileFormat
-253       fileFormat
-254       fileFormat
-255       fileFormat
-256       fileFormat
-257       fileFormat
-258       fileFormat
-259       fileFormat
-260       fileFormat
-261       fileFormat
-262       fileFormat
-263       fileFormat
-264       fileFormat
-265       fileFormat
-266       fileFormat
-267       fileFormat
-268       fileFormat
-269       fileFormat
-270       fileFormat
-271       fileFormat
-272       fileFormat
-273       fileFormat
-274       fileFormat
-275       fileFormat
-276       fileFormat
-277       fileFormat
-278       fileFormat
-279       fileFormat
-280       fileFormat
-281       fileFormat
-282       fileFormat
-283       fileFormat
-284       fileFormat
-285       fileFormat
-286       fileFormat
-287       fileFormat
-288       fileFormat
-289       fileFormat
-290       fileFormat
-291       fileFormat
-292       fileFormat
-293       fileFormat
-294       fileFormat
-295       fileFormat
-296       fileFormat
-297       fileFormat
-298       fileFormat
-299       fileFormat
-300       fileFormat
-301 fileFormatSchool
-302 fileFormatSchool
+    fileFormat
+1      student
+2      student
+3      student
+4      student
+5      student
+6      student
+7      student
+8      student
+9      student
+10     student
+11     student
+12     student
+13     student
+14     student
+15     student
+16     student
+17     student
+18     student
+19     student
+20     student
+21     student
+22     student
+23     student
+24     student
+25     student
+26     student
+27     student
+28     student
+29     student
+30     student
+31     student
+32     student
+33     student
+34     student
+35     student
+36     student
+37     student
+38     student
+39     student
+40     student
+41     student
+42     student
+43     student
+44     student
+45     student
+46     student
+47     student
+48     student
+49     student
+50     student
+51     student
+52     student
+53     student
+54     student
+55     student
+56     student
+57     student
+58     student
+59     student
+60     student
+61     student
+62     student
+63     student
+64     student
+65     student
+66     student
+67     student
+68     student
+69     student
+70     student
+71     student
+72     student
+73     student
+74     student
+75     student
+76     student
+77     student
+78     student
+79     student
+80     student
+81     student
+82     student
+83     student
+84     student
+85     student
+86     student
+87     student
+88     student
+89     student
+90     student
+91     student
+92     student
+93     student
+94     student
+95     student
+96     student
+97     student
+98     student
+99     student
+100    student
+101    student
+102    student
+103    student
+104    student
+105    student
+106    student
+107    student
+108    student
+109    student
+110    student
+111    student
+112    student
+113    student
+114    student
+115    student
+116    student
+117    student
+118    student
+119    student
+120    student
+121    student
+122    student
+123    student
+124    student
+125    student
+126    student
+127    student
+128    student
+129    student
+130    student
+131    student
+132    student
+133    student
+134    student
+135    student
+136    student
+137    student
+138    student
+139    student
+140    student
+141    student
+142    student
+143    student
+144    student
+145    student
+146    student
+147    student
+148    student
+149    student
+150    student
+151    student
+152    student
+153    student
+154    student
+155    student
+156    student
+157    student
+158    student
+159    student
+160    student
+161    student
+162    student
+163    student
+164    student
+165    student
+166    student
+167    student
+168    student
+169    student
+170    student
+171    student
+172    student
+173    student
+174    student
+175    student
+176    student
+177    student
+178    student
+179    student
+180    student
+181    student
+182    student
+183    student
+184    student
+185    student
+186    student
+187    student
+188    student
+189    student
+190    student
+191    student
+192    student
+193    student
+194    student
+195    student
+196    student
+197    student
+198    student
+199    student
+200    student
+201    student
+202    student
+203    student
+204    student
+205    student
+206    student
+207    student
+208    student
+209    student
+210    student
+211    student
+212    student
+213    student
+214    student
+215    student
+216    student
+217    student
+218    student
+219    student
+220    student
+221    student
+222    student
+223    student
+224    student
+225    student
+226    student
+227    student
+228    student
+229    student
+230    student
+231    student
+232    student
+233    student
+234    student
+235    student
+236    student
+237    student
+238    student
+239    student
+240    student
+241    student
+242    student
+243    student
+244    student
+245    student
+246    student
+247    student
+248    student
+249    student
+250    student
+251    student
+252    student
+253    student
+254    student
+255    student
+256    student
+257    student
+258    student
+259    student
+260    student
+261    student
+262    student
+263    student
+264    student
+265    student
+266    student
+267    student
+268    student
+269    student
+270    student
+271    student
+272    student
+273    student
+274    student
+275    student
+276    student
+277    student
+278    student
+279    student
+280    student
+281    student
+282    student
+283    student
+284    student
+285    student
+286    student
+287    student
+288    student
+289    student
+290    student
+291    student
+292    student
+293    student
+294    student
+295    student
+296    student
+297    student
+298    student
+299    student
+300    student
+301     school
+302     school
                                                                                                                                                                                                                 labelValueRecodes
 1                                                                                                                                                                                                                                
 2                                                                                                                                                                                                          Age 09; Age 13; Age 17
@@ -5430,12 +5556,7 @@ Male
 > 
 > # returns data, but uses substantial memory
 > ## Not run: 
-> ##D sdf[1:3, "origwt"]
 > ##D head(sdf[c("origwt","m145101")])
-> ##D sdf[1:3, c("origwt","m145101")]
-> ##D sdf[1:3,]
-> ##D head(sdf[,14])
-> ##D head(sdf[,10:14])
 > ##D 
 > ##D # subset an edsurvey.data.frame.list
 > ##D sdfA <- subset(sdf, scrpsu %in% c(5,45,56))
@@ -5479,12 +5600,14 @@ Male
 Estimates are weighted using weight variable 'origwt'
    Variable     N Weighted N   Min. 1st Qu.   Median     Mean  3rd Qu.    Max.
 1 composite 16915   16932.46 126.11 251.962 277.4799 275.8892 301.1861 404.184
-        SD NA's Zero-weight's
-1 36.57022    0             0
+        SD NA's Zero-weights
+1 36.57022    0            0
 > 
 > ## Not run: 
-> ##D # print out summary of weighted statistics of a variable including omitted levels
+> ##D # print out summary of weighted statistics of a variable, including omitted levels
 > ##D summary2(sdf, "b017451", omittedLevels = FALSE)
+> ##D # make a crosstab
+> ##D summary2(sdf, c("b017451", "dsex"), omittedLevels = FALSE)
 > ##D 
 > ##D # print out summary of unweighted statistics of a variable
 > ##D summary2(sdf, "composite", weightVar = NULL)
@@ -5666,7 +5789,7 @@ Multiple R-squared: 0.0224
 > cleanEx()
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  18.14 0.77 19.62 NA NA 
+Time elapsed:  29.11 1.11 30.4 NA NA 
 > grDevices::dev.off()
 null device 
           1 

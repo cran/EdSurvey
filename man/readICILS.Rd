@@ -11,19 +11,19 @@ readICILS(path, countries, dataSet = c("student", "teacher"),
 \item{path}{a character value to the full directory to the ICILS extracted SPSS (.sav) set of data}
 
 \item{countries}{a character vector of the country/countries to include using
-the three-digit ISO country code.  
+the three-digit ISO country code.
 A list of country codes can be found on Wikipedia at
 \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes},
 or other online sources. Consult the \emph{ICILS User Guide} to help determine what countries
 are included within a specific testing year of ICILS.
 To select all countries, use a wildcard value of \strong{\code{*}}.}
 
-\item{dataSet}{a character value of either \code{student} (the default if not specified) or \code{teacher} to 
+\item{dataSet}{a character value of either \code{student} (the default if not specified) or \code{teacher} to
 indicate which set of data is returned.
 The student-level and teacher-level datasets cannot both be returned at the same time, unlike other IEA datasets.}
 
-\item{forceReread}{a logical value to force rereading of all processed data. 
-The default value of \code{FALSE} will speed up the \code{readICILS} function 
+\item{forceReread}{a logical value to force rereading of all processed data.
+The default value of \code{FALSE} will speed up the \code{readICILS} function
 by using existing read-in data already processed.}
 
 \item{verbose}{a logical value to either print or suppress status message output.
@@ -34,7 +34,7 @@ an \code{edsurvey.data.frame} for a single specified country or an \code{edsurve
 }
 \description{
 Opens a connection to an ICILS data file residing
-             on the disk and returns an \code{edsurvey.data.frame} with 
+             on the disk and returns an \code{edsurvey.data.frame} with
              information about the file and data.
 }
 \details{

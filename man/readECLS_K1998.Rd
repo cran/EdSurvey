@@ -10,8 +10,8 @@ readECLS_K1998(path = getwd(),
   verbose = TRUE)
 }
 \arguments{
-\item{path}{a character value to the full directory path(s) to the ECLS-K
-extracted fixed-with-format (.dat) set of data files}
+\item{path}{a character value to the full directory path(s) to the 
+ECLS-K-extracted fixed-with-format (.dat) set of data files}
 
 \item{filename}{a character value of the name of the fixed-width-file (.dat)
 data file in the specified \code{path} to be read}
@@ -21,7 +21,7 @@ text (.txt) layout file of the \code{filename} within
 the specified \code{path}, 
 OR a character value of the  filename of the SPSS syntax (.sps) layout file of the \code{filename} within the specified \code{path}}
 
-\item{forceReread}{a logical value to force re-reading of all processed data. 
+\item{forceReread}{a logical value to force rereading of all processed data. 
 The default value of \code{FALSE} will speed up the read function by using existing read-in data already processed.}
 
 \item{verbose}{a logical value that will determine if you want verbose output while the \code{readECLS-K1998} function is running to indicate processing progress.
@@ -36,8 +36,8 @@ Opens a connection to an ECLS-K 1998 data file and
              information about the file and data.
 }
 \details{
-Reads in the unzipped files downloaded from the ECLS-K 1998 longitudinal database(s) to an \code{edsurvey.data.frame}.  The ECLS-K 1998-1999 study consisted of
-         three distinct separate datasets that cannot be combined: (1) Child Grades K-8; (2) School Base Year Data; (3) Teacher Base Year Data.
+Reads in the unzipped files downloaded from the ECLS-K 1998 longitudinal database(s) to an \code{edsurvey.data.frame}.  The ECLS-K 1998-99 study consisted of
+         three distinct separate datasets that cannot be combined: (1) Child Grades K-8 Data, (2) School Base-Year Data, and (3) Teacher Base-Year Data.
          The \code{filename} and \code{layoutFilename} arguments are defaulted to the corresponding Child K-8 default filenames.
 }
 \examples{

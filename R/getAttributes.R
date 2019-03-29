@@ -24,10 +24,10 @@ getAttributes <- function(data, attribute = NULL) {
   
   # recodes can be NULL, so it won't show up as a named attribute
   # so return it as NULL when missing from the list
-  if(attribute %in% c("recodes") & !(attribute %in% attrs)) {
+  if(attribute %in% c("recodes", "psuVar", "stratumVar") & !(attribute %in% attrs)) {
     return(NULL)
   }
-  
+
   # if attribute searched for is not in defaultAttributes, stop function
   # and return a warning
   if (!(attribute %in% attrs)) {
@@ -39,6 +39,9 @@ getAttributes <- function(data, attribute = NULL) {
     attr <- data[[attribute]]
   } else {
     attr <- attributes(data)[[attribute]]
+    if(length(attr) == 1 && attr == "NULL") {
+      return(NULL)
+    }
   }
   return(attr)
 }

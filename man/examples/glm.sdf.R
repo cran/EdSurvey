@@ -7,10 +7,17 @@ table(sdf$b013801)
 logit1 <- logit.sdf(I(b013801 %in% c("26-100", ">100")) ~ dsex + b017451, data=sdf)
 # use summary to get detailed results
 summary(logit1)
+
+# Taylor series variance estimation
+logit1t <- logit.sdf(I(b013801 %in% c("26-100", ">100")) ~ dsex + b017451, data=sdf,
+                     varMethod="Taylor")
+summary(logit1t)
+
 logit2 <- logit.sdf(I(composite >= 300) ~ dsex + b013801, data=sdf)
 summary(logit2)
 
 logit3 <- glm.sdf(I(composite >= 300) ~ dsex + b013801, data=sdf, 
                   family=quasibinomial(link="logit"))
+
 summary(logit3)
 }

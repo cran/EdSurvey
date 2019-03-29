@@ -10,10 +10,11 @@ summary2(data, variable, weightVar = attr(getAttributes(data, "weights"),
 \arguments{
 \item{data}{an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}}
 
-\item{variable}{character variable name}
+\item{variable}{character vector of variable names}
 
-\item{weightVar}{character weight variable name. Default to be the default weight of \code{data} if exists.
-If the given survey data does not have a default weight, the function will produce unweighted statistics instead. 
+\item{weightVar}{character weight variable name. Default to be the default weight of \code{data} if it exists.
+If the given survey data do not have a default weight,
+the function will produce unweighted statistics instead. 
 Can be set to \code{NULL} to return unweighted statistics.}
 
 \item{omittedLevels}{a logical value. When set to \code{TRUE}, drops those levels of the specified \code{variable}.
@@ -22,15 +23,17 @@ Use print on an \code{edsurvey.data.frame} to see the omitted levels. Defaults t
 \value{
 summary of weighted or unweighted statistics of a given variable in an \code{edsurvey.data.frame}  
 
-For categorical variables, summary results include:
+For categorical variables, summary results are a crosstab of all variables and include:
 \describe{
+  \item{[variable name]}{level of the variable in the column name that the row regards. There is one column per element of \code{variable}.}
   \item{N}{number of cases for each category. Weighted N is also produced if users choose to produce weighted statistics.}
-  \item{Percent}{percentage of each category. Weighted Percent is also produced if users choose to produce weighted statistics.}
+  \item{Percent}{percentage of each category. Weighted percent is also produced if users choose to produce weighted statistics.}
   \item{SE}{standard error of the percentage statistics}
  }
  
-For continuous variables, summary results include:
+For continuous variables, summary results are by variable and include:
 \describe{
+  \item{Variable}{name of the variable the row regards}
   \item{N}{total number of cases (both valid and invalid cases)}
   \item{Min.}{smallest value of the variable}
   \item{1st Qu.}{first quantile of the variable}
@@ -39,8 +42,8 @@ For continuous variables, summary results include:
   \item{3rd Qu.}{third quantile of the variable}
   \item{Max.}{largest value of the variable}
   \item{SD}{standard deviation or weighted standard deviation}
-  \item{NA's}{number of NA's in variable and in weight variables}
-  \item{Zero-weight's}{number of zero-weight cases if users choose to produce weighted statistics}
+  \item{NA's}{number of \code{NA} in variable and in weight variables}
+  \item{Zero-weights}{number of zero-weight cases if users choose to produce weighted statistics}
 }
 
 If the weight option is chosen, the function produces weighted percentile and standard deviation. Refer to the vignette titled 
@@ -60,8 +63,10 @@ sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprime
 summary2(sdf, "composite")
 
 \dontrun{
-# print out summary of weighted statistics of a variable including omitted levels
+# print out summary of weighted statistics of a variable, including omitted levels
 summary2(sdf, "b017451", omittedLevels = FALSE)
+# make a crosstab
+summary2(sdf, c("b017451", "dsex"), omittedLevels = FALSE)
 
 # print out summary of unweighted statistics of a variable
 summary2(sdf, "composite", weightVar = NULL)
@@ -71,5 +76,5 @@ summary2(sdf, "composite", weightVar = NULL)
 \code{\link{percentile}}
 }
 \author{
-Trang Nguyen
+Paul Bailey and Trang Nguyen
 }

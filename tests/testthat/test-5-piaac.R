@@ -3,7 +3,7 @@ require(testthat)
 require(EdSurvey)
 options(width = 500)
 options(useFancyQuotes=FALSE)
-#source("REF-5-piaac.R") # has REF output in it
+source("REF-5-piaac.R") # has REF output in it
 
 context("PIAAC data reads in correctly")
 if(!exists("edsurveyHome")) {
@@ -20,9 +20,9 @@ if (!dir.exists(edsurveyHome)) {
 
 test_that("PIAAC data reads in correctly", {
   expect_silent(downloadPIAAC(root=edsurveyHome, round = 1, verbose = FALSE))
-  expect_error(usa <<- readPIAAC(file.path(edsurveyHome, "PIAAC", "Round 1"), countries = c("usa"), verbose=FALSE), NA)
-  expect_error(nor <<- readPIAAC(file.path(edsurveyHome, "PIAAC", "Round 1"), countries = c("nor"), verbose=FALSE), NA)
-  expect_error(deu <<- readPIAAC(file.path(edsurveyHome, "PIAAC", "Round 1"), countries = c("deu"), verbose=FALSE), NA)
+  usa <<- readPIAAC(file.path(edsurveyHome, "PIAAC", "Round 1"), countries = c("usa"), verbose=FALSE)
+  nor <<- readPIAAC(file.path(edsurveyHome, "PIAAC", "Round 1"), countries = c("nor"), verbose=FALSE)
+  deu <<- readPIAAC(file.path(edsurveyHome, "PIAAC", "Round 1"), countries = c("deu"), verbose=FALSE)
 })
 
 context("PIAAC data Wald test examples")

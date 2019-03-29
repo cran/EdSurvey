@@ -18,18 +18,15 @@
 #'                   for the \code{edsurvey.data.frame}.
 #' @param varMethod  a character set to \dQuote{jackknife} or \dQuote{Taylor} that indicates the variance
 #'                   estimation method to be used. See Details.
-#' @param jrrIMax    when using the jackknife variance estimation method, the \eqn{V_{jrr}} term
-#'                   (see Details) can be estimated with
-#'                   any positive number of plausible values and is estimated on 
-#'                   the lower
-#'                   of the number of available plausible values and \code{jrrIMax}. When
-#'                   \code{jrrIMax} is set to \code{Inf}, all plausible values will be used.
-#'                   Higher values of \code{jrrIMax} lead to longer computing times and more
-#'                   accurate variance estimates.
-#' @param relevels   a list; used when the user wants to change the contrasts from the
+#' @param jrrIMax    when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+#'                   sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
+#'                   term (see Details) can be estimated with any number of plausible values, and values larger than the number of 
+#'                   plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+#'                   Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.
+#' @param relevels   a list. Used to change the contrasts from the
 #'                   default treatment contrasts to the treatment contrasts with a chosen omitted
-#'                   group. The name of each element should be the variable name, and the value 
-#'                   should be the group to be omitted.
+#'                   group (the reference group). The name of each element should be the variable name, and the value 
+#'                   should be the group to be omitted (the reference group).
 #' @param omittedLevels a logical value. When set to the default value of \code{TRUE}, drops
 #'                      those levels of all factor variables that are specified
 #'                      in an \code{edsurvey.data.frame}. Use \code{print} on an
@@ -46,14 +43,14 @@
 #'                           the computation
 #'                           of covariances between estimates.
 #' @param returnNumberOfPSU a logical value set to \code{TRUE} to return the number of 
-#'                          primary sampling units (PSU).
+#'                          primary sampling units (PSUs)
 #' @param standardizeWithSamplingVar a logical value indicating if the standardized coefficients
 #'                                   should have the variance of the regressors and outcome measured
 #'                                   with sampling variance. Defaults to \code{FALSE}.
 #' @details 
 #'  
 #' This function implements an estimator that correctly handles left-hand
-#' side variables that are either numeric or plausible values and allows for survey 
+#' side variables that are either numeric or plausible values, and allows for survey 
 #' sampling weights and estimates variances using the jackknife replication method.
 #' The vignette titled
 #' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
@@ -77,6 +74,17 @@
 #' The \bold{coefficient of determination (\emph{R}-squared value)} is similarly estimated by finding
 #' the average \emph{R}-squared using the average across the plausible values.
 #'
+#' \subsection{Standardized regression coefficients}{
+#'   Standardized regression coefficients can be returned in a call to \code{summary},
+#'   by setting the argument \code{src} to \code{TRUE}. See Examples.
+#' 
+#'   By default, the standardized coefficients are calculated using standard
+#'   deviations of the variables themselves, including averaging the standard
+#'   deviation across any plausible values. When \code{standardizeWithSamplingVar}
+#'   is set to \code{TRUE} the variance of the standardized coefficient is
+#'   calculated similar to a regression coefficient and therefore includes the
+#'   sampling variance in the variance estimate of the outcome variable.
+#' }
 #'
 #' \subsection{Variance estimation of coefficients}{
 #'   All variance estimation methods are shown in the vignette titled
@@ -97,7 +105,7 @@
 #' \dQuote{Estimation of Standard Errors of Weighted Means When Plausible
 #'         Values Are Not Present, Using the Taylor Series Method.}
 #'
-#'   When plausible values are present and \code{varMethod} is \dQuote{Taylor,} the
+#'   When plausible values are present and \code{varMethod} is \code{Taylor}, the
 #'   variance of the coefficients is estimated according to the section
 #' \dQuote{Estimation of Standard Errors of Weighted Means When Plausible
 #'         Values Are Present, Using the Taylor Series Method.}
@@ -151,7 +159,7 @@
 #'                        used for calculating covariances with
 #'                        \code{\link{varEstToCov}}.}
 #'    \item{standardizeWithSamplingVar}{when \code{standardizeWithSamplingVar}
-#'                                      is set to \code{TRUE} this element is
+#'                                      is set to \code{TRUE}, this element is
 #'                                      returned. Calculates the standard deviation
 #'                                      of the standardized
 #'                                      regression coefficients like any other
@@ -216,7 +224,7 @@ calc.lm.sdf <- function(formula,
                         data,
                         weightVar=NULL,
                         relevels=list(),
-                        varMethod=c("jackknife", "Taylor"),
+                        varMethod=c("jackknife", "Taylor", "j", "t"),
                         jrrIMax=1,
                         omittedLevels=TRUE,
                         defaultConditions=TRUE,
@@ -246,7 +254,10 @@ calc.lm.sdf <- function(formula,
   sdf <- data # short for survey data.frame
   
   # get varMethod, turn into first character as lower case
-  varMethod <- substr(tolower(match.arg(varMethod)), 0, 1)
+  varMethod <- substr(tolower(varMethod[[1]]), 0, 1)
+  if(!varMethod %in% c("j", "t")) {
+    stop(paste0("The argument ", sQuote("varMethod"), " must be one of ", dQuote("Taylor"), " or ", dQuote("jackknife"), "."))
+  }
   if(standardizeWithSamplingVar & varMethod == "t") { 
     warning(paste0(sQuote("standardizeWithSamplingVar"), " reset to ", dQuote("FALSE"), " because ", sQuote("varMethod"), " is ", dQuote("Taylor"), "."))
     standardizeWithSamplingVar <- FALSE
@@ -276,6 +287,12 @@ calc.lm.sdf <- function(formula,
   taylorVars <- c()
   psuVar <- getPSUVar(data,weightVar)
   stratumVar <- getStratumVar(data,weightVar)
+  if (is.null(psuVar)) {
+    stop(paste0("Cannot find primary sampling unit variable for weight ", sQuote(wgt), "." ))
+  }
+  if (is.null(stratumVar)) {
+    stop(paste0("Cannot find stratum variable for weight ", sQuote(wgt), "." ))
+  }
   # in PIAAC there is sometimes an SRS, that is not appropriate for Taylor
   if(stratumVar == "JK1" & varMethod == "t") {
     varMethod <- "j"
@@ -295,7 +312,7 @@ calc.lm.sdf <- function(formula,
     # Get stratum and PSU variable
     stratumVar <- getStratumVar(data, wgt)
     psuVar <- getPSUVar(data, wgt)
-    if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% names(data$data))) {
+    if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% colnames(data))) { #names(data$data) changed to colnames(data)::Tom
       getDataVarNames <- unique(c(getDataVarNames,stratumVar,psuVar))
     } else {
       warning(paste0("Stratum and PSU variable are required for this call and are not on the incoming data. Resetting ", sQuote("returnNumberOfPSU"), " to ", dQuote("FALSE"), "."))
@@ -560,7 +577,7 @@ calc.lm.sdf <- function(formula,
         }
       } # End while loop: pvi < length(yvars)
     } else { # End of if statment: varMethod == "j"
-      # Taylor series
+      # Taylor series, PVs
       # y is a variable with plausible values and we are using the Taylor series approach
       # 
       # here the regression uses the normal equations for weighted regression
@@ -573,6 +590,7 @@ calc.lm.sdf <- function(formula,
       D <- solve(t(X) %*% W %*% X)
       dofNum <- matrix(0, nrow=nrow(D), ncol=length(yvars))
       dofDenom <- matrix(0, nrow=nrow(D), ncol=length(yvars))
+      warnDrop <- 0 # warn if a stratum is too thin to estimate variance on it
       lms <- lapply(1:length(yvars), function(mm) {
         # for each PV, run the regression, form the coefficients and variance components
         Y <- as(edf[,yvars[mm],drop=FALSE],"Matrix")
@@ -587,23 +605,25 @@ calc.lm.sdf <- function(formula,
         # notation (uhij) from AM documentation
         # this is the partial of the likelihood at the unit level
         uhij <- e*as.matrix(X)
+        # singleton PSUs removed in lapply below, not here
         for(bi in 1:length(b)) { # for each coefficient
           coln <- colnames(uhij)[bi]
           # get the stratum/PSU based sum
           edf$bb <- uhij[,bi] * edf[,wgt]
           taylorVars <- c(psuVar, stratumVar)
           res_sp <- aggregate(formula(paste0("bb ~ ", psuVar, " + ", stratumVar)), edf, sum)
-          # and the average of the same across strata
-          res_s <- aggregate(formula(paste0("bb ~ ", stratumVar)),res_sp,function(x) { mean(x)})
+          # and the average of the previous line results across strata (notice data=res_sp)
+          res_s <- aggregate(formula(paste0("bb ~ ", stratumVar)), res_sp, mean)
           names(res_sp)[3] <- coln
           names(res_s)[2] <- paste0("uh_",coln)
+          # grab the sum of weights, this does not vary by regression coef, so only do this once
           if(bi==1) {
             uhi <- res_sp
             edf$strtWgt <- edf[,wgt]
-            res_s_wgt <- aggregate(formula(paste0("strtWgt ~ ", stratumVar)), edf, function(x) { sum(x)})
+            res_s_wgt <- aggregate(formula(paste0("strtWgt ~ ", stratumVar)), edf, sum)
             uhi <- merge(uhi, res_s_wgt, by=c(stratumVar), all=TRUE)
           } else{
-            uhi <- merge(uhi,res_sp, by=c(psuVar, stratumVar), all=TRUE)
+            uhi <- merge(uhi, res_sp, by=c(psuVar, stratumVar), all=TRUE)
           }
           uhi <- merge(uhi, res_s, by=c(stratumVar), all=TRUE)
           uhi[,paste0("dx",bi)] <- uhi[,coln] - uhi[,paste0("uh_",coln)]
@@ -611,21 +631,21 @@ calc.lm.sdf <- function(formula,
 
         # this will be the variance-covariance matrix for this plausible value
         vv <- matrix(0,nrow=length(b), ncol=length(b))
-        sa <-  lapply(unique(uhi[,stratumVar]), function(ii) {
+        sa <- lapply(unique(uhi[,stratumVar]), function(ii) {
           vvj <- matrix(0,nrow=length(b), ncol=length(b))
           unkj <- unique(uhi[uhi[,stratumVar] == ii, psuVar, drop=TRUE])
-          if(length(unkj)>1) { # cannot estimate variance off one unit
+          if(length(unkj)>1) { # cannot estimate variance off one PSU
             sb <- lapply(unkj, function(jj) {
               v <- as.numeric(t(uhi[uhi[,stratumVar]==ii & uhi[,psuVar]==jj, paste0("dx",1:length(b)), drop=FALSE]))
               vvj <<- vvj + v %*% t(v)
             })
             vvj <- vvj * ( (length(unkj)) / ( length(unkj) - 1) )
             vv <<- vv + vvj
-            sw <- (uhi$strtWgt[uhi[,stratumVar]==ii])[1]
-            num <- sw * diag(vvj)
+            num <- diag(D %*% vvj %*% D)
             dofNum[,mm] <<- dofNum[,mm] + num
             dofDenom[,mm] <<- dofDenom[,mm] + num^2
-            
+          } else { # End of if statment: if(length(unkj)>1)
+            warnDrop <<- warnDrop + 1
           }
         })
         M <- vv
@@ -640,6 +660,9 @@ calc.lm.sdf <- function(formula,
         varM[[mm]] <<- as.matrix(vc)
         varm[mm,] <<- as.numeric(diag(vc))
       })
+      if(warnDrop > 0) {
+        warning(paste0(warnDrop/length(yvars), " strata had only one populated PSU. Units in these strata assumed to be certainties. You can condense the strata/PSU structure to avoid this."))
+      }
 
     } # End of if/else statment: varMethod == "j"
     # number of PVs
@@ -724,21 +747,19 @@ calc.lm.sdf <- function(formula,
       coefm <- NULL # no coefficients matrix by PV
 
     } else { # end if(varMethod == "j")
-      # Taylor series
+      # Taylor series, no PV
+      Y <- as(edf[,yvars[1],drop=FALSE],"Matrix")
       X <- sparse.model.matrix(frm, edf)
       W <- Diagonal(n=nrow(edf),edf[,wgt,drop=TRUE])
-      XW <-X * sqrt(edf[,wgt,drop=TRUE])
-      qrXW <- qr(XW)
-      D <- solve(t(X) %*% W %*% X)
-      Y <- as(edf[,yvars[1],drop=FALSE],"Matrix")
-      YW <- Y * sqrt(edf[,wgt,drop=TRUE])
-
-      b <- qr.coef(qrXW, YW)
+      D <- vcov(lm0)
+      b <- coef(lm0)
+      # fitted values
       fitted <- X%*%b
-      e <- as.vector((Y-fitted))
+      # residuals, devide by sigma^2 because D from vcov(lm0) has a sigma2 in it
+      e <- (as.vector((Y-fitted)))/summary(lm0)$sigma^2
       # this is the partial of the likelihood at the unit level
       uhij <- e*as.matrix(X)
-      
+      # singletons dropped in lapply below, not here
       for(bi in 1:length(b)) { # for each coefficient
         coln <- colnames(uhij)[bi]
         # get the stratum/PSU based sum
@@ -763,28 +784,36 @@ calc.lm.sdf <- function(formula,
       vv <- matrix(0,nrow=length(b), ncol=length(b))
       dofNum <- rep(0,length(b))
       dofDenom <- rep(0,length(b))
-      sa <-  lapply(unique(uhi[,stratumVar]), function(ii) {
+      warnDrop <- FALSE
+      sa <- lapply(unique(uhi[,stratumVar]), function(ii) {
         vvj <- matrix(0,nrow=length(b), ncol=length(b))
-            unkj <- unique(uhi[uhi[,stratumVar] == ii, psuVar, drop=TRUE])
-        if(length(unkj)>1) { # cannot estimate variance of single unit
+        unkj <- unique(uhi[uhi[,stratumVar] == ii, psuVar, drop=TRUE])
+        if(length(unkj)>1) { # cannot estimate variance of single PSU
           sb <- lapply(unkj, function(jj) {
             v <- as.numeric(t(uhi[uhi[,stratumVar]==ii & uhi[,psuVar]==jj, paste0("dx",1:length(b)), drop=FALSE]))
             vvj <<- vvj + v %*% t(v)
           })
           vvj <- vvj * ( (length(unkj)) / ( length(unkj) - 1) )
-          sw <- (uhi$strtWgt[uhi[,stratumVar]==ii])[1]
-          num <- sw * diag(vvj)
+          num <- diag(D %*% vvj %*% D)
           dofNum <<- dofNum + num
           dofDenom <<- dofDenom + num^2
           vv <<- vv + vvj
-        } # End of if statment:  if(length(unkj)>1)
-      }) # End of Lappy Loop: lapply(unique(uhi$repgrp1), function(ii)
+        } else { # End of if statment: if(length(unkj)>1)
+          warnDrop <<- TRUE
+        }
+      }) # End of lapply loop: lapply(unique(uhi$repgrp1), function(ii)
+      if(warnDrop) {
+        warning("Some strata had only one populated PSU. Units in these strata assumed to be certainties. You can condense the strata/PSU structure to avoid this.")
+      }
       M <- vv
       vc <- D %*% M %*% D
       # get R-squared
       meanY <- sum(W %*% Y) / sum(diag(W))
       dY <- Y-meanY
       syy <- t(dY) %*% W %*% dY # Weisberg and adding in weights
+      # all cases not, not just those in complete strata
+      fitted <- X%*%b
+      e <- as.vector((Y-fitted))
       rss <- t(e) %*% W %*% e # Weisberg, page 81 eq 4.2
       r2 <- as.numeric(1-(rss/syy)) # Weisberg, page 49 eq 2.31
       coef <- as.numeric(b)
@@ -1084,7 +1113,7 @@ plot.edsurveyLm <- function(x, ...) {
   plot(cr)
 }
 
-# helper to get standard deviations for a weight
+# helper to get standard deviations for a weighted variable
 getStdev <- function(outcomeData, XData, weightData) {
   std <- c(outcome=fast.sd(outcomeData, weightData)["std"])
   for(i in 1:ncol(XData)) {

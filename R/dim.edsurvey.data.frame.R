@@ -20,22 +20,20 @@
 #' @aliases dim.edsurvey.data.frame.list
 #' @export
 dim.edsurvey.data.frame <- function(x) {
-  # if there is teacher data
-  if(!is.null(x$dataTch)){
-    suppressWarnings(data <- getData(x,
-                                     varnames=c(names(x$dataTch)[!names(x$dataTch) %in% c(names(x$data), names(x$dataSch))][1]), #we need a unique dataTch variable for this to work correctly
-                                     drop=TRUE,
-                                     omittedLevels=FALSE,
-                                     defaultConditions=FALSE))
-  } else {
-    suppressWarnings(data <- getData(x,
-                                     varnames=c(names(x$data)[1]),
-                                     drop=TRUE,
-                                     omittedLevels=FALSE,
-                                     defaultConditions=FALSE))
+  
+  testVars <- NULL
+  excludeVars <- NULL
+  
+  for(di in x$dataList){
+    if(di$isDimLevel){
+      testVars <- names(di$lafObject)
+    }else{
+      excludeVars <- c(excludeVars, names(di$lafObject))
+    }
   }
   
-  nrow <- length(data)
+  nrow <- length(suppressWarnings(getData(x, testVars[!testVars %in% excludeVars][1], drop=TRUE, omittedLevels = FALSE, defaultConditions = FALSE)))
+  
   # every column must have a name
   ncol <- length(colnames(x))
   return(c(nrow, ncol))
@@ -64,15 +62,13 @@ nrow2.edsurvey.data.frame <- function(x) {
 #' @export
 dimnames.edsurvey.data.frame <- function(x) {
   nameVals <- c()
-  if(!is.null(x$data)){
-    nameVals <- names(x$data)
+  
+  for(di in x$dataList){
+    if(!is.null(di$lafObject)){
+      nameVals <- c(nameVals, names(di$lafObject))
+    }
   }
-  if(!is.null(x$dataSch)){
-    nameVals <- c(nameVals, names(x$dataSch))
-  }
-  if(!is.null(x$dataTch)){
-    nameVals <- c(nameVals, names(x$dataTch))
-  }
+  
   return(list(NA,unique(nameVals)))
 }
 

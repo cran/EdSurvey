@@ -37,7 +37,7 @@
 #'               \code{=} \code{"d"))}. See Examples.
 #' @param includeNaLabel a logical value to indicate if \code{NA} (missing) values are
 #'                       returned as literal \code{NA} values or as factor levels
-#'                       coded as \code{NA}.
+#'                       coded as \code{NA}
 #' @param addAttributes a logical value set to \code{TRUE} to get a
 #'                      \code{data.frame} that can be used in calls to
 #'                      other functions that usually would take an
@@ -55,7 +55,7 @@
 #'
 #' When \code{getData} is called, it returns a \code{data.frame}. When the
 #' \code{addAttributes} argument is set to \code{TRUE}, that \code{data.frame}
-#' has several attributes added to make it usable by the functions in 
+#' has several attributes added to make it usable by the functions in
 #' the \code{EdSurvey} package (e.g., \code{lm.sdf}), and the class is a
 #' \code{light.edsurvey.data.frame}.
 #'
@@ -66,9 +66,9 @@
 #' \href{https://www.air.org/sites/default/files/EdSurvey-getData.pdf}{getData}
 #' for long-form documentation on this function.
 #'
-#' @return When \code{addAttributes} is \code{FALSE}, returns a
+#' @return When \code{addAttributes} is \code{FALSE}, \code{getData} returns a
 #' \code{data.frame} containing data associated with requested
-#' variables. When \code{addAttributes} is \code{TRUE}, returns a
+#' variables. When \code{addAttributes} is \code{TRUE}, \code{getData} returns a
 #' \code{light.edsurvey.data.frame}.
 #'
 #' @seealso \code{\link{subset.edsurvey.data.frame}} for how to remove
@@ -81,7 +81,7 @@ getData <- function(data,
                     varnames=NULL,
                     drop= FALSE,
                     dropUnusedLevels=TRUE,
-                    omittedLevels=TRUE, 
+                    omittedLevels=TRUE,
                     defaultConditions=TRUE,
                     formula = NULL,
                     recode = NULL,
@@ -100,7 +100,7 @@ getData <- function(data,
   if(!is.logical(defaultConditions)) stop("The ", sQuote("defaultConditions"), " argument must be logical.")
   if(!is.null(recode) & !is.list(recode)) stop(paste0("The ", sQuote("recode"), " argument must be a list."))
   if(is.null(varnames) & is.null(formula)) stop(paste0("At least one of ", sQuote("varnames"), " and ", sQuote("formula"), "must be not NULL."))
-  
+
   # for edsurvey.data.frame.list, just return a list of results
   if (inherits(sdf, c("edsurvey.data.frame.list"))) {
     return(itterateESDFL(match.call(),sdf))
@@ -112,12 +112,12 @@ getData <- function(data,
       warning(paste0("The argument ",sQuote("defaultConditions"), " is defined but will be ignored because the incoming data set is already a ", sQuote("light.edsurvey.data.frame"), "."))
     }
   }
-  
+
   #LaF objects hold file format info and file connections.
   #Ensure the file connections are open for reading.
   #OS has limits on maximum open file connections so only open when needed, and close when not in use.
   sdf <- openLaFConnections(sdf)
-  
+
   # get variables from formula
   formulaVars <- all.vars(formula)
   varnames <-c(varnames,formulaVars)
@@ -132,7 +132,7 @@ getData <- function(data,
     }
     varNamesDefaults <- all.vars(dConditions)
   }
-  
+
   #check if the variable names in recodes are in the data
   varRecodes <- c()
   if(!is.null(recode)) {
@@ -145,70 +145,14 @@ getData <- function(data,
     sdf <- recode.sdf(sdf, recode)
     recode <- NULL
   }
-  
-  #build the school/student merge link criteria if applicable
-  schoolMergeVarStudent <- NULL
-  schoolMergeVarSchool <- NULL
-  #Test to ensure all merge variables are present to make the merge
-  if(inherits(sdf, "edsurvey.data.frame") && !is.null(sdf$dataListMeta$student$school)) {
-    schoolMergeVarStudent <- unlist(strsplit(sdf$dataListMeta$student$school, ";", fixed = TRUE)) #first split on ';' as major fields
-    schoolMergeVarStudent <- sapply(schoolMergeVarStudent, function(x){
-      head(unlist(strsplit(x, "^", fixed = TRUE)), n=1) #get first item from split in case we need to merge on variables with different names (var1^var2)
-    }, simplify = TRUE)
-    if(!is.null(schoolMergeVarStudent)) {
-      if(sum(!schoolMergeVarStudent %in% names(sdf$data))>0) {
-        sdf <- closeLaFConnections(sdf)
-        stop(paste0("Merge variable(s) ", pasteItems(sQuote(schoolMergeVarStudent)), " not found in dataset."))
-      }
-    }
-    
-    schoolMergeVarSchool <- unlist(strsplit(sdf$dataListMeta$student$school, ";", fixed = TRUE))
-    schoolMergeVarSchool <- sapply(schoolMergeVarSchool, function(x){
-      tail(unlist(strsplit(x, "^", fixed = TRUE)), n=1) #get last item from split
-    }, simplify = TRUE)
-    if(!is.null(schoolMergeVarSchool)) {
-      if(sum(!schoolMergeVarSchool %in% names(sdf$dataSch))>0) {
-        sdf <- closeLaFConnections(sdf)
-        stop(paste0("Merge variable(s) ", pasteItems(sQuote(schoolMergeVarSchool)), " not found in dataset."))
-      }
-    }
-  } # end if(inherits(sdf, "edsurvey.data.frame") && !is.null(sdf$dataListMeta$student$school))
-  
-  #build the teacher/student merge link critiera if applicable
-  teacherMergeVarStudent <- NULL
-  teacherMergeVarTeacher <- NULL
-  #Test to ensure all merge variables are present to make the merge
-  if(inherits(sdf, "edsurvey.data.frame") && !is.null(sdf$dataListMeta$student$teacher)) {
-    teacherMergeVarStudent <- unlist(strsplit(sdf$dataListMeta$student$teacher, ";", fixed = TRUE))
-    teacherMergeVarStudent <- sapply(teacherMergeVarStudent, function(x){
-      head(unlist(strsplit(x, "^", fixed = TRUE)), n=1) #get first item from split
-    }, simplify = TRUE)
-    if(!is.null(teacherMergeVarStudent)) {
-      if(sum(!teacherMergeVarStudent %in% names(sdf$data))>0) {
-        sdf <- closeLaFConnections(sdf)
-        stop(paste0("Merge variable(s) ", pasteItems(sQuote(teacherMergeVarStudent)), " not found in dataset."))
-      }
-    }
-    
-    teacherMergeVarTeacher <- unlist(strsplit(sdf$dataListMeta$student$teacher, ";", fixed = TRUE))
-    teacherMergeVarTeacher <- sapply(teacherMergeVarTeacher, function(x){
-      tail(unlist(strsplit(x, "^", fixed = TRUE)), n=1) # get last item from split
-    }, simplify = TRUE)
-    if(!is.null(teacherMergeVarTeacher)) {
-      if(sum(!teacherMergeVarTeacher %in% names(sdf$dataTch))>0) {
-        sdf <- closeLaFConnections(sdf)
-        stop(paste0("Merge variable(s) ", pasteItems(sQuote(teacherMergeVarTeacher)), " not found in dataset."))
-      }
-    }
-  } # end if(inherits(sdf, "edsurvey.data.frame") && !is.null(sdf$dataListMeta$student$teacher))
-  
+
   #Retrieve user conditions
   userConditions <- getAttributes(sdf, "userConditions")
   varNamesConditions <- c()
   if(length(userConditions)>0) {
     for (i in c(1:length(userConditions))) {
       if (!is.null(names(userConditions)[i]) && names(userConditions)[i] %in% "recode") {
-        varNamesConditions <- c(varNamesConditions, unique(names(userConditions[[i]]))) 
+        varNamesConditions <- c(varNamesConditions, unique(names(userConditions[[i]])))
       } else {
         condition <- userConditions[[i]]
         varNamesConditions <- c(varNamesConditions, all.vars(condition))
@@ -218,14 +162,14 @@ getData <- function(data,
   if(!inherits(sdf, "edsurvey.data.frame")) {
      varNamesConditions <- c()
   }
-  
+
   #Using the conditions and default variables and varnames to read in data from LaF
   varNamesDefaults2 <- varNamesDefaults
   varNamesDefaults <- varNamesDefaults[which(varNamesDefaults %in% colnames(sdf))]
   varnamesAllConditions <- c(varNamesConditions, varNamesDefaults)
   vars <- c()
   v <-c ()
-  
+
   hpv <- hasPlausibleValue(varnames, sdf) # boolean vector that is TRUE when the variable has plausible values
   iw <- isWeight(varnames, sdf) # boolean vector that is TRUE when the variable is a weight
   vars <- c(vars, varnames[!(iw | hpv)])
@@ -247,7 +191,7 @@ getData <- function(data,
   }
   # remove any duplicates (e.g. because part of default conditions and requested)
   varnames <- unique(vars)
-  
+
   # expand varnamesAllConditions when it has a variable with PVs or is a weight
   # also make varnamesTotal
   vars <- c()
@@ -276,137 +220,96 @@ getData <- function(data,
   }
   varnamesTotal <- unique(varnamesTotal)
   vars_exclude_omitted <- c(vars_exclude_omitted, varnamesAllConditions[!varnamesAllConditions %in% varnames]) # exclude variables in userConditions but not in called variables
-  
+
   # this section is for retreiving the data from a LaF
   if(inherits(sdf, "edsurvey.data.frame")) {
-    #Retrieve the LAF objects from the data list to work with
-    dataLaf <- sdf$data
-    dataSchLaf <- sdf$dataSch
-    dataTchLaf <- sdf$dataTch
-    
-    ndsl1 <- names(dataSchLaf)
-    hasSchoolVars <- ndsl1[!(ndsl1 %in% c(schoolMergeVarSchool, names(dataLaf)))] #remove any merge vars or vars that overlap with the student file from our named list::char
-    hasSchoolVars <- hasSchoolVars %in% varnamesTotal[!(varnamesTotal %in% schoolMergeVarSchool)] #check if any school vars exist that are needed that are not merge vars::logical
-    hasSchoolVars <- any(hasSchoolVars) #collapse the previous test into one true/false logical
-    
-    if (!hasSchoolVars){ #set the merge vars to null if not needed
-      schoolMergeVarSchool <- NULL
-      schoolMergeVarStudent <- NULL
-    }
-    #grab the index of the var names required in case needed later (include mergeVars)
-    indexSchVars <- ndsl1 %in% c(varnamesTotal, schoolMergeVarSchool)
-   
-    ndsl2 <- names(dataTchLaf)
-    hasTeacherVars <- ndsl2[!(ndsl2 %in% c(teacherMergeVarTeacher, names(dataLaf)))] #remove any merge vars or vars that overlap with the teacher file from our named list::char
-    hasTeacherVars <- hasTeacherVars %in% varnamesTotal[!(varnamesTotal %in% teacherMergeVarTeacher)] #check if any teacher vars exist that are needed that are not merge vars::logical
-    hasTeacherVars <- any(hasTeacherVars)
-    
-    if (!hasTeacherVars){ #set the merge vars to null if not needed
-      teacherMergeVarTeacher <- NULL
-      teacherMergeVarStudent <- NULL
-    }
-    #grab the index of the var names required in case needed later (include mergeVars)
-    indexTchVars <- ndsl2 %in% c(varnamesTotal, teacherMergeVarTeacher) #logical empty if no teacherLaf
+    #prepare new objects for storing the merged data and label files. must be done outside the loop
+    data <- NULL
+    labelsFile <- NULL
 
-    missingVars <- varnames[!varnames %in% vars_exclude_omitted & !varnames %in% colnames(sdf)] #ensure we don't have any missing vars::be sure to exclude any vars 'vars_exclude_omit'
-    if(length(missingVars) >0 ) {
-      sdf <- closeLaFConnections(sdf)
-      stop(paste0("The following variable names are required for this call and are not on the incoming data ", paste(sQuote(missingVars), collapse=", "),"."))
-    }
-    
-    #get the numeric indexes for the student data we want
-    indexVars <- (1:length(names(dataLaf)))[names(dataLaf) %in% c(varnamesTotal, schoolMergeVarStudent, teacherMergeVarStudent)]
-    
-    # get the student data using the indexes
-    data <- dataLaf[,indexVars, drop=FALSE]
-    
-    #perform the actual student->school merge if applicable
-    if(!is.null(dataSchLaf) && hasSchoolVars==TRUE) { #grab and merge the school level data if necessary
-      if(any(indexSchVars) && hasSchoolVars==TRUE) {#test if we have any school vars
-        indexSchVars <- (1:length(ndsl1))[indexSchVars] #convert boolean vector to numeric index vector of TRUE values
-        
-        # get school level data
-        datas <- dataSchLaf[,indexSchVars, drop=FALSE]
-        
-        data$oorder__zz11qq <- 1:nrow(data) # retain original order
-        data <- merge(data, datas, by.x=schoolMergeVarStudent, by.y=schoolMergeVarSchool, all.x=TRUE, all.y=FALSE, suffixes = c("", ".dupe"))
-        data <- data[,names(data)[!grepl("\\.dupe$",names(data))]] #remove any duplicate fields::student file will take precedent
-        
-        #test if any schoolMergeVarSchool variables are in the vars to export as these are not included if differently named between datasets, also ensure this variable is requested for output
-        if(length(schoolMergeVarSchool[!(schoolMergeVarSchool %in% schoolMergeVarStudent)])>0 && any(schoolMergeVarSchool[!(schoolMergeVarSchool %in% schoolMergeVarStudent)] %in% varnamesTotal)){
-          varsToAdd <- schoolMergeVarSchool[!(schoolMergeVarSchool %in% schoolMergeVarStudent)]
-          varsToAddIndx <- varsToAdd %in% schoolMergeVarSchool #creates logical vector
-          varsToAddIndx <- (1:length(schoolMergeVarSchool))[varsToAddIndx] #converts logical vector into numeric index
-          appendData <- data.frame(data[, schoolMergeVarStudent[varsToAddIndx]])
-          names(appendData) <- schoolMergeVarSchool[varsToAddIndx]
-          varnamesTotal <- c(varnamesTotal, names(appendData)) #be sure to add this back into the varnames total
-          data <- cbind(data, appendData) #duplicate the fields if need by since we are dealing with multiple names of the same field
+    #for determining which data levels we did in fact merge for use later in function
+    mergeLevels <- rep(FALSE, length=length(sdf$dataList))
+    names(mergeLevels) <- sapply(sdf$dataList, function(dl){dl$levelLabel})
+
+    #the mergeVars list will be a list of variables at the named dataLevel in which will be needed for merging based on the resulting test in the loop below
+    mergeVars <- vector("list", length=length(sdf$dataList))
+    names(mergeVars) <- sapply(sdf$dataList, function(dl){dl$levelLabel})
+
+    #loop through dataList in reverse order to determine the highest levels that have requested variables.  mark those levels, and their required parent levels as 'TRUE'
+    for(dlevel in rev(sdf$dataList)){
+      #check if the level requires to be merged either by: 1) forceMerged flag is TRUE. 2) Has a variable requested by the user that is not contained in the levels 'ignoreVars' list.
+      if(dlevel$forceMerge || any(dlevel$fileFormat$variableName[!dlevel$fileFormat$variableName %in% dlevel$ignoreVars] %in% varnamesTotal)){
+        mergeLevels[names(mergeLevels)==dlevel$levelLabel | names(mergeLevels) %in% dlevel$parentMergeLevels] <- TRUE #specify which levels we need to specifically loop through/merge
+
+        #store the specific 'parent' merge variables under the level (by name) based on 'parentMergeLevels' and 'parentMergeVars'
+        for(pLevel in unique(dlevel$parentMergeLevels)){
+          mergeVars[[pLevel]] <- unique(c(mergeVars[[pLevel]], dlevel$parentMergeVars))
         }
-        
-        data <- data[order(data$oorder__zz11qq),]
-        data$oorder__zz11qq <- NULL
-        
-      } #end if(sum(nchar(dataSchLaf[indexSchVars]))>1 && hasSchoolVars==TRUE)
-    } #end if(!is.null(dataSchLaf) && hasSchoolVars==TRUE)
-    
-    #perform the actual student->teacher OR (student+schoool)->teacher merge if applicable
-    if(!is.null(dataTchLaf) && hasTeacherVars==TRUE) { #grab and merge the teacher level data if necessary
-      if(any(indexTchVars) && hasTeacherVars==TRUE) {
-        indexTchVars <- (1:length(ndsl2))[indexTchVars] #convert boolean vector to numeric index vector of TRUE values
-        
-        # get teacher level data
-        datas <- dataTchLaf[,indexTchVars, drop=FALSE]
-        data$oorder__zz11qq <- 1:nrow(data) # retain original order
-        data <- merge(data, datas, by.x=teacherMergeVarStudent, by.y=teacherMergeVarTeacher, all.x=TRUE, all.y=FALSE, suffixes = c("", ".dupe"))
-        data <- data[,names(data)[!grepl("\\.dupe$",names(data))]] #remove any duplicate fields::student file will take precedent
-        
-        #test if any teacherMergeVarTeacher variables are in the vars to export as these are not included if differently named between datasets
-        if(length(teacherMergeVarTeacher[!(teacherMergeVarTeacher %in% teacherMergeVarStudent)])>0 && any(teacherMergeVarTeacher[!(teacherMergeVarTeacher %in% teacherMergeVarStudent)] %in% varnamesTotal)){
-          varsToAdd <- teacherMergeVarTeacher[!(teacherMergeVarTeacher %in% teacherMergeVarStudent)]
-          varsToAddIndx <- varsToAdd %in% teacherMergeVarTeacher #creates logical vector
-          varsToAddIndx <- (1:length(teacherMergeVarTeacher))[varsToAddIndx] #converts logical vector into numeric index
-          appendData <- data.frame(data[, teacherMergeVarStudent[varsToAddIndx]])
-          names(appendData) <- teacherMergeVarTeacher[varsToAddIndx]
-          varnamesTotal <- c(varnamesTotal, names(appendData)) #be sure to add this back into the varnames total
-          data <- cbind(data, appendData) #duplicate the fields if need by since we are dealing with multiple names of the same field
-        }
-        
-        data <- data[order(data$oorder__zz11qq),]
-        data$oorder__zz11qq <- NULL
-        
-      }#end if(sum(nchar(dataTchLaf[indexTchVars]))>1 && hasTeacherVars==TRUE)
-    } #end if(!is.null(dataTchLaf) && hasTeacherVars==TRUE)
-     
-    
-    mergeVarsToRemove <- c(schoolMergeVarSchool, schoolMergeVarStudent, teacherMergeVarStudent, teacherMergeVarTeacher)
-    mergeVarsToRemove <- mergeVarsToRemove[!mergeVarsToRemove %in% varnamesTotal] 
-    data <- data[,!(names(data) %in% mergeVarsToRemove), drop=FALSE] #remove the unneeded merge vars from the dataset
-    varnamesTotal <- names(data) #reset the varnamesTotal variable in case it's out of sync after the merge
-    
+      }
+    }#end for(dlevel in rev(sdf$dataList))
+
+    #loop through each data item and see if any variables are requested and process accordingly to the dataList rules
+    for(dlevel in sdf$dataList){
+
+      if(dlevel$forceMerge || mergeLevels[names(mergeLevels)==dlevel$levelLabel]==TRUE){
+        laf <- dlevel$lafObject
+        ff <- dlevel$fileFormat
+
+        levelVars <- dlevel$fileFormat$variableName #get all variable names
+        levelVars <- levelVars[!levelVars %in% dlevel$ignoreVars] #remove ignored variables
+        levelVars <- levelVars[levelVars %in% varnamesTotal] #determine which specific variables are requested by user
+
+        parentMergeVars <- mergeVars[[dlevel$levelLabel]][] #grab any parent merge variables required from the initial scan that are stored for this level
+
+        dataChunk <- laf[,which(names(laf) %in% c(levelVars, dlevel$mergeVars, parentMergeVars), arr.ind = TRUE), drop=FALSE] #retrieve the values from the LaF
+
+        if(is.null(data)){
+          data <- dataChunk
+          data$zzz___SORTORDER <- 1:nrow(data)
+
+          labelsFile <- ff
+
+        }else{
+          data$zzz___SORTORDER <- 1:nrow(data) #number the datarows to ensure we keep original source, we will reorder after merge
+          data <- merge(data, dataChunk, all.x=TRUE, all.y=FALSE, by.x = dlevel$parentMergeVars, by.y = dlevel$mergeVars, suffixes = c("", ".dupe"))
+          data <- data[,names(data)[!grepl("\\.dupe$",names(data))], drop=FALSE] #remove any duplicate fields::priority data level will take precedent
+
+          #check here to see if the variable names differed between the parent and level
+          #if there is a mismatch we need to insert
+          if(any(dlevel$parentMergeVars!=dlevel$mergeVars)){
+            idx <- which(dlevel$parentMergeVars!=dlevel$mergeVars, arr.ind = TRUE)
+
+            #duplicate the column value based on the parent name::note that this will only ever apply to merge variables with varying names
+            for(i in idx){
+              data[ , dlevel$mergeVars[i]] <- data[ , dlevel$parentMergeVars[i]]
+            }
+
+          }
+
+          ff <- ff[!(ff$variableName %in% labelsFile$variableName), ]
+          labelsFile <- rbind(labelsFile, ff)
+        }#end if(is.null(data))
+
+        #reorder to ensure original row ordering intact after merge
+        data <- data[order(data$zzz___SORTORDER), , drop=FALSE]
+        data$zzz___SORTORDER <- NULL
+      }#end if(dlevel$forceMerge || mergeLevels[names(mergeLevels)==dlevel$levelLabel]==TRUE)
+    }#end for(dlevel in sdf$dataList)
+
+    #tidy up and drop any columns not requested by user
+    dataChunk <- NULL
+
+    data <- data[,(names(data) %in% varnamesTotal), drop=FALSE]
+    row.names(data) <- 1:nrow(data)
+
     #validation check to ensure we have all the fields that were requested
-    errorVars <- varnames[!(varnames %in% varnamesTotal)]
+    errorVars <- varnames[!(varnames %in% names(data))]
     if (sum(nchar(errorVars))>0) {
       sdf <- closeLaFConnections(sdf)
       stop(paste0("The following variable names are required for this call but not found in the data: ", paste(sQuote(errorVars), collapse=", "),"."))
     }
-    
-    #Apply labels and decimal values:: only build the labels file from unique items to not overlap/combine decimals or other values
-    labelsFile1 <- sdf$fileFormat
-    
-    if(hasSchoolVars){ #only add the labels if we need them
-      labelsFile2 <- sdf$fileFormatSchool[!(sdf$fileFormatSchool$variableName %in% labelsFile1$variableName), ]
-    } else {
-      labelsFile2 <- NULL
-    }
-    
-    if (hasTeacherVars){ #only add the labels if we need them
-      labelsFile3 <- sdf$fileFormatTeacher[!(sdf$fileFormatTeacher$variableName %in% c(labelsFile1$variableName, labelsFile2$variableName)), ]
-    } else {
-      labelsFile3 <- NULL
-    }
-    
-    labelsFile <- rbind(labelsFile1, labelsFile2, labelsFile3) #if null these will not add any additional rows
-    
+
+
     labelsFile <- labelsFile[order(labelsFile$Start),]
     decimals <- as.numeric(labelsFile$Decimal)
     variables <- labelsFile$variableName
@@ -420,7 +323,7 @@ getData <- function(data,
       if(length(keysTemp!=0)) {
         for (j in c(1:length(keysTemp))) {
           keys = c(keys,strsplit(keysTemp[j],'=', fixed = TRUE)[[1]][1])
-          
+
           #in case the label has a true '=' symbol, we will then need to re-join all but the first element
           temp <- paste0(strsplit(keysTemp[j],'=', fixed = TRUE)[[1]][-1], collapse = "=")
           if(temp == "" | is.na(temp)) {
@@ -428,14 +331,14 @@ getData <- function(data,
           }
           values = c(values,temp)
           }
-          
+
         labels[[variable]] <- list(keys = keys, values = values)
-      }    
+      }
     }
-    
+
     #apply the decimal conversion prior to applying the labels AND the merge in case we have a decimal value used as the key in the key/value label or need to adjust any weights
     #PISA reads in csv files so no need to convert to decimal values
-    if (!sdf$survey %in% c("PISA","TALIS","PIAAC")) {
+    if (sdf$reqDecimalConversion==TRUE) {
       for(i in c(1:length(colnames(sdf)))) {
         varn <- variables[i] # the variable being considered
         decLen <- decimals[i]
@@ -446,12 +349,15 @@ getData <- function(data,
         }
       }
     }
-    
-    #Give warning to user that 'totwgt' (student level weight) may give incorrect results when teacher data is merged
-    if (sdf$survey %in% c("TIMSS", "PIRLS", "TIMSS Advanced", "CivED") && hasTeacherVars && any(varnamesTotal %in% c("totwgt"))) {
-      warning("Teacher data has been merged.  The student-level 'totwgt' weight variable may not produce correct results in analysis.  See documentation.")
+
+    #Give warning to user that 'totwgt' (student level weight) may give incorrect results when teacher data is merged::first ensure there is a 'Teacher' level
+    if (sdf$survey %in% c("TIMSS", "PIRLS", "TIMSS Advanced", "CivED") && any(names(data)=="totwgt") && any(grepl("teacher", names(mergeLevels), ignore.case = TRUE))) {
+      if(mergeLevels[[grep("teacher", names(mergeLevels), ignore.case = TRUE)]]==TRUE){
+        warning("Teacher Data has been Merged.  The student level 'totwgt' weight variable may not produce correct results in analysis.  See documentation.")
+      }
     } #end  if (sdf$survey %in% c("TIMSS", "PIRLS", "TIMSS Advanced") && hasTeacherVars)
-    
+
+
     #applying labels to the data file
     labelsn <- names(labels)
     for(i in 1:length(labels)) {
@@ -465,11 +371,11 @@ getData <- function(data,
         if((sdf$survey != "PIAAC" && all(labels[[i]]$values %in% sdf$omittedLevels))) { #generally these are 99999/999997 etc
           if(is.numeric(suppressWarnings(as.numeric(labels[[i]]$keys)))){
             #fixes any rounding issues comparing source data to the key value (e.g., value of 999998.99999999 need to be compared to key value of 999999)
-            data[round(data[,vari],8) %in% labels[[i]]$keys,vari] <- NA 
+            data[round(data[,vari],8) %in% labels[[i]]$keys,vari] <- NA
           }else{
             data[data[,vari] %in% labels[[i]]$keys,vari] <- NA
           }
-          
+
         } else if (!is.null(labelsFile$labelled) && !labelsFile$labelled[labelsFile$variableName == vari]) {
           # fileFormat has missing values and labelled columns
           # keep the missing value labels ----> need to think whether to keep it or not
@@ -482,13 +388,21 @@ getData <- function(data,
             dnames <- names(tab[tab > 1])
             needNewLabels <- labels[[i]]$values %in% dnames
             if(vari %in% varnames) {
-              warning(paste0("Updating labels on ",sQuote(vari), " because there are multiples of the label ", sQuote(dnames), "."))  
+              warning(paste0("Updating labels on ",sQuote(vari), " because there are multiples of the label ", sQuote(dnames), "."))
             }
             labels[[i]]$values[needNewLabels] <- paste(labels[[i]]$values[needNewLabels],1:(sum(needNewLabels)), sep=":")
           }
-          
+
           lvls <- labels[[i]]$keys
           lbls <- labels[[i]]$values
+          
+          #determine if the field keys are numeric, but the value labels are saved as character (e.g., 001, 010)
+          #convert those to numeric values if the data is also numeric type
+          if(all(!is.na(suppressWarnings(as.numeric(lvls)))) && is.numeric(data[,vari])){
+            lvls <- as.numeric(lvls)
+          }
+          
+          
           if(includeNaLabel) {
              if(sum(is.na(data[,vari])) > 0) {
                lvls <- c(NA, lvls) #add NA first to the list
@@ -501,19 +415,19 @@ getData <- function(data,
             lvls <- c(lvls,exception)
             lbls <- c(lbls,exception)
           }
-          
+
           #test if there are defined numeric values not in the label
           if(getAttributes(sdf,"validateFactorLabels")==TRUE){
-            exception <- unique(data[,vari][!data[,vari] %in% lvls])
+            exception <- sort(unique(data[,vari][!data[,vari] %in% lvls]))
             exception <- exception[!is.na(exception) & trimws(exception, which = "both")!=""]
             if(length(exception)>0){
               lvls <- c(lvls,exception)
               lbls <- c(lbls,exception)
             }
           }
-          
-          
-          data[data[,vari]=="" | is.na(data[,vari]),vari] <- NA 
+
+
+          data[data[,vari]=="" | is.na(data[,vari]),vari] <- NA
           suppressWarnings(lvlsp <- as.numeric(lvls))
           suppressWarnings(dvi <- as.numeric(data[,vari]))
           suppressWarnings(lblsp <- as.numeric(lbls))
@@ -536,15 +450,15 @@ getData <- function(data,
         # nothing to do
       }# end else for if(vari %in% names(data))
     } # for for(i in 1:length(labels))
-    
 
-    # check if variable can be converted to numeric. Some "labels" are just numbers. 
+
+    # check if variable can be converted to numeric. Some "labels" are just numbers.
     # this fixes that
     for(var in names(data)) {
       # convToNum converts the variable to a number--if it will not cause data loss
-      data[,var] <- convToNum(data[,var])  
+      data[,var] <- convToNum(data[,var])
     }
-    
+
     #Apply default conditions
     # first check if they are valid
     if (any(!varNamesDefaults2 %in% names(data))) {
@@ -562,7 +476,7 @@ getData <- function(data,
         data <- data[r,,drop=FALSE]
       }
     }
-  
+
     #Apply user conditions (i.e. subset, recode)
     if(length(userConditions)>0) {
       for (i in c(1:length(userConditions))) {
@@ -577,15 +491,15 @@ getData <- function(data,
               if (length(to) > 1) {
                 stop(paste0("More than one 'To' value found in the ", sQuote(ni) ," element of the 'recode' argument."))
               }
-              
-              badFrom <- c() #levels with incorrect recodes 
+
+              badFrom <- c() #levels with incorrect recodes
               if(inherits(data[,ni], "factor")) {
                 newto <- to
                 if(to %in% from) { # remove degenerate recode
                   from <- from[!from %in% to]
                 }
                 labs <- levels(data[,ni]) # used for both lfactors and factors
-                if(newto %in% labs) { # this is not a new label 
+                if(newto %in% labs) { # this is not a new label
                   newto <- NULL
                 }
                 tmp <- as.character(data[,ni])
@@ -612,7 +526,7 @@ getData <- function(data,
                     }
                   }
                   # after the code above, to is always a character label
-                  
+
                   # from can be a vector of mixed numeric and character values
                   # fromNum: numeric values in from
                   # fromChar: character values in from
@@ -620,7 +534,7 @@ getData <- function(data,
                   fromChar <- from[is.na(fromNum)]# character from variables
                   # numeric from variables
                   fromNum <- fromNum[!is.na(fromNum)]
-                  
+
                   # changing tmp according to numeric values of from
                   if(length(fromNum)>0) {
                     tmp_numeric <- lfactors:::switchllevels(data[,ni])
@@ -656,7 +570,7 @@ getData <- function(data,
                   data[,ni] <- factor(tmp, levels=labs)
                 }
               } else { # end if(inherits(x[,ni], "factor"))
-                # recode for non factors 
+                # recode for non factors
                 if(any(!from %in% data[,ni])) {
                   badFrom <- from[!from %in% data[,ni]]
                 }
@@ -673,11 +587,11 @@ getData <- function(data,
           condition <- userConditions[[i]]
           r <- eval(condition, data)
           r <- ifelse(is.na(r),FALSE,r) #remove NA
-          data <- data[which(r),,drop=FALSE]  
+          data <- data[which(r),,drop=FALSE]
         }
       }#end for (i in c(1:length(userConditions)))
     } # end if(length(userConditions) > 0)
-    
+
     # apply omittedLevels when TRUE or equal to some levels
     # this code should execute on all of the variables when omittedLevels is TRUE
     flag <- FALSE # set to TRUE when using ommittedLevels in some capacity
@@ -690,7 +604,7 @@ getData <- function(data,
       lev <- omittedLevels
       flag <- TRUE
     }
-    
+
     #flag variable is calculated above to determine if omitted values should be excluded from results
     if(flag) {
       keep <- rep(0, nrow(data))
@@ -705,9 +619,9 @@ getData <- function(data,
         # only omit if something gets omitted
         data <- data[keep==0,,drop=FALSE]
       }
-    }  
-    
-    
+    }
+
+
     # call droplevels on data when dropUnusedLevels=TRUE
     if(dropUnusedLevels) {
       for (i in 1:length(varnamesTotal)) {
@@ -716,7 +630,7 @@ getData <- function(data,
         }
       }
     }
-    
+
   } # end if(inherits(sdf, "edsurvey.data.frame"))
   else {
     missingVars <- varnames[!varnames %in% vars_exclude_omitted & !varnames %in% colnames(sdf)]
@@ -724,10 +638,10 @@ getData <- function(data,
       sdf <- closeLaFConnections(sdf)
       stop(paste0("The following variable names are required for this call and are not on the incoming data ", pasteItems(dQuote(missingVars)),"."))
     }
-    
+
     varnamesTotal <- varnames
     data <- sdf
-    
+
     # check omittedLevels argument to see if should be applied
     flag <- FALSE
     if(omittedLevels == TRUE) {
@@ -753,7 +667,7 @@ getData <- function(data,
         data <- data[keep==0,,drop=FALSE]
       }
     }
-    
+
     # dropUnusedLevels for a light.edsurvey.data.frame
     if(!missing(dropUnusedLevels)) {
       if(dropUnusedLevels) {
@@ -767,7 +681,7 @@ getData <- function(data,
     data <- data[,varnames, drop=FALSE]
   } # end else for if(inherits(sdf, "edsurvey.data.frame"))
   # now the variable 'data' has a data.frame in it
-  
+
   sdf <- closeLaFConnections(sdf) #ensure we close the LaF connections
   if(addAttributes) {
     # the user requested a light.edsurvey.data.frame
@@ -784,15 +698,19 @@ getData <- function(data,
     # add every other attribute to "data"
     lapply(sdfnames, function(x){
       dat <- get("data")
-      attr(dat, x) <- sdf[[x]]
+      if(!is.null(sdf[[x]])) {
+        attr(dat, x) <- sdf[[x]]
+      } else {
+        attr(dat, x) <- "NULL"
+      }
       data <<- dat
     })
     # reset userConditions to remove recode (because its already applied)
     class(data) <- c("light.edsurvey.data.frame", class(data))
     data <- setAttributes(data,"userConditions", userConditions[which(!names(userConditions) %in% "recode")])
-    
+
     return(data)
-  } # end if(addAttributes) 
+  } # end if(addAttributes)
   if(nrow(data) == 0) {
     warning("The requested dataset has 0 rows.")
   }
@@ -803,11 +721,11 @@ getData <- function(data,
 
 # convToNum converts the variable to a number--if it will not cause data loss
 convToNum <- function(x) {
-  
+
   if(!is.character(x)){
     return(x)
   }
-  
+
   x3 <- trimws(x)
   x3[x3 == ""] <- NA
   suppressWarnings(x2 <- as.numeric(x3))
@@ -824,105 +742,55 @@ convToNum <- function(x) {
 
 #openLaFConnections ensures any closed LaF connections to files are opened for gathering data
 openLaFConnections <- function(sdf) {
-  
-  #establish LaF connections if they are not opened
-  if(!is.null(sdf$data)){#ensure we have a LaF object here the student object
-    if(sdf$data@file_id < 0){ #test if the file connection is open or not::if not then we will recreate the LaF from the existing LaF model.  Must supply 'column_types' as character vector in this instance
-      if(sdf$data@file_type=="fwf"){
-        newLaF <- laf_open_fwf(filename = sdf$data@filename, 
-                                    column_types = sdf$fileFormat$dataType, 
-                                    column_widths = sdf$data@column_widths, 
-                                    column_names = sdf$data@column_names, 
-                                    dec = sdf$data@options$dec, 
-                                    trim = sdf$data@options$trim)
-      }else if(sdf$data@file_type=="csv"){
-        newLaF <- laf_open_csv(filename = sdf$data@filename,
-                                    column_types = sdf$fileFormat$dataType,
-                                    column_names = sdf$data@column_names,
-                                    sep = sdf$data@options$sep,
-                                    dec = sdf$data@options$dec,
-                                    trim = sdf$data@options$trim,
-                                    skip = sdf$data@options$skip)
-      }else{
-        stop(paste0("Unexpected LaF object type provided. Expects the LaF object type of ", sQuote("fwf"), " or ", sQuote("csv"), "."))
+
+  i <- 1
+  for(item in sdf$dataList){
+
+    #establish LaF connections if they are not opened
+    if(!is.null(item$lafObject)){#ensure we have a LaF object here the student object
+      if(item$lafObject@file_id < 0){ #test if the file connection is open or not::if not then we will recreate the LaF from the existing LaF model.  Must supply 'column_types' as character vector in this instance
+        if(item$lafObject@file_type=="fwf"){
+          newLaF <- LaF::laf_open_fwf(filename = item$lafObject@filename,
+                                      column_types = item$fileFormat$dataType,
+                                      column_widths = item$lafObject@column_widths,
+                                      column_names = item$lafObject@column_names,
+                                      dec = item$lafObject@options$dec,
+                                      trim = item$lafObject@options$trim)
+        }else if(item$lafObject@file_type=="csv"){
+          newLaF <- LaF::laf_open_csv(filename = item$lafObject@filename,
+                                      column_types = item$fileFormat$dataType,
+                                      column_names = item$lafObject@column_names,
+                                      sep = item$lafObject@options$sep,
+                                      dec = item$lafObject@options$dec,
+                                      trim = item$lafObject@options$trim,
+                                      skip = item$lafObject@options$skip)
+        }else{
+          stop("Unexpected LaF object type provided.  Expects the LaF object type of 'fwf' or 'csv'")
+        }
+
+        #must assign it to overall SDF instead of loop var otherwise it's pointing to copy in memory
+        sdf$dataList[[i]]$lafObject <- newLaF
       }
-      
-      
-      sdf$data <- newLaF
     }
-  }
-  if(!is.null(sdf$dataSch)){#ensure we have a LaF object here for the school object
-    if(sdf$dataSch@file_id < 0){ #test if the file connection is open or not::if not then we will recreate the LaF from the existing LaF model.  Must supply 'column_types' as character vector in this instance
-      if(sdf$dataSch@file_type=="fwf"){
-        newLaF <- laf_open_fwf(filename = sdf$dataSch@filename, 
-                                    column_types = sdf$fileFormatSchool$dataType, 
-                                    column_widths = sdf$dataSch@column_widths, 
-                                    column_names = sdf$dataSch@column_names, 
-                                    dec = sdf$dataSch@options$dec, 
-                                    trim = sdf$dataSch@options$trim)
-      }else if(sdf$dataSch@file_type=="csv"){
-        newLaF <- laf_open_csv(filename = sdf$dataSch@filename,
-                                    column_types = sdf$fileFormatSchool$dataType,
-                                    column_names = sdf$dataSch@column_names,
-                                    sep = sdf$dataSch@options$sep,
-                                    dec = sdf$dataSch@options$dec,
-                                    trim = sdf$dataSch@options$trim,
-                                    skip = sdf$dataSch@options$skip)
-      }else{
-        stop(paste0("Unexpected LaF object type provided. Expects the LaF object type of ", sQuote("fwf"), " or ", sQuote("csv"), "."))
-      }
-      
-      sdf$dataSch <- newLaF
-    }
-  }
-  if(!is.null(sdf$dataTch)){#ensure we have a LaF object here for the school object
-    if(sdf$dataTch@file_id < 0){ #test if the file connection is open or not::if not then we will recreate the LaF from the existing LaF model.  Must supply 'column_types' as character vector in this instance
-      if(sdf$dataTch@file_type=="fwf"){
-        newLaF <- laf_open_fwf(filename = sdf$dataTch@filename, 
-                                    column_types = sdf$fileFormatTeacher$dataType, 
-                                    column_widths = sdf$dataTch@column_widths, 
-                                    column_names = sdf$dataTch@column_names, 
-                                    dec = sdf$dataTch@options$dec, 
-                                    trim = sdf$dataTch@options$trim)
-      }else if(sdf$dataTch@file_type=="csv"){
-        newLaF <- laf_open_csv(filename = sdf$dataTch@filename,
-                                    column_types = sdf$fileFormatTeacher$dataType,
-                                    column_names = sdf$dataTch@column_names,
-                                    sep = sdf$dataTch@options$sep,
-                                    dec = sdf$dataTch@options$dec,
-                                    trim = sdf$dataTch@options$trim,
-                                    skip = sdf$dataTch@options$skip)
-      }else{
-        stop(paste0("Unexpected LaF object type provided. Expects the LaF object type of ", sQuote("fwf"), " or ", sQuote("csv"), "."))
-      }
-      
-      
-      sdf$dataTch <- newLaF
-    }
-  }
-  
+
+    i <- i + 1
+  } #end for(item in sdf$dataList)
+
+
   return(sdf)
 }
 
 #openLaFConnections ensures any closed LaF connections to files are opened for gathering data
 closeLaFConnections <- function(sdf) {
-  
-  #establish LaF connections if they are not opened
-  if(!is.null(sdf$data)){#ensure we have a LaF object here the student object
-    if(!(sdf$data@file_id < 0)){ #test if the file connection is open or not::if not then we will recreate the LaF from the existing LaF model.
-      LaF::close(sdf$data)
+
+  #ensure each dataList item has an LaF_Obj and then test if the file connection is already closed (as indicated by -1 file_id)
+  for(item in sdf$dataList){
+    if(!is.null(item$lafObject)){
+      if(!(item$lafObject@file_id < 0)){
+        LaF::close(item$lafObject)
+      }
     }
   }
-  if(!is.null(sdf$dataSch)){#ensure we have a LaF object here for the school object
-    if(!(sdf$dataSch@file_id < 0)){ #test if the file connection is open or not::if not then we will recreate the LaF from the existing LaF model.
-      LaF::close(sdf$dataSch)
-    }
-  }
-  if(!is.null(sdf$dataTch)){#ensure we have a LaF object here for the teacher object
-    if(!(sdf$dataTch@file_id < 0)){ #test if the file connection is open or not::if not then we will recreate the LaF from the existing LaF model.
-      LaF::close(sdf$dataTch)
-    }
-  }
-  
+
   return(sdf)
 }

@@ -5,7 +5,7 @@ options(width = 500)
 options(useFancyQuotes=FALSE)
 
 
-#source("REF-6-ECLS_K.R") # has REF output in it
+source("REF-6-ECLS_K.R") # has REF output in it
 if(!exists("edsurveyHome")) {
   if (Sys.info()[['sysname']] == "Windows") {
     edsurveyHome <- "C:/EdSurveyData/"
@@ -54,6 +54,7 @@ test_that("ECLS_K rename.sdf", {
 
 context("ECLS_K Taylor Series")
 test_that("ECLS_K Taylor Series", {
+  skip_on_cran()
   lmTaylor <- lm.sdf(x8mscalk4 ~  x12sesl, weightVar = "w8c28p_8t280", varMethod = "Taylor",
                      data = eclsk11)
   withr::with_options(list(digits=7), lmTaylorOutput <- capture.output(summary(lmTaylor)))
@@ -74,8 +75,17 @@ test_that("ECLS_K Wald test", {
 
 context("ECLS_K summary2")
 test_that("ECLS_K summary2", {
+  skip_on_cran()
   withr::with_options(list(digits=7), ecls_sum <- capture.output(summary2(eclsk98,"c7r4mscl")))
   expect_equal(ecls_sum,ecls_sumREF)
   suppressWarnings(withr::with_options(list(digits=7), ecls_sum_w <- capture.output(summary2(eclsk98,"c7r4mscl", weightVar = 'c7cpts0'))))
   expect_equal(ecls_sum_w, ecls_sum_wREF)
+})
+
+context("ECLS_K suggestWeights")
+test_that("ECLS_K suggestWeights", {
+  expect_equal(expect_warning(suggestWeights("x8mscalk4", eclsk11), "experimental"), "w8c8p_20")
+  expect_equal(expect_warning(suggestWeights(c("x7mscalk4","x8mscalk4", "x_chsex_r", "x_raceth_r"), eclsk11, TRUE), "experimental"), 
+                              c("w8c28p_8a0", "w8c28p_2t80", "w8c28p_2t8z0", "w8c28p_8b0", "w8c28p_2t280", "w8cf8p_80", "w8c28p_8t280", "w8c28p_8t28z0", "w8c18p_8t180", "w8cf8p_2t180"))
+  expect_equal(expect_warning(suggestWeights(c("x8mscalk4", "x_chsex_r", "x12sesl"), eclsk11), "experimental"), "w8c8p_20")
 })

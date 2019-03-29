@@ -11,7 +11,7 @@ gap(variable, data, groupA = "default", groupB = "default",
   omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
   referenceDataIndex = 1, returnVarEstInputs = FALSE,
   returnSimpleDoF = FALSE, returnSimpleN = FALSE,
-  returnNumberOfPSU = FALSE)
+  returnNumberOfPSU = FALSE, noCov = FALSE)
 }
 \arguments{
 \item{variable}{a character indicating the variable to be compared,
@@ -19,11 +19,11 @@ potentially with a subject scale or subscale}
 
 \item{data}{an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}}
 
-\item{groupA}{an expression or character expression that defines a  condition for subset.
+\item{groupA}{an expression or character expression that defines a condition for the subset.
 This subset will be compared to \code{groupB}. If not specified, it will define
 a whole sample as in \code{data}.}
 
-\item{groupB}{an expression or character expression that defines a  condition for subset.
+\item{groupB}{an expression or character expression that defines a condition for the subset.
 This subset will be compared to \code{groupA}. If not specified, it will define
 a whole sample as in \code{data}. If set to \code{NULL}, estimates for the second group 
 will be dropped.}
@@ -50,24 +50,19 @@ included in the percentage.}
 
 \item{targetLevel}{a character string. When specified, calculates the gap in
 the percentage of students at
-\code{targetLevel} in \code{variable}. This is useful for
+\code{targetLevel} in the \code{variable} argument. This is useful for
 comparing the gap in the percentage of students at a
 survey response level.}
 
 \item{weightVar}{a character indicating the weight variable to use.
 See Details.}
 
-\item{jrrIMax}{a numeric value; when using the jackknife variance estimation
-method, the \eqn{V_{jrr}} term
-(see Details) can be estimated with any positive number
-of plausible values and is 
-estimated on the lower of the number of
-available plausible values and 
-\code{jrrIMax}. When \code{jrrIMax} is set to \code{Inf},
-all plausible values will 
-be used. Higher values of \code{jrrIMax} lead to longer
-computing times and more
-accurate variance estimates.}
+\item{jrrIMax}{a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+  sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
+  term (see the Details section of
+\code{\link{lm.sdf}} to see the definition of \eqn{V_{jrr}}) can be estimated with any number of plausible values, and values larger than the number of 
+  plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+  Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
 
 \item{varMethod}{a character set to \code{jackknife} or \code{Taylor}
 that indicates the variance estimation method
@@ -93,11 +88,11 @@ Can be set as
 \code{"c"),} \code{to} \code{=} \code{"d"))}.
 See Examples.}
 
-\item{referenceDataIndex}{a numeric used only when \code{data} is an
+\item{referenceDataIndex}{a numeric used only when the \code{data} argument is an
 \code{edsurvey.data.frame.list},
 indicating which dataset is the reference
 dataset that other datasets are compared with. 
-Defaults to one.}
+Defaults to 1.}
 
 \item{returnVarEstInputs}{a logical value; set to \code{TRUE} to return the
 inputs to the jackknife and imputation variance
@@ -115,7 +110,9 @@ section) that do not have a
 in the percentage object}
 
 \item{returnNumberOfPSU}{a logical value set to \code{TRUE} to return the number of 
-primary sampling units (PSU) used in calculation.}
+primary sampling units (PSUs) used in the calculation}
+
+\item{noCov}{set the covariances to zero in result.}
 }
 \value{
 The return type depends on if the class of the \code{data} argument is an
@@ -125,7 +122,7 @@ an object named \code{percentage}
 that shows the percentage in \code{groupA} and \code{groupB}, and an object
 that shows the gap called \code{results}. 
 
-The labels includes the following elements:
+The labels include the following elements:
 \describe{
   \item{definition}{the definitions of the groups}
   \item{nFullData}{the n-size for the full dataset (before applying the definition)}
@@ -176,7 +173,7 @@ are always set to the number of jackknife replicates in the data.
                            minus \code{pctB}}
     \item{diffABpValue}{the \emph{p}-value associated with the \emph{t}-test used
                         for the hypothesis test that \code{diffAB}
-                        is zero.}
+                        is zero}
     \item{dofAB}{degrees of freedom used in calculating
                       \code{diffABpValue}}
   }
@@ -238,7 +235,7 @@ are always set to the number of jackknife replicates in the data.
     \item{covAA}{the covariance of \code{pctA} in the reference data and
                  \code{pctA} on this row. Used in
                  calculating \code{diffAAse}.}
-    \item{diffAAse}{the standard error for \code{diffAA}.}
+    \item{diffAAse}{the standard error for \code{diffAA}}
     \item{diffAApValue}{the \emph{p}-value associated with the \emph{t}-test used
                         for the hypothesis test that \code{diffAA}
                         is zero}
@@ -274,7 +271,7 @@ are always set to the number of jackknife replicates in the data.
     \item{covAA}{the covariance of \code{meanA} in the reference data and
                  \code{meanA} on this row. Used in
                  calculating \code{diffAAse}.}
-    \item{diffAAse}{the standard error for \code{diffAA}.}
+    \item{diffAAse}{the standard error for \code{diffAA}}
     \item{diffAApValue}{the \emph{p}-value associated with the \emph{t}-test used
                         for the hypothesis test that \code{diffAA}
                         is zero}

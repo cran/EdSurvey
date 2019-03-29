@@ -29,22 +29,19 @@ The \code{weightVar} must be one of the weights for the
 \code{edsurvey.data.frame}. If \code{NULL}, it  uses the default
 for the \code{edsurvey.data.frame}.}
 
-\item{relevels}{a list; used when the user wants to change the contrasts from the
+\item{relevels}{a list. Used to change the contrasts from the
 default treatment contrasts to the treatment contrasts with a chosen omitted
-group. The name of each element should be the variable name, and the value 
-should be the group to be omitted.}
+group (the reference group). The name of each element should be the variable name, and the value 
+should be the group to be omitted (the reference group).}
 
 \item{varMethod}{a character set to \dQuote{jackknife} or \dQuote{Taylor} that indicates the variance
 estimation method to be used. See Details.}
 
-\item{jrrIMax}{when using the jackknife variance estimation method, the \eqn{V_{jrr}} term
-(see Details) can be estimated with
-any positive number of plausible values and is estimated on 
-the lower
-of the number of available plausible values and \code{jrrIMax}. When
-\code{jrrIMax} is set to \code{Inf}, all plausible values will be used.
-Higher values of \code{jrrIMax} lead to longer computing times and more
-accurate variance estimates.}
+\item{jrrIMax}{when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
+term (see Details) can be estimated with any number of plausible values, and values larger than the number of 
+plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
 
 \item{omittedLevels}{a logical value. When set to the default value of \code{TRUE}, drops
 those levels of all factor variables that are specified
@@ -66,7 +63,7 @@ the computation
 of covariances between estimates.}
 
 \item{returnNumberOfPSU}{a logical value set to \code{TRUE} to return the number of 
-primary sampling units (PSU).}
+primary sampling units (PSUs)}
 
 \item{standardizeWithSamplingVar}{a logical value indicating if the standardized coefficients
 should have the variance of the regressors and outcome measured
@@ -111,7 +108,7 @@ An \code{edsurvey.lm} with the following elements:
                        used for calculating covariances with
                        \code{\link{varEstToCov}}.}
    \item{standardizeWithSamplingVar}{when \code{standardizeWithSamplingVar}
-                                     is set to \code{TRUE} this element is
+                                     is set to \code{TRUE}, this element is
                                      returned. Calculates the standard deviation
                                      of the standardized
                                      regression coefficients like any other
@@ -122,7 +119,7 @@ Fits a linear model that uses weights and variance estimates appropriate for the
 }
 \details{
 This function implements an estimator that correctly handles left-hand
-side variables that are either numeric or plausible values and allows for survey 
+side variables that are either numeric or plausible values, and allows for survey 
 sampling weights and estimates variances using the jackknife replication method.
 The vignette titled
 \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
@@ -146,6 +143,17 @@ the variance of that estimate.
 The \bold{coefficient of determination (\emph{R}-squared value)} is similarly estimated by finding
 the average \emph{R}-squared using the average across the plausible values.
 
+\subsection{Standardized regression coefficients}{
+  Standardized regression coefficients can be returned in a call to \code{summary},
+  by setting the argument \code{src} to \code{TRUE}. See Examples.
+
+  By default, the standardized coefficients are calculated using standard
+  deviations of the variables themselves, including averaging the standard
+  deviation across any plausible values. When \code{standardizeWithSamplingVar}
+  is set to \code{TRUE} the variance of the standardized coefficient is
+  calculated similar to a regression coefficient and therefore includes the
+  sampling variance in the variance estimate of the outcome variable.
+}
 
 \subsection{Variance estimation of coefficients}{
   All variance estimation methods are shown in the vignette titled
@@ -166,7 +174,7 @@ the average \emph{R}-squared using the average across the plausible values.
 \dQuote{Estimation of Standard Errors of Weighted Means When Plausible
         Values Are Not Present, Using the Taylor Series Method.}
 
-  When plausible values are present and \code{varMethod} is \dQuote{Taylor,} the
+  When plausible values are present and \code{varMethod} is \code{Taylor}, the
   variance of the coefficients is estimated according to the section
 \dQuote{Estimation of Standard Errors of Weighted Means When Plausible
         Values Are Present, Using the Taylor Series Method.}
@@ -181,10 +189,13 @@ sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprime
 lm1 <- lm.sdf(composite ~ dsex + b017451, data=sdf)
 lm1
 
-# for more detailed results use summary
+# The summary function displays detailed results
 summary(lm1)
 
-# to specify a variance method, use varMethod
+# To show standardized regression coefficients
+summary(lm1, src=TRUE)
+
+# To specify a variance method, use varMethod
 lm2 <- lm.sdf(composite ~ dsex + b017451, data=sdf, varMethod="Taylor")
 lm2
 summary(lm2)

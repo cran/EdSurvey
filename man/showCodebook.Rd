@@ -28,8 +28,8 @@ a \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}} that shows t
                        or an \code{edsurvey.data.frame.list}
 }
 \description{
-Retrieves variable names, variable labels, and value labels for an \code{edsurvey.data.frame}, \code{light.edsurvey.data.frame},
-or \code{edsurvey.data.frame.list}.
+Retrieves variable names, variable labels, and value labels for an \code{edsurvey.data.frame},
+\code{light.edsurvey.data.frame}, or \code{edsurvey.data.frame.list}.
 }
 \examples{
 # read in the example data (generated, not real student data)
@@ -53,5 +53,5 @@ showCodebook(sdf, c("student"), labelLevels = FALSE, includeRecodes = TRUE)
 showCodebook(sdf, c("student","school"), labelLevels = FALSE, includeRecodes = TRUE)
 }
 \author{
-Michael Lee
+Michael Lee and Paul Bailey
 }

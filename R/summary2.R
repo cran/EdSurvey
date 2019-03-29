@@ -3,9 +3,10 @@
 #' @description Summarizes edsurvey.data.frame variables.
 #'
 #' @param data an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}
-#' @param variable character variable name
-#' @param weightVar character weight variable name. Default to be the default weight of \code{data} if exists.
-#'                  If the given survey data does not have a default weight, the function will produce unweighted statistics instead. 
+#' @param variable character vector of variable names
+#' @param weightVar character weight variable name. Default to be the default weight of \code{data} if it exists.
+#'                  If the given survey data do not have a default weight,
+#'                  the function will produce unweighted statistics instead. 
 #'                  Can be set to \code{NULL} to return unweighted statistics.
 #' @param omittedLevels a logical value. When set to \code{TRUE}, drops those levels of the specified \code{variable}.
 #'                     Use print on an \code{edsurvey.data.frame} to see the omitted levels. Defaults to \code{FALSE}.
@@ -13,15 +14,17 @@
 #' @return 
 #' summary of weighted or unweighted statistics of a given variable in an \code{edsurvey.data.frame}  
 #' 
-#' For categorical variables, summary results include:
+#' For categorical variables, summary results are a crosstab of all variables and include:
 #' \describe{
+#'   \item{[variable name]}{level of the variable in the column name that the row regards. There is one column per element of \code{variable}.}
 #'   \item{N}{number of cases for each category. Weighted N is also produced if users choose to produce weighted statistics.}
-#'   \item{Percent}{percentage of each category. Weighted Percent is also produced if users choose to produce weighted statistics.}
+#'   \item{Percent}{percentage of each category. Weighted percent is also produced if users choose to produce weighted statistics.}
 #'   \item{SE}{standard error of the percentage statistics}
 #'  }
 #'  
-#' For continuous variables, summary results include:
+#' For continuous variables, summary results are by variable and include:
 #' \describe{
+#'   \item{Variable}{name of the variable the row regards}
 #'   \item{N}{total number of cases (both valid and invalid cases)}
 #'   \item{Min.}{smallest value of the variable}
 #'   \item{1st Qu.}{first quantile of the variable}
@@ -30,8 +33,8 @@
 #'   \item{3rd Qu.}{third quantile of the variable}
 #'   \item{Max.}{largest value of the variable}
 #'   \item{SD}{standard deviation or weighted standard deviation}
-#'   \item{NA's}{number of NA's in variable and in weight variables}
-#'   \item{Zero-weight's}{number of zero-weight cases if users choose to produce weighted statistics}
+#'   \item{NA's}{number of \code{NA} in variable and in weight variables}
+#'   \item{Zero-weights}{number of zero-weight cases if users choose to produce weighted statistics}
 #' }
 #' 
 #' If the weight option is chosen, the function produces weighted percentile and standard deviation. Refer to the vignette titled 
@@ -44,8 +47,8 @@
 #' @export
 #' @example man\examples\summary2.R
 #' @seealso \code{\link{percentile}} 
-#' @author Trang Nguyen
-summary2 <- function(data,variable,
+#' @author Paul Bailey and Trang Nguyen
+summary2 <- function(data, variable,
                      weightVar=attr(getAttributes(data,"weights"),"default"),
                      omittedLevels=FALSE) {
   checkDataClass(data,c("light.edsurvey.data.frame","edsurvey.data.frame"))
@@ -54,30 +57,33 @@ summary2 <- function(data,variable,
     callc$weightVar <- NULL
     edf <- getData(data,variable, omittedLevels = omittedLevels, includeNaLabel = !omittedLevels)
     N <- nrow(edf)
-    if (typeOfVariable(variable,data) == "discrete") {
+    if(length(unique(typeOfVariable(variable,data))) > 1) {
+      stop("Summarize only discrete or only continious variables together.")
+    }
+    if (unique(typeOfVariable(variable,data)) == "discrete") {
       ret <- as.data.frame(ftable(edf[,variable], exclude = NULL))
       colnames(ret) <- c(variable, "N")
       ret$Percent <- ret$N/N * 100
-      ret <- list(summary=ret)
-      ret$call <- callc
-      class(ret) <- "summary2"
-      return(ret)
     } else {
       ret <- lapply(1:ncol(edf), function(i) {
         descriptiveContinuous(edf[[i]])
       })
       ret <- cbind("Variable" = names(edf), as.data.frame(do.call('rbind',ret)))
-      ret <- list(summary=ret)
-      ret$call <- callc
-      class(ret) <- "summary2"
-      return(ret)
     }
-  } # end if(is.null(weightVar))
+    ret <- list(summary=ret)
+    ret$call <- callc
+    class(ret) <- "summary2"
+    return(ret)
+  } # end if (is.null(weightVar) || !weightVar %in% colnames(data))
   
   callc$weightVar <- weightVar
-  data <- getData(data,c(variable, weightVar), omittedLevels = omittedLevels, addAttributes = TRUE, includeNaLabel = !omittedLevels, drop = FALSE)
-  if(typeOfVariable(variable,data) == "discrete") {
-    ret <- edsurveyTable(as.formula(paste0("~ ",variable)),
+  data <- getData(data,c(variable, weightVar), omittedLevels = omittedLevels,
+                  addAttributes = TRUE, includeNaLabel = !omittedLevels, drop = FALSE)
+  if(length(unique(typeOfVariable(variable, data))) > 1) {
+    stop("The summary2 function requires that all variables are discrete or all variables are continuous.")
+  }
+  if(unique(typeOfVariable(variable, data)) == "discrete") {
+    ret <- edsurveyTable(as.formula(paste0("~ ",paste(variable, collapse=" + "))),
                          data=data,returnMeans=FALSE,
                          omittedLevels = omittedLevels,
                          weightVar = weightVar)
@@ -85,23 +91,34 @@ summary2 <- function(data,variable,
     colnames(ret$data)[4] <- "Weighted Percent"
     colnames(ret$data)[5] <- "Weighted Percent SE"
     ret <- ret$data[,1:5]
-  } else {
-    variable_r <- variable
-    ret <- as.data.frame(percentile(variable,data=data,percentiles=c(0,25,50,75,100), weightVar = weightVar))$estimate
-    if (hasPlausibleValue(variable,data)) {
-      variable <- getPlausibleValue(variable,data)
-    }
-    lm0 <- fast.sd(data[,variable], data[,weightVar])
-    mean_var <- lm0$mean
-    sd_var <- lm0$std
-    n <- nrow(data)
-    wN <- sum(data[,weightVar],na.rm = TRUE)
-    nNA <- sum(rowSums(is.na(data[,variable,drop=FALSE])) > 0 | is.na(data[,weightVar]))
-    ret <- c(n,wN,ret[1:3],mean_var,ret[4:5],sd_var,nNA, sum(data[,weightVar] == 0, na.rm = TRUE))
-    names(ret) <- c("N","Weighted N","Min.", "1st Qu.", "Median", "Mean", "3rd Qu.", 
-                    "Max.", "SD","NA's", "Zero-weight's")
-    ret <- cbind("Variable" = variable_r, as.data.frame(do.call('rbind',list(ret))))
-  }
+  } else { # end # end if(typeOfVariable(variable,data) == "discrete")
+    variableR <- variable
+    # build a data.frame, robust to vector "variable"
+    ret <- do.call(rbind, lapply(variable, function(v) {
+      as.data.frame(suppressWarnings(percentile(v, data=data,
+                                                percentiles=c(0,25,50,75,100),
+                                                weightVar = weightVar)))$estimate
+    }))
+    # turn plausible value variables into their member parts
+    ret0 <- lapply(1:length(variable), function(vi) {
+      v <- variable[vi]
+      if (hasPlausibleValue(v,data)) {
+        v <- getPlausibleValue(v,data)
+      }
+      lm0 <- fast.sd(data[,v], data[,weightVar])
+      meanVar <- lm0$mean
+      sdVar <- lm0$std
+      n <- nrow(data)
+      wN <- sum(data[,weightVar],na.rm = TRUE)
+      nNA <- sum(rowSums(is.na(data[,v,drop=FALSE])) > 0 | is.na(data[,weightVar]))
+      return(c(n, wN, ret[vi, 1:3], meanVar, ret[vi, 4:5], sdVar, nNA,
+               sum(data[,weightVar] == 0, na.rm = TRUE)))
+    })
+    ret <- do.call(rbind, ret0)
+    colnames(ret) <- c("N","Weighted N","Min.", "1st Qu.", "Median", "Mean", "3rd Qu.", 
+                    "Max.", "SD","NA's", "Zero-weights")
+    ret <- cbind("Variable" = variableR, as.data.frame(ret))
+  } # end else for if(typeOfVariable(variable,data) == "discrete")
   ret <- list(summary=ret)
   ret$call <- callc
   class(ret) <- "summary2"
@@ -118,35 +135,35 @@ print.summary2 <- function(x, ...) {
     cat("Estimates are not weighted.\n")
   } else {
     cat(paste0("Estimates are weighted using weight variable ", sQuote(call$weightVar),"\n"))
-  }
+  } # end if (!"weightVar" %in% names(call))
   print(x$summary, ...)
 }
 
 
 
 # calculates a mean and standard deviation (std) estimate based on variables
-# tha are already read in.
+# that are already read in.
 # variables: the variables in this variable (this is not vectorized, simply allows for PV vars)
 # weight: the full sample weight
 fast.sd <- function(variables, weight) { 
   y <- as.matrix(variables) # need to abstract PVs
-  se <- mu <- rep(NA, ncol(y))
+  variance <- mu <- rep(NA, ncol(y))
   for(i in 1:ncol(y)) {
     y0 <- y[!is.na(y[,i]) & !is.na(weight) & weight != 0,i]
     w0 <- weight[!is.na(y[,i]) & !is.na(weight) & weight !=0]
     mu[i] <- sum(w0 * y0)/sum(w0)
-    se[i] <- sum(w0 * (y0 - mu[i])^2)/sum(w0)
+    variance[i] <- sum(w0 * (y0 - mu[i])^2)/sum(w0)
   }
-  return(list(mean=mean(mu), std=sqrt(mean(se))))
+  return(list(mean=mean(mu), std=sqrt(mean(variance))))
 }
 
 # returns the N, min, quartiles, max, mean, and sd of x, and number of NA's
 # does no checking of x
 descriptiveContinuous <- function(x) {
+  # type=8 is the unbiased quantile, also what is used in EdSurvey::percentile
   q <- quantile(x, probs = c(0,0.25,0.5,0.75,1), na.rm = TRUE, type = 8)
   ret <- c(length(x),q[1:3],mean(x,na.rm=TRUE),q[4:5],sd(x,na.rm = TRUE), sum(is.na(x)))
   names(ret) <- c("N","Min.", "1st Qu.", "Median", "Mean", "3rd Qu.", 
                   "Max.", "SD", "NA's")
-
   return(ret)
 }

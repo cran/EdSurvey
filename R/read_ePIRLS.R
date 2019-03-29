@@ -173,11 +173,6 @@ read_ePIRLS <- function(path,
       
       processedData$userConditions <- list()
       processedData$defaultConditions <- NULL
-      processedData$data <- processedData$dataList$student
-      processedData$dataSch <- processedData$dataList$school
-      processedData$dataTch <- processedData$dataList$teacher
-      
-      processedData$dataListMeta <- processedData$dataListMeta
       
       testJKprefix <- c("JK", "JK.TCHWGT") #have any jk prefix values here that are applicable for this dataset
       weights <- NULL #default value
@@ -228,18 +223,18 @@ read_ePIRLS <- function(path,
                                        'MISSING', 
                                        '(Missing)')
       
-      processedData$fileFormat <- processedData$dataListFF$student
-      processedData$fileFormatSchool <- processedData$dataListFF$school
-      processedData$fileFormatTeacher <- processedData$dataListFF$teacher
+
       processedData$survey <- "ePIRLS"
       processedData$country <- get_ePIRLSCountryName(cntry)
       
       procCountryData[[iProcCountry]] <- edsurvey.data.frame(userConditions = processedData$userConditions,
                                                              defaultConditions = processedData$defaultConditions,
-                                                             data = processedData$dataList$student,
-                                                             dataSch = processedData$dataList$school,
-                                                             dataTch = processedData$dataList$teacher,
-                                                             dataListMeta <- processedData$dataListMeta,
+                                                             dataList = build_ePIRLS_dataList(processedData$dataList$student,
+                                                                                              processedData$dataListFF$student,
+                                                                                              processedData$dataList$school,
+                                                                                              processedData$dataListFF$school,
+                                                                                              processedData$dataList$teacher,
+                                                                                              processedData$dataListFF$teacher),
                                                              weights = processedData$weights,
                                                              pvvars = processedData$pvvars,
                                                              subject = processedData$subject,
@@ -249,9 +244,6 @@ read_ePIRLS <- function(path,
                                                              gradeLevel = processedData$gradeLevel,
                                                              achievementLevels = processedData$achievementLevels,
                                                              omittedLevels = processedData$omittedLevels,
-                                                             fileFormat = processedData$fileFormat,
-                                                             fileFormatSchool = processedData$fileFormatSchool,
-                                                             fileFormatTeacher = processedData$fileFormatTeacher,
                                                              survey = processedData$survey,
                                                              country = processedData$country,
                                                              psuVar = "jkrep",
@@ -616,4 +608,43 @@ ePIRLS_ValueLabelCorrection <- function(fileFormat, yrCode){
   }
   
   return(fileFormat)
+}
+
+#builds the PIRLS dataList object
+build_ePIRLS_dataList <- function(stuLaf, stuFF, schLaf, schFF, tchLaf, tchFF){
+  
+  dataList <- list()
+  
+  #build the list hierarchical based on the order in which the data levels would be merged in getData
+  dataList[["Student"]] <- dataListItem(lafObject = stuLaf,
+                                        fileFormat = stuFF,
+                                        levelLabel = "Student",
+                                        forceMerge = TRUE,
+                                        parentMergeLevels = NULL,
+                                        parentMergeVars = NULL,
+                                        mergeVars = NULL,
+                                        ignoreVars = NULL,
+                                        isDimLevel = FALSE)
+  
+  dataList[["School"]] <- dataListItem(lafObject = schLaf,
+                                       fileFormat = schFF,
+                                       levelLabel = "School",
+                                       forceMerge = FALSE,
+                                       parentMergeLevels = c("Student", "Student"),
+                                       parentMergeVars = c("idcntry", "idschool"),
+                                       mergeVars = c("idcntry", "idschool"),
+                                       ignoreVars = names(schLaf)[names(schLaf) %in% names(stuLaf)],
+                                       isDimLevel = FALSE)
+  
+  dataList[["Teacher"]] <- dataListItem(lafObject = tchLaf,
+                                        fileFormat = tchFF,
+                                        levelLabel = "Teacher",
+                                        forceMerge = FALSE,
+                                        parentMergeLevels = c("Student", "Student"),
+                                        parentMergeVars = c("idcntry", "idstud"),
+                                        mergeVars = c("idcntry", "idstud"),
+                                        ignoreVars = names(tchLaf)[names(tchLaf) %in% names(stuLaf)],
+                                        isDimLevel = TRUE)
+  
+  return(dataList)
 }

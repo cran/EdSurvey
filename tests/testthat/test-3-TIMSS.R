@@ -3,7 +3,7 @@ require(testthat)
 require(EdSurvey)
 options(width = 500)
 options(useFancyQuotes=FALSE)
-#source("REF-3-TIMSS.R") # has REF output in it
+source("REF-3-TIMSS.R") # has REF output in it
 
 context("TIMSS data reads in correctly")
 if(!exists("edsurveyHome")) {
@@ -103,19 +103,18 @@ test_that("TIMSS lm.sdf",{
               "364.9699220 -12.4878760  -0.5142928 ")
   expect_equal(co, co.ref)
   expect_is(waldTest(lm1t, "asbgssb"), "edsurveyWaldTest") 
-  expect_equal(sqrt(diag(vcov(lm1t))), lm1t$coefmat$se)
+  expect_equal(unname(sqrt(diag(vcov(lm1t)))), lm1t$coefmat$se)
   lm1j <- lm.sdf(mmat ~ asbg01 + asbgssb, kwt4.15, varMethod="jackknife", returnNumberOfPSU=TRUE)
-  expect_equal(sqrt(diag(vcov(lm1j))), lm1j$coefmat$se)
+  expect_equal(unname(sqrt(diag(vcov(lm1j)))), lm1j$coefmat$se)
   expect_is(waldTest(lm1j, "asbgssb"), "edsurveyWaldTest")
   
   lm2t <- lm.sdf(itsex ~ asbgssb, kwt4.15, varMethod="Taylor", returnNumberOfPSU=TRUE)
-  expect_equal(sqrt(diag(vcov(lm2t))), lm2t$coefmat$se)
+  expect_equal(unname(sqrt(diag(vcov(lm2t)))), lm2t$coefmat$se)
   expect_is(waldTest(lm2t, "asbgssb"), "edsurveyWaldTest")
 
   lm2j <- lm.sdf(itsex ~ asbgssb, kwt4.15, varMethod="jackknife", returnNumberOfPSU=TRUE)
-  expect_equal(sqrt(diag(vcov(lm2j))), lm2j$coefmat$se)
+  expect_equal(unname(sqrt(diag(vcov(lm2j)))), lm2j$coefmat$se)
   expect_is(waldTest(lm2j, "asbgssb"), "edsurveyWaldTest")
-
 
   lm1jk <- lm.sdf(ssci ~ bsbg01 + bsbg12c, usa8.11, varMethod="jackknife")
   withr::with_options(list(digits=7), co <- capture.output(lm1jk))
@@ -128,10 +127,11 @@ test_that("TIMSS lm.sdf",{
   withr::with_options(list(digits=7), co <- capture.output(summary(lm1t)))
   co.ref <- c("", "Formula: mmat ~ asbg01 + asbgssb", "", "jrrIMax: 5", "Weight variable: 'totwgt'", 
               "Variance method: Taylor series", "full data n: 11318", "n used: 6704", 
-              "", "Coefficients:", "                 coef        se         t     dof  Pr(>|t|)    ", 
-              "(Intercept) 364.96992  15.20664  24.00069  7.2631 3.478e-08 ***", 
-              "asbg01BOY   -12.48788   6.00111  -2.08093 14.1563   0.05607 .  ", 
-              "asbgssb      -0.51429   1.18887  -0.43259  7.1544   0.67806    ", 
+              "", "Coefficients:",
+              "                 coef        se         t    dof Pr(>|t|)    ", 
+              "(Intercept) 364.96992  15.20664  24.00069 24.170  < 2e-16 ***", 
+              "asbg01BOY   -12.48788   6.00111  -2.08093 17.596  0.05234 .  ", 
+              "asbgssb      -0.51429   1.18887  -0.43259 38.286  0.66774    ", 
               "---", "Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1", 
               "", "Multiple R-squared: 0.0036", "")
   expect_equal(co, co.ref)
@@ -139,7 +139,8 @@ test_that("TIMSS lm.sdf",{
   withr::with_options(list(digits=7), co <- capture.output(summary(lm1jk)))
   co.ref <- c("", "Formula: ssci ~ bsbg01 + bsbg12c", "", "jrrIMax: 1", "Weight variable: 'totwgt'", 
               "Variance method: jackknife", "JK replicates: 150", "full data n: 20859", 
-              "n used: 10319", "", "Coefficients:", "                             coef       se        t     dof  Pr(>|t|)    ", 
+              "n used: 10319", "","Coefficients:",
+              "                             coef       se        t     dof  Pr(>|t|)    ", 
               "(Intercept)              530.6222   3.1016 171.0782 128.797 < 2.2e-16 ***", 
               "bsbg01BOY                 11.7015   2.2822   5.1273 118.079 1.163e-06 ***", 
               "bsbg12cAGREE A LITTLE     -8.9177   2.5260  -3.5303 143.706 0.0005581 ***", 
@@ -199,7 +200,7 @@ test_that("TIMSS getData", {
   
   #test a getData call with teacher level variable ensure warning is returned
   tchWrn <- capture_warnings(gd3 <- getData(kwt4.15, c("mgeo", "idstud", "atbg10f"), dropUnusedLevels=FALSE))
-  expect_known_value(gd3, file="TIMSSgd3.rds", update=FALSE)
+  expect_known_value(gd3, file="TIMSSgd3.rds", update=FALSE, check.attributes=FALSE)
   
   kwt4_males <- EdSurvey:::subset(kwt4.15, asbg01 %in% "BOY", verbose=FALSE)
   expect_equal(dim(kwt4_males), c(5252, 2261))
