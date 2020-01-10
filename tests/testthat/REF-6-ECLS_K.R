@@ -90,21 +90,29 @@ wgt.Ref <- c("There are 71 full sample weight(s) in this edsurvey.data.frame",
              "  'c7cptm0' with 90 JK replicate weights.",
              "  'c7cpts0' with 90 JK replicate weights." )
 
-lmTaylorREF <- c("", "Formula: x8mscalk4 ~ x12sesl", "", "Weight variable: 'w8c28p_8t280'", 
-                 "Variance method: Taylor series", "full data n: 18174", "n used: 6460", 
-                 "", "Coefficients:", "                 coef        se         t    dof  Pr(>|t|)    ", 
-                 "(Intercept) 110.44930   0.42864 257.67614 25.755 < 2.2e-16 ***", 
-                 "x12sesl       7.37147   0.30441  24.21581 34.896 < 2.2e-16 ***",
-                 "---", "Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1", 
-                 "", "Multiple R-squared: 0.1462", "")
+lmTaylorREF <- c("",
+                 "Formula: x8mscalk4 ~ x12sesl",
+                 "",
+                 "Weight variable: 'w8c28p_8t280'", 
+                 "Variance method: Taylor series",
+                 "full data n: 18174",
+                 "n used: 6460", 
+                 "",
+                 "Coefficients:",
+                 "                 coef        se       t    dof  Pr(>|t|)    ", 
+                 "(Intercept) 110.44930   0.42864 257.676 25.755 < 2.2e-16 ***", 
+                 "x12sesl       7.37147   0.30441  24.216 34.896 < 2.2e-16 ***",
+                 "---",
+                 "Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1", 
+                 "",
+                 "Multiple R-squared: 0.1462",
+                 "")
 
 
-ecls_sumREF <- c("Estimates are not weighted.", "  Variable     N  Min. 1st Qu. Median     Mean 3rd Qu.  Max.       SD  NA's", 
-                 "1 c7r4mscl 21409 66.17  129.25 146.33 142.2209  160.18 172.2 22.00873 12124"
-)
+ecls_sumREF <- c("Estimates are not weighted.",
+                 "  Variable     N  Min. 1st Qu. Median     Mean 3rd Qu.  Max.       SD  NA's", 
+                 "1 c7r4mscl 21409 66.17  129.25 146.33 142.2209  160.18 172.2 22.00873 12124")
 
 ecls_sum_wREF <- c("Estimates are weighted using weight variable 'c7cpts0'", 
-                   "  Variable     N Weighted N  Min.  1st Qu.   Median     Mean  3rd Qu.  Max.       SD  NA's Zero-weights", 
-                   "1 c7r4mscl 21409    3941257 66.26 125.8516 144.3048 139.9674 158.9644 172.2 23.61741 12124         5561"
-)
-
+                   "  Variable     N Weighted N  Min.  1st Qu. Median     Mean  3rd Qu.  Max.       SD  NA's Zero-weights", 
+                   "1 c7r4mscl 21409    3941257 66.26 125.8504  144.3 139.9674 158.9718 172.2 23.62027 12124         5561")

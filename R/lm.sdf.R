@@ -18,10 +18,12 @@
 #'                   for the \code{edsurvey.data.frame}.
 #' @param varMethod  a character set to \dQuote{jackknife} or \dQuote{Taylor} that indicates the variance
 #'                   estimation method to be used. See Details.
-#' @param jrrIMax    when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
-#'                   sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
-#'                   term (see Details) can be estimated with any number of plausible values, and values larger than the number of 
-#'                   plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+#' @param jrrIMax    a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+#'                   sampling variance from the first plausible value as the component for sampling variance estimation. The \code{Vjrr} 
+#'                   term (see 
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}})
+#'                   can be estimated with any number of plausible values, and values larger than the number of 
+#'                   plausible values on the survey (including \code{Inf}) will result in all plausible values being used. 
 #'                   Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.
 #' @param relevels   a list. Used to change the contrasts from the
 #'                   default treatment contrasts to the treatment contrasts with a chosen omitted
@@ -39,8 +41,7 @@
 #'                  \code{recode=}\code{list(}\code{var1} \code{=} \code{list(}\code{from=} \code{c("a",} \code{"b",} \code{"c"),} \code{to=} \code{"d"))}. See Examples.
 #' @param returnVarEstInputs a logical value set to \code{TRUE} to return the
 #'                           inputs to the jackknife and imputation variance
-#'                           estimates. This is intended to allow for
-#'                           the computation
+#'                           estimates, which allow for the computation
 #'                           of covariances between estimates.
 #' @param returnNumberOfPSU a logical value set to \code{TRUE} to return the number of 
 #'                          primary sampling units (PSUs)
@@ -50,10 +51,10 @@
 #' @details 
 #'  
 #' This function implements an estimator that correctly handles left-hand
-#' side variables that are either numeric or plausible values, and allows for survey 
+#' side variables that are either numeric or plausible values and allows for survey 
 #' sampling weights and estimates variances using the jackknife replication method.
 #' The vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
 #'  describes estimation of the reported statistics. 
 #' 
 #' Regardless of the variance estimation, the coefficients are estimated
@@ -81,15 +82,15 @@
 #'   By default, the standardized coefficients are calculated using standard
 #'   deviations of the variables themselves, including averaging the standard
 #'   deviation across any plausible values. When \code{standardizeWithSamplingVar}
-#'   is set to \code{TRUE} the variance of the standardized coefficient is
+#'   is set to \code{TRUE}, the variance of the standardized coefficient is
 #'   calculated similar to a regression coefficient and therefore includes the
 #'   sampling variance in the variance estimate of the outcome variable.
 #' }
 #'
 #' \subsection{Variance estimation of coefficients}{
 #'   All variance estimation methods are shown in the vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.
-#'   When \code{varMethod} is set to \code{jackknife} and the predicted
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}.
+#'   When \code{varMethod} is set to the \code{jackknife} and the predicted
 #'   value does not have plausible values, the variance of the coefficients
 #'   is estimated according to the section
 #' \dQuote{Estimation of Standard Errors of Weighted Means When
@@ -110,6 +111,14 @@
 #' \dQuote{Estimation of Standard Errors of Weighted Means When Plausible
 #'         Values Are Present, Using the Taylor Series Method.}
 #' }
+#'
+#' @section Testing:
+#' Of the common hypothesis tests for joint parameter testing, only the Wald
+#' test is widely used with plausible values and sample weights. As such, it
+#' replaces, if imperfectly, the Akaike Information Criteria (AIC), the
+#' likelihood ratio test, chi-squared, and analysis of variance (ANOVA, including \emph{F}-tests). See \code{\link{waldTest}} or
+#' the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-WaldTest.pdf}{\emph{Methods and Overview of Using EdSurvey for Running Wald Tests}}.
 #'
 #' @references
 #' Binder, D. A. (1983). On the variances of asymptotically normal estimators from complex surveys. \emph{International Statistical Review}, \emph{51}(3), 279--292. 
@@ -136,9 +145,9 @@
 #'    \item{weight}{the name of the weight variable}
 #'    \item{npv}{the number of plausible values}
 #'    \item{jrrIMax}{the \code{jrrIMax} value used in computation}
-#'    \item{njk}{the number of jackknife replicates used; set to \code{NA}
+#'    \item{njk}{the number of the jackknife replicates used; set to \code{NA}
 #'               when Taylor series variance estimates are used}
-#'    \item{varMethod}{one of \code{Taylor series} or \code{jackknife}}
+#'    \item{varMethod}{one of \code{Taylor series} or the \code{jackknife}}
 #'    \item{residuals}{residuals from the average regression coefficients}
 #'    \item{PV.residuals}{residuals from the by plausible value coefficients}
 #'    \item{PV.fitted.values}{fitted values from the by plausible value coefficients}
@@ -146,7 +155,7 @@
 #'    \item{U}{sampling variance covariance matrix}
 #'    \item{rbar}{average relative increase in variance; see van Buuren (2012, eq. 2.29)}
 #'    \item{nPSU}{number of PSUs used in calculation}
-#'    \item{n0}{number of rows on \code{edsurvey.data.frame} before any conditions were applied}
+#'    \item{n0}{number of rows on an \code{edsurvey.data.frame} before any conditions were applied}
 #'    \item{nUsed}{number of observations with valid data and weights larger than zero}
 #'    \item{data}{data used for the computation}
 #'    \item{Xstdev}{standard deviations of regressors, used for computing standardized
@@ -273,7 +282,6 @@ calc.lm.sdf <- function(formula,
     # no weight
     stop(paste0("There is no default weight variable for ",getAttributes(sdf,"survey")," data, so the argument ",sQuote("weightVar"), " must be specified."))
   }
-
   # check if there is an outcome variable and set it to the default if it is missing
   zeroLengthLHS <- attr(terms(formula), "response") == 0
   if(zeroLengthLHS) {
@@ -285,13 +293,23 @@ calc.lm.sdf <- function(formula,
 
   # grab the variables needed for the Taylor series method, if that is the variance estimation method being used
   taylorVars <- c()
-  psuVar <- getPSUVar(data,weightVar)
-  stratumVar <- getStratumVar(data,weightVar)
+  psuVar <- getPSUVar(data, wgt)
+  stratumVar <- getStratumVar(data, wgt)
   if (is.null(psuVar)) {
-    stop(paste0("Cannot find primary sampling unit variable for weight ", sQuote(wgt), "." ))
+    if(returnNumberOfPSU | varMethod=="t") {
+      stop(paste0("Cannot find primary sampling unit variable for weight ", sQuote(wgt), ". Try setting the ", dQuote("varMethod"), " argument to ", dQuote("jackknife"), " and ", dQuote("returnNumberOfPSU"), " to ", dQuote("FALSE"), "."))
+    } else {
+      # set to a dummy variable, not on the data
+      psuVar <- ""
+    }
   }
   if (is.null(stratumVar)) {
-    stop(paste0("Cannot find stratum variable for weight ", sQuote(wgt), "." ))
+    if(returnNumberOfPSU | varMethod=="t") {
+      stop(paste0("Cannot find stratum variable for weight ", sQuote(wgt), ". Try setting the ", dQuote("varMethod"), " argument to ", dQuote("jackknife"), " and ", dQuote("returnNumberOfPSU"), " to ", dQuote("FALSE"), "." ))
+    } else {
+      # set to a dummy variable, not on the data
+      stratumVar <- ""
+    }
   }
   # in PIAAC there is sometimes an SRS, that is not appropriate for Taylor
   if(stratumVar == "JK1" & varMethod == "t") {
@@ -335,7 +353,7 @@ calc.lm.sdf <- function(formula,
   if(!missingDefaultConditions) {
     getDataArgs <- c(getDataArgs, list(defaultConditions=defaultConditions))
   }
-  
+
   # edf is the actual data
   edf <- do.call(getData, getDataArgs)
   # check for incomplete cases on the formula variables and weights (excluding Taylor vars)
@@ -739,7 +757,7 @@ calc.lm.sdf <- function(formula,
       # done getting var est inputs
       njk <- length(wgtl$jksuffixes)
       coefa <- coefa^2 # this is JK-2
-      Vjrr <- getAttributes(data, "jkSumMultiplier") * apply(coefa, 2, sum)
+      Vjrr <- getAttributes(data, "jkSumMultiplier") * apply(coefa, 2, sum, na.rm=TRUE)
       coef <- co0 # coefficients come from full sample weights run
       Vimp <- 0 # no imputation variance when there are no PVs
       M <- 1 # only on replicate when there are no PVs
@@ -970,8 +988,8 @@ print.edsurveyLmList <- function(x, ...) {
 }
 
 
-# @param src boolean indicating if the the standardized regression coefficients
-#            should be included in the coefficients table. 
+# @param src a logical indicating if the the standardized regression coefficients
+#            should be included in the coefficients table
 #' @method summary edsurveyLm
 #' @export
 summary.edsurveyLm <- function(object, src=FALSE, ...) {
@@ -1015,13 +1033,14 @@ summary.edsurveyLmList <- function(object, smd=FALSE, ...) {
 #' @export
 print.summary.edsurveyLm <- function(x, ...) {
   cat(paste0("\nFormula: ", paste(deparse(x$formula), collapse=""),"\n\n"))
-  if(x$npv != 1) {
-    cat(paste0("jrrIMax: ", x$jrrIMax, "\n"))
-  }
   cat(paste0("Weight variable: ", sQuote(x$weight), "\n"))
   cat(paste0("Variance method: ",x$varMethod,"\n"))
   if(!is.na(x$njk)) {
     cat(paste0("JK replicates: ", x$njk, "\n"))
+  }
+  if(x$npv != 1) {
+    cat(paste0("Plausible values: ", x$npv, "\n"))
+    cat(paste0("jrrIMax: ", x$jrrIMax, "\n"))
   }
   cat(paste0("full data n: ", x$n0, "\n"))
   if (!is.null(x$nPSU)) {
@@ -1030,7 +1049,8 @@ print.summary.edsurveyLm <- function(x, ...) {
   cat(paste0("n used: ", x$nUsed, "\n\n"))
   
   cat(paste0("Coefficients:\n"))
-  printCoefmat(x$coefmat, P.values=TRUE, has.Pvalue=TRUE)
+  csind <- which(colnames(x$coefmat) %in% c("coef", "se", "stdCoef", "stdSE"))
+  printCoefmat(x$coefmat, P.values=TRUE, has.Pvalue=TRUE, cs.ind=csind)
   cat("\n")
   cat(paste0("Multiple R-squared: ", round(x$r.squared,4), "\n\n"))
 }
@@ -1117,8 +1137,8 @@ plot.edsurveyLm <- function(x, ...) {
 getStdev <- function(outcomeData, XData, weightData) {
   std <- c(outcome=fast.sd(outcomeData, weightData)["std"])
   for(i in 1:ncol(XData)) {
-    if(sd(XData[,i]) > 0) {
-    std <- c(std, fast.sd(XData[,i], weightData)["std"])
+    if(!is.na(sd(XData[,i])) & sd(XData[,i]) > 0) {
+      std <- c(std, fast.sd(XData[,i], weightData)["std"])
     } else {
       std <- c(std, 0)
     }

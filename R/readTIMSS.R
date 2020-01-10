@@ -4,55 +4,71 @@
 #'              returns an \code{edsurvey.data.frame} with
 #'              information about the file and data.
 #'
-#' @param path a character vector to the full directory path(s) to the TIMSS extracted SPSS (.sav) set of data
+#' @param path a character vector to the full directory path(s) to the TIMSS
+#'             extracted SPSS (.sav) set of data
 #' @param countries a character vector of the country/countries to include using
 #'                  the three-digit ISO country code.
 #'                  A list of country codes can be found on Wikipedia at
-#'                  \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes},
-#'                  or other online sources. Consult the \emph{TIMSS User Guide} documentation to help determine what countries
-#'                  are included within a specific testing year of TIMSS and for country code definitions.
+#'                  \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}
+#'                  or other online sources. Consult the \emph{TIMSS User Guide}
+#'                  documentation to help determine what countries
+#'                  are included within a specific testing year of TIMSS and
+#'                  for country code definitions.
 #'                  To select all countries available, use a wildcard value of \strong{\code{*}}.
 #' @param gradeLvl a character value to indicate the specific grade level you wish to return
 #'                 \itemize{
-#'                      \item{\strong{4} = fourth grade (the default if not specified)}
-#'                      \item{\strong{8} = eighth grade}
+#'                   \item{\strong{4} = fourth grade (the default if not specified)}
+#'                   \item{\strong{8} = eighth grade}
 #'                 }
 #' @param forceReread a logical value to force rereading of all processed data.
 #'                    The default value of \code{FALSE} will speed up the \code{readTIMSS} function by using existing read-in data already processed.
 #'
 #' @param verbose a logical value to either print or suppress status message output.
 #'                The default value is \code{TRUE}.
-#' @details Reads in the unzipped files downloaded from the TIMSS international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}.
-#'          Data files require the SPSS data file (.sav) format using the default filenames.
+#' @details
+#' Reads in the unzipped files downloaded from the TIMSS international
+#' database(s) using the \href{https://www.iea.nl/data-tools/repository}{IEA Study Data Repository}.
+#' Data files require the SPSS data file (.sav) format using the default
+#' filenames.
 #'
-#' @details A TIMSS \code{edsurvey.data.frame} includes three distinct data levels:
-#'          \itemize{
-#'               \item student
-#'               \item school
-#'               \item teacher
-#'          }
+#' A TIMSS \code{edsurvey.data.frame} includes three distinct data levels:
+#' \itemize{
+#'   \item student
+#'   \item school
+#'   \item teacher
+#' }
 #'
-#'          When the \code{getData} function is called using a TIMSS \code{edsurvey.data.frame},
-#'          the requested data variables are inspected, and it handles any necessary data merges automatically.
-#'          Note that the \code{school} data will always be returned merged to the \code{student}
-#'          data, even if only \code{school} variables are requested.
-#'          Only if \code{teacher} variables are requested by the \code{getData} call, will cause \code{teacher} data to be merged.
-#'          Many \code{students} can be linked to many \code{teachers}, which varies widely between countries.
+#' When the \code{getData} function is called using a TIMSS \code{edsurvey.data.frame},
+#' the requested data variables are inspected, and it handles any necessary data merges automatically.
+#' The \code{school} data always will be returned merged to the \code{student}
+#' data, even if only \code{school} variables are requested.
+#' If \code{teacher} variables are requested by the \code{getData} call, it
+#' will cause \code{teacher} data to be merged.
+#' Many \code{students} can be linked to many \code{teachers}, which varies
+#' widely between countries.
 #'
-#' @details Please note that calling the \code{dim} function for a TIMSS \code{edsurvey.data.frame} will result in the row count as if the \code{teacher} dataset was merged.
-#'          This row count will be considered the \code{full data N} of the \code{edsurvey.data.frame}, even if no \code{teacher} data were included in an analysis.
-#'          The column count returned by \code{dim} will be the count of unique column variables across all three data levels.
+#' Please note that calling the \code{dim} function for a TIMSS
+#' \code{edsurvey.data.frame} will result in the row count as if the
+#' \code{teacher} dataset was merged.
+#' This row count will be considered the \code{full data N} of the
+#' \code{edsurvey.data.frame}, even if no \code{teacher} data were included in an analysis.
+#' The column count returned by \code{dim} will be the count of unique column
+#' variables across all three data levels.
 #'
-#' @details Beginning in TIMSS 2015, a \code{numeracy} dataset was designed to assess mathematics at the end of the primary school cycle
-#'          for countries where most children are still developing fundamental mathematics skills.
-#'          The \code{numeracy} dataset is handled automatically for the user and is included within the fourth-grade dataset \code{gradeLvl=4}.
-#'          Most \code{numeracy} countries have a \code{4th grade} dataset in addition to their \code{numeracy} dataset, but some do not.
-#'          For countries that have both a \code{numeracy} and \code{4th grade} dataset,
-#'          the two datasets are combined into one \code{edsurvey.data.frame} for that country.
-#'          Data variables missing from either dataset are kept, with \code{NA} values inserted for the dataset records where that variable did not exist.
-#'          Data variables common to both datasets are kept as a single data variable, with records retaining their original values from the source dataset.
-#'          Consult the \emph{TIMSS User Guide} for further information.
-#'
+#' Beginning with TIMSS 2015, a \code{numeracy} dataset was designed to assess
+#' mathematics at the end of the primary school cycle
+#' for countries where most children are still developing fundamental mathematics skills.
+#' The \code{numeracy} dataset is handled automatically for the user and is
+#' included within the fourth-grade dataset \code{gradeLvl=4}.
+#' Most \code{numeracy} countries have a \code{4th grade} dataset in addition
+#' to their \code{numeracy} dataset, but some do not.
+#' For countries that have both a \code{numeracy} and a \code{4th grade} dataset,
+#' the two datasets are combined into one \code{edsurvey.data.frame} for that country.
+#' Data variables missing from either dataset are kept, with \code{NA} values
+#' inserted for the dataset records where that variable did not exist.
+#' Data variables common to both datasets are kept as a single data variable,
+#' with records retaining their original values from the source dataset.
+#' Consult the \emph{TIMSS User Guide} for further information.
 #'
 #' @return
 #'  an \code{edsurvey.data.frame} for a single specified country or an \code{edsurvey.data.frame.list} if multiple countries specified
@@ -71,6 +87,11 @@ readTIMSS <- function(path,
                       gradeLvl,
                       forceReread = FALSE,
                       verbose = TRUE) {
+  
+  #temporarily adjust any necessary option settings; revert back when done
+  userOp <- options(OutDec = ".")
+  on.exit(options(userOp), add = TRUE)
+  
   #validate the folder path(s) the user specified to make sure they exist
   path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
 
@@ -1008,6 +1029,7 @@ mergeTibble <- function(a, b, by,  ..., suffixes=c("", ".junk")) {
 }
 
 #writes a tibble object to a fixed-width-format (fwf) datafile, compiles the FileFormat detail of the fwf into a data.frame of needed info
+# contributor: Jeppe Bundsgaard: updates for ICILS 2018
 writeTibbleToFWFReturnFileFormat <- function(spssDF, outF, jkType=c("JK2", "JK1")) {
 
   if(!inherits(spssDF, "tbl_df")) stop("spssDF must be a tibble")
@@ -1177,6 +1199,7 @@ writeTibbleToFWFReturnFileFormat <- function(spssDF, outF, jkType=c("JK2", "JK1"
   #test for any specialty *dash* (em-dash, en-dash) characters in the labels that may be confusing for users and replace them with a regular dash character
   ff$labelValues <- gsub("\u2013", "-", ff$labelValues) #replace en-dash (\u2013) with regular dash (\u002d)
   ff$labelValues <- gsub("\u2014", "-", ff$labelValues) #replace em-dash (\u2014) with regular dash (\u002d)
+  ff$labelValues <- gsub("\\", "/", ff$labelValues, fixed=TRUE) #switch \\ to /
 
   ## for replicate weights it is the jackknife replicate weight number
   ## for plausible value variables it is the index within the construct
@@ -1184,7 +1207,7 @@ writeTibbleToFWFReturnFileFormat <- function(spssDF, outF, jkType=c("JK2", "JK1"
     if(grepl("[ABMPabmp][Ss][MSPRmspr]...[0][1-5]", zz, ignore.case = TRUE)){
       return(substring(zz,8,8)) #has two-digits, remove the leading 0::PVs are 1-5 for the measures
     }
-    else if(grepl("^PV[1-5]CI[LV]$", zz, ignore.case = TRUE)){ #Specific For ICILS (PV1CIL) single PV measure and ICCS (PV1CIV) single PV measure
+    else if(grepl("^PV[1-5]CI[LV]$", zz, ignore.case = TRUE)){ #Specific For ICILS (PV1CIL) single PV measure and ICCS (PV1CIV) single PV measure, and for ICILS 2018 (PV1CT)
       return(substring(zz,3,3))
     }
     else {
@@ -1220,7 +1243,7 @@ writeTibbleToFWFReturnFileFormat <- function(spssDF, outF, jkType=c("JK2", "JK1"
     if(grepl("[ABMPabmp][Ss][MSPREmspre]...[0][1-5]", zzz, ignore.case = TRUE)==TRUE){
       return(substring(tolower(zzz),3,6))
     }
-    else if(grepl("^PV[1-5]CI[LV]$", zzz, ignore.case = TRUE)==TRUE){ #specific for ICILS (PV1CIL) single PV measure and ICCS (PV1CIV) single PV measure
+    else if(grepl("^PV[1-5](CI[LV]|CT)$", zzz, ignore.case = TRUE)==TRUE){ #specific for ICILS (PV1CIL, PV1CT) single PV measure and ICCS (PV1CIV) single PV measure
       return(substring(tolower(zzz),4,6))
     }
     else {
@@ -1727,21 +1750,6 @@ rBindTibble <- function(tbl1, tbl2){
   }
   return(xTbl)
 }
-
-#removes the haven defined column classes from a returned tibble
-#needed for issues revolving around `user_na=TRUE` argument of haven 'read_sav' method parameter
-#throwing a strange error: `x` and `labels` must be same type
-UnclassCols <- function(tbl){
-
-  if(ncol(tbl)>0){
-    for(i in 1:ncol(tbl)){
-      tbl[[i]] <- unclass(tbl[[i]])
-    }
-  }
-
-  return(tbl)
-}
-
 
 #builds the TIMSS dataList object
 buildTIMSS_dataList <- function(stuLaf, stuFF, schLaf, schFF, tchLaf, tchFF){

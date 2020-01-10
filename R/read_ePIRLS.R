@@ -4,11 +4,11 @@
 #'              returns an \code{edsurvey.data.frame} with 
 #'              information about the file and data.
 #'
-#' @param path a character value to the full directory to the ePIRLS extracted SPSS (.sav) set of data
+#' @param path a character value to the full directory path to the ePIRLS extracted SPSS (.sav) set of data
 #' @param countries a character vector of the country/countries to include using
 #'                  the three-digit ISO country code.  
 #'                  A list of country codes can be found on Wikipedia at
-#'                  \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes},
+#'                  \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}
 #'                  or other online sources. Consult the \emph{ePIRLS User Guide} to help determine what countries
 #'                  are included within a specific testing year of ePIRLS.
 #'                  To select all countries, use a wildcard value of \strong{\code{*}}.
@@ -19,8 +19,9 @@
 #' @param verbose a logical value to either print or suppress status message output.
 #'                The default value is \code{TRUE}.
 #' 
-#' @details Reads in the unzipped files downloaded from the ePIRLS international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}. 
-#'          Data files require the SPSS data file (.sav) format using the default filenames.
+#' @details Reads in the unzipped files downloaded from the ePIRLS international
+#' database(s) using the \href{https://www.iea.nl/data-tools/repository}{IEA Study Data Repository}. 
+#' Data files require the SPSS data file (.sav) format using the default filenames.
 #'
 #' @details An ePIRLS \code{edsurvey.data.frame} includes three distinct data levels: 
 #'          \itemize{
@@ -29,11 +30,11 @@
 #'               \item teacher
 #'          }
 #'           
-#'          When the \code{getData} function is called using a ePIRLS \code{edsurvey.data.frame},
+#'          When the \code{getData} function is called using an ePIRLS \code{edsurvey.data.frame},
 #'          the requested data variables are inspected, and it handles any necessary data merges automatically. 
-#'          Note that the \code{school} data will always be returned merged to the \code{student}
+#'          The \code{school} data always will be returned merged to the \code{student}
 #'          data, even if only \code{school} variables are requested.
-#'          Only if \code{teacher} variables are requested by the \code{getData} call, will cause \code{teacher} data to be merged.
+#'          If \code{teacher} variables are requested by the \code{getData} call, it will cause \code{teacher} data to be merged.
 #'          A \code{student} can be linked to many \code{teachers}, which varies widely between countries.
 #'          
 #' @details Please note that calling the \code{dim} function for an ePIRLS \code{edsurvey.data.frame} will result in 
@@ -42,7 +43,8 @@
 #'          The column count returned by \code{dim} will be the count of unique column variables across all three data levels.
 #'          
 #' @return
-#'  an \code{edsurvey.data.frame} for a single specified country or an \code{edsurvey.data.frame.list} if multiple countries specified
+#' an \code{edsurvey.data.frame} for a single specified country or an
+#' \code{edsurvey.data.frame.list} if multiple countries are specified
 #'
 #' @seealso \code{\link{readNAEP}}, \code{\link{readTIMSS}}, \code{\link{getData}}, and \code{\link{download_ePIRLS}}
 #' @author Tom Fink
@@ -56,6 +58,10 @@ read_ePIRLS <- function(path,
                       countries,
                       forceReread=FALSE,
                       verbose=TRUE) {
+  
+  #temporarily adjust any necessary option settings; revert back when done
+  userOp <- options(OutDec = ".")
+  on.exit(options(userOp), add = TRUE)
   
   path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
   
@@ -199,7 +205,7 @@ read_ePIRLS <- function(path,
       attr(weights, "default") <- "totwgt"
       
       processedData$weights <-  weights
-      processedData$pvvars <- buildPVVARS_ePIRLS(processedData$dataListFF$student, defaultPV = "rrea")
+      processedData$pvvars <- buildPVVARS_ePIRLS(processedData$dataListFF$student, defaultPV = "erea")
       processedData$subject <- c("Reading")
       processedData$year <- convert_ePIRLSYearCode(yrCode)
       processedData$assessmentCode <- "International"

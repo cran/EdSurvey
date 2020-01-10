@@ -22,22 +22,21 @@
 #'                        balanced repeated replication (BRR) 
 #'                        method---multiplies the final jackknife variance estimate by a value, 
 #'                        set \code{jkSumMultiplier} to that value.
-#'                        For an \code{edsurvey.data.frame}, or
+#'                        For an \code{edsurvey.data.frame} or
 #'                        a \code{light.edsurvey.data.frame},
 #'                        the recommended value can be recovered with
 #'                        \code{EdSurvey::getAttributes(}\code{myData,} \code{"jkSumMultiplier")}.
 #'
 #' @details
-#' Note that these functions are not vectorized, so \code{varA} and 
+#' These functions are not vectorized, so \code{varA} and 
 #' \code{varB} must contain exactly one variable name.
 #'
 #' The method used to compute the covariance is in
 #' the vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
-#' in the section \dQuote{Estimation of Covariances.}
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
 #'
 #' The method used to compute the degrees of freedom is in the vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
 #' in the section \dQuote{Estimation of Degrees of Freedom.}
 #'
 #' @return
@@ -76,6 +75,7 @@ varEstToCov <- function(varEstA, varEstB=varEstA, varA, varB=varA, jkSumMultipli
     stop("Could not find appropriate values in JK results to calculate covariance.")
   }
   JK$cov <- jkSumMultiplier * JK$value.A * JK$value.B
+  JK <- JK[!is.na(JK$cov),]
   CovJK <- sum(JK$cov) / length(unique(JK$PV))
   # now get Imputation Covariance
   if(!is.null(varEstA$PV) & !is.null(varEstB$PV)) {

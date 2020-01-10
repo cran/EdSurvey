@@ -14,37 +14,37 @@
 #' In the default case where the null hypothesis value of the parameters is 0,
 #' if the test fails to reject the null hypothesis, removing the variables from
 #' the model will not substantially harm the fit of that model. Alternative null
-#' hypothesis values can also be specified with the \code{H0} argument.
+#' hypothesis values also can be specified with the \code{H0} argument.
 #' See Examples.
 #' 
 #' Coefficients to test can be specified by an integer (or integer vector)
 #' corresponding to the order of coefficients in the summary output. Coefficients
-#' can also be specified using a character vector, to specify coefficient names
+#' also can be specified using a character vector, to specify coefficient names
 #' to test. The name of a factor variable can be used to test all levels of that
 #' variable.
 #'
-#' This test produces both chi-square and F-tests; their calculation is described
+#' This test produces both chi-square and \emph{F}-tests; their calculation is described
 #' in the vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-WaldTest.pdf}{Wald Test}.
+#' \href{https://www.air.org/sites/default/files/EdSurvey-WaldTest.pdf}{\emph{Methods and Overview of Using EdSurvey for Running Wald Tests}}.
 #'
 #' @return 
 #' An \code{edsurveyWaldTest} object with the following elements:
 #'    \item{Sigma}{coefficient covariance matrix}
 #'    \item{coefficients}{indices of the coefficients tested}
 #'    \item{H0}{null hypothesis values of coefficients tested}
-#'    \item{result}{result object containing the values of the chi-square and F-tests}
-#'    \item{hypoMatrix}{hypothesis matrix used for the Wald test}
+#'    \item{result}{result object containing the values of the chi-square and \emph{F}-tests}
+#'    \item{hypoMatrix}{hypothesis matrix used for the Wald Test}
 #'
 #' @references
 #' 
-#' [UCLA IDRE - FAQ:How are the likelihood ratio, Wald, and Lagrange multiplier (score) tests different and/or similar?](https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faqhow-are-the-likelihood-ratio-wald-and-lagrange-multiplier-score-tests-different-andor-similar/)
-#' 
-#' Diggle, P. J., Liang, K.-Y., & Zeger, S. L. (1994). \emph{Analysis of longitudinal data}. Oxford: Clarendon Press. 
+#' Diggle, P. J., Liang, K.-Y., & Zeger, S. L. (1994). \emph{Analysis of longitudinal data}. Oxford, UK: Clarendon Press. 
 #' 
 #' Draper, N. R., & Smith, H. (1998). \emph{Applied regression analysis}. New York, NY: Wiley.
 #' 
 #' Fox, J. (1997). \emph{Applied regression analysis, linear models, and related methods}. Thousand Oaks, CA: SAGE.
-#'
+#' 
+#'[Institute for Digital Research and Education. (n.d.). FAQ: How are the likelihood ratio, Wald, and LaGrange multiplier (score) tests different and/or similar?](https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faqhow-are-the-likelihood-ratio-wald-and-lagrange-multiplier-score-tests-different-andor-similar/). Los Angeles: University of California at Los Angeles. Retrieved from [https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faqhow-are-the-likelihood-ratio-wald-and-lagrange-multiplier-score-tests-different-andor-similar/](https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faqhow-are-the-likelihood-ratio-wald-and-lagrange-multiplier-score-tests-different-andor-similar/)
+#' 
 #' Korn, E., & Graubard, B. (1990). Simultaneous testing of regression coefficients with complex survey data: Use of Bonferroni t statistics. \emph{The American Statistician}, \emph{44}(4), 270--276.
 #'
 #' @example man/examples/waldTest.R

@@ -10,7 +10,7 @@
 \method{print}{gapList}(x, ..., printPercentage = TRUE)
 }
 \arguments{
-\item{x}{an R object representing a \code{gap} of class \code{gap} or \code{gapList}}
+\item{x}{an \code{R} object representing a \code{gap} of class \code{gap} or \code{gapList}}
 
 \item{...}{these arguments are not passed anywhere and are included only for compatibility}
 

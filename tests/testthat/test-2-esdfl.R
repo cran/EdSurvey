@@ -112,7 +112,7 @@ test_that("ESDFL gap",{
   # also check that the overall output has not changed.targetLevel="Male"
 	expect_known_value(g1, "gap_esdfl_mean.rds", update=FALSE)
   # percentile
-  expect_known_value(g_pct <- gap("composite", sdfl, dsex=="Male", percentiles=c(2,50)), "gap_esdfl_pct.rds", update=FALSE)
+  expect_known_value(g_pct <- gap("composite", sdfl, dsex=="Male", percentiles=c(2,50)), "gap_esdfl_pct.rds", update=TRUE)
   # achievement level
   expect_known_value(g_al <- gap("composite", sdfl, dsex=="Male", achievementLevel="Proficient"), "gap_esdfl_al.rds", update=FALSE)
   # percent
@@ -174,7 +174,7 @@ test_that("ESDFL cor", {
 context("ESDFL subset and print")
 test_that("ESDFL subset and print",{
   sdfl2 <- subset(sdfl, dsex=="Male")
-  expect_known_value(capture.output(print(sdfl2)), file="esdfl_print.rds", update=FALSE)
+  expect_equal(capture.output(print(sdfl2)), printREF)
   d1 <- dim(sdfl2)
   expect_equal(d1$nrow[1], nrow(subset(sdfA, dsex=="Male")))
   expect_equal(d1$ncol[3], ncol(subset(sdfC, dsex=="Female")))

@@ -4,8 +4,13 @@
 \alias{downloadPISA}
 \title{Download and Unzip PISA Files}
 \usage{
-downloadPISA(root, years = c(2000, 2003, 2006, 2009, 2012, 2015),
-  database = c("INT", "CBA", "FIN"), cache = FALSE, verbose = TRUE)
+downloadPISA(
+  root,
+  years = c(2000, 2003, 2006, 2009, 2012, 2015),
+  database = c("INT", "CBA", "FIN"),
+  cache = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{root}{a character string indicating the directory where the PISA data should
@@ -28,23 +33,26 @@ the data. Default value is \code{FALSE}.}
 The default value is \code{TRUE}.}
 }
 \description{
-Uses a connection to download PISA data to a
+Uses an Internet connection to download PISA data to a
              computer. Data come from the OECD website.
 }
 \details{
-The function uses \ifelse{latex}{\code{download.file}}{\code{\link[utils]{download.file}}} to download files from provided URLs. 
-         Some machines might require a different user agent in HTPP(S) requests. If the downloading gives an error or behaves unexpectedly 
-         (for example, a zip file cannot be unzipped or a data file is significantly smaller than expected), users can toggle \code{HTPPUserAgent}
-         options to find one that works for their machines. One common alternative option is 
+The function uses
+\ifelse{latex}{\code{download.file}}{\code{\link[utils]{download.file}}}
+to download files from provided URLs. Some machines might require a different
+user agent in HTPP(S) requests. If the downloading gives an error or behaves
+unexpectedly (e.g., a zip file cannot be unzipped or a data file is
+significantly smaller than expected), users can toggle \code{HTTPUserAgent}
+options to find one that works for their machines. One common alternative option is 
 
-         \code{options(HTTPUserAgent="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/53.0")}.
+\code{options(HTTPUserAgent="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/53.0")}
 }
 \examples{
 \dontrun{
-# Download PISA 2012 data (for all three databases)
+# download PISA 2012 data (for all three databases)
 downloadPISA(years = 2012, database = c("INT","CBA","FIN"), root="C:/")
 
-# Download PISA 2009, 2012, and 2015 data (International Database only) 
+# download PISA 2009, 2012, and 2015 data (International Database only) 
 # to C:/PISA/2009, C:/PISA/2012, and C:/PISA/2015 folders, respectively
 downloadPISA(years = c(2009,2012,2015), root="C:/")  
 }

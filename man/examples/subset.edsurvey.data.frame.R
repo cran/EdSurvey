@@ -10,7 +10,7 @@ newsdf <-  subset(x=sdf, subset= dsex == "Male")
 edsurveyTable(composite ~ dsex, data=newsdf, returnMeans=FALSE, returnSepct=FALSE)
 
 # Variable names that are not in the sdf get resolved in the parent frame.
-# Practically, that means that the following two subset 
+# practically, that means that the following two subset 
 # calls sdfM1 and sdfM2 do the same thing
 male_var <- "Male"
 sdfM1 <- subset(x=sdf, subset= dsex == male_var)

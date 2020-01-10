@@ -1,11 +1,12 @@
 #' @title Download and Unzip PIAAC Files
 #'
-#' @description Uses a connection to download PIAAC data to a
+#' @description Uses an Internet connection to download PIAAC data to a
 #'              computer. Data come from the OECD website. 
 #' 
 #' @param root a character string indicating the directory where the PIAAC data should
-#'             be stored. Files are placed in a folder named PIAAC/Round [round number].
-#' @param round a numeric value indicating the assessment round to download. Valid round is 1 only (2012/2014).
+#'             be stored. Files are placed in a folder named PIAAC/cycle [cycle number].
+#' @param cycle a numeric value indicating the assessment cycle to download.
+#'              Valid cycle is 1 only.
 #' @param cache a logical value set to process and cache the text (.txt) version of files.
 #'              This takes a very long time but saves time for future uses of 
 #'              the data. Default value is \code{FALSE}.
@@ -16,26 +17,29 @@
 #' @importFrom readxl read_excel
 #' @importFrom stringr str_subset
 #' @importFrom rvest html html_nodes html_attr
-#' @author Trang Nguyen
+#' @author Paul Bailey and Trang Nguyen
 #' @example man/examples/downloadPIAAC.R
 #' @export
-downloadPIAAC <- function(root, round=1, cache=FALSE, verbose=TRUE) {
-  valid_rounds <- c(1)
-  if (!round %in% valid_rounds) {
-    stop("PIAAC is not available for this round.")
+downloadPIAAC <- function(root, cycle=1, cache=FALSE, verbose=TRUE) {
+  valid_cycles <- 1
+  if (!cycle %in% valid_cycles) {
+    stop("PIAAC is not available for this cycle.")
   }
+  root <- normalizePath(root)
   root <- gsub("/$","", root)
   dirname <- file.path(root,"PIAAC")
+
   if(!dir.exists(dirname)) {
     dir.create(dirname)
   }
-  yroot <- file.path(dirname, paste0("Round ",round))
+  yroot <- file.path(dirname, paste0("Cycle ",cycle))
   if(!dir.exists(yroot)) {
     dir.create(yroot)
   }
   
-  if(round == 1) {
-    url <- "http://vs-web-fs-1.oecd.org/piaac/puf-data/CSV/"
+  if(cycle == 1) {
+    url0 <- "https://webfs.oecd.org"
+    url <- paste0(url0, "/piaac/puf-data/CSV/")
   }
   
   temp <- tryCatch({
@@ -56,10 +60,10 @@ downloadPIAAC <- function(root, round=1, cache=FALSE, verbose=TRUE) {
   for (f in data_files) {
     fn <- basename(f)
     if(!file.exists(file.path(yroot,fn))) {
-      download.file(paste0("http://vs-web-fs-1.oecd.org",f),file.path(yroot,fn), mode = "w", method = "auto")
+      download.file(paste0(url0,f),file.path(yroot,fn), mode = "w", method = "auto")
     } else {
       if (verbose) {
-        cat(paste0("Found downloaded round ",round, " PIAAC file ",fn, ".\n"))
+        cat(paste0("Found downloaded cycle ",cycle, " PIAAC file ",fn, ".\n"))
       }
     }
   }
@@ -68,7 +72,7 @@ downloadPIAAC <- function(root, round=1, cache=FALSE, verbose=TRUE) {
     download.file(codebook,file.path(yroot,fn), mode = "wb")
   } else {
     if (verbose) {
-      cat(paste0("Found downloaded round ",round," PIAAC codebook file ",fn, ".\n"))
+      cat(paste0("Found downloaded cycle ",cycle," PIAAC codebook file ",fn, ".\n"))
     }
   }
   

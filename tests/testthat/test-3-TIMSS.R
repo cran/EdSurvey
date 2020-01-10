@@ -52,6 +52,14 @@ test_that("TIMSS data reads in correctly", {
   expect_equal(co, co.ref)
 })
 
+context("TIMSS $ assign")
+test_that("TIMSS edsurveyTable",{
+  kwt4.15$testVar1 <- ifelse(kwt4.15$idstud %% 2 == 0,1,0) #create a 'cache' var:: works good
+  # veryify that the raw cache agrees with the getData results
+  tab0 <- table(kwt4.15$cache$testVar1)
+  tab1 <- table(kwt4.15$testVar1)
+  expect_equal(tab0, tab1)
+})
 context("TIMSS edsurveyTable")
 test_that("TIMSS edsurveyTable",{
   estt <- edsurveyTable(srea ~ as4gsex, usa4.07, varMethod="Taylor")
@@ -118,74 +126,63 @@ test_that("TIMSS lm.sdf",{
 
   lm1jk <- lm.sdf(ssci ~ bsbg01 + bsbg12c, usa8.11, varMethod="jackknife")
   withr::with_options(list(digits=7), co <- capture.output(lm1jk))
-  co.ref <- c("             (Intercept)                bsbg01BOY    bsbg12cAGREE A LITTLE bsbg12cDISAGREE A LITTLE    bsbg12cDISAGREE A LOT ", 
-               "              530.622228                11.701545                -8.917658               -20.192490               -40.085668 "
-  )
-  expect_equal(co, co.ref)
+  co.ref1 <- c("             (Intercept)                bsbg01BOY    bsbg12cAGREE A LITTLE bsbg12cDISAGREE A LITTLE    bsbg12cDISAGREE A LOT ", 
+               "              530.622228                11.701545                -8.917658               -20.192490               -40.085668 ")
+  expect_equal(co, co.ref1)
   
   lm1t$nPSU <- NULL
   withr::with_options(list(digits=7), co <- capture.output(summary(lm1t)))
-  co.ref <- c("", "Formula: mmat ~ asbg01 + asbgssb", "", "jrrIMax: 5", "Weight variable: 'totwgt'", 
-              "Variance method: Taylor series", "full data n: 11318", "n used: 6704", 
-              "", "Coefficients:",
-              "                 coef        se         t    dof Pr(>|t|)    ", 
-              "(Intercept) 364.96992  15.20664  24.00069 24.170  < 2e-16 ***", 
-              "asbg01BOY   -12.48788   6.00111  -2.08093 17.596  0.05234 .  ", 
-              "asbgssb      -0.51429   1.18887  -0.43259 38.286  0.66774    ", 
-              "---", "Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1", 
-              "", "Multiple R-squared: 0.0036", "")
-  expect_equal(co, co.ref)
+  co.ref2 <- c("",
+               "Formula: mmat ~ asbg01 + asbgssb",
+               "",
+               "Weight variable: 'totwgt'", 
+               "Variance method: Taylor series",
+               "Plausible values: 5",
+               "jrrIMax: 5", 
+               "full data n: 11318",
+               "n used: 6704",
+               "",
+               "Coefficients:",
+               "                 coef        se        t    dof Pr(>|t|)    ", 
+               "(Intercept) 364.96992  15.20664 24.00069 24.170  < 2e-16 ***", 
+               "asbg01BOY   -12.48788   6.00111 -2.08093 17.596  0.05234 .  ", 
+               "asbgssb      -0.51429   1.18887 -0.43259 38.286  0.66774    ", 
+               "---",
+               "Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1", 
+               "",
+               "Multiple R-squared: 0.0036",
+               "")
+  expect_equal(co, co.ref2)
   
   withr::with_options(list(digits=7), co <- capture.output(summary(lm1jk)))
-  co.ref <- c("", "Formula: ssci ~ bsbg01 + bsbg12c", "", "jrrIMax: 1", "Weight variable: 'totwgt'", 
-              "Variance method: jackknife", "JK replicates: 150", "full data n: 20859", 
-              "n used: 10319", "","Coefficients:",
-              "                             coef       se        t     dof  Pr(>|t|)    ", 
-              "(Intercept)              530.6222   3.1016 171.0782 128.797 < 2.2e-16 ***", 
-              "bsbg01BOY                 11.7015   2.2822   5.1273 118.079 1.163e-06 ***", 
-              "bsbg12cAGREE A LITTLE     -8.9177   2.5260  -3.5303 143.706 0.0005581 ***", 
-              "bsbg12cDISAGREE A LITTLE -20.1925   3.4035  -5.9329  87.353 5.852e-08 ***", 
-              "bsbg12cDISAGREE A LOT    -40.0857   4.3027  -9.3164  89.639 7.815e-15 ***", 
-              "---", "Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1", 
-              "", "Multiple R-squared: 0.0302", "")
-  expect_equal(co, co.ref)
+  co.ref3 <- c("",
+               "Formula: ssci ~ bsbg01 + bsbg12c",
+               "",
+               "Weight variable: 'totwgt'", 
+               "Variance method: jackknife",
+               "JK replicates: 150",
+               "Plausible values: 5", 
+               "jrrIMax: 1",
+               "full data n: 20859",
+               "n used: 10319",
+               "",
+               "Coefficients:",
+               "                             coef       se        t     dof  Pr(>|t|)    ", 
+               "(Intercept)              530.6222   3.1016 171.0782 128.797 < 2.2e-16 ***", 
+               "bsbg01BOY                 11.7015   2.2822   5.1273 118.079 1.163e-06 ***", 
+               "bsbg12cAGREE A LITTLE     -8.9177   2.5260  -3.5303 143.706 0.0005581 ***", 
+               "bsbg12cDISAGREE A LITTLE -20.1925   3.4035  -5.9329  87.353 5.852e-08 ***", 
+               "bsbg12cDISAGREE A LOT    -40.0857   4.3027  -9.3164  89.639 7.815e-15 ***", 
+               "---",
+               "Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1", 
+               "",
+               "Multiple R-squared: 0.0302",
+               "")
+  expect_equal(co, co.ref3)
 })
 
 context("TIMSS showPlausibleValues and showWeights verbose output agrees")
 test_that("TIMSS showPlausibleValues and showWeights verbose output agrees",{
-  spv <- c("There are 16 subject scale(s) or subscale(s) in this edsurvey.data.frame",
-           "  'mibm' subject scale or subscale with 5 plausible values. They are:",
-           "    'asmibm01' 'asmibm02' 'asmibm03' 'asmibm04' 'asmibm05'",
-           "  'sibm' subject scale or subscale with 5 plausible values. They are:",
-           "    'assibm01' 'assibm02' 'assibm03' 'assibm04' 'assibm05'",
-           "  'mmat' subject scale or subscale with 5 plausible values (the default). They are:",
-           "    'asmmat01' 'asmmat02' 'asmmat03' 'asmmat04' 'asmmat05'",
-           "  'ssci' subject scale or subscale with 5 plausible values. They are:",
-           "    'asssci01' 'asssci02' 'asssci03' 'asssci04' 'asssci05'",
-           "  'mdat' subject scale or subscale with 5 plausible values. They are:",
-           "    'asmdat01' 'asmdat02' 'asmdat03' 'asmdat04' 'asmdat05'",
-           "  'mgeo' subject scale or subscale with 5 plausible values. They are:",
-           "    'asmgeo01' 'asmgeo02' 'asmgeo03' 'asmgeo04' 'asmgeo05'",
-           "  'mnum' subject scale or subscale with 5 plausible values. They are:",
-           "    'asmnum01' 'asmnum02' 'asmnum03' 'asmnum04' 'asmnum05'",
-           "  'sear' subject scale or subscale with 5 plausible values. They are:",
-           "    'assear01' 'assear02' 'assear03' 'assear04' 'assear05'",
-           "  'slif' subject scale or subscale with 5 plausible values. They are:",
-           "    'asslif01' 'asslif02' 'asslif03' 'asslif04' 'asslif05'",
-           "  'sphy' subject scale or subscale with 5 plausible values. They are:",
-           "    'assphy01' 'assphy02' 'assphy03' 'assphy04' 'assphy05'",
-           "  'mkno' subject scale or subscale with 5 plausible values. They are:",
-           "    'asmkno01' 'asmkno02' 'asmkno03' 'asmkno04' 'asmkno05'",
-           "  'mapp' subject scale or subscale with 5 plausible values. They are:",
-           "    'asmapp01' 'asmapp02' 'asmapp03' 'asmapp04' 'asmapp05'",
-           "  'mrea' subject scale or subscale with 5 plausible values. They are:",
-           "    'asmrea01' 'asmrea02' 'asmrea03' 'asmrea04' 'asmrea05'",
-           "  'skno' subject scale or subscale with 5 plausible values. They are:",
-           "    'asskno01' 'asskno02' 'asskno03' 'asskno04' 'asskno05'",
-           "  'sapp' subject scale or subscale with 5 plausible values. They are:",
-           "    'assapp01' 'assapp02' 'assapp03' 'assapp04' 'assapp05'",
-           "  'srea' subject scale or subscale with 5 plausible values. They are:",
-           "    'assrea01' 'assrea02' 'assrea03' 'assrea04' 'assrea05'")
   co <- capture.output(showPlausibleValues(usa4.07,verbose=TRUE))
   expect_equal(co, spv)
   

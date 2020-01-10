@@ -2,9 +2,6 @@
 # the same as the edsurvey.data.frame
 require(testthat)
 require(EdSurvey)
-# if(interactive()) {
-#  setwd(system.file("testRDs", package = "EdSurvey"))
-# }
 options(width = 500)
 source("REF-1-lesdf.R") # has REF output in it
 
@@ -314,7 +311,6 @@ test_that("updatePlausibleValue",{
   lmb$formula <- lma$formula <- NULL # the formula has the default value substituted in and so is different
   expect_equal(lma, lmb)
 })
-
 
 context("LESDF percentile")
 test_that("LESDF percentile",{

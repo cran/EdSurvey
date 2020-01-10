@@ -4,16 +4,22 @@
 \alias{readCivEDICCS}
 \title{Connect to ICCS and CivED Data}
 \usage{
-readCivEDICCS(path, countries, dataSet = c("student", "teacher"),
-  gradeLvl = c("8", "9", "12"), forceReread = FALSE, verbose = TRUE)
+readCivEDICCS(
+  path,
+  countries,
+  dataSet = c("student", "teacher"),
+  gradeLvl = c("8", "9", "12"),
+  forceReread = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{path}{a character value of the full directory to the ICCS/CivED extracted SPSS (.sav) set of data}
 
 \item{countries}{a character vector of the country/countries to include using
-the three-digit ISO country code.  
+the three-digit International Organization for Standardization (ISO) country code.  
 A list of country codes can be found on Wikipedia at
-\url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes},
+\url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}
 or other online sources. Consult the \emph{ICCS/CivED User Guide} to help determine what countries
 are included within a specific testing year of ICCS/CivED. 
 To select all countries, use a wildcard value of \strong{\code{*}}.}
@@ -45,15 +51,15 @@ Opens a connection to an ICCS or CivEd (1999) data file and
              information about the file and data.
 }
 \details{
-Reads in the unzipped files downloaded from the international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}.
+Reads in the unzipped files downloaded from the international database(s) using the \href{https://www.iea.nl/data-tools/repository}{IEA Study Data Repository}.
          Data files require the SPSS data file (.sav) format using the default filenames.
 
 When using the \code{getData} function with a CivED or ICCS study \code{edsurvey.data.frame},
          the requested data variables are inspected, and it handles any necessary data merges automatically. 
-         Note that the \code{school} data will always be returned merged to the \code{student}
+         The \code{school} data always will be returned merged to the \code{student}
          data, even if only \code{school} variables are requested.
-         Only if a 1999 CivED Grade 8 \code{edsurvey.data.frame} with \code{teacher} data variables is requested by the \code{getData} call, 
-         will cause \code{teacher} data to be merged.
+         If a 1999 CivED Grade 8 \code{edsurvey.data.frame} with \code{teacher} data variables is requested by the \code{getData} call, 
+         it will cause \code{teacher} data to be merged.
          Many \code{students} can be linked to many \code{teachers}, which varies widely between countries, 
          and not all countries contain \code{teacher} data.
 

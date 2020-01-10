@@ -9,7 +9,7 @@
 #' @param m integer value of the number of \code{x} and \code{y} grid points
 #' @param xrange numeric vector of length two indicating \code{x}-range of plot;
 #'               defaults to range(x)
-#' @param yrange numeric vector of length two indicating \code{y}-range of plot.
+#' @param yrange numeric vector of length two indicating \code{y}-range of plot;
 #'               defaults to range(y)
 #' @param xkernel numeric indicating the standard deviation of Normal
 #'                \code{x} kernel to use in generating contour plot

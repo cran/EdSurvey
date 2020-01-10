@@ -4,14 +4,31 @@
 \alias{gap}
 \title{Gap Analysis}
 \usage{
-gap(variable, data, groupA = "default", groupB = "default",
-  percentiles = NULL, achievementLevel = NULL,
-  achievementDiscrete = FALSE, targetLevel = NULL, weightVar = NULL,
-  jrrIMax = 1, varMethod = c("jackknife", "Taylor"),
-  omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
-  referenceDataIndex = 1, returnVarEstInputs = FALSE,
-  returnSimpleDoF = FALSE, returnSimpleN = FALSE,
-  returnNumberOfPSU = FALSE, noCov = FALSE)
+gap(
+  variable,
+  data,
+  groupA = "default",
+  groupB = "default",
+  percentiles = NULL,
+  achievementLevel = NULL,
+  achievementDiscrete = FALSE,
+  stDev = FALSE,
+  targetLevel = NULL,
+  weightVar = NULL,
+  jrrIMax = 1,
+  varMethod = c("jackknife"),
+  omittedLevels = TRUE,
+  defaultConditions = TRUE,
+  recode = NULL,
+  referenceDataIndex = 1,
+  returnVarEstInputs = FALSE,
+  returnSimpleDoF = FALSE,
+  returnSimpleN = FALSE,
+  returnNumberOfPSU = FALSE,
+  noCov = FALSE,
+  pctMethod = c("unbiased", "simple"),
+  includeLinkingError = FALSE
+)
 }
 \arguments{
 \item{variable}{a character indicating the variable to be compared,
@@ -48,6 +65,8 @@ the percentage at or above that achievement level
 will be
 included in the percentage.}
 
+\item{stDev}{a logical, set to \code{TRUE} to calculate the gap in standard deviations.}
+
 \item{targetLevel}{a character string. When specified, calculates the gap in
 the percentage of students at
 \code{targetLevel} in the \code{variable} argument. This is useful for
@@ -58,15 +77,12 @@ survey response level.}
 See Details.}
 
 \item{jrrIMax}{a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
-  sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
-  term (see the Details section of
-\code{\link{lm.sdf}} to see the definition of \eqn{V_{jrr}}) can be estimated with any number of plausible values, and values larger than the number of 
-  plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
-  Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
+sampling variance from the first plausible value as the component for sampling variance estimation. The \code{Vjrr} 
+term, or sampeling variance term, can be estimated with any number of plausible values, and values larger than the number of 
+plausible values on the survey (including \code{Inf}) will result in all plausible values being used. 
+Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
 
-\item{varMethod}{a character set to \code{jackknife} or \code{Taylor}
-that indicates the variance estimation method
-to be used}
+\item{varMethod}{deprecated parameter, \code{gap} always uses the jackknife variance estimation}
 
 \item{omittedLevels}{a logical value. When set to the default value of
 \code{TRUE}, drops those levels of 
@@ -85,8 +101,7 @@ to see the default conditions.}
 Can be set as
 \code{recode} \code{=} \code{list(var1} \code{=}
 \code{list(from} \code{=} \code{c("a",} \code{"b",}
-\code{"c"),} \code{to} \code{=} \code{"d"))}.
-See Examples.}
+\code{"c"),} \code{to} \code{=} \code{"d"))}.}
 
 \item{referenceDataIndex}{a numeric used only when the \code{data} argument is an
 \code{edsurvey.data.frame.list},
@@ -96,7 +111,7 @@ Defaults to 1.}
 
 \item{returnVarEstInputs}{a logical value; set to \code{TRUE} to return the
 inputs to the jackknife and imputation variance
-estimates. This is intended to allow for the
+estimates which allows for the
 computation
 of covariances between estimates.}
 
@@ -110,9 +125,21 @@ section) that do not have a
 in the percentage object}
 
 \item{returnNumberOfPSU}{a logical value set to \code{TRUE} to return the number of 
-primary sampling units (PSUs) used in the calculation}
+PSUs used in the calculation}
 
-\item{noCov}{set the covariances to zero in result.}
+\item{noCov}{set the covariances to zero in result}
+
+\item{pctMethod}{a character that is one of \code{unbiased} or \code{simple}.
+See the help for \code{\link{percentile}} for more information.}
+
+\item{includeLinkingError}{a logical value set to \code{TRUE} to include the
+linking error in variance estimation.
+Standard errors (e.g., \code{diffAAse}, \code{diffBBse}, 
+and \code{diffABABse}) and \emph{p}-values (e.g., \code{diffAApValue}, 
+\code{diffBBpValue}, and \code{diffABABpValue}) would be adjusted for 
+comparisons between digitally based assessments (DBA) and 
+paper-based assessments (PBA) data.
+This option is supported only for NAEP data.}
 }
 \value{
 The return type depends on if the class of the \code{data} argument is an
@@ -123,17 +150,15 @@ that shows the percentage in \code{groupA} and \code{groupB}, and an object
 that shows the gap called \code{results}. 
 
 The labels include the following elements:
-\describe{
   \item{definition}{the definitions of the groups}
-  \item{nFullData}{the n-size for the full dataset (before applying the definition)}
-  \item{nUsed}{the n-size for the data after the group is subsetted and other
+  \item{nFullData}{the \emph{n}-size for the full dataset (before applying the definition)}
+  \item{nUsed}{the \emph{n}-size for the data after the group is subsetted and other
                restrictions (such as omitted values) are applied}
   \item{nPSU}{the number of PSUs used in calculation--only returned when 
               \code{returnNumberOfPSU} \code{=} \code{TRUE}}
-}
 
 The percentages are computed according to the vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
  in the section
 \dQuote{Estimation of Weighted Percentages When Plausible Values Are Not Present.}
 The standard errors are calculated according to
@@ -142,18 +167,17 @@ Standard errors of differences are calculated as the square root of the typical
 variance formula
 \deqn{Var(A-B) = Var(A) + Var(B) - 2 Cov(A,B)}
 where the covariance term is calculated as described in the vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
  in the section
 \dQuote{Estimation of Covariances.} These degrees of freedom are available only
 with the jackknife variance estimation. The degrees of freedom used for hypothesis testing
 are always set to the number of jackknife replicates in the data.
 
-\subsection{the data argument is an edsurvey.data.frame}{
+\strong{the data argument is an edsurvey.data.frame}
   When the \code{data} argument is an \code{edsurvey.data.frame},
   \code{gap} returns an S3 object of class \code{gap}. 
 
   The \code{percentage} object is a numeric vector with the following elements:
-  \describe{
     \item{pctA}{the percentage of respondents in \code{groupA} compared with the whole sample in \code{data}}
     \item{pctAse}{the standard error on the percentage of respondents in
                       \code{groupA}}
@@ -176,10 +200,8 @@ are always set to the number of jackknife replicates in the data.
                         is zero}
     \item{dofAB}{degrees of freedom used in calculating
                       \code{diffABpValue}}
-  }
 
   The \code{results} object is a numeric data frame with the following elements:
-  \describe{
     \item{estimateA}{the mean estimate of \code{groupA} (or the percentage estimate
                      if \code{achievementLevel} or \code{targetLevel} is specified)}
     \item{estimateAse}{the standard error of \code{estimateA}}
@@ -200,7 +222,6 @@ are always set to the number of jackknife replicates in the data.
                         for the hypothesis test that \code{diffAB}
                         is zero.}
     \item{dofAB}{degrees of freedom used for the \emph{t}-test on \code{diffAB}}
-  }
   
   If the gap was in  achievement levels or percentiles and more
   than one percentile or achievement level is requested,
@@ -212,9 +233,8 @@ are always set to the number of jackknife replicates in the data.
   is \code{TRUE}, the additional elements \code{varEstInputs} and
   \code{pctVarEstInputs} also are returned. These can be used for calculating
   covariances with \code{\link{varEstToCov}}.
-}
 
-\subsection{the data argument is an edsurvey.data.frame.list}{
+\strong{the data argument is an edsurvey.data.frame.list}
   When the \code{data} argument is an \code{edsurvey.data.frame.list},
   \code{gap} returns an S3 object of class \code{gapList}.
   
@@ -224,7 +244,6 @@ are always set to the number of jackknife replicates in the data.
   the \code{referenceDataIndex} argument.
   
   The \code{percentage} object is a \code{data.frame} with the following elements:
-  \describe{
     \item{covs}{a data frame with a column for each column in the \code{covs}. See previous
                 section for more details.}
     \item{...}{all elements in the \code{percentage} object in the
@@ -259,10 +278,8 @@ are always set to the number of jackknife replicates in the data.
     \item{diffABABpValue}{the \emph{p}-value associated with the \emph{t}-test used
                         for the hypothesis test that \code{diffABAB}
                         is zero}
-  }
 
   The \code{results} object is a \code{data.frame} with the following elements:
-  \describe{
     \item{...}{all elements in the \code{results} object in the
                previous section}
     \item{diffAA}{the value of \code{groupA} in the reference dataset minus
@@ -299,9 +316,6 @@ are always set to the number of jackknife replicates in the data.
     \item{sameSurvey}{a logical value indicating if this line uses the same
                       survey as the reference line. Set to \code{NA} for the
                       reference line.}
-  }
-
-}
 }
 \description{
 Compares the average levels of a variable between two groups
@@ -380,8 +394,26 @@ sdfl <- edsurvey.data.frame.list(list(sdfA, sdfB, sdfC, sdfD),
 
 gap("composite", sdfl, dsex=="Male", dsex=="Female", percentile=c(50))
 
+# example showing using linking error with gap
+# load Grade 4 math data
+g4math2015 <- readNAEP(".../M46NT1AT.dat")
+g4math2017 <- readNAEP(".../M48NT1AT.dat")
+g4math2019 <- readNAEP(".../M50NT1AT.dat")
+
+# make an edsurvey.data.frame.list from math grade 4 2015, 2017, and 2019 data
+g4math <- edsurvey.data.frame.list(list(g4math2019, g4math2017, g4math2015),
+                                   labels = c("2019", "2017", "2015"))
+
+# gap analysis with linking error in variance estimation across surveys
+gap("composite", g4math, dsex == "Male", dsex == "Female", includeLinkingError=TRUE)
+gap("composite", g4math, dsex == "Male", dsex == "Female", percentiles = c(10, 25), 
+    includeLinkingError=TRUE)
+gap("composite", g4math, dsex == "Male", dsex == "Female", 
+    achievementDiscrete = TRUE, achievementLevel=c("Basic", "Proficient", "Advanced"), 
+    includeLinkingError=TRUE)
+
 }
 }
 \author{
-Paul Bailey and Trang Nguyen
+Paul Bailey, Trang Nguyen, and Huade Huo
 }

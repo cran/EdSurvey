@@ -5,9 +5,19 @@
 \alias{rq}
 \title{EdSurvey Quantile Regression Models}
 \usage{
-rq.sdf(formula, data, tau = 0.5, weightVar = NULL, relevels = list(),
-  jrrIMax = 1, omittedLevels = TRUE, defaultConditions = TRUE,
-  recode = NULL, returnNumberOfPSU = FALSE, ...)
+rq.sdf(
+  formula,
+  data,
+  tau = 0.5,
+  weightVar = NULL,
+  relevels = list(),
+  jrrIMax = 1,
+  omittedLevels = TRUE,
+  defaultConditions = TRUE,
+  recode = NULL,
+  returnNumberOfPSU = FALSE,
+  ...
+)
 }
 \arguments{
 \item{formula}{a \ifelse{latex}{\code{formula}}{\code{\link[stats]{formula}}} for the
@@ -24,7 +34,7 @@ or an \code{edsurvey.data.frame.list}}
 
 \item{tau}{the quantile to be estimated. The value could be set between 0 and 1 with a default of 0.5.}
 
-\item{weightVar}{a character indicating the weight variable to use (see Details).
+\item{weightVar}{a character indicating the weight variable to use.
 The \code{weightVar} must be one of the weights for the
 \code{edsurvey.data.frame}. If \code{NULL}, it  uses the default
 for the \code{edsurvey.data.frame}.}
@@ -36,8 +46,8 @@ should be the group to be omitted (the reference group).}
 
 \item{jrrIMax}{when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
 sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
-term (see Details) can be estimated with any number of plausible values, and values larger than the number of 
-plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+term can be estimated with any number of plausible values, and values larger than the number of 
+plausible values on the survey (including \code{Inf}) will result in all plausible values being used. 
 Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
 
 \item{omittedLevels}{a logical value. When set to the default value of \code{TRUE}, drops
@@ -52,7 +62,7 @@ to subset the data. Use \code{print} on an
 
 \item{recode}{a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
 \code{recode=}\code{list(}\code{var1} \code{=} \code{list(}\code{from=} 
-\code{c("a",} \code{"b",} \code{"c"),} \code{to=} \code{"d"))}. See Examples.}
+\code{c("a",} \code{"b",} \code{"c"),} \code{to=} \code{"d"))}.}
 
 \item{returnNumberOfPSU}{a logical value set to \code{TRUE} to return the number of 
 primary sampling units (PSUs)}
@@ -74,27 +84,27 @@ An \code{edsurvey.rq} with the following elements:
    \item{coefmat}{the coefficient matrix (typically produced by the summary of a model)}
    \item{weight}{the name of the weight variable}
    \item{npv}{the number of plausible values}
-   \item{njk}{the number of jackknife replicates used; set to \code{NA} when Taylor series variance
+   \item{njk}{the number of the jackknife replicates used; set to \code{NA} when Taylor series variance
    estimates are used}
 }
 \description{
 Fits a quantile regression model that uses weights and variance estimates appropriate for the data.
 }
 \details{
-The function computes an estimate on the tau-th conditional quantile function of the response, 
+The function computes an estimate on the \code{tau}-th conditional quantile function of the response, 
 given the covariates, as specified by the formula argument. Like \code{lm.sdf()}, the  
 function presumes a linear specification for the quantile regression model (i.e., that the 
-formula defines a model that is linear in parameters). Unlike \code{lm.sdf()}, Jackknife is the
+formula defines a model that is linear in parameters). Unlike \code{lm.sdf()}, the jackknife is the
 only applicable variance estimation method used by the function.
 
 For further details on quantile regression models and how they are implemented in R, see Koenker
- & Bassett (1978), Koenker (2005), and the vignette from the \code{quantreg} package 
-(accessible by \code{vignette("rq",package="quantreg")}), on which this function is 
+and Bassett (1978), Koenker (2005), and the vignette from the \code{quantreg} package---
+accessible by \code{vignette("rq",package="quantreg")}---on which this function is 
 built.
 
-For further details on how left-hand side variables, survey sampling weights, and estimates 
-variances are correctly handled, see \code{?lm.sdf} or the
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}.
+For further details on how left-hand side variables, survey sampling weights, and estimated 
+variances are correctly handled, see \code{\link{lm.sdf}} or the vignette titled
+\emph{\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistical Methods Used in EdSurvey}}.
 }
 \examples{
 \dontrun{
@@ -113,9 +123,9 @@ Binder, D. A. (1983). On the variances of asymptotically normal estimators from 
 Johnson, E. G., & Rust, K. F. (1992). Population inferences and variance estimation for NAEP 
 data. \emph{Journal of Education Statistics}, \emph{17}(2), 175--190.
 
-Koenker, R. W., & Bassett, G. W. (1978). Regression quantiles, \emph{Econometrica}, 46, 33--50.
+Koenker, R. W., & Bassett, G. W. (1978). Regression quantiles, \emph{Econometrica, 46,} 33--50.
 
-Koenker, R. W. (2005). \emph{Quantile regression}. Cambridge, UK; Cambridge University Press.
+Koenker, R. W. (2005). \emph{Quantile regression}. Cambridge, UK: Cambridge University Press.
 
 Rubin, D. B. (1987). \emph{Multiple imputation for nonresponse in surveys}. New York, NY: Wiley.
 }

@@ -30,7 +30,7 @@ sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"
 getPlausibleValue(var="composite", data=sdf)
 }
 \seealso{
-\code{\link{updatePlausibleValue}}, \code{\link{showPlausibleValues}}
+\code{\link{showPlausibleValues}}, \code{\link{updatePlausibleValue}}
 }
 \author{
 Michael Lee and Paul Bailey

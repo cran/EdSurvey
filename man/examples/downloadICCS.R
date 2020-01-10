@@ -1,4 +1,4 @@
 \dontrun{
-#view instructions to manually download study data
+# view instructions to manually download study data
 downloadCivEDICCS()
 }

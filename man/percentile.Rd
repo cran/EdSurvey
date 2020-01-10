@@ -4,30 +4,42 @@
 \alias{percentile}
 \title{EdSurvey Percentiles}
 \usage{
-percentile(variable, percentiles, data, weightVar = NULL, jrrIMax = 1,
-  varMethod = c("jackknife", "Taylor"), alpha = 0.05,
-  omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
-  returnVarEstInputs = FALSE, returnNumberOfPSU = FALSE)
+percentile(
+  variable,
+  percentiles,
+  data,
+  weightVar = NULL,
+  jrrIMax = 1,
+  varMethod = c("jackknife", "Taylor"),
+  alpha = 0.05,
+  omittedLevels = TRUE,
+  defaultConditions = TRUE,
+  recode = NULL,
+  returnVarEstInputs = FALSE,
+  returnNumberOfPSU = FALSE,
+  pctMethod = c("unbiased", "simple"),
+  confInt = TRUE
+)
 }
 \arguments{
 \item{variable}{the character name of the variable to percentiles computed,
 typically a subject scale or subscale}
 
-\item{percentiles}{a numeric vector of percentiles in the range 0 to 100
+\item{percentiles}{a numeric vector of percentiles in the range of 0 to 100
 (inclusive)}
 
 \item{data}{an \code{edsurvey.data.frame} or an
 \code{edsurvey.data.frame.list}}
 
-\item{weightVar}{a character indicating the weight variable to use.
-(See Details.)}
+\item{weightVar}{a character indicating the weight variable to use.}
 
 \item{jrrIMax}{a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
-  sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
-  term (see the Details section of
-\code{\link{lm.sdf}} to see the definition of \eqn{V_{jrr}}) can be estimated with any number of plausible values, and values larger than the number of 
-  plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
-  Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
+                  sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
+                  term (see 
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}})
+                  can be estimated with any number of plausible values, and values larger than the number of 
+                  plausible values on the survey (including \code{Inf}) will result in all plausible values being used. 
+                  Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
 
 \item{varMethod}{a character set to \code{jackknife} or \code{Taylor}
 that indicates the variance estimation method used when 
@@ -57,35 +69,38 @@ to see the default conditions.}
 \code{NULL}. Can be set as
 \code{recode=}\code{list(var1=} \code{list(from=} \code{c("a",}
 \code{"b",} \code{"c"),}
-\code{to=} \code{"d"))}. See Examples.}
+\code{to=} \code{"d"))}.}
 
 \item{returnVarEstInputs}{a logical value set to \code{TRUE} to return the
 inputs to the jackknife and imputation variance
-estimates. This is intended to allow for the
-computation
+estimates which allows for the computation
 of covariances between estimates.}
 
 \item{returnNumberOfPSU}{a logical value set to \code{TRUE} to return the number of 
 primary sampling units (PSUs)}
+
+\item{pctMethod}{one of \dQuote{unbiased} or \dQuote{simple};
+unbiased produces a weighted median unbiased percentile estimate,
+whereas simple uses a basic formula that matches previously
+published results.}
+
+\item{confInt}{a Boolean indicating if the confidence interval should be returned}
 }
 \value{
 The return type depends on whether the class of the \code{data} argument is an
 \code{edsurvey.data.frame} or an \code{edsurvey.data.frame.list}.
 
-\subsection{The data argument is an edsurvey.data.frame}{
+\strong{The data argument is an edsurvey.data.frame}
   When the \code{data} argument is an \code{edsurvey.data.frame},
   \code{percentile} returns an S3 object of class \code{percentile}.
   This is a \code{data.frame} with typical attributes (\code{names},
   \code{row.names}, and \code{class}) and additional attributes as follows:
-  \describe{
     \item{n0}{number of rows on \code{edsurvey.data.frame} before any conditions were applied}
     \item{nUsed}{number of observations with valid data and weights larger than zero}
-    \item{nPSU}{number of PSUs used in calculation}
+    \item{nPSU}{number of PSUs used in the calculation}
     \item{call}{the call used to generate these results}
-  }
 
   The columns of the \code{data.frame} are as follows:
-  \describe{
     \item{percentile}{the percentile of this row}
     \item{estimate}{the estimated value of the percentile}
     \item{se}{the jackknife standard error of the estimated percentile}
@@ -94,25 +109,21 @@ The return type depends on whether the class of the \code{data} argument is an
                      of the confidence interval}
     \item{confInt.ci_upper}{the upper bound
                      of the confidence interval}
-    \item{nsmall}{number of units with more extreme results, averaged
+    \item{nsmall}{the number of units with more extreme results, averaged
                   across plausible values}
-  }
-}
+  When the \code{confInt} argument is set to \code{FALSE}, the confidence
+  intervals are not returned.
 
-\subsection{The data argument is an edsurvey.data.frame.list}{
+\strong{The data argument is an edsurvey.data.frame.list}
   When the \code{data} argument is an \code{edsurvey.data.frame.list},
   \code{percentile} returns an S3 object of class \code{percentileList}.
   This is a data.frame with a \code{call} attribute.
-  
   The columns in the \code{data.frame} are identical to those in the previous
   section, but there also are columns from the \code{edsurvey.data.frame.list}.
   
-  \describe{
     \item{covs}{a column for each column in the \code{covs} value of the
                 \code{edsurvey.data.frame.list}.
                 See Examples.}
-  }
-}
 
 When \code{returnVarEstInputs} is \code{TRUE}, an attribute
 \code{varEstInputs} also is returned that includes the variance estimate
@@ -125,10 +136,10 @@ Calculates the percentiles of a numeric variable in an
 }
 \details{
 Percentiles, their standard errors, and confidence intervals
-         are calculated according to the vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Percentiles.pdf}{Methods Used for Estimating Percentiles}.
-         Note that the standard errors and confidence intervals are based
-         on separate formulas and assumptions.
+are calculated according to the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}.
+The standard errors and confidence intervals are based
+on separate formulas and assumptions.
 
 The Taylor series variance estimation procedure is not relevant to percentiles
 because percentiles are not continuously differentiable.
@@ -140,9 +151,9 @@ sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"
 # get the median of the composite
 percentile("composite", 50, sdf)
 
+\dontrun{
 # get several percentiles
 percentile("composite", c(0,1,25,50,75,99,100), sdf)
-\dontrun{
 # build an edsurvey.data.frame.list
 sdfA <- subset(sdf, scrpsu \%in\% c(5,45,56))
 sdfB <- subset(sdf, scrpsu \%in\% c(75,76,78))

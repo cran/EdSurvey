@@ -20,11 +20,7 @@ sameSurvey <- function(x, y) {
   noncomp <- c("userConditions", "data", "pvvars", "weights", "dataSch", "dataTch",
                "achievementLevels", "omittedLevels", "fileFormat",
                "fileFormatSchool", "fileFormatTeacher","defaultConditions", "class", "names",
-               "row.names", "recodes")
-  for(element in noncomp) {
-    x[[element]] <- NULL
-    y[[element]] <- NULL
-  }
+               "row.names", "recodes", "cache")
   compare <- names(x)[!names(x) %in% noncomp]
   ae <- all.equal(x[compare],y[compare])
   if( inherits(ae, "logical") && length(ae) == 1 && ae == TRUE ) {

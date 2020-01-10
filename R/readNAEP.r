@@ -4,15 +4,24 @@
 #'              on the disk and returns an \code{edsurvey.data.frame} with 
 #'              information about the file and data.
 #' 
-#' @param path a character value indicating the full filepath location and name of the (.dat) data file
-#' @param defaultWeight a character value that indicates the default weight specified in the resulting \code{edsurvey.data.frame}.  
+#' @param path a character value indicating the full filepath location and name
+#'             of the (.dat) data file
+#' @param defaultWeight a character value that indicates the default weight
+#'                      specified in the resulting \code{edsurvey.data.frame}.  
 #'                      Default value is \code{origwt} if not specified.
-#' @param defaultPvs a character value that indicates the default plausible value specified in the resulting \code{edsurvey.data.frame}.
-#'                    Default value is \code{composite} if not specified.
+#' @param defaultPvs a character value that indicates the default plausible value
+#'                   specified in the resulting \code{edsurvey.data.frame}.
+#'                   Default value is \code{composite} if not specified.
 #' @param omittedLevels a character vector indicating which factor levels/labels
-#'                       should be excluded. When set to the default value of \code{c('Multiple',NA,'Omitted')}, adds the vector to the \code{edsurvey.data.frame}.
-#' @param frPath a character value indicating the location of the \code{fr2} parameter layout file included with the data companion to parse the specified \code{filepath} data file
-#' @details The function uses the \code{frPath} file layout (.fr2) data to read in the fixed-width data file (.dat), and builds the \code{edsurvey.data.frame}.
+#'                      should be excluded. When set to the default value of
+#'                      \code{c('Multiple',NA,'Omitted')}, adds the vector to
+#'                      the \code{edsurvey.data.frame}.
+#' @param frPath a character value indicating the location of the \code{fr2}
+#'               parameter layout file included with the data companion to
+#'               parse the specified \code{filepath} data file
+#' @details
+#' The function uses the \code{frPath} file layout (.fr2) data to read in the
+#' fixed-width data file (.dat) and builds the \code{edsurvey.data.frame}.
 #'           
 #' @return An \code{edsurvey.data.frame} containing the following elements:
 #'    \item{userConditions}{a list containing all user conditions set using the \code{subset.edsurvey.data.frame} method}
@@ -37,6 +46,11 @@
 #' @example \man\examples\readNAEP.R
 #' @export
 readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", omittedLevels = c('Multiple',NA,'Omitted'), frPath = NULL) {
+  
+  #temporarily adjust any necessary option settings; revert back when done
+  userOp <- options(OutDec = ".")
+  on.exit(options(userOp), add = TRUE)
+  
   filepath <- normalizePath(unique(path), winslash = "/")
   if(length(filepath) != 1) {
     stop(paste0("The argument ", sQuote("filepath"), " must specify exactly one file."))
@@ -45,7 +59,12 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
   filedir <- dirname(filepath)
   # the file name (less a trailing .dat, if included)
   filename <- gsub('.dat$','', basename(filepath))
-
+  if(tolower(substr(filename, nchar(filename) - 3, nchar(filename) - 3)) %in% "c") {
+    filename_school <- filename
+    substr(filename, nchar(filename) - 3, nchar(filename) - 3) <- "T"
+    filepath <- sub(filename_school, filename, filepath)
+    warning("Input file was a school level file. Reading in student level file instead. EdSurvey will automatically link the school file.")
+  }
   # find the school path, if this is a student file
   schPath <- NULL 
   if(tolower(substr(filename, nchar(filename) - 3, nchar(filename) - 3)) %in% "t") {
@@ -68,7 +87,12 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
   
   # grab the subfolder select/parms in an case insensitive way 
   if (is.null(frPath)) {
-    frName <- grep(paste0(dirname(filedir),"/select/parms$"), list.dirs(dirname(filedir)), value=TRUE, ignore.case=TRUE)
+    # Remove special characters in the filedir
+    filedirEscapeRegex <- dirname(filedir)
+    for (c in strsplit(".*+?^${}()|[]", "")[[1]]) {
+      filedirEscapeRegex <- gsub(pattern = c, replacement = paste0("\\", c), filedirEscapeRegex, fixed = T)
+    }
+    frName <- grep(paste0(filedirEscapeRegex,"/select/parms$"), list.dirs(dirname(filedir)), value=TRUE, ignore.case=TRUE)
     if(length(frName) == 0) {
       stop(paste0("Could not find folder ", dQuote(paste0(dirname(filedir),"/select/parms/")), "." ))
     }
@@ -218,7 +242,17 @@ readMRC <- function(filename) {
   Decimal <- as.numeric(trimws(substring(mrcFile, 15, 15))) # digits (from the right) to be considered decimals
   Labels <- trimws(substring(mrcFile, 21, 70)) # variable label
   NumValue <- as.numeric(trimws(substring(mrcFile, 89, 90))) # number of numeric codes (e.g. one could would be 1="Yes")
+  zeroLenVars <- nchar(variableName) == 0
+  if(any(zeroLenVars)) {
+    warning(paste0("Unnamed variables in .fr2 file on row(s) ", pasteItems( (1:length(variableName))[zeroLenVars]), ". File located at ", filename, ". These variables renamed sequentially, starting with V1."))
+    variableName[zeroLenVars] <- paste0("v", 1:sum(zeroLenVars))
+  }
 
+  zeroLenVars <- nchar(variableName) == 0
+  if(any(zeroLenVars)) {
+    warning(paste0("Unnamed variables in .fr2 file on row(s) ", pasteItems( (1:length(variableName))[zeroLenVars]), ". File located at ", filename, ". These variables renamed sequentially, starting with V1."))
+    variableName[zeroLenVars] <- paste0("v", 1:sum(zeroLenVars))
+  }
   # parse the numeric codes
   labelValues <- character(length(mrcFile))
   for (j in 1:length(mrcFile)) {

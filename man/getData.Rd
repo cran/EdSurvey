@@ -4,10 +4,19 @@
 \alias{getData}
 \title{Read Data to a Data Frame}
 \usage{
-getData(data, varnames = NULL, drop = FALSE, dropUnusedLevels = TRUE,
-  omittedLevels = TRUE, defaultConditions = TRUE, formula = NULL,
-  recode = NULL, includeNaLabel = FALSE, addAttributes = FALSE,
-  returnJKreplicates = TRUE)
+getData(
+  data,
+  varnames = NULL,
+  drop = FALSE,
+  dropUnusedLevels = TRUE,
+  omittedLevels = TRUE,
+  defaultConditions = TRUE,
+  formula = NULL,
+  recode = NULL,
+  includeNaLabel = FALSE,
+  addAttributes = FALSE,
+  returnJKreplicates = TRUE
+)
 }
 \arguments{
 \item{data}{an \code{edsurvey.data.frame} or
@@ -30,7 +39,8 @@ variables.}
 \code{TRUE}, drops those levels of all factor variables
 that are specified in an \code{edsurvey.data.frame}. Use
 \code{print} on an \code{edsurvey.data.frame} to see
-the omitted levels.}
+the omitted levels. The omitted levels also can be
+adjusted with \code{setAttributes}; see Examples.}
 
 \item{defaultConditions}{a logical value. When set to the default value of
 \code{TRUE}, uses the default conditions stored in
@@ -56,8 +66,8 @@ coded as \code{NA}}
 \item{addAttributes}{a logical value set to \code{TRUE} to get a
 \code{data.frame} that can be used in calls to
 other functions that usually would take an
-\code{edsurvey.data.frame}. This \code{data.frame} is also called \code{light.edsurvey.data.frame}.
-See Details section in \code{\link{edsurvey.data.frame}} for
+\code{edsurvey.data.frame}. This \code{data.frame} also is called a \code{light.edsurvey.data.frame}.
+See Description section in \code{\link{edsurvey.data.frame}} for
 more information on \code{light.edsurvey.data.frame}.}
 
 \item{returnJKreplicates}{a logical value indicating if JK replicate weights
@@ -65,7 +75,7 @@ should be returned. Defaults to \code{TRUE}.}
 }
 \value{
 When \code{addAttributes} is \code{FALSE}, \code{getData} returns a
-\code{data.frame} containing data associated with requested
+\code{data.frame} containing data associated with the requested
 variables. When \code{addAttributes} is \code{TRUE}, \code{getData} returns a
 \code{light.edsurvey.data.frame}.
 }
@@ -81,17 +91,23 @@ This structure allows \code{EdSurvey} to have a minimal memory footprint.
 To keep the footprint small, you need to limit \code{varnames} to just
 the necessary variables.
 
-When \code{getData} is called, it returns a \code{data.frame}. When the
-\code{addAttributes} argument is set to \code{TRUE}, that \code{data.frame}
-has several attributes added to make it usable by the functions in
-the \code{EdSurvey} package (e.g., \code{lm.sdf}), and the class is a
-\code{light.edsurvey.data.frame}.
+There are two methods of attaching survey attributes to a \code{data.frame}
+to make it usable by the functions in the \code{EdSurvey} package (e.g., \code{lm.sdf}):
+(a) setting the \code{addAttributes} argument to \code{TRUE} at in the call to \code{getData}
+or (b) by appending the attributes to the data frame with \code{rebindAttributes}.
 
-Note that if both \code{formula} and \code{varnames} are populated, the
+When \code{getData} is called, it returns a data frame. Setting the
+\code{addAttributes} argument to \code{TRUE} adds the survey attributes and
+changes the resultant \code{data.frame} to a \code{light.edsurvey.data.frame}.
+
+Alternatively, a \code{data.frame} can be coerced into a \code{light.edsurvey.data.frame}
+using \code{rebindAttributes}. See Examples in the \code{\link{rebindAttributes}} documentation.
+
+If both \code{formula} and \code{varnames} are populated, the
 variables on both will be included.
 
 See the vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-getData.pdf}{getData}
+\href{https://www.air.org/sites/default/files/EdSurvey-getData.pdf}{\emph{Using the \code{getData} Function in EdSurvey}}
 for long-form documentation on this function.
 }
 \examples{
@@ -110,7 +126,7 @@ df2 <- getData(data=sdf, varnames=c("dsex", "t088301"),
                                         to=c("No"))))
 table(df2)
 
-# When readNAEP is called on a data file, it appends a default 
+# when readNAEP is called on a data file, it appends a default 
 # condition to the edsurvey.data.frame. You can see these conditions
 # by printing the sdf
 sdf
@@ -120,10 +136,19 @@ sdf
 df2 <- getData(data=sdf, varnames=c("dsex", "b017451"), defaultConditions = FALSE)
 table(df2)
 
-# Similarly, the default behavior of omitting certain levels specified
+# similarly, the default behavior of omitting certain levels specified
 # in the edsurvey.data.frame can be changed as follows:
 df2 <- getData(data=sdf, varnames=c("dsex", "b017451"), omittedLevels = FALSE)
 table(df2)
+
+# omittedLevels can also be edited with setAttributes()
+# here, the omitted level "Multiple" is removed from the list
+sdfIncludeMultiple <- setAttributes(sdf, "omittedLevels", c(NA, "Omitted"))
+# check that it was set
+getAttributes(sdfIncludeMultiple, "omittedLevels")
+# notice that omittedLevels is TRUE, removing NA and "Omitted" still
+dfIncludeMultiple <- getData(data=sdfIncludeMultiple, varnames=c("dsex", "b017451"))
+table(dfIncludeMultiple)
 
 # the variable "c052601" is from the school-level data file; merging is handled automatically.
 # returns a light.edsurvey.data.frame using addAttributes=TRUE argument
@@ -133,10 +158,21 @@ gddat <- getData(data=sdf,
 class(gddat)
 # look at the first few lines
 head(gddat)
+
+# get a selection of variables, recode using ifelse, and reappend attributes
+# with rebindAttributes so that it can be used with EdSurvey analysis functions
+df0 <- getData(sdf, c("composite", "dsex", "b017451", "origwt"))
+df0$sex <- ifelse(df0$dsex=="Male", "boy", "girl")
+df0 <- rebindAttributes(df0, sdf)
+
+\dontrun{
+# getting all the data can use up all the memory and is generally a bad idea
+df0 <- getData(sdf, varnames=colnames(sdf),
+               omittedLevels=FALSE, defaultConditions=FALSE)
+} 
 }
 \seealso{
-\code{\link{subset.edsurvey.data.frame}} for how to remove
-         rows from the output
+\code{\link{rebindAttributes}}, \code{\link{subset.edsurvey.data.frame}}
 }
 \author{
 Tom Fink, Paul Bailey, and Ahmad Emad

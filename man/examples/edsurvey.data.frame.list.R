@@ -46,4 +46,3 @@ sdfl4 <- append.edsurvey.data.frame.list(
   sdfD,
   labelsB = "D locations")
 identical(sdfl, sdfl4) #TRUE
-

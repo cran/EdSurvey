@@ -4,8 +4,7 @@
 \alias{downloadECLS_K}
 \title{Download and Unzip ECLS_K Files}
 \usage{
-downloadECLS_K(root, years = c(1998, 2011), cache = FALSE,
-  verbose = TRUE)
+downloadECLS_K(root, years = c(1998, 2011), cache = FALSE, verbose = TRUE)
 }
 \arguments{
 \item{root}{a character string indicating the directory where the ECLS_K
@@ -34,8 +33,8 @@ downloadECLS_K(years=c(1998, 2011), root = "C:/")
 # cache=TRUE will download then process the datafiles
 downloadECLS_K(years=c(1998, 2011), root = "C:/", cache = TRUE)
 
-#set verbose=FALSE for silent output
-#if year not specified, download all years
+# set verbose=FALSE for silent output
+# if year not specified, download all years
 downloadECLS_K(root="C:/", verbose = FALSE)
 }
 }

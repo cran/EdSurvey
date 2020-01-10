@@ -1,11 +1,44 @@
 \name{NEWS}
 \title{NEWS for EdSurvey}
 
+\section{Changes in version 2.4.0}{
+  \subsection{NEW DATA}{
+    \itemize{
+      \item Added support for the 2009 High School Longitudinal Study (see \code{downloadHSLS} and \code{readHSLS}). These do not support Restricted Use Data (RUD).
+      \item Added support for the 2002 Education Longitudinal Study (see \code{downloadELS} and \code{readELS}).
+      \item Added the ECLS Kindergarten Class of 1998-1999 Study. Thes datasets can be downloaded with \code{downloadECLS_K} and read in with \code{readECLS_K1998}. This was added in 2.3.0 but first added to the NEWS for 2.4.0.
+      \item Added support for ePIRLS (see \code{read_ePIRLS} and \code{download_ePIRLS}). This was added in 2.3.0 but first added to the NEWS for 2.4.0.
+   }
+  }
+  \subsection{DATA UPDATES}{
+    \itemize{
+      \item Added support for 2018 for the existing \code{readICILS} function. Thanks to Jeppe Bundsgaard of Aarhus University, Danish School of Education, for contributing the code for this.
+      \item OECD moved the PIAAC data to a new location, and the \code{downloadPIAAC} function now uses the new URL.
+      \item The PISA 2015 data cache could have been formed incorrectly; that is fixed. When PISA 2015 datasets are first used with 2.4 it will take time to re-cache the data. The process now also uses far less memory.
+      \item The PISA data had incorrect PSU and stratum variables for most years. They are all fixed except for 2000, which we do not believe has a PSU variable on the file. Several strata have only one PSU, so the design still needs to be edited by the user to get correct Taylor series sampling variance estimates.
+    }
+  }
+  \subsection{UPDATES}{
+    \itemize{
+      \item The \code{mixed.sdf} function now correctly aggregates results and has its methodology documented. It no longer supports binomial models and has several arguments deprecated as a result.
+      \item The \code{gap} function argument \code{varMethod} is deprecated. The function uses only jackknife variance estimation.
+      \item The \code{gap} function now accounts for linking error between NAEP paper and digitally based assessments.
+      \item The \code{subset} function used to fail when a global variable shared a name with a column on the data; it now works.
+      \item The \code{percentile} function has been updated to a formula that generates survey percentiles that are robust to transformation. For example, if the values are multiplied by a constant, then the percentiles move by that same constant.
+      \item The \code{lm.sdf} function header now prints the number of plausible values used (when they are used) as well as the number of plausible values used in the sampling variance (\code{jrrIMax}).
+      \item The \code{levelsSDF} function now makes more informative warnings when passed a \code{light.edsurvey.data.frame}.
+      \item The \code{print} function for \code{cor.sdf} now prints a final new line.
+      \item When \code{searchSDF} was called with more than one search string and the \code{levels} argument was set to \code{TRUE}, a useless warning was issued. The warning was removed.
+      \item More \code{EdSurvey} functions wrap to the width of the console.
+    }
+  }
+}
+
 \section{Changes in version 2.3.0}{
   \subsection{NEW FEATURES}{
     \itemize{
       \item The \code{rq.sdf} function adds quantile regression to the package. See the \code{rq.sdf} documentation for more information.
-      \item The functions \code{getStratumVar} and \code{getPSUVar} were added to give users stratum and PSU variables for longitudinal surveys.
+      \item The functions \code{getStratumVar} and \code{getPSUVar} were added to give users stratum and PSU variables for surveys and Taylor series analyses.
       \item The \code{summary2} function now accepts a vector of variables.
       \item The \code{searchSDF} function now accepts a vector \code{string} input so that results can be filtered.
       \item The formula for degrees of freedom when Taylor series variance estimation is used has been updated. The new formula is derived in the statistics vignette. See \url{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}.

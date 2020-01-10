@@ -5,21 +5,27 @@
 #' @param varnames a vector of character strings to search for in the database connection object (\code{data})
 #' @param data an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
 #'         an \code{edsurvey.data.frame.list}
+#' @param showOmitted a Boolean indicating if omitted levels should be shown
+#' @param showN a Boolean indicating if (unweighted) \emph{n}-sizes should be shown for each response level
 #' 
 #' @author Michael Lee and Paul Bailey
 #' @example  man/examples/levelsSDF.R
 #' @export
-levelsSDF <- function(varnames, data) {
+levelsSDF <- function(varnames, data, showOmitted=TRUE, showN=TRUE) {
   if (inherits(data, c("edsurvey.data.frame.list"))) {
     return(itterateESDFL(match.call(),data))
   }
   # show levels only if varnames is valid
+  checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
+
   if(any(!varnames %in% colnames(data))) {
     warning(paste0("Could not find variable(s) ", pasteItems(dQuote(varnames), final="or")))
     varnames <- varnames[varnames %in% colnames(data)]
+    if(length(varnames) == 0) {
+      return()
+    }
   }
 
-  checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
 
   # check recode attribute in userConditions, and only include those recodes that are applicable to varnames called in levelsSDF
   userConditions <- getAttributes(data, "userConditions")
@@ -33,7 +39,6 @@ levelsSDF <- function(varnames, data) {
   }
 
   if (inherits(data, c("light.edsurvey.data.frame"))) {
-    warning("These codes were taken when getData was called and may have been modified since then.")
     varnames <- toupper(varnames)
     labelsFile <- showCodebook(data, labelLevels = TRUE)
     labelsFile$labelValues <- gsub("\\; ", "^", labelsFile$labelValues)
@@ -126,32 +131,98 @@ levelsSDF <- function(varnames, data) {
     } # for (i in 1:length(recode))
   } # if (length(recode) > 0)
   names(levelsData) <- tolower(names(levelsData))
+
+  lnames <- names(levelsData)
+  levelsData <- lapply(levelsData, function(x) {
+    labs <- strsplit(x, split="=", fixed=TRUE)
+    levels <- unlist(lapply(labs, function(z) { z[[1]] }))
+    labels <- unlist(lapply(labs, function(z) { z[[2]] }))
+    return(data.frame(level=levels, labels=labels))
+  })
+
+  # add omitted
+  if(showOmitted) {
+    omittedL <- getAttributes(data, "omittedLevels")
+    levelsData <- lapply(levelsData, function(x) {
+      if(nrow(x)==0) {
+        return(x)
+      } else {
+        # add omitted column based on if the label is an omitted level
+        x$omitted <- x$labels %in% omittedL
+        return(x)
+      }
+    })
+  }
+  # add n sizes
+  if(showN) {
+    dat <- getData(data=data, varnames=names(levelsData), omittedLevels=FALSE)
+    lnames <- names(levelsData)
+    levelsData <- lapply(lnames, function(x) {
+      if(nrow(levelsData[[x]])==0) {
+        return(levelsData[[x]])
+      } else {
+        ns <- table(dat[,x])
+        ld <- levelsData[[x]]
+        ld$n <- 0
+        for(i in 1:nrow(ld)) {
+          if(ld$labels[i] %in% names(ns)) {
+            ld$n[i] <- ns[ld$labels[i] == names(ns)]
+          }
+        }
+        return(ld)
+      }
+    })
+    names(levelsData) <- lnames
+  }
+
   class(levelsData) <- c("levelsSDF")
   if (length(levelsData) == 0) {
     # return a warning if there are no variables in the data$fileFormat or llevels attribute of
     # the data.frame that match the string searched
-    warning(paste0("There are no variables with the string ", sQuote(varnames), " in this ", class(data)[[1]], "."))
+    warning(paste0("There are no variables with the string(s) ", sQuote(varnames), " in the codebook for this ", class(data)[[1]], "."))
+  } else {
+    # we are returning something
+    if (inherits(data, c("light.edsurvey.data.frame"))) {
+      warning("These codes were taken when getData was called and may have been modified since then.")
+    }
   }
-  levelsData
+  return(levelsData)
 }
 
-# @author Michael Lee
+# @author Michael Lee and Paul Bailey
 #' @method print levelsSDF
 #' @export
 print.levelsSDF <- function(x, ...) {
-  x <- lapply(x, gsub, pattern = "=", replacement = ". ")  # replace '=' with '. ' to indicate level
   if (length(x) > 0) {
     for (i in 1:length(x)) {
       cat(paste0("Levels for Variable '", tolower(names(x[i])), "' (Lowest level first):\n"))
-      if (identical(x[[i]], character(0))) {
+      if (nrow(x[[i]]) == 0) {
         # if there is no level info return an NA
         cat(paste0("    ", paste0(NA), "\n"))
       } else {
-        for (ii in 1:length(x[i][[1]])) {
-          # for each unique level, paste the level number and name
-          cat(paste0("    ", x[[i]][[ii]], "\n"))
-        } # End of for loop ii in 1:length(x[i][[1]])
-      } # End of if/else: identical(x[[i]], character(0))
+        # the data.frame for this variable
+        xi <- x[[i]]
+        # reformat omitted to * vs blank string
+        if("omitted" %in% colnames(xi)) {
+          xi$omitted <- ifelse(xi$omitted, "*", "")
+        }
+        # print row by row
+        for(ii in 1:nrow(xi)) {
+          cat(paste0("    ", xi$level[ii], ". ", xi$label[ii]))
+          if("omitted" %in% colnames(xi)) {
+            cat(xi$omitted[ii])
+          }
+          if("n" %in% colnames(xi)) {
+            cat(paste0(" (n=", xi$n[ii], ")"))
+          }
+          cat("\n")
+        }
+        if("omitted" %in% colnames(xi)) {
+          if(sum(xi$omitted %in% "*") > 0) { # there is at least one omitted
+            cat("    NOTE: * indicates an omitted level.\n")
+          }
+        }
+      } # End of if/else: nrow(x[[i]]) == 0
     } # End of loop: i in 1:length(x)
   } # End of If statment: if legth of x is greater than 0
 }

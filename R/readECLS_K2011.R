@@ -1,22 +1,22 @@
-#' @title Connect to ECLS-K 2011 Data
+#' @title Connect to ECLS--K 2011 Data
 #'
-#' @description Opens a connection to an ECLS-K 2011 data file and
+#' @description Opens a connection to an ECLS--K 2011 data file and
 #'              returns an \code{edsurvey.data.frame} with
 #'              information about the file and data.
 #'
-#' @param path a character value to the full directory path(s) to the ECLS-K 2010-11 extracted fixed-with-format (.dat) set of data files
-#' @param filename a character value of the name of the fixed-width-file (.dat) data file in the specified \code{path} to be read
-#' @param layoutFilename a character value of the filename of either the ASCII text (.txt) layout file of the \code{filename} within the specified \code{path},
-#'                       OR a character value of the  filename of the SPSS syntax (.sps) layout file of the \code{filename} within the specified \code{path}
+#' @param path a character value to the full directory path(s) to the ECLS--K 2010--11 extracted fixed-with-format (.dat) set of data files
+#' @param filename a character value of the name of the fixed-width (.dat) data file in the specified \code{path} to be read
+#' @param layoutFilename a character value of the filename of either the ASCII (.txt) layout file of the \code{filename} within the specified \code{path}
+#'                       or a character value of the  filename of the SPSS syntax (.sps) layout file of the \code{filename} within the specified \code{path}
 #' @param forceReread a logical value to force rereading of all processed data.
 #'                    The default value of \code{FALSE} will speed up the read function by using existing read-in data already processed.
 #'
-#' @param verbose a logical value that will determine if you want verbose output while the \code{readECLS-K2011} function is running to indicate processing progress.
+#' @param verbose a logical value that will determine if you want verbose output while the \code{readECLS--K2011} function is running to indicate processing progress.
 #'                The default value is \code{TRUE}.
-#' @details Reads in the unzipped files downloaded from the ECLS-K 2010-11 longitudinal database.
+#' @details Reads in the unzipped files downloaded from the ECLS--K 2010--11 longitudinal dataset.
 #'
 #'
-#' @return an \code{edsurvey.data.frame} for the ECLS-K 2010-11 longitudinal dataset
+#' @return an \code{edsurvey.data.frame} for the ECLS--K 2010--11 longitudinal dataset
 #'
 #' @seealso \code{\link{readECLS_K1998}}, \code{\link{readNAEP}}, \code{\link{getData}}, and \code{\link{downloadECLS_K}}
 #' @author Tom Fink
@@ -28,6 +28,12 @@ readECLS_K2011 <- function(path = getwd(),
                            forceReread = FALSE,
                            verbose = TRUE) {
 
+  #temporarily adjust any necessary option settings; revert back when done
+  userOp <- options(OutDec = ".")
+  on.exit(options(userOp), add = TRUE)
+  
+  path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
+  
   #setup file list to work with
   fileList <- list(dataFile=unlist(file.path(path, filename))[1],
                    layoutFile=unlist(file.path(path, layoutFilename))[1])

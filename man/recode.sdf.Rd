@@ -13,7 +13,7 @@ or an \code{edsurvey.data.frame.list}}
 \item{recode}{a list of recoding rules. See Examples for the format of recoding rules.}
 }
 \value{
-an object of the same class as \code{x} with the recode added to it
+an object of the same class as \code{x} with the \code{recode} added to it
 }
 \description{
 Recodes variables in an \code{edsurvey.data.frame}, 

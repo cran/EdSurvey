@@ -4,17 +4,21 @@
 #'              on the disk and returns an \code{edsurvey.data.frame} with
 #'              information about the file and data.
 #'
-#' @param path a character value to the full directory to the ICILS extracted SPSS (.sav) set of data
+#' @param path a character value to the full directory path to the ICILS
+#'             extracted SPSS (.sav) set of data
 #' @param countries a character vector of the country/countries to include using
 #'                  the three-digit ISO country code.
 #'                  A list of country codes can be found on Wikipedia at
-#'                  \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes},
-#'                  or other online sources. Consult the \emph{ICILS User Guide} to help determine what countries
+#'                  \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}
+#'                  or other online sources. Consult the \emph{ICILS User Guide}
+#'                  to help determine what countries
 #'                  are included within a specific testing year of ICILS.
 #'                  To select all countries, use a wildcard value of \strong{\code{*}}.
-#' @param dataSet a character value of either \code{student} (the default if not specified) or \code{teacher} to
-#'                  indicate which set of data is returned.
-#'                  The student-level and teacher-level datasets cannot both be returned at the same time, unlike other IEA datasets.
+#' @param dataSet a character value of either \code{student} (the default if
+#'                not specified) or \code{teacher} to
+#'                indicate which set of data is returned.
+#'                The student-level and teacher-level datasets cannot both be
+#'                returned at the same time, unlike other IEA datasets.
 #'
 #' @param forceReread a logical value to force rereading of all processed data.
 #'                    The default value of \code{FALSE} will speed up the \code{readICILS} function
@@ -23,14 +27,18 @@
 #' @param verbose a logical value to either print or suppress status message output.
 #'                The default value is \code{TRUE}.
 #'
-#' @details Reads in the unzipped files downloaded from the ICILS international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}.
-#'          Data files require the SPSS data file (.sav) format using the default filenames.
+#' @details
+#' Reads in the unzipped files downloaded from the ICILS international
+#' dataset(s) using the
+#' \href{https://www.iea.nl/data-tools/repository}{IEA Study Data Repository}.
+#' Data files require the SPSS data file (.sav) format using the default filenames.
 #'
 #' @return
-#'  an \code{edsurvey.data.frame} for a single specified country or an \code{edsurvey.data.frame.list} if multiple countries specified
+#' an \code{edsurvey.data.frame} for a single specified country or an
+#' \code{edsurvey.data.frame.list} if multiple countries specified
 #'
 #' @seealso \code{\link{readNAEP}}, \code{\link{readTIMSS}}, and \code{\link{getData}}
-#' @author Tom Fink
+#' @author Tom Fink and Jeppe Bundsgaard (updated for 2018)
 #'
 #' @example man/examples/readICILS.R
 #'
@@ -43,6 +51,10 @@ readICILS <- function(path,
                       forceReread=FALSE,
                       verbose=TRUE) {
 
+  #temporarily adjust any necessary option settings; revert back when done
+  userOp <- options(OutDec = ".")
+  on.exit(options(userOp), add = TRUE)
+  
   path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
 
   if(!all(dir.exists(path))){
@@ -180,8 +192,8 @@ readICILS <- function(path,
         processedData$fileFormatTeacher <- NULL
 
         #ICILS achievement level definitions includes additional decimal precision for analysis
-        processedData$achievementLevels <- c("661.001", "576.001", "492.001", "407.001")
-        names(processedData$achievementLevels) <- c("Level 4", "Level 3", "Level 2", "Level 1")
+        processedData$achievementLevels <- list("CIL" = c("Level 1" =407.001, "Level 2"=492.001, "Level 3" = 576.001, "Level 4"= 661.001),
+                                                "CT" = c("Middle region"=459.001, "Upper Region"=589.001))
 
         testJKprefix <- c("srwgt") #have any jk prefix values here that are applicable for this dataset
         weights <- NULL #default value
@@ -207,6 +219,8 @@ readICILS <- function(path,
         processedData$dataType <- "Student"
         processedData$weights <-  weights
         processedData$pvvars <- buildPVVARS_ICILS(processedData$dataListFF$student, defaultPV = "cil")
+        processedData$pvvars$cil$achievementLevel <- processedData$achievementLevels$CIL
+        processedData$pvvars$ct$achievementLevel <- processedData$achievementLevels$CT
         processedData$psuVar <- "jkreps"
         processedData$stratumVar <- "jkzones"
 
@@ -334,15 +348,17 @@ convertICILSYearCode <- function(yrCode){
 
   yrTest <- tolower(sort(unique(yrCode)))
   yrTest[yrTest %in% "i1"] <- 2013
+  yrTest[yrTest %in% "i2"] <- 2018
 
   return(yrTest)
 }
 
+# contributor: Jeppe Bundsgaard: updates for ICILS 2018
 getICILSYearCodes <- function(){
-  #retrieve the TIMMS years based on their filenaming structure
+  #retrieve the ICILS years based on their filenaming structure
 
-  yrVals = c("i1")
-  names(yrVals) = c(2013)
+  yrVals = c("i1", "i2")
+  names(yrVals) = c(2013, 2018)
 
   return(yrVals)
 }
@@ -579,6 +595,7 @@ exportICILSToCSV <- function(folderPath, exportPath, cntryCodes, dataSet, ...){
 #get the full country name to aide the user, so they won't have to track them down.
 #cntryCode should be the 3 character country code vector defined in the data filename scheme (e.g., usa = United States, swe = Sweden)
 #if a match is not found, this funtion will return a character value indicating it is unknown '(unknown) CountryCode: xxx'
+# contributor: Jeppe Bundsgaard: updates for ICILS 2018
 getICILSCountryName <- function(countryCode){
 
   cntryCodeDF <- data.frame(
@@ -592,7 +609,9 @@ getICILSCountryName <- function(countryCode){
                   "pol",
                   "rus",
                   "svk", "svn",
-                  "tha", "tur"),
+                  "tha", "tur",
+                  "fin", "fra", "ita", "kaz", "lux", "prt",
+                  "usa", "ury", "rmo", "dnw", "dew"),
     cntryName = c("Buenos Aires, Argentina", "Australia",
                   "Switzerland", "Chile", "Newfoundland and Labrador, Canada", "Ontario, Canada", "Czech Republic",
                   "Germany", "Denmark",
@@ -603,8 +622,10 @@ getICILSCountryName <- function(countryCode){
                   "Poland",
                   "Russian Federation",
                   "Slovak Republic", "Slovenia",
-                  "Thailand", "Turkey"),
-    stringsAsFactors = FALSE) #be sure to not create any factors::factors not needed at all
+                  "Thailand", "Turkey",
+                  "Finland", "France", "Italy", "Kazakhstan", "Luxembourg", "Portugal",
+                  "United States", "Uruguay", "Moscow (Russian Federation)", "North Rhine-Westphalia (Germany)", "Germany - DEU and NRW"),
+    stringsAsFactors = FALSE) #be sure to not create any factors not needed at all
 
   lookupNames <- vector(mode = "character", length = length(countryCode))
 

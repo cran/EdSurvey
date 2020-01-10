@@ -4,13 +4,14 @@
 \alias{downloadPIAAC}
 \title{Download and Unzip PIAAC Files}
 \usage{
-downloadPIAAC(root, round = 1, cache = FALSE, verbose = TRUE)
+downloadPIAAC(root, cycle = 1, cache = FALSE, verbose = TRUE)
 }
 \arguments{
 \item{root}{a character string indicating the directory where the PIAAC data should
-be stored. Files are placed in a folder named PIAAC/Round [round number].}
+be stored. Files are placed in a folder named PIAAC/cycle [cycle number].}
 
-\item{round}{a numeric value indicating the assessment round to download. Valid round is 1 only (2012/2014).}
+\item{cycle}{a numeric value indicating the assessment cycle to download.
+Valid cycle is 1 only.}
 
 \item{cache}{a logical value set to process and cache the text (.txt) version of files.
 This takes a very long time but saves time for future uses of 
@@ -20,16 +21,16 @@ the data. Default value is \code{FALSE}.}
 The default value is \code{TRUE}.}
 }
 \description{
-Uses a connection to download PIAAC data to a
+Uses an Internet connection to download PIAAC data to a
              computer. Data come from the OECD website.
 }
 \examples{
 \dontrun{
-# Download all available data for PIAAC round 1 to "C:/PIAAC/Round 1" folder
+# download all available data for PIAAC round 1 to "C:/PIAAC/Round 1" folder
 # root argument will vary by operating system conventions
 downloadPIAAC(root="C:/")
 }
 }
 \author{
-Trang Nguyen
+Paul Bailey and Trang Nguyen
 }

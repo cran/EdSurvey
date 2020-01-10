@@ -7,15 +7,14 @@
 \usage{
 edsurvey.data.frame.list(datalist, cov = NULL, labels = NULL)
 
-append.edsurvey.data.frame.list(sdfA, sdfB, labelsA = NULL,
-  labelsB = NULL)
+append.edsurvey.data.frame.list(sdfA, sdfB, labelsA = NULL, labelsB = NULL)
 }
 \arguments{
 \item{datalist}{a list of \code{edsurvey.data.frame}s to be combined}
 
 \item{cov}{a character vector that indicates what varies across
 the \code{edsurvey.data.frame} objects.
-See Examples. Guessed if not supplied. For example,
+Guessed if not supplied. For example,
 if several \code{edsurvey.data.frame}s for several
 different countries are supplied, then \code{cov} would
 be set to the country.}
@@ -25,9 +24,9 @@ same length
 as \code{datalist}. Not needed if \code{cov} exists or can be
 guessed. See Examples.}
 
-\item{sdfA}{an \code{edsurvey.data.frame} or \code{edsurvey.data.frame.list} to be combined}
+\item{sdfA}{an \code{edsurvey.data.frame} or an \code{edsurvey.data.frame.list} to be combined}
 
-\item{sdfB}{an \code{edsurvey.data.frame} or \code{edsurvey.data.frame.list} to be combined}
+\item{sdfB}{an \code{edsurvey.data.frame} or an \code{edsurvey.data.frame.list} to be combined}
 
 \item{labelsA}{a character vector that specifies \code{labels} for \code{sdfA} when creating 
 the new \code{edsurvey.data.frame.list}. \code{labelsA} would be ignored
@@ -40,19 +39,19 @@ if \code{sdfB} is an \code{edsurvey.data.frame.list} with labels supplied.}
 \value{
 \code{edsurvey.data.frame.list} returns an \code{edsurvey.data.frame.list} with
 elements
-\item{\code{datalist}}{a list of \code{edsurvey.data.frame} objects}
-\item{\code{covs}}{a character vector of key variables that vary within
+\item{datalist}{a list of \code{edsurvey.data.frame} objects}
+\item{covs}{a character vector of key variables that vary within
                    the \code{edsurvey.data.frame.list}.
                    When labels are included, they will be included in
                    \code{covs}. In the unusual circumstance that \code{sdfA} or \code{sdfB}
-                   is an \code{edsurvey.data.frame.list},
+                   is an \code{edsurvey.data.frame.list}
                    has \code{covs}, and labels are not supplied, the \code{covs}
                    are simply pasted together with colons between them.}
 
 \code{append.edsurvey.data.frame.list} returns an \code{edsurvey.data.frame.list} with
 elements
-\item{\code{datalist}}{a list of \code{edsurvey.data.frame} objects}
-\item{\code{covs}}{a character vector of key variables that vary within
+\item{datalist}{a list of \code{edsurvey.data.frame} objects}
+\item{covs}{a character vector of key variables that vary within
                    the \code{edsurvey.data.frame.list}.
                    When labels are included, they will be included in
                    \code{covs}.}
@@ -138,8 +137,7 @@ sdfl4 <- append.edsurvey.data.frame.list(
   sdfD,
   labelsB = "D locations")
 identical(sdfl, sdfl4) #TRUE
-
 }
 \author{
-Paul Bailey and Huade Huo
+Paul Bailey, Huade Huo
 }

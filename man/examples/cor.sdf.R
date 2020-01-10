@@ -16,10 +16,10 @@ c1_polyc
 
 # for categorical variables, users can either keep the original numeric levels of the variables
 # or condense the levels (default)
-# The following call condenses the levels of the variable 'c046501'
+# the following call condenses the levels of the variable 'c046501'
 cor.sdf(x="c046501", y="c044006", data=sdf)
 
-# The following call keeps the original levels of the variable 'c046501'
+# the following call keeps the original levels of the variable 'c046501'
 cor.sdf(x="c046501", y="c044006", data=sdf, condenseLevels = FALSE)
 
 # these take awhile to calculate for large datasets, so limit to a subset

@@ -4,13 +4,18 @@
 \alias{DoFCorrection}
 \title{Degrees of Freedom}
 \usage{
-DoFCorrection(varEstA, varEstB = varEstA, varA, varB = varA,
-  method = c("WS", "JR"))
+DoFCorrection(
+  varEstA,
+  varEstB = varEstA,
+  varA,
+  varB = varA,
+  method = c("WS", "JR")
+)
 }
 \arguments{
-\item{varEstA}{the varEstInput object returned from certain functions, such as
-\code{\link{lm.sdf}} when \code{returnVarEstInputs=} \code{TRUE}).
-The variable \code{varA} must be on this data.
+\item{varEstA}{the \code{varEstInput} object returned from certain functions, such as
+\code{\link{lm.sdf}} when \code{returnVarEstInputs=}\code{TRUE}).
+The variable \code{varA} must be on this dataset.
 See Examples.}
 
 \item{varEstB}{similar to the \code{varEstA} argument.
@@ -45,11 +50,11 @@ This calculation happens under the notion that statistics
 have little variance within strata, and
 some strata will contribute fewer than a full degree of freedom.
 
-Note that these functions are not vectorized, so \code{varA} and 
+The functions are not vectorized, so both \code{varA} and 
 \code{varB} must contain exactly one variable name.
 
 The method used to compute the degrees of freedom is in the vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
 section \dQuote{Estimation of Degrees of Freedom.}
 }
 \examples{

@@ -1,7 +1,7 @@
 #' @title Download and Unzip TIMSS Advanced Files
 #'
 #' @description Uses an Internet connection to download TIMSS Advanced data.
-#'              Data comes from \href{https://timssandpirls.bc.edu/}{timssandpirls.bc.edu} zip files. This
+#'              Data come from \href{https://timssandpirls.bc.edu/}{timssandpirls.bc.edu} zip files. This
 #'              function works for 1995, 2008, and 2015 data.
 #'
 #' @param root a character string indicating the directory where the TIMSS Advanced

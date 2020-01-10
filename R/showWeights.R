@@ -2,7 +2,7 @@
 #'
 #' @description Prints a summary of the weights in an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 #'
-#' @param data an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
+#' @param data an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or 
 #'         an \code{edsurvey.data.frame.list}
 #' @param verbose a logical value; set to TRUE to print the complete list of jackknife
 #'                replicate weights associated with each full sample weight;
@@ -20,22 +20,25 @@ showWeights <- function(data, verbose = FALSE) {
   #  1:i-th weight is returned in weights
   weights <- getAttributes(data, "weights")
   wgtNames <- names(weights)
-  cat(paste0("There are ", length(wgtNames), " full sample weight(s) in this edsurvey.data.frame\n"))
+  helper <- ifelse(length(wgtNames) == 1, "is", "are")
+  s <- ifelse(length(wgtNames) == 1, "", "s")
+  eout(paste0("There ", helper," ", length(wgtNames), " full sample weight",s," in this edsurvey.data.frame:\n"))
   for (i in 1:length(wgtNames)) {
     wgti <- weights[[i]]
-    cat(paste0("  ", sQuote(names(weights)[i]), " with ", length(wgti$jksuffixes), " JK replicate weights"))
+    txt <- paste0(sQuote(names(weights)[i]), " with ", length(wgti$jksuffixes), " JK replicate weights")
     if (attributes(weights)$default == wgtNames[i]) {
       # if there is a default weight, return with paste ' (the default)'
-      cat(" (the default).")
+      txt <- paste0(txt, " (the default).")
     } else {
-      cat(".")
+      txt <- paste0(txt, ".")
     } # End of if/esle statment: if attributes(weights)$default == wgtNames[i]
-    
+    eout(txt, indent=2, exdent=2)
+
     if (verbose) {
       # if verbose = TRUE, return the jackknife replicate weights using the default weight
-      cat(" Jackknife replicate weight variables:\n")
+      eout(paste0("Jackknife replicate weight variables associated with the full sample weight ",sQuote(names(weights)[i]),":\n"), indent=4, exdent=4)
       jki <- getWeightJkReplicates(wgtNames[i], data)
-      print(jki)
+      eout(pasteItems(sQuote(jki)), indent=4, exdent=4)
     } # end of if statment: if verbrose 
     cat("\n")
   } #End of For loop: for i in 1:length(wgtNames)

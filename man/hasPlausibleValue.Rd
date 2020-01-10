@@ -20,7 +20,7 @@ a Boolean (or vector when \code{var} is a vector) indicating if each element of 
 Returns a value indicating if this variable has associated plausible values in an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 }
 \details{
-Note that this function returns \code{TRUE} only when the variable passed to it is the name for a set of plausible values but
+This function returns \code{TRUE} only when the variable passed to it is the name for a set of plausible values but
          not if it is an individual plausible value from such a set. Thus, on the NAEP Primer, \code{composite} has plausible
          values (and so \code{TRUE} would be returned by this function), but any of the plausible values or variable names defined in
          the actual data (such as \code{"mrpcm1"} or \code{"dsex"}) are not.
@@ -29,10 +29,10 @@ Note that this function returns \code{TRUE} only when the variable passed to it 
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
-# True
+# TRUE
 hasPlausibleValue(var="composite", data=sdf)
 
-# False
+# FALSE
 hasPlausibleValue(var="dsex", data=sdf)
 }
 \author{

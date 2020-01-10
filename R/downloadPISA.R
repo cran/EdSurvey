@@ -1,6 +1,6 @@
 #' @title Download and Unzip PISA Files
 #'
-#' @description Uses a connection to download PISA data to a
+#' @description Uses an Internet connection to download PISA data to a
 #'              computer. Data come from the OECD website. 
 #' 
 #' @param root a character string indicating the directory where the PISA data should
@@ -17,12 +17,17 @@
 #'              the data. Default value is \code{FALSE}.
 #' @param verbose a logical value to either print or suppress status message output.
 #'                The default value is \code{TRUE}.
-#' @details The function uses \ifelse{latex}{\code{download.file}}{\code{\link[utils]{download.file}}} to download files from provided URLs. 
-#'          Some machines might require a different user agent in HTPP(S) requests. If the downloading gives an error or behaves unexpectedly 
-#'          (for example, a zip file cannot be unzipped or a data file is significantly smaller than expected), users can toggle \code{HTPPUserAgent}
-#'          options to find one that works for their machines. One common alternative option is 
+#' @details
+#' The function uses
+#' \ifelse{latex}{\code{download.file}}{\code{\link[utils]{download.file}}}
+#' to download files from provided URLs. Some machines might require a different
+#' user agent in HTPP(S) requests. If the downloading gives an error or behaves
+#' unexpectedly (e.g., a zip file cannot be unzipped or a data file is
+#' significantly smaller than expected), users can toggle \code{HTTPUserAgent}
+#' options to find one that works for their machines. One common alternative option is 
 #'
-#'          \code{options(HTTPUserAgent="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/53.0")}. 
+#' \code{options(HTTPUserAgent="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/53.0")}
+#' 
 #' @seealso \code{\link{readPISA}}, \ifelse{latex}{\code{download.file}}{\code{\link[utils]{download.file}}}, \ifelse{latex}{\code{options}}{\code{\link[base]{options}}}
 #' @author Yuqi Liao, Paul Bailey, and Trang Nguyen
 #' @example man/examples/downloadPISA.R
@@ -46,11 +51,11 @@ downloadPISA <- function(root, years=c(2000, 2003, 2006, 2009, 2012, 2015), data
     }
     
     # Create a year root directory
-    baseroot <- paste0(root,"PISA/")
+    baseroot <- file.path(root,"PISA/")
     if(!dir.exists(baseroot)) {
       dir.create(baseroot)
     }
-    yroot <- paste0(baseroot,y)
+    yroot <- file.path(baseroot,y)
     if(!dir.exists(yroot)) {
       dir.create(yroot)
     }
@@ -100,7 +105,7 @@ downloadPISA <- function(root, years=c(2000, 2003, 2006, 2009, 2012, 2015), data
             unzip(z,files=lst$Name[i], exdir = yroot)
                     
             if(basename(lst$Name[i]) != lst$Name[i]) {
-              file.rename(file.path(yroot,lst$Name[i]), file.path(yroot,basename(lst$Name[i])))
+              file.rename(file.path(yroot, lst$Name[i]), file.path(yroot, basename(lst$Name[i])))
             }
           }
         }
@@ -116,12 +121,12 @@ downloadPISA <- function(root, years=c(2000, 2003, 2006, 2009, 2012, 2015), data
 
 pisaURLDat <- function(year, database = "INT") {
   text <- "year	database	type	url
-2015	INT	data	http://vs-web-fs-1.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_QQQ.zip
-2015	INT	data	http://vs-web-fs-1.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_SCH_QQQ.zip
-2015	INT	data	http://vs-web-fs-1.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_COG.zip
-2015	INT	data	http://vs-web-fs-1.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_QTM.zip
-2015	INT	data	http://vs-web-fs-1.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_FLT.zip
-2015	INT	data	http://vs-web-fs-1.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_CPS.zip
+2015	INT	data	http://webfs.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_QQQ.zip
+2015	INT	data	http://webfs.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_SCH_QQQ.zip
+2015	INT	data	http://webfs.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_COG.zip
+2015	INT	data	http://webfs.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_QTM.zip
+2015	INT	data	http://webfs.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_FLT.zip
+2015	INT	data	http://webfs.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_CPS.zip
 2012	INT	data	http://www.oecd.org/pisa/pisaproducts/INT_STU12_DEC03.zip
 2012	INT	data	http://www.oecd.org/pisa/pisaproducts/INT_SCQ12_DEC03.zip
 2012	INT	data	http://www.oecd.org/pisa/pisaproducts/INT_PAQ12_DEC03.zip

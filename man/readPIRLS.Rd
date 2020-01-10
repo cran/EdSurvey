@@ -7,13 +7,15 @@
 readPIRLS(path, countries, forceReread = FALSE, verbose = TRUE)
 }
 \arguments{
-\item{path}{a character value to the full directory to the PIRLS extracted SPSS (.sav) set of data}
+\item{path}{a character value to the full directory path to the PIRLS extracted
+SPSS (.sav) set of data}
 
 \item{countries}{a character vector of the country/countries to include using
 the three-digit ISO country code.
 A list of country codes can be found on Wikipedia at
-\url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes},
-or other online sources. Consult the \emph{PIRLS User Guide} to help determine what countries
+\url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}
+or other online sources. Consult the \emph{PIRLS User Guide}
+to help determine what countries
 are included within a specific testing year of PIRLS.
 To select all countries, use a wildcard value of \strong{\code{*}}.}
 
@@ -25,7 +27,8 @@ using existing read-in data already processed.}
 The default value is \code{TRUE}.}
 }
 \value{
-an \code{edsurvey.data.frame} for a single specified country or an \code{edsurvey.data.frame.list} if multiple countries specified
+an \code{edsurvey.data.frame} for a single specified country or an
+\code{edsurvey.data.frame.list} if multiple countries specified
 }
 \description{
 Opens a connection to a PIRLS data file and
@@ -33,27 +36,34 @@ Opens a connection to a PIRLS data file and
              information about the file and data.
 }
 \details{
-Reads in the unzipped files downloaded from the PIRLS international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}.
-         Data files require the SPSS data file (.sav) format using the default filenames.
+Reads in the unzipped files downloaded from the PIRLS international
+database(s) using the \href{https://www.iea.nl/data-tools/repository}{IEA Study Data Repository}.
+Data files require the SPSS data file (.sav) format using the default
+filenames.
 
 A PIRLS \code{edsurvey.data.frame} includes three distinct data levels:
-         \itemize{
-              \item student
-              \item school
-              \item teacher
-         }
+\itemize{
+  \item student
+  \item school
+  \item teacher
+ }
 
-         When the \code{getData} function is called using a PIRLS \code{edsurvey.data.frame},
-         the requested data variables are inspected, and it handles any necessary data merges automatically.
-         Note that the \code{school} data will always be returned merged to the \code{student}
-         data, even if only \code{school} variables are requested.
-         Only if \code{teacher} variables are requested by the \code{getData} call, will cause \code{teacher} data to be merged.
-         Many \code{students} can be linked to many \code{teachers}, which varies widely between countries.
+When the \code{getData} function is called using a PIRLS \code{edsurvey.data.frame},
+the requested data variables are inspected, and it handles any necessary data merges automatically.
+The \code{school} data always will be returned merged to the \code{student}
+data, even if only \code{school} variables are requested.
+If \code{teacher} variables are requested by the \code{getData} call, it
+will cause \code{teacher} data to be merged.
+Many \code{students} can be linked to many \code{teachers}, which varies widely between countries.
 
-Please note that calling the \code{dim} function for a PIRLS \code{edsurvey.data.frame} will result in
-         the row count as if the \code{teacher} dataset was merged.
-         This row count will be considered the \code{full data N} of the \code{edsurvey.data.frame}, even if no \code{teacher} data were included in an analysis.
-         The column count returned by \code{dim} will be the count of unique column variables across all three data levels.
+Please note that calling the \code{dim} function for a PIRLS
+\code{edsurvey.data.frame} will result in
+the row count as if the \code{teacher} dataset was merged.
+This row count will be considered the \code{full data N} of the
+\code{edsurvey.data.frame}, even if no \code{teacher} data were
+included in an analysis.
+The column count returned by \code{dim} will be the count of unique
+column variables across all three data levels.
 }
 \examples{
 \dontrun{

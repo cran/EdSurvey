@@ -4,11 +4,22 @@
 \alias{mixed.sdf}
 \title{EdSurvey Mixed-Effects Model}
 \usage{
-mixed.sdf(formula, data, weightVars = NULL,
-  weightTransformation = TRUE, recode = NULL,
-  defaultConditions = TRUE, tolerance = 0.01, nQuad = NULL,
-  verbose = 0, family = NULL, centerGroup = NULL,
-  centerGrand = NULL, fast = FALSE, ...)
+mixed.sdf(
+  formula,
+  data,
+  weightVars = NULL,
+  weightTransformation = TRUE,
+  recode = NULL,
+  defaultConditions = TRUE,
+  tolerance = 0.01,
+  nQuad = NULL,
+  verbose = 0,
+  family = NULL,
+  centerGroup = NULL,
+  centerGrand = NULL,
+  fast = FALSE,
+  ...
+)
 }
 \arguments{
 \item{formula}{a \ifelse{latex}{\code{formula}}{\code{\link[stats]{formula}}}
@@ -20,10 +31,7 @@ will be used. (You can find the default using
 \code{\link{showPlausibleValues}}.) If \emph{y} is a variable
 for a subject scale or subscale (one of the names shown by
 \code{\link{showPlausibleValues}}), then that subject scale
-or subscale is used.
-
-For logistic models, we recommend using the \code{I()} function 
-   to define the level used for success. (See Examples.)}
+or subscale is used.}
 
 \item{data}{an \code{edsurvey.data.frame} or a \code{light.edsurvey.data.frame}}
 
@@ -53,16 +61,9 @@ an \code{edsurvey.data.frame} to subset the data.
 Use \code{print} on an \code{edsurvey.data.frame}
 to see the default conditions.}
 
-\item{tolerance}{a numeric value to indicate how accurate the result is.
-See Details for more information. Defaults to 0.01.}
+\item{tolerance}{depreciated, no effect}
 
-\item{nQuad}{an integer to indicate the number of quadrature points in
-adaptive quadrature process. See documentation of
-\ifelse{latex}{\code{WeMix::mix}}{\code{\link[WeMix]{mix}}} 
-for more details on how \code{nQuad} affects
-the estimation. If no \code{nQuad} is set, function will start with 
-\code{nQuad = 5} and increase until a stable result is reached. See details for 
-further discussion.}
+\item{nQuad}{depreciated, no effect}
 
 \item{verbose}{an integer; when set to \code{1}, it will print out
 the brief progress of the function \code{mix.sdf}.
@@ -72,21 +73,19 @@ out the detailed progress, including temporary estimates
    during the optimization. Defaults to \code{0}, which 
    will run the function without output.}
 
-\item{family}{an element of \ifelse{latex}{\code{family}}{\code{\link[stats]{family}}} class; optionally used 
-to specify generalized linear mixed models.
-Defaults to \code{NULL}, which runs mixed linear regression models. Another 
-family option is \code{binomial(link="logit")} to run binomial mixed models.}
+\item{family}{this argument is depreciated; please use the \code{WeMix}
+package's \code{mix} function directly for binomial models.}
 
 \item{centerGroup}{a list in which the name of each element is the name of the aggregation level, 
 and the element is a formula of variable names to be group mean centered. For example, to group mean center
  gender and age within the group student: \code{list("student"= ~gender+age)}. Defaults to \code{NULL}, which means 
- predictors are not adjusted by group centering. See Examples in \ifelse{latex}{\code{mix}}{\code{\link[WeMix]{mix}}}.}
+ predictors are not adjusted by group centering. See Examples in the \code{WeMix} function \ifelse{latex}{\code{mix}}{\code{\link[WeMix]{mix}}}.}
 
 \item{centerGrand}{a formula of variable names to be grand mean centered. For example, to center the 
 variable education by overall mean of education: \code{~education}. Defaults to \code{NULL}, which means predictors
 are not adjusted by grand centering.}
 
-\item{fast}{a logical value; when set to \code{TRUE}, use  c++ function for faster result. Defaults to \code{FALSE}.}
+\item{fast}{depreciated, no effect}
 
 \item{...}{other potential arguments to be used in \ifelse{latex}{\code{mix}}{\code{\link[WeMix]{mix}}}}
 }
@@ -94,13 +93,15 @@ are not adjusted by grand centering.}
 A \code{mixedSdfResults} object with the following elements:
    \item{call}{the original call used in \code{mixed.sdf} }
    \item{formula}{the formula used to fit the model}
-   \item{coef}{the estimates of the coefficients}
-   \item{se}{the standard error estimates of the coefficients}
-   \item{vars}{variance components of the model }
-   \item{levels}{the  number of levels in the model }
-   \item{ICC}{the intraclass correlation coefficient of the model }
+   \item{coef}{a vector of coefficient estimates}
+   \item{se}{a vector with the standard error estimates of the coefficients and the standard error of the variance components}
+   \item{vars}{estimated variance components of the model}
+   \item{levels}{the number of levels in the model}
+   \item{ICC}{the intraclass correlation coefficient of the model}
    \item{npv}{the number of plausible values}
-   \item{ngroups}{a \code{data.frame} that includes number of observations for each group}
+   \item{ngroups}{a \code{data.frame} that includes the number of observations for each group}
+   \item{n0}{the number of observations in the original data}
+   \item{nused}{the number of observations used in the analysis}
 If the formula does not involve plausible values, the function will return the following additional elements:
    \item{lnlf}{the likelihood function } 
    \item{lnl}{the log-likelihood of the model }
@@ -109,42 +110,41 @@ If the formula involves plausible values, the function will return the following
    \item{Vjrr}{the estimated variance from sampling}
 }
 \description{
-Fits a linear or logistic weighted mixed-effects model.
+Fits a linear weighted mixed-effects model.
 }
 \details{
-If users do not specify the \code{nQuad} argument, the functions will
-         use the \code{tolerance} argument to repeatedly run the mixed model and increment
-         \code{nQuad} (starting at 5) until the percentage of difference between the
-         log-likelihood of the new model and the old model is smaller than
-         \code{tolerance}. If users provide  \code{nQuad}, selecting a smaller value of \code{nQuad} 
-         can save processing time; however, it is recommended that users try incrementing
-           \code{nQuad} to check whether the result is stable.
-         
-         Note that if the outcome variable has plausible values, the previous setting will be 
-         applied to the estimation of all plausible values.
+This function uses the \code{mix} call in the \code{WeMix} package to fit mixed models.
+When the outcome does not have plausible values, the variance estimator directly from
+the \code{mix} function is used; these account for covariance at the top level
+of the model specified by the user.
+
+When the outcome has plausible values, the coefficients are estimated in the same
+way as in \code{lm.sdf}, that is, averaged across the plausible values.
+In addition, the variance of the coefficients is estimated
+as the sum of the variance estimate from the \code{mix} function and the
+imputation variance. The formula for the imputation variance is, again, the same
+as for \code{lm.sdf},
+with the same estimators as in the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}.
+In the section
+\dQuote{Estimation of Standard Errors of Weighted Means When Plausible Values Are Present, Using the Jackknife Method}
+in the formula for \eqn{V_{imp}}, the variance
+and estimates of the variance components are estimated with the same formulas as
+the regression coefficients.
 }
 \examples{
 \dontrun{
-# read in the example data (generated, not real student data)
-sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
-
-# subset to a smaller sample
-sdf_subset <- subset(sdf, scrpsu < 500)
-
-# fast is an argument from WeMix::mix that allows the function to run faster using c++
-m1 <- mixed.sdf(composite ~ dsex + b017451 + (1|scrpsu), data=sdf_subset,
-                weightVar = c('origwt', 'srwt01'),
-                fast=TRUE, verbose=1)
-summary(m1)
-
-# Run multilevel logistic regression model
-# nQuad is specified to be 7, which means 
-# the function will use 7 quadrature points for the integration
-m2 <- mixed.sdf(I(composite >= 214) ~ (1|scrpsu), 
-                data=sdf_subset, family = binomial(link="logit"),
-                weightVar = c('origwt', 'srwt01'), 
-                nQuad = 7, verbose=1)
-summary(m2)
+# save TIMSS 2015 data to ~/TIMSS/2015
+downloadTIMSS(root="~/", years=2015)
+fin <- readTIMSS("~/TIMSS/2015", countries="fin", gradeLvl=4)
+# uses all plausible values
+mix1 <- mixed.sdf(mmat ~ itsex + (1|idschool), data = fin,
+                  weightVar=c("totwgt","schwgt"), weightTransformation=FALSE)
+summary(mix1)
+# uses only one plausible value
+mix2 <- mixed.sdf(asmmat01 ~ itsex + (1|idschool), data = fin,
+                  weightVar=c("totwgt","schwgt"), weightTransformation=FALSE)
+summary(mix2)
 }
 }
 \references{
@@ -153,8 +153,8 @@ survey data. \emph{Journal of the Royal Statistical Society: Series A
 (Statistics in Society), 169}(4), 805--827.
 }
 \seealso{
-\ifelse{latex}{\code{mix}}{\code{\link[WeMix]{mix}}} and \ifelse{latex}{\code{lm.sdf}}{\code{\link{lm.sdf}}}
+\ifelse{latex}{WeMix \code{mix} function}{\code{\link[WeMix]{mix}}} and \code{\link{lm.sdf}}
 }
 \author{
-Trang Nguyen and Claire Kelley
+Paul Bailey, Trang Nguyen, and Claire Kelley
 }

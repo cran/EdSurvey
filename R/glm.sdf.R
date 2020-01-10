@@ -3,7 +3,7 @@
 #' @description Fits a logit or probit that
 #'              uses weights and variance estimates
 #'              appropriate for the \code{edsurvey.data.frame},
-#'              \code{light.edsurvey.data.frame}, or \code{edsurvey.data.frame.list}.
+#'              the \code{light.edsurvey.data.frame}, or the \code{edsurvey.data.frame.list}.
 #'
 #' @param formula    a \ifelse{latex}{\code{formula}}{\code{\link[stats]{formula}}} for the
 #'                   linear model. See \ifelse{latex}{\code{glm}}{\code{\link[stats]{glm}}}.
@@ -15,7 +15,9 @@
 #'                   functions are available for binomial models. See the \code{link}
 #'                   argument in the help for 
 #'                   \ifelse{latex}{\code{family}}{\code{\link[stats]{family}}}.
-#' @param jrrIMax    the \eqn{V_{jrr}} term (see Details) can be estimated with
+#' @param jrrIMax    the \code{Vjrr} sampling variance term (see 
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}})
+#'                   can be estimated with
 #'                   any positive number of plausible values and is estimated on 
 #'                   the lower
 #'                   of the number of available plausible values and \code{jrrIMax}. When
@@ -41,22 +43,22 @@
 #'                          to subset the data. Use \code{print} on an
 #'                          \code{edsurvey.data.frame} to see the default conditions.
 #' @param recode a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
-#'               \code{recode=} \code{list(}\code{var1=} \code{list(from=} \code{c("a",} \code{"b",} \code{"c"),} \code{to=}\code{"d"))}. See Examples.
+#'               \code{recode=} \code{list(}\code{var1=} \code{list(from=} \code{c("a",} \code{"b",} \code{"c"),} \code{to=}\code{"d"))}.
 #' @param returnNumberOfPSU a logical value set to \code{TRUE} to return the number of 
 #'                          primary sampling units (PSUs)
 #' @param returnVarEstInputs a logical value set to \code{TRUE} to return the
 #'                           inputs to the jackknife and imputation variance
-#'                           estimates. This is intended to allow for
+#'                           estimates, which allow for
 #'                           the computation
 #'                           of covariances between estimates.
 #' 
 #' @details
 #' This function implements an estimator that correctly handles left-hand side
 #' variables that are logical, allows for survey sampling weights, and estimates
-#' variances using jackknife replication or Taylor series.
+#' variances using the jackknife replication or Taylor series.
 #' The vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
-#' describes estimation of the reported statistics. 
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
+#' describes estimation of the reported statistics and how it depends on \code{varMethod}. 
 #' 
 #' The coefficients are estimated
 #' using the sample weights according to the section
@@ -73,7 +75,7 @@
 #' \eqn{ \hat{\beta} } is the estimated coefficient and \eqn{\mathrm{var}(\hat{\beta})} is
 #' its variance of that estimate.
 #'
-#' Note that \code{logit.sdf} and \code{probit.sdf} are included for convenience only;
+#' \code{logit.sdf} and \code{probit.sdf} are included for convenience only;
 #' they give the same results as a call to \code{glm.sdf} with the binomial family
 #' and the link function named in the function call (logit or probit).
 #' By default, \code{glm} fits a logistic regression when \code{family} is not set, 
@@ -82,7 +84,7 @@
 #'
 #' \subsection{Variance estimation of coefficients}{
 #'   All variance estimation methods are shown in the vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}.
 #'   When the predicted
 #'   value does not have plausible values and \code{varMethod} is set to
 #'   \code{jackknife}, the variance of the coefficients
@@ -110,6 +112,15 @@
 #'         Plausible Values Are Present, Using the Taylor Series Method.}
 #' }
 #' 
+#' @section Testing:
+#' Of the common hypothesis tests for joint parameter testing, only the Wald
+#' test is widely used with plausible values and sample weights. As such, it
+#' replaces, if imperfectly, the Akaike Information Criteria (AIC), the
+#' likelihood ratio test, chi-squared, and analysis of variance (ANOVA, including \emph{F}-tests).
+#' See \code{\link{waldTest}} or
+#' the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-WaldTest.pdf}{\emph{Methods and Overview of Using EdSurvey for Running Wald Tests}}.
+#'
 #' @aliases logit.sdf probit.sdf glm
 #'
 #' @return
@@ -118,16 +129,16 @@
 #'    \item{formula}{the formula used to fit the model}
 #'    \item{coef}{the estimates of the coefficients}
 #'    \item{se}{the standard error estimates of the coefficients}
-#'    \item{Vimp}{the estimated variance due to uncertainty in the scores (plausible value variables)}
-#'    \item{Vjrr}{the estimated variance due to sampling}
+#'    \item{Vimp}{the estimated variance caused by uncertainty in the scores (plausible value variables)}
+#'    \item{Vjrr}{the estimated variance from sampling}
 #'    \item{M}{the number of plausible values}
-#'    \item{nPSU}{the number of PSUs used in calculation}
+#'    \item{nPSU}{the number of PSUs used in the calculation}
 #'    \item{varm}{the variance estimates under the various plausible values}
 #'    \item{coefm}{the values of the coefficients under the various plausible values}
 #'    \item{coefmat}{the coefficient matrix (typically produced by the summary of a model)}
 #'    \item{weight}{the name of the weight variable}
 #'    \item{npv}{the number of plausible values}
-#'    \item{njk}{the number of jackknife replicates used}
+#'    \item{njk}{the number of the jackknife replicates used}
 #'    \item{varMethod}{always \code{jackknife}}
 #'    \item{varEstInputs}{when \code{returnVarEstInputs} is \code{TRUE},
 #'                        this element is returned. These are
@@ -912,8 +923,9 @@ calc.glm.sdf <- function(formula,
   # add waldDenomBaseDof if relevant
   if(all(c(stratumVar, psuVar) %in% colnames(edf))) {
     res <- c(res, list(waldDenomBaseDof=waldDof(edf, stratumVar, psuVar)))
-  } else if(all(c("stratumVar", "psuVar") %in% names(data))) {
-    res <- c(res, list(waldDenomBaseDof=waldDof(data, data$stratumVar, data$psuVar)))
+  } 
+  if("stratumVar" %in% names(data) && "JK1" %in% data$stratumVar) {
+    res <- c(res, list(waldDenomBaseDof="JK1"))
   }
   res <- c(res, list(n0=nrow2.edsurvey.data.frame(data), nUsed=nrow(edf)))
   if(inherits(data, "edsurvey.data.frame")) {
@@ -1006,7 +1018,7 @@ vcov.edsurveyGlm <- function(object, ...) {
   vcov.edsurveyLm(object, ...)
 }
 
-#' @title Odds Ratios for \code{edsurveyGlm} Models
+#' @title Odds Ratios for edsurveyGlm Models
 #' @description Converts coefficients from \code{edsurveyGlm} logit regression model to odds ratios.
 #' @param model an \code{edsurveyGlm} model
 #' 

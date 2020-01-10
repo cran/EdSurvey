@@ -4,8 +4,7 @@
 \alias{print.achievementLevels}
 \title{Print AchievementLevels Results}
 \usage{
-\method{print}{achievementLevels}(x, printCall = TRUE,
-  printDiscrete = TRUE, printCumulative = TRUE, ...)
+\method{print}{achievementLevels}(x, printCall = TRUE, printDiscrete = TRUE, printCumulative = TRUE, ...)
 }
 \arguments{
 \item{x}{an \code{achievementLevels} object}

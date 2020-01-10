@@ -13,7 +13,7 @@ for (i in c("st62q04", "st62q11", "st62q13")) {
   ledf[,i] <- factor(ledf[,i], exclude=omittedLevels)
 }
 
-#after applying some dplyr functions, the "light.edsurvey.data.frame" becomes just "data.frame"
+# after applying some dplyr functions, the "light.edsurvey.data.frame" becomes just "data.frame"
 PISA2012_ledf <- ledf %>%        
   rowwise() %>% 
   mutate(avg_3 = mean(c(st62q04, st62q11, st62q13), na.rm = TRUE)) %>% 

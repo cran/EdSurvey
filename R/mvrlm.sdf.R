@@ -3,26 +3,28 @@
 #' @description Fits a multivariate linear model that uses weights and variance
 #'              estimates appropriate for the \code{edsurvey.data.frame}.
 #'
-#' @param formula    a \ifelse{latex}{\code{Formula}}{\code{\link[Formula]{Formula}}} for the
+#' @param formula    a \ifelse{latex}{\code{Formula} package \code{Formula}}{\code{\link[Formula]{Formula}}} for the
 #'                   linear model. See \ifelse{latex}{\code{Formula}}{\code{\link[Formula]{Formula}}};
 #'                   left-hand side variables are separated with 
 #'                   vertical pipes (\code{|}). See Examples.
-#' @param data       an \code{edsurvey.data.frame} or \code{edsurvey.data.frame.list}
+#' @param data       an \code{edsurvey.data.frame} or an \code{edsurvey.data.frame.list}
 #' @param weightVar  character indicating the weight variable to use (see Details).
 #'                   The \code{weightVar} must be one of the weights for the
 #'                   \code{edsurvey.data.frame}. If \code{NULL}, uses the default
 #'                   for the \code{edsurvey.data.frame}.
-#' @param jrrIMax    when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+#' @param jrrIMax    a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
 #'                   sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
-#'                   term (see Details) can be estimated with any number of plausible values, and values larger than the number of 
-#'                   plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+#'                   term (see
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}})
+#'                   can be estimated with any number of plausible values, and values larger than the number of 
+#'                   plausible values on the survey (including \code{Inf}) will result in all plausible values being used. 
 #'                   Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.
 #' @param relevels   a list. Used to change the contrasts from the
 #'                   default treatment contrasts to treatment contrasts with a chosen omitted
 #'                   group (the reference group).
 #'                   To do this, the user puts an element on the list with the same name as
-#'                   a variable to change contrasts on,
-#'                   and then makes the value for that list element equal to the value
+#'                   a variable to change contrasts on
+#'                   and then make the value for that list element equal to the value
 #'                   that should
 #'                   be the omitted group (the reference group).
 #' @param omittedLevels a logical value. When set to the default value of \code{TRUE}, drops
@@ -34,20 +36,22 @@
 #'                          to subset the data. Use \code{print} on an
 #'                          \code{edsurvey.data.frame} to see the default conditions.
 #' @param recode a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
-#'                  \code{recode} \code{=} \code{list(var1=} \code{list(from=c("a","b","c"),} \code{to ="d"))}. See Examples.
+#'                  \code{recode} \code{=} \code{list(var1=} \code{list(from=c("a","b","c"),} \code{to ="d"))}.
 #' @param returnVarEstInputs a logical value. Set to \code{TRUE} to return the
 #'                           inputs to the jackknife and imputation variance
-#'                           estimates. This is intended to allow for
+#'                           estimates, which allow for
 #'                           computation of covariances between estimates.
 #' @param estMethod a character value indicating which estimation method to use.
-#'                  Default is 'OLS'; other option is 'GLS'.
+#'                  Default is \code{OLS}; other option is \code{GLS}.
 #' 
 #' @details    
 #'                
 #' This function implements an estimator that correctly handles multiple left-hand
 #' side variables that are either numeric or plausible values, allows for survey 
 #' sampling weights, and estimates variances using the jackknife replication method.
-#' The vignette titled \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics} describes estimation of the reported statistics. 
+#' The vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
+#' describes estimation of the reported statistics. 
 #' 
 #' The \bold{coefficients} are estimated using the sample weights according to the section 
 #' \dQuote{Estimation of Weighted Means When Plausible Values Are Not Present}
@@ -60,7 +64,7 @@
 #'
 #' \subsection{Variance estimation of coefficients}{
 #'   All variance estimation methods are shown in the vignette titled
-#'   \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.  
+#'   \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}.  
 #'
 #'   When the predicted value does not have plausible values, the variance of the coefficients
 #'   is estimated according to the section \dQuote{Estimation of Standard Errors
@@ -72,7 +76,7 @@
 #' }
 #' 
 #' For more information on the specifics of multivariate regression, see the vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Multivariate_Regression.pdf}{Multivariate Regression}.
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Multivariate_Regression.pdf}{Methods and Overview of Using EdSurvey for Multivariate Regression}.
 #'
 #'    
 #'
@@ -82,16 +86,16 @@
 #'    \item{formula}{the formula used to fit the model}
 #'    \item{coef}{the estimates of the coefficients}
 #'    \item{se}{the standard error estimates of the coefficients}
-#'    \item{Vimp}{the estimated variance due to uncertainty in the scores (plausible value variables)}
-#'    \item{Vjrr}{the estimated variance due to sampling}
+#'    \item{Vimp}{the estimated variance caused by uncertainty in the scores (plausible value variables)}
+#'    \item{Vjrr}{the estimated variance caused by sampling}
 #'    \item{M}{the number of plausible values}
 #'    \item{varm}{the variance estimates under the various plausible values}
 #'    \item{coefm}{the values of the coefficients under the various plausible values}
 #'    \item{coefmat}{the coefficient matrix (typically produced by the summary of a model)}
 #'    \item{r.squared}{the coefficient of determination}
 #'    \item{weight}{the name of the weight variable}
-#'    \item{npv}{number of plausible values}
-#'    \item{njk}{the number of jackknife replicates used}
+#'    \item{npv}{the number of plausible values}
+#'    \item{njk}{the number of the jackknife replicates used}
 #'    \item{varEstInputs}{When \code{returnVarEstInputs} is \code{TRUE},
 #'                        this element is returned. These are
 #'                        used for calculating covariances with
@@ -101,12 +105,12 @@
 #'    \item{residCov}{residual covariance matrix for dependent variables}
 #'    \item{residPV}{residuals for each dependent variable}
 #'    \item{inputs}{coefficient estimation input matrices}
-#'    \item{n0}{full data n}
-#'    \item{nUsed}{n used for model}
+#'    \item{n0}{full data \emph{n}}
+#'    \item{nUsed}{\emph{n} used for model}
 #'    \item{B}{imputation variance-covariance matrix, before multiplication by (M+1)/M}
 #'    \item{U}{sampling variance-covariance matrix}
 #'                        
-#' @seealso \ifelse{latex}{\code{lm}}{\code{\link[stats]{lm}}}, \ifelse{latex}{\code{lm.sdf}}{\code{\link[EdSurvey]{lm.sdf}}}
+#' @seealso \ifelse{latex}{the stats package \code{lm}}{\code{\link[stats]{lm}}}, \code{\link{lm.sdf}}
 #' @author Alex Lishinski and Paul Bailey
 #' 
 #' @example \man\examples\mvrlm.sdf.R

@@ -22,9 +22,9 @@ if (!dir.exists(edsurveyHome)) {
 # Test =================
 # Check multiple-path read-in
 test_that("PISA multiple path read-in", {
-  multiESDFL <- readPISA(paste0(edsurveyHome,c("PISA/2009", "PISA/2012", "PISA/2015")), countries="usa",verbose=FALSE)
-  expect_is(multiESDFL,"edsurvey.data.frame.list")
-  expect_equal(colnames(multiESDFL$covs), c("subject","year","country"))
+  multiESDFL <- readPISA(paste0(edsurveyHome, c("PISA/2009", "PISA/2012", "PISA/2015")), countries="usa", verbose=FALSE)
+  expect_is(multiESDFL, "edsurvey.data.frame.list")
+  expect_equal(colnames(multiESDFL$covs), c("subject", "year", "country"))
   expect_equal(length(multiESDFL$datalist), 3)
 })
  
@@ -32,58 +32,33 @@ test_that("PISA multiple path read-in", {
 test_that("PISA data reads in correctly", {
   expect_silent(downloadPISA(root=edsurveyHome, year=c(2006, 2009, 2012, 2015), cache=FALSE, verbose = FALSE))
   expect_silent(downloadPISA(root=edsurveyHome, year=2012, database="CBA", cache=FALSE, verbose = FALSE))
-  expect_silent(suppressWarnings(usaINT2015 <<- readPISA(paste0(edsurveyHome, "PISA/2015"), countries = "usa", verbose = FALSE)))
-  expect_silent(suppressWarnings(usaINT2012 <<- readPISA(paste0(edsurveyHome, "PISA/2012"), countries = "usa", verbose = FALSE)))
-  expect_silent(suppressWarnings(qcnCBA2012 <<- readPISA(paste0(edsurveyHome, "PISA/2012"), database = "CBA", countries = "qcn", verbose = FALSE))) # Shanghai
-  expect_silent(suppressWarnings(jpn2009 <<- readPISA(paste0(edsurveyHome, "PISA/2009"), countries = "jpn", verbose = FALSE)))
-  expect_silent(suppressWarnings(aus2006 <<- readPISA(paste0(edsurveyHome, "PISA/2006"), countries = "aus", verbose = FALSE)))
+  expect_silent(usaINT2015 <<- readPISA(paste0(edsurveyHome, "PISA/2015"), countries = "usa", verbose = FALSE))
+  expect_silent(usaINT2012 <<- readPISA(paste0(edsurveyHome, "PISA/2012"), countries = "usa", verbose = FALSE))
+  expect_silent(qcnCBA2012 <<- readPISA(paste0(edsurveyHome, "PISA/2012"), database = "CBA", countries = "qcn", verbose = FALSE)) # Shanghai
+  expect_silent(jpn2009 <<- readPISA(paste0(edsurveyHome, "PISA/2009"), countries = "jpn", verbose = FALSE))
+  expect_silent(aus2006 <<- readPISA(paste0(edsurveyHome, "PISA/2006"), countries = "aus", verbose = FALSE))
+  expect_silent(aus2003 <<- readPISA(paste0(edsurveyHome, "PISA/2003"), countries = "aus", verbose = FALSE))
+  # 2000 complains about the PSU variable not being present
 
-  expect_is(usaINT2015,"edsurvey.data.frame")
-  expect_is(usaINT2012,"edsurvey.data.frame")
-  expect_is(qcnCBA2012,"edsurvey.data.frame")
-  expect_is(jpn2009,"edsurvey.data.frame")
-  expect_is(aus2006,"edsurvey.data.frame")
-  expect_equal(dim(usaINT2015),c(5712,3715))
-  expect_equal(dim(usaINT2012),c(4978,1262))
-  expect_equal(dim(qcnCBA2012),c(5177,1345))
-  expect_equal(dim(jpn2009),c(6088,981))
-  expect_equal(dim(aus2006),c(14170,1019))
+  expect_is(usaINT2015, "edsurvey.data.frame")
+  expect_is(usaINT2012, "edsurvey.data.frame")
+  expect_is(qcnCBA2012, "edsurvey.data.frame")
+  expect_is(jpn2009, "edsurvey.data.frame")
+  expect_is(aus2006, "edsurvey.data.frame")
+  expect_equal(dim(usaINT2015), c(5712,3715))
+  expect_equal(dim(usaINT2012), c(4978,1262))
+  expect_equal(dim(qcnCBA2012), c(5177,1345))
+  expect_equal(dim(jpn2009), c(6088,981))
+  expect_equal(dim(aus2006), c(14170,1019))
 })
 
 context("PISA showPlausibleValues and showWeights verbose output agrees")
 test_that("PISA showPlausibleValues and showWeights verbose output agrees", {
-  spv <- c("There are 10 subject scale(s) or subscale(s) in this edsurvey.data.frame",           
-            "  'math' subject scale or subscale with 5 plausible values (the default). They are:",
-            "    'pv1math' 'pv2math' 'pv3math' 'pv4math' 'pv5math'",                              
-            "  'macc' subject scale or subscale with 5 plausible values. They are:",              
-            "    'pv1macc' 'pv2macc' 'pv3macc' 'pv4macc' 'pv5macc'",                              
-            "  'macq' subject scale or subscale with 5 plausible values. They are:",              
-            "    'pv1macq' 'pv2macq' 'pv3macq' 'pv4macq' 'pv5macq'",             
-            "  'macs' subject scale or subscale with 5 plausible values. They are:",            
-            "    'pv1macs' 'pv2macs' 'pv3macs' 'pv4macs' 'pv5macs'",           
-            "  'macu' subject scale or subscale with 5 plausible values. They are:",          
-            "    'pv1macu' 'pv2macu' 'pv3macu' 'pv4macu' 'pv5macu'",         
-            "  'mape' subject scale or subscale with 5 plausible values. They are:",              
-            "    'pv1mape' 'pv2mape' 'pv3mape' 'pv4mape' 'pv5mape'",                              
-            "  'mapf' subject scale or subscale with 5 plausible values. They are:",              
-            "    'pv1mapf' 'pv2mapf' 'pv3mapf' 'pv4mapf' 'pv5mapf'",                              
-            "  'mapi' subject scale or subscale with 5 plausible values. They are:",              
-            "    'pv1mapi' 'pv2mapi' 'pv3mapi' 'pv4mapi' 'pv5mapi'",                              
-            "  'read' subject scale or subscale with 5 plausible values. They are:",              
-            "    'pv1read' 'pv2read' 'pv3read' 'pv4read' 'pv5read'",                              
-            "  'scie' subject scale or subscale with 5 plausible values. They are:",              
-            "    'pv1scie' 'pv2scie' 'pv3scie' 'pv4scie' 'pv5scie'"                              
-  )
   co <- capture.output(showPlausibleValues(usaINT2012, verbose = TRUE))
-  expect_equal(co,spv)
+  expect_equal(co,pvREF)
   
-  sw <- c("There are 1 full sample weight(s) in this edsurvey.data.frame", 
-          "  'w_fstuwt' with 80 JK replicate weights (the default). Jackknife replicate weight variables:",
-          " [1] \"w_fstr1\"  \"w_fstr2\"  \"w_fstr3\"  \"w_fstr4\"  \"w_fstr5\"  \"w_fstr6\"  \"w_fstr7\"  \"w_fstr8\"  \"w_fstr9\"  \"w_fstr10\" \"w_fstr11\" \"w_fstr12\" \"w_fstr13\" \"w_fstr14\" \"w_fstr15\" \"w_fstr16\" \"w_fstr17\" \"w_fstr18\" \"w_fstr19\" \"w_fstr20\" \"w_fstr21\" \"w_fstr22\" \"w_fstr23\" \"w_fstr24\" \"w_fstr25\" \"w_fstr26\" \"w_fstr27\" \"w_fstr28\" \"w_fstr29\" \"w_fstr30\" \"w_fstr31\" \"w_fstr32\" \"w_fstr33\" \"w_fstr34\" \"w_fstr35\" \"w_fstr36\" \"w_fstr37\" \"w_fstr38\" \"w_fstr39\" \"w_fstr40\" \"w_fstr41\" \"w_fstr42\" \"w_fstr43\" \"w_fstr44\" \"w_fstr45\"",
-          "[46] \"w_fstr46\" \"w_fstr47\" \"w_fstr48\" \"w_fstr49\" \"w_fstr50\" \"w_fstr51\" \"w_fstr52\" \"w_fstr53\" \"w_fstr54\" \"w_fstr55\" \"w_fstr56\" \"w_fstr57\" \"w_fstr58\" \"w_fstr59\" \"w_fstr60\" \"w_fstr61\" \"w_fstr62\" \"w_fstr63\" \"w_fstr64\" \"w_fstr65\" \"w_fstr66\" \"w_fstr67\" \"w_fstr68\" \"w_fstr69\" \"w_fstr70\" \"w_fstr71\" \"w_fstr72\" \"w_fstr73\" \"w_fstr74\" \"w_fstr75\" \"w_fstr76\" \"w_fstr77\" \"w_fstr78\" \"w_fstr79\" \"w_fstr80\"",
-          "")
   co <- capture.output(showWeights(usaINT2012, verbose = TRUE))
-  expect_equal(co, sw)
+  expect_equal(co, swREF)
 })
 
 context("PISA getData")
@@ -103,12 +78,8 @@ test_that("PISA subset data", {
 
 context("PISA showCutPoints")
 test_that("PISA showCutPoints", {
-  sc <- c("Achievement Levels:",
-          "  Mathematics:  357.77, 420.07, 482.38, 544.68, 606.99, 669.3", 
-          "  Problem Solving:  358.49, 423.42, 488.35, 553.28, 618.21, 683.14", 
-          "  Reading:  262.04, 334.75, 407.47, 480.18, 552.89, 625.61, 698.32")
   co <- capture.output(showCutPoints(qcnCBA2012))
-  expect_equal(co,sc)
+  expect_equal(co,scREF)
 })
 
 # 2. Check analytical functions

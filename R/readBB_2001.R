@@ -1,34 +1,42 @@
-#' @title Connect to B&B 2000-2001 Data
+#' @title Connect to B&B 2000--2001 Data
 #'
-#' @description Opens a connection to a Baccalaureate & Beyond 2000-2001 data file and
+#' @description Opens a connection to a Baccalaureate & Beyond 2000--2001 data file and
 #'              returns an \code{edsurvey.data.frame} with 
 #'              information about the file and data.
 #'
-#' @param b01DER_Filepath a character value to the main study derived analyticial data file (B01DER.dat).  Located within the ECBW/Data Folder.
-#' @param b01WT_FilePath a character value to the study weight data file (B01WT.dat). Located within the ECBW/Data Folder.
-#' @param masterTxtFilepath a character value of the master format file (master.txt) that contains the metadata 
-#'                          for the \code{b01DER_Filepath} and \code{b01WT_FilePath}.  Located in the ECBW folder.
-#' @param forceReread a logical value to force re-reading of all processed data.
+#' @param b01DER_Filepath a character value to the main study-derived analytical data file (\code{B01DER.dat}).  Located within the ECBW/Data Folder.
+#' @param b01WT_FilePath a character value to the study weight data file (\code{B01WT.dat}). Located within the \code{ECBW/Data} Folder.
+#' @param masterTxtFilepath a character value of the master format file (\code{master.txt}) that contains the metadata 
+#'                          for the \code{b01DER_Filepath} and \code{b01WT_FilePath}.  Located in the \code{ECBW} folder.
+#' @param forceReread a logical value to force rereading of all processed data.
 #'                    The default value of \code{FALSE} will speed up the read function by using existing read-in data already processed.
-#' @param verbose a logical value that will determine if you want verbose output while the \code{readBB_2001-K2011} function is running to indicate processing progress.
+#' @param verbose a logical value that will determine if you want verbose output while the \code{readBB_2001} function is running to indicate processing progress.
 #'                The default value is \code{TRUE}.
 #'                    
-#' @details Reads in the specified \code{csvFilename} file for the B&B 2000-2001 longitudinal survey to an \code{edsurvey.data.frame}.
-#'          The two created cached datafiles will be saved in the same directory and filename as the \code{b01DER_Filepath} file.
-#'          The two cached datafiles will have a new file extension of \code{.txt} and \code{.meta}.  
+#' @details Reads the \code{masterTxtFilepath} file to parse the \code{b01DER_Filepath} and \code{b01WT_FilePath} files to an \code{edsurvey.data.frame}.
+#'          This function creates two cached data files will be saved in the same directory and filename as the \code{b01DER_Filepath} file for the B&B 2000--2001 longitudinal survey.
+#'          The two cached data files will have file extensions of .txt and .meta.
 #' 
 #' @return
-#'  an \code{edsurvey.data.frame} for the B&B 2000-2001 longitudinal dataset.
+#'  an \code{edsurvey.data.frame} for the B&B 2000--2001 longitudinal dataset.
 #'
 #' @seealso \code{\link{readECLS_K2011}}, \code{\link{readNAEP}}, and \code{\link{getData}}
 #' @author Tom Fink
 #' @example /man/examples/readBB_2001.R
-#' @export
+#' 
 readBB_2001 <- function(b01DER_Filepath,
                         b01WT_FilePath,
                         masterTxtFilepath,
                         forceReread=FALSE,
                         verbose=TRUE) {
+  
+  #temporarily adjust any necessary option settings; revert back when done
+  userOp <- options(OutDec = ".")
+  on.exit(options(userOp), add = TRUE)
+  
+  b01DER_Filepath <- suppressWarnings(normalizePath(unique(b01DER_Filepath), winslash = "/"))
+  b01WT_FilePath <- suppressWarnings(normalizePath(unique(b01WT_FilePath), winslash = "/"))
+  masterTxtFilepath <- suppressWarnings(normalizePath(unique(masterTxtFilepath), winslash = "/"))
   
   if(!file.exists(b01DER_Filepath)){
     stop(paste0("Cannot find specified data file ", sQuote("b01DER_Filepath"), " in path ", sQuote(file.path(b01DER_Filepath)), "."))
@@ -57,6 +65,24 @@ readBB_2001 <- function(b01DER_Filepath,
     }
   }
   
+  omittedLevels <- c("{Don't know}", "{Refuse}", "{Refused}", "{Not reached}",
+                     "{Missing}", "{Skipped}", "{CATI error}",
+                     "{Out of range}", "{Uncodeable}", "{Not applicable}",
+                     "{Accepted to program but hasn't started}",
+                     "{at least one zipcode was -1}", "{at least one zipcode was -2}",
+                     "{at least one zipcode was out of the US}",
+                     "{at least one zipcode was bad data}",
+                     "{at least one zipcode was not found}",
+                     "{at least one zipcode was military code}",
+                     "{at least one zipcode was missing}",
+                     "{Does not plan to complete this degree}",
+                     "{Not living in USA}", "{One time event}",
+                     "{Missing-CATI error}", "{Pass/fail}",
+                     "{No grades awarded}", "{Bad or missing school code}",
+                     "{No match PSS}", "{No match, PSS}","{No match, CCD}", "{Match but value missing in CCD/PSS}",
+                     "{Not degree granting/unknown}",
+                     "(Missing)", NA)
+  
   #force reprocess if called for
   if(forceReread==TRUE){
     runProcessing <- TRUE
@@ -82,8 +108,18 @@ readBB_2001 <- function(b01DER_Filepath,
         file.remove(cacheFilename)
       }
       
-      derivedConn <- file(b01DER_Filepath, "r")
-      writeConnection <- file(cacheFilename, "w")
+      #write the file out to the cache location
+      derivedConn <- tryCatch({file(b01DER_Filepath, "r")},
+                          error = function(e){
+                            stop(paste0("Unable to read data file.\n Please ensure you have read permissions to the read path: ", sQuote(b01DER_Filepath), "\n",
+                                        "Error message: ", e))
+                          })
+      
+      writeConnection <- tryCatch({file(cacheFilename, "w")},
+                          error = function(e){
+                            stop(paste0("Unable to write to cache file.\n Please ensure you have write permissions to the save path: ", sQuote(cacheFilename), "\n",
+                                        "Error message: ", e))
+                          })
       
       wgtData <- readLines(b01WT_FilePath)
       wgtDataID <- substr(wgtData, 1, 8)
@@ -111,6 +147,8 @@ readBB_2001 <- function(b01DER_Filepath,
     close(writeConnection)
     close(derivedConn)
     
+    fileFormat <- valueLabelCleanupFF(fileFormat, omittedLevels, c("{Zero}", "{zero}"))
+    
     #write cache file and .meta
     cacheFile <- list(ver=ifelse(any(search() %in% "EdSurvey"), packageVersion("EdSurvey"), "Invalid"),
                       cacheFileVer=1,
@@ -128,22 +166,6 @@ readBB_2001 <- function(b01DER_Filepath,
   attributes(weights)$default <- "bb01awt" #set default weight
   
   pvs <- list() #no plausible values or achievement levels
-  omittedLevels <- c("{Don't know}", "{Refuse}", "{Refused}", "{Not reached}",
-                     "{Missing}", "{Skipped}", "{CATI error}",
-                     "{Out of range}", "{Uncodeable}", "{Not applicable}",
-                     "{Accepted to program but hasn't started}",
-                     "{at least one zipcode was -1}", "{at least one zipcode was -2}",
-                     "{at least one zipcode was out of the US}",
-                     "{at least one zipcode was bad data}",
-                     "{at least one zipcode was not found}",
-                     "{at least one zipcode was military code}",
-                     "{Does not plan to complete this degree}",
-                     "{Not living in USA}", "{One time event}",
-                     "{Missing-CATI error}", "{Pass/fail}",
-                     "{No grades awarded}", "{Bad or missing school code}",
-                     "{No match PSS}", "{No match, CCD}", "{Match but value missing in CCD/PSS}",
-                     "{Not degree granting/unknown}",
-                     "(Missing)", NA)
   
   edsurvey.data.frame(userConditions = list(),
                       defaultConditions = NULL,
@@ -159,9 +181,9 @@ readBB_2001 <- function(b01DER_Filepath,
                       omittedLevels = omittedLevels,
                       survey = "B&B2001",
                       country = "USA",
-                      psuVar = NULL,  #psu and stratum are weight specific
-                      stratumVar = NULL, 
-                      jkSumMultiplier = 1,
+                      psuVar = "bb01apsu",  #psu and stratum are weight specific
+                      stratumVar = "bb01astr", 
+                      jkSumMultiplier = 0.015625, #1/64 replicates
                       validateFactorLabels = FALSE, #the validateFactorLabels will check in `getData` if all values have a defined label, any missing labels will be automatically added.
                       reqDecimalConversion = FALSE) #decimal conversion is not needed
 }
@@ -308,7 +330,8 @@ parseBBTxtMaster_2001 <- function(masterTxtFilepath){
     for(i in 1:(length(varLineIdx)-1)){
       currentLine <- varLineIdx[i] + 1
       currentVar <- varNames[i]
-      
+      currentFileNo <- fileNo[i]
+
       if((i+1)>=length(varLineIdx)){
         endLine <- length(lines)
       }else{
@@ -339,24 +362,22 @@ parseBBTxtMaster_2001 <- function(masterTxtFilepath){
             
             xDesc <- gsub("^", "'", xDesc, fixed=TRUE) #replace any carrots with single quotes
             
-            if(xCode=="0" && xDesc=="{zero}"){
-              #skip 0={zero} value label as it causes isusses in getData function
-            }else{
-              varCode <- c(varCode, xCode)
-              varDesc <- c(varDesc, xDesc)
-            }
-            
-            
+            varCode <- c(varCode, xCode)
+            varDesc <- c(varDesc, xDesc)
           }
         }
       } #end for(j in currentLine:endLine)
       
       if(length(varCode)>0){
-        fileFormat$labelValues[fileFormat$variableName %in% currentVar] <- paste(varCode, varDesc, sep="=", collapse="^")
+        if(length(varCode)==1 && varCode[1]==0 && length(varDesc)==1 && varDesc[1]=="{zero}"){
+          #if the only varcode and vardesc is 0={zero} then we want to skip adding the definition
+        }else{
+          fileFormat$labelValues[fileFormat$variableName==currentVar & fileFormat$FileNo==currentFileNo] <- paste(varCode, varDesc, sep="=", collapse="^")
+        }
+        
       }
     }
   }#end if(!is.null(varLineIdx) && length(varLineIdx)>0)
-  
   
   #subset for the specific file number we need and also append the ID field as it's not present in the master.txt file
   fileFormat <- subset(fileFormat, fileFormat$FileNo %in% c(1,9)) #filter the file listing for only the derived (fileNo==1) and weight (fileNo==9) files
@@ -371,3 +392,5 @@ parseBBTxtMaster_2001 <- function(masterTxtFilepath){
   
   return(fileFormat)
 }
+
+

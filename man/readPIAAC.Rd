@@ -7,22 +7,30 @@
 readPIAAC(path, countries, forceReread = FALSE, verbose = TRUE)
 }
 \arguments{
-\item{path}{a character value to the full directory to the PIAAC .csv files and Microsoft Excel codebook}
+\item{path}{a character value to the full directory path to the PIAAC .csv
+files and Microsoft Excel codebook}
 
-\item{countries}{a character vector of the country/countries to include using the 
-three-digit ISO country code. A list of country codes can be found in the PIAAC codebook or \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}.
-If files are downloaded using \code{\link{downloadPIAAC}}, a country dictionary text file can be
-found in the filepath. You can use \code{*} to indicate all countries available.}
+\item{countries}{a character vector of the country/countries to include 
+using the three-digit ISO country code. A list of country
+codes can be found in the PIAAC codebook or
+\url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}.
+If files are downloaded using \code{\link{downloadPIAAC}},
+a country dictionary text file can be
+found in the filepath. You can use \code{*} to indicate
+all countries available.}
 
-\item{forceReread}{a logical value to force rereading of all processed data. Defaults to \code{FALSE}.
-Setting \code{forceReread} to be \code{TRUE} will cause PIAAC data to be reread and increase processing time.}
+\item{forceReread}{a logical value to force rereading of all processed data.
+Defaults to \code{FALSE}.
+Setting \code{forceReread} to be \code{TRUE} will cause
+PIAAC data to be reread and increase the processing time.}
 
-\item{verbose}{a logical value that will determine if you want verbose output while the function is running to indicate the progress.
+\item{verbose}{a logical value that will determine if you want verbose
+output while the function is running to indicate the progress.
 Defaults to \code{TRUE}.}
 }
 \value{
 an \code{edsurvey.data.frame} for a single specified country or 
-  an \code{edsurvey.data.frame.list} if multiple countries specified
+an \code{edsurvey.data.frame.list} if multiple countries specified
 }
 \description{
 Opens a connection to a PIAAC data file and
@@ -30,19 +38,20 @@ Opens a connection to a PIAAC data file and
              information about the file and data.
 }
 \details{
-Reads in the unzipped .csv files downloaded from the PIAAC Database using the OECD Repository (\url{http://www.oecd.org/skills/piaac/}). Users can use
-       \code{\link{downloadPIAAC}} to download all required files automatically.
+Reads in the unzipped .csv files downloaded from the PIAAC dataset using
+the OECD repository (\url{http://www.oecd.org/skills/piaac/}). Users can use
+\code{\link{downloadPIAAC}} to download all required files automatically.
 }
 \examples{
 \dontrun{
-# The following call returns an edsurvey.data.frame to PIAAC for Canada
+# the following call returns an edsurvey.data.frame to PIAAC for Canada
 can <- readPIAAC("C:/PIAAC", countries = "can")
 
-# Extract a data.frame with a few variables
+# extract a data.frame with a few variables
 gg <- getData(can, c("c_d05","ageg10lfs"))  
 head(gg)
 
-# Conduct a preliminary analysis on the edsurvey.data.frame
+# conduct an analysis on the edsurvey.data.frame
 edsurveyTable(~ c_d05 + ageg10lfs, data = can)
 }
 

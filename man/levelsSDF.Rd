@@ -4,13 +4,17 @@
 \alias{levelsSDF}
 \title{Print Levels and Labels}
 \usage{
-levelsSDF(varnames, data)
+levelsSDF(varnames, data, showOmitted = TRUE, showN = TRUE)
 }
 \arguments{
 \item{varnames}{a vector of character strings to search for in the database connection object (\code{data})}
 
 \item{data}{an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
 an \code{edsurvey.data.frame.list}}
+
+\item{showOmitted}{a Boolean indicating if omitted levels should be shown}
+
+\item{showN}{a Boolean indicating if (unweighted) \emph{n}-sizes should be shown for each response level}
 }
 \description{
 Retrieve the levels and labels of a variable from an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.

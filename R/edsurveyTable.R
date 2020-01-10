@@ -18,7 +18,7 @@
 #'                using the function \code{\link{showPlausibleValues}}.
 #'                Note that the order of the right-hand side variables affects the output.
 #' @param data object of class \code{edsurvey.data.frame}. See \code{\link{readNAEP}}
-#'       for how to generate an \code{edsurvey.data.frame}.
+#'             for how to generate an \code{edsurvey.data.frame}.
 #' @param weightVar character string indicating the weight variable to use.
 #'                   Note that only the name of the
 #'                   weight variable needs to be included here, and any
@@ -47,7 +47,7 @@
 #' @param returnMeans a logical value; set to \code{TRUE} (the default) to get the \code{MEAN} and
 #'                     \code{SE(MEAN)} columns in the returned table described in the Value section.
 #' @param returnSepct set to \code{TRUE} (the default) to get the \code{SEPCT} column in the returned table described in the Value section.
-#' @param varMethod  a character set to \dQuote{jackknife} or \dQuote{Taylor} that indicates the variance estimation method
+#' @param varMethod  a character set to \code{jackknife} or \code{Taylor} that indicates the variance estimation method
 #'                   to be used.
 #' @param drop a logical value. When set to the default value of \code{FALSE}, when a single column is returned, it is still represented as a \code{data.frame} and is
 #'             not converted to a vector.
@@ -56,10 +56,10 @@
 #' @param defaultConditions a logical value. When set to the default value of \code{TRUE}, uses the default conditions stored in an \code{edsurvey.data.frame}
 #'                           to subset the data. Use \code{print} on an \code{edsurvey.data.frame} to see the default conditions.
 #' @param recode a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
-#'                  \code{recode} \code{=} \code{list(var1} \code{=} \code{list(from} \code{=} \code{c("a", "b", "c"),} \code{to} \code{=} \code{"c"))}. See Examples.
+#'                  \code{recode} \code{=} \code{list(var1} \code{=} \code{list(from} \code{=} \code{c("a", "b", "c"),} \code{to} \code{=} \code{"c"))}.
 #' @param returnVarEstInputs a logical value set to \code{TRUE} to return the
 #'                           inputs to the jackknife and imputation variance
-#'                           estimates. This is intended to allow for
+#'                           estimates, which allows for
 #'                           the computation
 #'                           of covariances between estimates.
 #'
@@ -70,35 +70,35 @@
 #' each level of the cross-tabulation table. 
 #'       
 #' A detailed description of all statistics is given in the vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}.
 #' 
 #' @return A table with the following columns:
 #'    \item{RHS levels}{one column for each right-hand side variable. Each row
 #'                      regards students who are at the levels shown in that row.}
-#'    \item{\code{N}}{count of the number of students in the survey in the \code{RHS levels}}
-#'    \item{\code{WTD_N}}{the weighted \emph{N} count of students in the survey in \code{RHS levels}}
-#'    \item{\code{PCT}}{the percentage of students at the aggregation level specified by \code{pctAggregationLevel} (see Arguments).
+#'    \item{N}{count of the number of students in the survey in the \code{RHS levels}}
+#'    \item{WTD_N}{the weighted \emph{N} count of students in the survey in \code{RHS levels}}
+#'    \item{PCT}{the percentage of students at the aggregation level specified by \code{pctAggregationLevel} (see Arguments).
 #'                      See the vignette titled
-#'         \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+#'         \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
 #'             in the section
 #' \dQuote{Estimation of Weighted Percentages} and its first subsection
 #' \dQuote{Estimation of Weighted Percentages When Plausible Values Are Not Present.}}
-#'    \item{\code{SE(PCT)}}{the standard  error of the percentage, accounting
+#'    \item{SE(PCT)}{the standard  error of the percentage, accounting
 #'                          for the survey sampling methodology. When \code{varMethod}
-#'                          is \code{jackknife}, the calculation of this column is
+#'                          is the \code{jackknife}, the calculation of this column is
 #'                          described in the vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
 #'  in the section
 #' \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Jackknife Method.}
 #'                       When \code{varMethod} is set to \code{Taylor}, the calculation of this column is described in
 #' \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Taylor Series Method.}
 #' }
-#'    \item{\code{MEAN}}{the mean assessment score for units in the \code{RHS levels}, calculated according to the  vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+#'    \item{MEAN}{the mean assessment score for units in the \code{RHS levels}, calculated according to the  vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
 #' in the section
 #' \dQuote{Estimation of Weighted Means When Plausible Values Are Present.}}
-#'    \item{\code{SE(MEAN)}}{the standard error of the \code{MEAN} column (the mean assessment score for units in the \code{RHS levels}), calculated according to the vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}                      
+#'    \item{SE(MEAN)}{the standard error of the \code{MEAN} column (the mean assessment score for units in the \code{RHS levels}), calculated according to the vignette titled
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}                      
 #' in the sections
 #' \dQuote{Estimation of Standard Errors of Weighted Means When Plausible Values Are Present, Using the Jackknife Method}
 #' or 
@@ -153,7 +153,6 @@ edsurveyTable <- function(formula,
     ll <- length(data$datalist)
     
     labels <- as.character(c(1:ll))
-    
     for(i in 1:ll) {
       sdf <- data$datalist[[i]]
       temp <- tryCatch(result <-calcEdsurveyTable(formula, sdf, weightVar, jrrIMax, pctAggregationLevel,
@@ -166,7 +165,6 @@ edsurveyTable <- function(formula,
                          message(paste("Error on dataset ", labels[i], ": ", cond, sep=""))
                        }
       ) 
-      
       if(class(temp) == "edsurveyTable") {
         res2[[labels[i]]] <- result
       }
@@ -419,10 +417,9 @@ calcEdsurveyTable <- function(formula,
         if(returnVarEstInputs) {
           meanVarEstInputsJK <- data.frame(PV = NA, JKreplicate = NA, variable = "label",value = NA)
           meanVarEstInputsPV <- data.frame(PV = NA, variable = "label",value = NA)
-        
         }
       }
-    } else { #for when nrow(dsdf) = 1
+    } else { #for when nrow(edf) = 0
       res[["MEAN"]] <- NA
       res[["SE(MEAN)"]] <- NA
       if(returnVarEstInputs) {
@@ -463,6 +460,7 @@ calcEdsurveyTable <- function(formula,
     }
     # calculate the percent
     res['PCT'] <- res[,'WTD_N']/res[,'twt']*100
+    res[["PCT"]][is.nan(res[["PCT"]])] <- NA
     # make containers for these variables
     pctVarEstInputs <- NULL
     pctVarEstInputsJK <- NULL
@@ -622,8 +620,10 @@ calcEdsurveyTable <- function(formula,
         }) # end sapply(unique(res_no0$group), function(z) {
         res <- merge(res, res_no0[,c(rhs_vars,"SE(PCT)")], by = rhs_vars, sort=FALSE, all.x=TRUE)
       } # end else for if(varMethod == "j") {
+      # these methods can produce NaN, return NA in those cases
+      res[['SE(PCT)']][is.nan(res[['SE(PCT)']])] <- NA
     } # end if(returnSepct) {
-    
+
     # delete intermediates from results
     res['group'] <- NULL
     res['twt'] <- NULL
@@ -671,11 +671,20 @@ calcEdsurveyTable <- function(formula,
                       varMethod=varMethod,
                       omittedLevels=FALSE, # taken care of above
                       returnVarEstInputs=returnVarEstInputs)
-          lmi <- tryCatch(do.call(lm.sdf, lst),
-                          error = function(cond) {
-                            message(paste0("Encountered an issue when calculating a row, ", dQuote(cond$message), " Some mean estimates will be NA in the table."))
-                            return(NULL)
-                          })
+          warningsList <- NULL
+          suppressWarnings(
+            lmi <- withCallingHandlers(
+              tryCatch(do.call(lm.sdf, lst),
+                       error = function(cond) {
+                         message(paste0("Encountered an issue when calculating a row, ", dQuote(cond$message), " Some mean estimates will be NA in the table."))
+                         return(NULL)
+                       }),warning = function(cond) {
+                         if (grepl("certainties", cond$message)) {
+                           warningsList <<- c(warningsList, "When performing Taylor series variance estimation some rows have strata that had only one populated PSU. Units in these strata were assumed to be certainties. You can condense the strata/PSU structure to avoid this.")
+                         } else {
+                           warningsList <<- c(warningsList, cond$message)
+                         }
+                       }))
           if (!is.null(lmi)) {
             cf <- summary(lmi)$coefmat
             if(!is.na(cf$coef)) {
@@ -718,6 +727,9 @@ calcEdsurveyTable <- function(formula,
         } # end if (nrow(dsdf) > 1)
         
       } # end for(i in 1:nrow(res)) {
+      if (length(unique(warningsList)) > 0) {
+        warning(unique(warningsList))
+      }
     } # if(returnMeans)
     
   } # end else if (length(rhs_vars) == 0)
@@ -808,7 +820,11 @@ print.edsurveyTable <- function(x, digits=getOption("digits"), ...) {
   }
   cat("\n")
   cat(paste0("Summary Table:\n"))
-  print(x$data, digits=digits, row.names=FALSE, ...)
+  # find out if it wraps,
+  co <- capture.output(print(x$data, digits=digits, row.names=TRUE, ...))
+  # it it wraps, that will make the length of co more than the number
+  # of rows in data plus a header row, so include row names to help the user
+  print(x$data, digits=digits, row.names=length(co) > nrow(x$data) + 1, ...)
 }
 
 sumna <- function(x) { sum(x, na.rm=TRUE)}
@@ -839,7 +855,15 @@ typeOfVariable <- function(var, data) {
     if (!tolower(v) %in% tolower(colnames(data))) {
       return(NA)
     }
-    
+    # get the cache, if it exists
+    tryCatch(cache <- getAttributes(data=data, "cache"), error=function(e) {})
+    if(tolower(v) %in% tolower(colnames(cache))) {
+      if(is.numeric(cache[[v]])) {
+        return("continuous")
+      } else {
+        return("discrete")
+      }
+    }
     if (fileFormat$dataType[tolower(fileFormat$variableName) == tolower(v)] == "numeric") {
       return("continuous")
     } else {

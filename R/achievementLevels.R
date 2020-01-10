@@ -13,7 +13,7 @@
 #'                    levels of all variables specified in \code{achievementVars}.
 #' @param data      an \code{edsurvey.data.frame}
 #' @param weightVar  character string indicating the weight variable to use.
-#'                   Note that only the name of the
+#'                   Only the name of the
 #'                   weight variable needs to be included here, and any
 #'                   replicate weights will be automatically included.
 #'                   When this argument is \code{NULL}, the function uses the default.
@@ -22,9 +22,9 @@
 #'                  Basic, Proficient, and Advanced by default.
 #' @param jrrIMax    a numeric value. When using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
 #'                   sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
-#'                   term (see the Details section of
-#'                 \code{\link{lm.sdf}} for the definition of \eqn{V_{jrr}}) can be estimated with any number of plausible values, and values larger than the number of 
-#'                   plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+#'                   term (see \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}} for the definition of \eqn{V_{jrr}})
+#'                   can be estimated with any number of plausible values, and values larger than the number of 
+#'                   plausible values on the survey (including \code{Inf}) will result in all plausible values being used. 
 #'                   Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.
 #' @param omittedLevels  a logical value. When set to the default value (\code{TRUE}), 
 #'                       it drops those levels in all factor variables that are specified in \code{achievementVars} 
@@ -44,21 +44,27 @@
 #'                          primary sampling units (PSUs)
 #' @param returnVarEstInputs a logical value set to \code{TRUE} to return the
 #'                           inputs to the jackknife and imputation variance
-#'                           estimates. This is intended to allow for
-#'                           the computation
+#'                           estimates, which allows for the computation
 #'                           of covariances between estimates.
 #' @author Huade Huo, Ahmad Emad, and Trang Nguyen
-#' @details The \code{achievementLevels} function applies appropriate weights and the variance estimation method for each
-#'          \code{edsurvey.data.frame}, with several arguments for customizing the aggregation and output of the analysis 
-#'          results. Namely, by using these optional arguments, users can choose to generate the percentage of students 
-#'          performing at each achievement level (discrete), generate the percentage of students performing at or above each achievement level (cumulative), 
-#'          calculate the percentage distribution of students by achievement level (discrete or cumulative) and 
-#'          selected characteristics (specified in \code{aggregateBy}), and compute the percentage distribution of students 
+#' @details The \code{achievementLevels} function applies appropriate weights
+#'          and the variance estimation method for each
+#'          \code{edsurvey.data.frame}, with several arguments for customizing
+#'          the aggregation and output of the analysis 
+#'          results. Namely, by using these optional arguments, users can choose
+#'          to generate the percentage of students 
+#'          performing at each achievement level (discrete), generate the
+#'          percentage of students performing at or above each achievement level
+#'          (cumulative), 
+#'          calculate the percentage distribution of students by achievement
+#'          level (discrete or cumulative) and 
+#'          selected characteristics (specified in \code{aggregateBy}), and
+#'          compute the percentage distribution of students 
 #'          by selected characteristics within a specific achievement level.
 #'
 #' \subsection{Calculation of percentages}{
 #'          The details of the methods are shown in the vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics} in 
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistical Methods Used in EdSurvey} in 
 #'          \dQuote{Estimation of Weighted Percentages When Plausible Values Are Present} and are used to calculate 
 #'          all cumulative and discrete probabilities.
 #'
@@ -74,13 +80,13 @@
 #'          
 #'          When the requested achievement levels are cumulative (\code{returnCumulative = TRUE}),
 #'          the percentage \eqn{\mathcal{A}} is the percentage of students (within the categories specified in \code{aggregateBy}) 
-#'          whose scores lie in the range  [\eqn{cutPoints_i}, \eqn{\infty}), \eqn{i = 1,2...,n-1}. The 
+#'          whose scores lie in the range  [\eqn{cutPoints_i}, \eqn{\infty}), \eqn{i = 1, 2, ..., n-1}. The 
 #'          first and last categories are the same as defined for discrete levels.
 #' } 
 #'         
 #' \subsection{Calculation of standard error of percentages}{
 #'          The method used to calculate the standard error of the percentages is described in the vignette titled
-#'          \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics} 
+#'          \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistical Methods Used in EdSurvey} 
 #'          in the sections \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Present, Using the Jackknife Method} 
 #'          and \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Taylor Series Method.}
 #'          For \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Present, Using the Jackknife Method,}
@@ -88,19 +94,19 @@
 #' }
 #'          
 #' @return
-#' A \code{list} containing up to two data frames, one for each of the discrete and cumulative achievement levels
-#' as determined by \code{returnDiscrete} and \code{returnCumulative}. The \code{data.frame} contains the following columns:
-#' \item{\code{Level}}{one row for each level of the specified achievement cutpoints}
+#' A \code{list} containing up to two data frames, one discrete achievement levels (when \code{returnDiscrete} is \code{TRUE})
+#' and one for cumulative achievement levels (when \code{returnCumulative} is \code{TRUE}). The \code{data.frame} contains the following columns:
+#' \item{Level}{one row for each level of the specified achievement cutpoints}
 #' \item{Variables in achievementVars}{one column for each variable in \code{achievementVars} 
 #' and one row for each level of each variable in \code{achievementVars}}
-#' \item{\code{Percent}}{the percentage of students at or above each achievement level aggregated as specified by \code{aggregateBy}}
-#' \item{\code{StandardError}}{the standard error of the percentage, accounting for the survey sampling methodology. 
-#'                             See the vignette titled \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.}
-#' \item{\code{N}}{the number of observations in the incoming data (the
+#' \item{Percent}{the percentage of students at or above each achievement level aggregated as specified by \code{aggregateBy}}
+#' \item{StandardError}{the standard error of the percentage, accounting for the survey sampling methodology. 
+#'                             See the vignette titled \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistical Methods Used in EdSurvey}.}
+#' \item{N}{the number of observations in the incoming data (the
 #'                  number of rows when \code{omittedLevels} and
 #'                  \code{defaultConditions} are set to \code{FALSE})}
-#' \item{\code{wtdN}}{the weighted number of observations in the data}
-#' \item{\code{nPSU}}{the number of primary sampling units (PSUs) at or above each achievement level aggregated as specified by \code{aggregateBy}. Only returned with \code{returnNumberOfPSU=TRUE}.}
+#' \item{wtdN}{the weighted number of observations in the data}
+#' \item{nPSU}{the number of PSUs at or above each achievement level aggregated as specified by \code{aggregateBy}. Only returned with \code{returnNumberOfPSU=TRUE}.}
 #' @references 
 #' Rubin, D. B. (1987). \emph{Multiple imputation for nonresponse in surveys}. New York, NY: Wiley.
 #'
@@ -120,6 +126,9 @@ achievementLevels <- function(achievementVars = NULL,
                               recode=NULL,
                               returnNumberOfPSU=FALSE,
                               returnVarEstInputs=FALSE) {
+  
+  achievementVars <- if (is.null(achievementVars)) NULL else tolower(achievementVars)
+  aggregateBy <- if (is.null(aggregateBy)) NULL else tolower(aggregateBy)
   
   alResultDfList <- list()
   assertArgument(data)
@@ -226,10 +235,10 @@ calAL <- function(achievementVars = NULL,
       # Get stratum and PSU variable
       stratumVar <- getAttributes(data,"stratumVar")
       psuVar <- getAttributes(data,"psuVar")
-      if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% names(data$data))) {
+      if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% colnames(data))) {
         getDataVarNames <- c(vars, wgt, stratumVar, psuVar)
     } else {
-      warning(paste0("Stratum and PSU variable are required for this call and are not on the incoming data. Ignoring ", dQuote("returnNumberOfPSU=TRUE"),"."))
+      warning(paste0("Stratum and PSU variables are required for this call and are not on the incoming data. Ignoring ", dQuote("returnNumberOfPSU=TRUE"),"."))
       returnNumberOfPSU <- FALSE
     }
 
@@ -466,7 +475,7 @@ assertArgument <- function(arguments, data){
            if (arguments == "") {
              stop("Argument ", sQuote("weightVar"), " is required.")
            }
-           if (!(arguments %in% attributes(getAttributes(data, "weights")))) {
+           if (!(arguments %in% attributes(getAttributes(data, "weights"))$names)) {
              stop(paste0("Argument ", sQuote("weightVar"), " value of ", sQuote(arguments), 
                          " is not available on the data.")) 
            }
@@ -552,7 +561,7 @@ calculateAL <- function(recodeEdfResults, pvs, jrrIMax, returnVarEstInputs,
   suppressWarnings(imp_dt <- lapply(1:M,function(i) {
     recodeEdfResults[,list(lengthY = .N, sumY = sum(get(wgt))), by = c(paste0(pvs[i],"_lvl"),achievementVars)][,PV:=i]
   }))
-  imp_dt <- rbindlist(imp_dt)
+  imp_dt <- rbindlist(imp_dt, use.names = FALSE)
   names(imp_dt)[1] <- "Level"
   # end imp_dt
 

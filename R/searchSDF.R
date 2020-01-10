@@ -1,11 +1,11 @@
 #' @title EdSurvey Codebook Search 
 #'
-#' @description Retrieves variable names and labels for an \code{edsurvey.data.frame},
+#' @description Retrieves variable names and labels for an \code{edsurvey.data.frame}, 
 #' a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
 #' using character string matching.
 #'
 #' @param string     a vector of character strings to search for in the database connection object (\code{data}).
-#'                   Note that the function will search the codebook
+#'                   The function will search the codebook
 #'                   for a matching character string using regular expressions. When a
 #'                   string has several elements, all must be present for a 
 #'                   variable to be returned.
@@ -75,7 +75,7 @@ searchSDF <- function(string, data, fileFormat = NULL, levels = FALSE) {
   labelsFile$Levels <- NA
   if (levels == TRUE) {
     # return levels of each of the variables
-    if (length(string) == 1 & string == "") {
+    if (length(string) == 1 && string == "") {
       stop(paste0("The argument ", sQuote("string"), " must be nonempty to return variable levels."))
     }
     # create a dataframe with file formatting information for selected variables 
@@ -89,9 +89,8 @@ searchSDF <- function(string, data, fileFormat = NULL, levels = FALSE) {
       # return levels of each of the variables; involves splitting and appending levels from the
       # fileFormat file. Note that some variable don't have levels and are read in as ''
       if (varsData$labelValues[[i]] != "") {
-        varLevels <- levelsSDF(varsData$variableName[[i]], sdf)
-        varLevels <- unlist(varLevels, use.names = FALSE)
-        varLevels <- gsub(pattern = "=", replacement = ". ", varLevels)
+        levelsInfo <- levelsSDF(varsData$variableName[[i]], sdf)[[varsData$variableName[[i]]]]
+        varLevels <- paste0(levelsInfo$level, ". ", levelsInfo$labels)
         varLevelsSplit <- c()
         for (ii in 1:length(varLevels)) {
           x <- varLevels[[ii]]

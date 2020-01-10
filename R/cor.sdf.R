@@ -9,7 +9,7 @@
 #' @param data       an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
 #' @param method     a character string indicating which correlation coefficient (or covariance) is to be computed.
 #'                   One of \code{Pearson} (default), \code{Spearman}, \code{Polychoric}, or \code{Polyserial}.
-#' @param weightVar  character indicating the weight variable to use. See Details.
+#' @param weightVar  character indicating the weight variable to use. See Details section in \code{\link{lm.sdf}}.
 #' @param reorder    a list of variables to reorder. Defaults to \code{NULL} (no variables are reordered). Can be set as 
 #'                   \code{reorder} \code{=} \code{list(var1} \code{=} \code{c("a","b","c"),} \code{var2} \code{=} \code{c("4", "3", "2", "1"))}. See Examples.
 #' @param omittedLevels a logical value. When set to the default value of \code{TRUE}, drops those levels of all factor variables that are specified
@@ -27,24 +27,24 @@
 #'                       in the codebook. See Examples.
 #' 
 #' @details 
-#' Note that the \code{\link{getData}} arguments and \code{\link{recode.sdf}} may be useful. (See Examples.)
+#' The \code{\link{getData}} arguments and \code{\link{recode.sdf}} may be useful. (See Examples.)
 #' The correlation methods are calculated as described in the documentation for the \code{wCorr} package---see \code{browseVignettes(package="wCorr")}.
 #'
 #' @return
 #' An \code{edsurvey.cor} that has print and summary methods.
 #'
 #' The class includes the following elements:
-#' \item{\code{correlation}}{numeric estimated correlation coefficient}
-#' \item{\code{Zse}}{standard error of the correlation (\code{Vimp} + \code{Vjrr}). In the case of Pearson, this is calculated in the linear atanh space and so is not a standard error in the usual sense.}
-#' \item{\code{correlates}}{a vector of length two showing the columns for which the correlation coefficient was calculated}
-#' \item{\code{variables}}{\code{correlates} that are discrete}
-#' \item{\code{order}}{a list that shows the order of each variable}
-#' \item{\code{method}}{the type of correlation estimated}
-#' \item{\code{Vjrr}}{the jackknife component of the variance estimate. For Pearson, in the atanh space.}
-#' \item{\code{Vimp}}{the imputation component of the variance estimate. For Pearson, in the atanh space.}
-#' \item{\code{weight}}{the weight variable used}
-#' \item{\code{npv}}{the number of plausible values used}
-#' \item{\code{njk}}{the number of the jackknife replicates used}
+#' \item{correlation}{numeric estimated correlation coefficient}
+#' \item{Zse}{standard error of the correlation (\code{Vimp} + \code{Vjrr}). In the case of Pearson, this is calculated in the linear atanh space and is not a standard error in the usual sense.}
+#' \item{correlates}{a vector of length two showing the columns for which the correlation coefficient was calculated}
+#' \item{variables}{\code{correlates} that are discrete}
+#' \item{order}{a list that shows the order of each variable}
+#' \item{method}{the type of correlation estimated}
+#' \item{Vjrr}{the jackknife component of the variance estimate. For Pearson, in the atanh space.}
+#' \item{Vimp}{the imputation component of the variance estimate. For Pearson, in the atanh space.}
+#' \item{weight}{the weight variable used}
+#' \item{npv}{the number of plausible values used}
+#' \item{njk}{the number of the jackknife replicates used}
 #' 
 #' @seealso \ifelse{latex}{\code{cor}}{\code{\link[stats]{cor}}} and \ifelse{latex}{\code{weightedCorr}}{\code{\link[wCorr]{weightedCorr}}}
 #' @author Paul Bailey; relies heavily on the \code{wCorr} package, written by Ahmad Emad and Paul Bailey
@@ -145,7 +145,7 @@ cor.sdf <- function(x,
       if(nrow(lsdf) == 0) {
         stop("No rows with positive weights.")
       }
-      warning("Removing rows with 0 weight from analysis.")
+      warning("Removing rows with 0 weight from the analysis.")
     }
   } # end if(weightVar=="one")
   
@@ -227,7 +227,10 @@ cor.sdf <- function(x,
   # drop NAs
   lsdf <- lsdf[!is.na(xvarlsdf[,1]),]
   lsdf <- lsdf[!is.na(yvarlsdf[,1]),]
-
+  
+  if(nrow(lsdf) == 0) {
+    stop("Nothing to correlate.")
+  }
 
   # get method
   method <- method[[1]]
@@ -328,6 +331,7 @@ print.edsurveyCor <- function(x, digits = getOption("digits"), ...) {
   cat(paste0("n used: ", x$nUsed, "\n"))
   cat("\n")
   cat(paste0("Correlation: ", signif(x$correlation, digits=digits), collapse=""))
+  cat("\n")
   if(length(x$order)>0) {
     cat("\nCorrelation Levels:\n")
     for(var in 1:length(x$order)) {

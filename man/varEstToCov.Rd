@@ -4,8 +4,7 @@
 \alias{varEstToCov}
 \title{Covariance Estimation}
 \usage{
-varEstToCov(varEstA, varEstB = varEstA, varA, varB = varA,
-  jkSumMultiplier)
+varEstToCov(varEstA, varEstB = varEstA, varA, varB = varA, jkSumMultiplier)
 }
 \arguments{
 \item{varEstA}{a list of two \code{data.frame}s returned by a function after 
@@ -29,7 +28,7 @@ argument for which a covariance is required}
 balanced repeated replication (BRR) 
 method---multiplies the final jackknife variance estimate by a value, 
 set \code{jkSumMultiplier} to that value.
-For an \code{edsurvey.data.frame}, or
+For an \code{edsurvey.data.frame} or
 a \code{light.edsurvey.data.frame},
 the recommended value can be recovered with
 \code{EdSurvey::getAttributes(}\code{myData,} \code{"jkSumMultiplier")}.}
@@ -45,16 +44,15 @@ When the variance of a derived statistic (e.g., a difference) is
              between two statistics.
 }
 \details{
-Note that these functions are not vectorized, so \code{varA} and 
+These functions are not vectorized, so \code{varA} and 
 \code{varB} must contain exactly one variable name.
 
 The method used to compute the covariance is in
 the vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
-in the section \dQuote{Estimation of Covariances.}
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
 
 The method used to compute the degrees of freedom is in the vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
 in the section \dQuote{Estimation of Degrees of Freedom.}
 }
 \examples{

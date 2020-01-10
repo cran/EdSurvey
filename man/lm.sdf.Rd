@@ -37,11 +37,13 @@ should be the group to be omitted (the reference group).}
 \item{varMethod}{a character set to \dQuote{jackknife} or \dQuote{Taylor} that indicates the variance
 estimation method to be used. See Details.}
 
-\item{jrrIMax}{when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
-sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
-term (see Details) can be estimated with any number of plausible values, and values larger than the number of 
-plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
-Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
+\item{jrrIMax}{a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+                  sampling variance from the first plausible value as the component for sampling variance estimation. The \code{Vjrr} 
+                  term (see 
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}})
+                  can be estimated with any number of plausible values, and values larger than the number of 
+                  plausible values on the survey (including \code{Inf}) will result in all plausible values being used. 
+                  Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
 
 \item{omittedLevels}{a logical value. When set to the default value of \code{TRUE}, drops
 those levels of all factor variables that are specified
@@ -58,8 +60,7 @@ to subset the data. Use \code{print} on an
 
 \item{returnVarEstInputs}{a logical value set to \code{TRUE} to return the
 inputs to the jackknife and imputation variance
-estimates. This is intended to allow for
-the computation
+estimates, which allow for the computation
 of covariances between estimates.}
 
 \item{returnNumberOfPSU}{a logical value set to \code{TRUE} to return the number of 
@@ -85,9 +86,9 @@ An \code{edsurvey.lm} with the following elements:
    \item{weight}{the name of the weight variable}
    \item{npv}{the number of plausible values}
    \item{jrrIMax}{the \code{jrrIMax} value used in computation}
-   \item{njk}{the number of jackknife replicates used; set to \code{NA}
+   \item{njk}{the number of the jackknife replicates used; set to \code{NA}
               when Taylor series variance estimates are used}
-   \item{varMethod}{one of \code{Taylor series} or \code{jackknife}}
+   \item{varMethod}{one of \code{Taylor series} or the \code{jackknife}}
    \item{residuals}{residuals from the average regression coefficients}
    \item{PV.residuals}{residuals from the by plausible value coefficients}
    \item{PV.fitted.values}{fitted values from the by plausible value coefficients}
@@ -95,7 +96,7 @@ An \code{edsurvey.lm} with the following elements:
    \item{U}{sampling variance covariance matrix}
    \item{rbar}{average relative increase in variance; see van Buuren (2012, eq. 2.29)}
    \item{nPSU}{number of PSUs used in calculation}
-   \item{n0}{number of rows on \code{edsurvey.data.frame} before any conditions were applied}
+   \item{n0}{number of rows on an \code{edsurvey.data.frame} before any conditions were applied}
    \item{nUsed}{number of observations with valid data and weights larger than zero}
    \item{data}{data used for the computation}
    \item{Xstdev}{standard deviations of regressors, used for computing standardized
@@ -119,10 +120,10 @@ Fits a linear model that uses weights and variance estimates appropriate for the
 }
 \details{
 This function implements an estimator that correctly handles left-hand
-side variables that are either numeric or plausible values, and allows for survey 
+side variables that are either numeric or plausible values and allows for survey 
 sampling weights and estimates variances using the jackknife replication method.
 The vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
  describes estimation of the reported statistics. 
 
 Regardless of the variance estimation, the coefficients are estimated
@@ -150,15 +151,15 @@ the average \emph{R}-squared using the average across the plausible values.
   By default, the standardized coefficients are calculated using standard
   deviations of the variables themselves, including averaging the standard
   deviation across any plausible values. When \code{standardizeWithSamplingVar}
-  is set to \code{TRUE} the variance of the standardized coefficient is
+  is set to \code{TRUE}, the variance of the standardized coefficient is
   calculated similar to a regression coefficient and therefore includes the
   sampling variance in the variance estimate of the outcome variable.
 }
 
 \subsection{Variance estimation of coefficients}{
   All variance estimation methods are shown in the vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.
-  When \code{varMethod} is set to \code{jackknife} and the predicted
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}.
+  When \code{varMethod} is set to the \code{jackknife} and the predicted
   value does not have plausible values, the variance of the coefficients
   is estimated according to the section
 \dQuote{Estimation of Standard Errors of Weighted Means When
@@ -180,31 +181,43 @@ the average \emph{R}-squared using the average across the plausible values.
         Values Are Present, Using the Taylor Series Method.}
 }
 }
+\section{Testing}{
+
+Of the common hypothesis tests for joint parameter testing, only the Wald
+test is widely used with plausible values and sample weights. As such, it
+replaces, if imperfectly, the Akaike Information Criteria (AIC), the
+likelihood ratio test, chi-squared, and analysis of variance (ANOVA, including \emph{F}-tests). See \code{\link{waldTest}} or
+the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-WaldTest.pdf}{\emph{Methods and Overview of Using EdSurvey for Running Wald Tests}}.
+}
+
 \examples{
 \dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
-# By default uses jackknife variance method using replicate weights
+# by default uses jackknife variance method using replicate weights
 lm1 <- lm.sdf(composite ~ dsex + b017451, data=sdf)
 lm1
 
-# The summary function displays detailed results
+# the summary function displays detailed results
 summary(lm1)
 
-# To show standardized regression coefficients
+# to show standardized regression coefficients
 summary(lm1, src=TRUE)
 
-# To specify a variance method, use varMethod
+# to specify a variance method, use varMethod
 lm2 <- lm.sdf(composite ~ dsex + b017451, data=sdf, varMethod="Taylor")
 lm2
 summary(lm2)
 
-# Use relevel to set a new omitted category
+# use relevel to set a new omitted category
 lm3 <- lm.sdf(composite ~ dsex + b017451, data=sdf, relevels=list(dsex="Female"))
 summary(lm3)
+# test of a simple joint hypothesis
+waldTest(lm3, "b017451")
 
-# Use recode to change values for specified variables
+# use recode to change values for specified variables
 lm4 <- lm.sdf(composite ~ dsex + b017451, data=sdf,
               recode=list(b017451=list(from=c("Never or hardly ever",
                                               "Once every few weeks",
@@ -214,6 +227,7 @@ lm4 <- lm.sdf(composite ~ dsex + b017451, data=sdf,
                                        to=c("Frequently"))))
 # Note: "Infrequently" is the dropped level for the recoded b017451
 summary(lm4)
+
 }
 }
 \references{

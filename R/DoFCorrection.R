@@ -3,9 +3,9 @@
 #' @description Calculates the degrees of freedom for a statistic
 #'              (or of a contrast between two statistics) based on the
 #'              jackknife and imputation variance estimates.
-#' @param varEstA the varEstInput object returned from certain functions, such as
-#'                \code{\link{lm.sdf}} when \code{returnVarEstInputs=} \code{TRUE}).
-#'                The variable \code{varA} must be on this data.
+#' @param varEstA the \code{varEstInput} object returned from certain functions, such as
+#'                \code{\link{lm.sdf}} when \code{returnVarEstInputs=}\code{TRUE}).
+#'                The variable \code{varA} must be on this dataset.
 #'                See Examples.
 #' @param varEstB similar to the \code{varEstA} argument.
 #'                If left blank, both are assumed to come 
@@ -28,11 +28,11 @@
 #' have little variance within strata, and
 #' some strata will contribute fewer than a full degree of freedom.
 #'
-#' Note that these functions are not vectorized, so \code{varA} and 
+#' The functions are not vectorized, so both \code{varA} and 
 #' \code{varB} must contain exactly one variable name.
 #'
 #' The method used to compute the degrees of freedom is in the vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
 #' section \dQuote{Estimation of Degrees of Freedom.}
 #'
 #' @return
@@ -81,6 +81,8 @@ DoFCorrection <- function(varEstA, varEstB=varEstA, varA, varB=varA, method=c("W
     }
     JK$cov <- (JK$value.A - JK$value.B)^2
   }
+  # remove rows where it is not possible to calcualte the statistic
+  JK <- JK[!is.na(JK$cov),]
  
   # the results will be NA if the denominator is zero
   if(!any(abs(JK$cov) > 0, na.rm=TRUE)) {

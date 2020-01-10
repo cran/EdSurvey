@@ -1,10 +1,10 @@
 #' @title Summarize edsurvey.data.frame Variables
 #'
-#' @description Summarizes edsurvey.data.frame variables.
+#' @description Summarizes \code{edsurvey.data.frame} variables.
 #'
-#' @param data an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}
+#' @param data an \code{edsurvey.data.frame}, an \code{edsurvey.data.frame.list}, or \code{light.edsurvey.data.frame}
 #' @param variable character vector of variable names
-#' @param weightVar character weight variable name. Default to be the default weight of \code{data} if it exists.
+#' @param weightVar character weight variable name. Default is the default weight of \code{data} if it exists.
 #'                  If the given survey data do not have a default weight,
 #'                  the function will produce unweighted statistics instead. 
 #'                  Can be set to \code{NULL} to return unweighted statistics.
@@ -14,16 +14,13 @@
 #' @return 
 #' summary of weighted or unweighted statistics of a given variable in an \code{edsurvey.data.frame}  
 #' 
-#' For categorical variables, summary results are a crosstab of all variables and include:
-#' \describe{
+#' For categorical variables, the summary results are a crosstab of all variables and include the following:
 #'   \item{[variable name]}{level of the variable in the column name that the row regards. There is one column per element of \code{variable}.}
-#'   \item{N}{number of cases for each category. Weighted N is also produced if users choose to produce weighted statistics.}
-#'   \item{Percent}{percentage of each category. Weighted percent is also produced if users choose to produce weighted statistics.}
+#'   \item{N}{number of cases for each category. Weighted N also is produced if users choose to produce weighted statistics.}
+#'   \item{Percent}{percentage of each category. Weighted percent also is produced if users choose to produce weighted statistics.}
 #'   \item{SE}{standard error of the percentage statistics}
-#'  }
 #'  
-#' For continuous variables, summary results are by variable and include:
-#' \describe{
+#' For continuous variables, the summary results are by variable and include the following:
 #'   \item{Variable}{name of the variable the row regards}
 #'   \item{N}{total number of cases (both valid and invalid cases)}
 #'   \item{Min.}{smallest value of the variable}
@@ -35,12 +32,11 @@
 #'   \item{SD}{standard deviation or weighted standard deviation}
 #'   \item{NA's}{number of \code{NA} in variable and in weight variables}
 #'   \item{Zero-weights}{number of zero-weight cases if users choose to produce weighted statistics}
-#' }
 #' 
 #' If the weight option is chosen, the function produces weighted percentile and standard deviation. Refer to the vignette titled 
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics} and
+#' \emph{\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistical Methods Used in EdSurvey}} and
 #' the vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Percentiles.pdf}{Percentile}
+#' \emph{\href{https://www.air.org/sites/default/files/EdSurvey-Percentiles.pdf}{Methods Used for Estimating Percentiles in EdSurvey}}
 #' for how the function calculates these statistics (with and without plausible values). 
 #' 
 #' @importFrom stats quantile
@@ -51,6 +47,9 @@
 summary2 <- function(data, variable,
                      weightVar=attr(getAttributes(data,"weights"),"default"),
                      omittedLevels=FALSE) {
+  if (inherits(data, c("edsurvey.data.frame.list"))) {
+    return(itterateESDFL(match.call(),data))
+  }
   checkDataClass(data,c("light.edsurvey.data.frame","edsurvey.data.frame"))
   callc <- match.call()
   if (is.null(weightVar) || !weightVar %in% colnames(data)) {
@@ -152,9 +151,177 @@ fast.sd <- function(variables, weight) {
     y0 <- y[!is.na(y[,i]) & !is.na(weight) & weight != 0,i]
     w0 <- weight[!is.na(y[,i]) & !is.na(weight) & weight !=0]
     mu[i] <- sum(w0 * y0)/sum(w0)
-    variance[i] <- sum(w0 * (y0 - mu[i])^2)/sum(w0)
+    N <- length(w0[w0>0])
+    variance[i] <- sum(w0 * (y0 - mu[i])^2)/( (N-1)/N * sum(w0))
   }
   return(list(mean=mean(mu), std=sqrt(mean(variance))))
+}
+
+fast.sd.var <- function(variables, weightVar, replicateWeights, 
+                        jrrIMax=1, jkSumMultiplier=1, returnVarEstInputs=TRUE) {
+  y <- as.matrix(variables) # need to abstract PVs
+  variance <- mu <- rep(NA, ncol(y))
+  stdVSamp <- 0
+  jrrIMax <- min(jrrIMax, ncol(y))
+  njr <- jrrIMax * ncol(replicateWeights)
+  JK <- data.frame(PV=rep(1:jrrIMax,ncol(replicateWeights)),
+                   JKreplicate=rep(1:ncol(replicateWeights),jrrIMax),
+                   variable=rep("SD", njr),
+                   value=rep(NA,njr))
+  for(i in 1:ncol(y)) {
+    y0 <- y[!is.na(y[,i]) & !is.na(weightVar) & weightVar != 0,i]
+    w0 <- weightVar[!is.na(y[,i]) & !is.na(weightVar) & weightVar !=0]
+    mu[i] <- sum(w0 * y0)/sum(w0)
+    N <- length(w0[w0>0])
+    variance[i] <- sum(w0 * (y0 - mu[i])^2)/( sum(w0))
+    if(i <= jrrIMax) {
+      for(j in 1:ncol(replicateWeights)) {
+        wj <- replicateWeights[,j]
+        w0 <- wj[!is.na(y[,i]) & !is.na(wj) & wj !=0]
+        y0 <- y[ !is.na(y[,i]) & !is.na(wj) & wj !=0,i]
+        muj <- sum(w0 * y0)/sum(w0)
+        variancej <- sum(w0 * (y0 - muj)^2)/( sum(w0))
+        JK$value[(i-1)*ncol(replicateWeights)+j] <- sqrt(variancej) - sqrt(variance[i])
+        stdVSamp <- stdVSamp + (sqrt(variancej) - sqrt(variance[i]))^2
+      }
+    }
+  }
+  stdVSamp <- stdVSamp / jrrIMax
+  # imputation variance
+  m <- ncol(y) 
+  stdVImp <- 0
+  if(m > 1) {
+    stdVImp <- (m+1)/(m*(m-1)) * sum((sqrt(variance) - mean(sqrt(variance)))^2)
+  }
+  varEstInputs <- list(JK=JK)
+  if(ncol(y) > 1) {
+    PV <- data.frame(PV=1:ncol(y),
+                     variable=rep("SD", ncol(y)),
+                     value=sqrt(variance) - mean(sqrt(variance)))
+    varEstInputs <- c(varEstInputs,list(PV=PV))
+  }
+  df <- DoFCorrection(varEstA=varEstInputs, varA="SD", method="JR")
+  stdse <- sqrt(stdVImp + stdVSamp)
+  if (returnVarEstInputs){
+    return(list(mean=mean(mu), 
+                std=mean(sqrt(variance)), 
+                stdSE=stdse, 
+                stdVar=list(varImp=stdVImp, varSamp=stdVSamp), 
+                df=df,
+                varEstInputs=varEstInputs))
+  } else {
+    return(list(mean=mean(mu), 
+                std=mean(sqrt(variance)), 
+                stdSE=stdse, 
+                stdVar=list(varImp=stdVImp, varSamp=stdVSamp), 
+                df=df))
+  }
+}
+
+#' @title EdSurvey Standard Deviation
+#'
+#' @description Calculate the standard deviation of a numeric variable in an \code{edsurvey.data.frame}.
+#'
+#' @param data an \code{edsurvey.data.frame}, an \code{edsurvey.data.frame.list}, or a \code{light.edsurvey.data.frame}
+#' @param variable character vector of variable names
+#' @param weightVar character weight variable name. Default is the default weight of \code{data} if it exists.
+#'                  If the given survey data do not have a default weight,
+#'                  the function will produce unweighted statistics instead. 
+#'                  Can be set to \code{NULL} to return unweighted statistics.
+#' @param jrrIMax    a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+#'                   sampling variance from the first plausible value as the component for sampling variance estimation. The \code{Vjrr} 
+#'                   term (see 
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}})
+#'                   can be estimated with any number of plausible values, and values larger than the number of 
+#'                   plausible values on the survey (including \code{Inf}) will result in all plausible values being used. 
+#'                   Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.
+#' @param varMethod  deprecated parameter; \code{gap} always uses the jackknife variance estimation
+#' @param omittedLevels a logical value. When set to \code{TRUE}, drops those levels of the specified \code{variable}.
+#'                     Use print on an \code{edsurvey.data.frame} to see the omitted levels. Defaults to \code{FALSE}.
+#' @param defaultConditions a logical value. When set to the default value of
+#'                          \code{TRUE}, uses the default conditions stored in
+#'                           an \code{edsurvey.data.frame} to subset the data. Use
+#'                          \code{print} on an \code{edsurvey.data.frame} to
+#'                          see the default conditions.
+#' @param recode a list of lists to recode variables. Defaults to \code{NULL}.
+#'               Can be set as \code{recode} \code{=} \code{list(var1}
+#'               \code{=} \code{list(from} \code{=} \code{c("a","b","c"), to}
+#'               \code{=} \code{"d"))}. 
+#' @param targetLevel a character string. When specified, calculates the gap in
+#'                    the percentage of students at
+#'                    \code{targetLevel} in the \code{variable} argument, which is useful for
+#'                    comparing the gap in the percentage of students at a
+#'                    survey response level.
+#' @param jkSumMultiplier when the jackknife variance estimation method---or
+#'                        balanced repeated replication (BRR) 
+#'                        method---multiplies the final jackknife variance estimate by a value, 
+#'                        set \code{jkSumMultiplier} to that value.
+#'                        For an \code{edsurvey.data.frame}, or
+#'                        a \code{light.edsurvey.data.frame},
+#'                        the recommended value can be recovered with
+#'                        \code{EdSurvey::getAttributes(}\code{myData,} \code{"jkSumMultiplier")}.
+#' @param returnVarEstInputs a logical value set to \code{TRUE} to return the
+#'                           inputs to the jackknife and imputation variance
+#'                           estimates, which allows for
+#'                           the computation
+#'                           of covariances between estimates.
+#'                           
+#' @return 
+#'   \code{SD} returns:
+#'   \describe{
+#'     \item{mean}{the mean assessment score for \code{variable}, calculated according to the vignette titled 
+#'                \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistical Methods Used in EdSurvey}}
+#'     \item{std}{the standard deviation of the \code{mean}}
+#'     \item{stdSE}{the standard error of the \code{std}}
+#'     \item{sd}{the degrees of freedom of the \code{std}}
+#'   }
+#'                          
+#' When \code{returnVarEstInputs} is \code{TRUE}, an attribute
+#' \code{varEstInputs} also is returned that includes the variance estimate
+#' inputs used for calculating covariances with \code{\link{varEstToCov}}.
+#'
+#' @author Paul Bailey and Huade Huo
+#' @example man/examples/SD.R
+#' @export
+SD <- function(data, 
+               variable, 
+               weightVar=NULL, 
+               jrrIMax=1, 
+               varMethod="jackknife",
+               omittedLevels=TRUE,
+               defaultConditions=TRUE,
+               recode=NULL,
+               targetLevel=NULL,
+               jkSumMultiplier=1, 
+               returnVarEstInputs=FALSE) {
+  # check incoming variables
+  checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
+  
+  if (inherits(data, c("edsurvey.data.frame.list"))) {
+    return(itterateESDFL(match.call(),data))
+  }
+  
+  if(is.null(weightVar)) {
+    weightVar <- attributes(getAttributes(data, "weights"))$default
+  }
+  gg <- getData(varnames=c(variable, weightVar), data=data, omittedLevels=omittedLevels,
+                recode=recode, defaultConditions=defaultConditions)
+  repw <- getWeightJkReplicates(var=weightVar, data=data)
+  if(hasPlausibleValue(data=data, variable)) {
+    var <- gg[,getPlausibleValue(data=data, variable)]
+  } else {
+    var <- gg[,variable]
+  }
+  
+  if(!is.null(targetLevel)) {
+    var <- var == targetLevel
+  }
+  fast.sd.var(var,
+              weightVar=gg[,weightVar],
+              replicateWeights=gg[,repw],
+              jrrIMax=jrrIMax,
+              jkSumMultiplier=jkSumMultiplier,
+              returnVarEstInputs=returnVarEstInputs)
 }
 
 # returns the N, min, quartiles, max, mean, and sd of x, and number of NA's

@@ -17,11 +17,6 @@
 #'                    mean when this
 #'                    argument is omitted or set to \code{NULL}. Otherwise,
 #'                    the gap at the percentile given is calculated.
-#' @param targetLevel a character string. When specified, calculates the gap in
-#'                    the percentage of students at
-#'                    \code{targetLevel} in the \code{variable} argument. This is useful for
-#'                    comparing the gap in the percentage of students at a
-#'                    survey response level.
 #' @param achievementLevel the achievement level(s) at which percentages
 #'                         should be calculated
 #' @param achievementDiscrete a logical indicating if the achievement level
@@ -35,17 +30,20 @@
 #'                            the percentage at or above that achievement level
 #'                            will be
 #'                            included in the percentage.
+#' @param stDev a logical, set to \code{TRUE} to calculate the gap in standard deviations.
+#' @param targetLevel a character string. When specified, calculates the gap in
+#'                    the percentage of students at
+#'                    \code{targetLevel} in the \code{variable} argument. This is useful for
+#'                    comparing the gap in the percentage of students at a
+#'                    survey response level.
 #' @param weightVar a character indicating the weight variable to use.
 #'                  See Details.
 #' @param jrrIMax    a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
-#'                   sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
-#'                   term (see the Details section of
-#'                 \code{\link{lm.sdf}} to see the definition of \eqn{V_{jrr}}) can be estimated with any number of plausible values, and values larger than the number of 
-#'                   plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+#'                   sampling variance from the first plausible value as the component for sampling variance estimation. The \code{Vjrr} 
+#'                   term, or sampeling variance term, can be estimated with any number of plausible values, and values larger than the number of 
+#'                   plausible values on the survey (including \code{Inf}) will result in all plausible values being used. 
 #'                   Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.
-#' @param varMethod  a character set to \code{jackknife} or \code{Taylor}
-#'                   that indicates the variance estimation method
-#'                   to be used
+#' @param varMethod  deprecated parameter, \code{gap} always uses the jackknife variance estimation
 #' @param omittedLevels a logical value. When set to the default value of
 #'                      \code{TRUE}, drops those levels of 
 #'                      all factor variables.
@@ -62,7 +60,6 @@
 #'               \code{recode} \code{=} \code{list(var1} \code{=}
 #'               \code{list(from} \code{=} \code{c("a",} \code{"b",}
 #'               \code{"c"),} \code{to} \code{=} \code{"d"))}.
-#'               See Examples.
 #' @param referenceDataIndex a numeric used only when the \code{data} argument is an
 #'                           \code{edsurvey.data.frame.list},
 #'                           indicating which dataset is the reference
@@ -70,7 +67,7 @@
 #'                           Defaults to 1.
 #' @param returnVarEstInputs a logical value; set to \code{TRUE} to return the
 #'                           inputs to the jackknife and imputation variance
-#'                           estimates. This is intended to allow for the
+#'                           estimates which allows for the
 #'                           computation
 #'                           of covariances between estimates.
 #' @param returnSimpleDoF    a logical value set to \code{TRUE} to return the degrees
@@ -81,8 +78,18 @@
 #'                           (\emph{n}-size) of observations included in groups A and B
 #'                           in the percentage object
 #' @param returnNumberOfPSU a logical value set to \code{TRUE} to return the number of 
-#'                          primary sampling units (PSUs) used in the calculation
-#' @param noCov set the covariances to zero in result.
+#'                          PSUs used in the calculation
+#' @param noCov set the covariances to zero in result
+#' @param pctMethod a character that is one of \code{unbiased} or \code{simple}.
+#'                  See the help for \code{\link{percentile}} for more information.
+#' @param includeLinkingError a logical value set to \code{TRUE} to include the
+#'                            linking error in variance estimation.
+#'                            Standard errors (e.g., \code{diffAAse}, \code{diffBBse}, 
+#'                            and \code{diffABABse}) and \emph{p}-values (e.g., \code{diffAApValue}, 
+#'                            \code{diffBBpValue}, and \code{diffABABpValue}) would be adjusted for 
+#'                            comparisons between digitally based assessments (DBA) and 
+#'                            paper-based assessments (PBA) data.
+#'                            This option is supported only for NAEP data.
 #' @details This function calculates the gap between \code{groupA} and \code{groupB} (which 
 #' may be omitted to indicate the full sample). The gap is
 #' calculated for one of four statistics:
@@ -120,17 +127,15 @@
 #' that shows the gap called \code{results}. 
 #'
 #' The labels include the following elements:
-#' \describe{
 #'   \item{definition}{the definitions of the groups}
-#'   \item{nFullData}{the n-size for the full dataset (before applying the definition)}
-#'   \item{nUsed}{the n-size for the data after the group is subsetted and other
+#'   \item{nFullData}{the \emph{n}-size for the full dataset (before applying the definition)}
+#'   \item{nUsed}{the \emph{n}-size for the data after the group is subsetted and other
 #'                restrictions (such as omitted values) are applied}
 #'   \item{nPSU}{the number of PSUs used in calculation--only returned when 
 #'               \code{returnNumberOfPSU} \code{=} \code{TRUE}}
-#' }
 #'
 #' The percentages are computed according to the vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
 #'  in the section
 #' \dQuote{Estimation of Weighted Percentages When Plausible Values Are Not Present.}
 #' The standard errors are calculated according to
@@ -139,18 +144,17 @@
 #' variance formula
 #' \deqn{Var(A-B) = Var(A) + Var(B) - 2 Cov(A,B)}
 #' where the covariance term is calculated as described in the vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
 #'  in the section
 #' \dQuote{Estimation of Covariances.} These degrees of freedom are available only
 #' with the jackknife variance estimation. The degrees of freedom used for hypothesis testing
 #' are always set to the number of jackknife replicates in the data.
 #'
-#' \subsection{the data argument is an edsurvey.data.frame}{
+#' \strong{the data argument is an edsurvey.data.frame}
 #'   When the \code{data} argument is an \code{edsurvey.data.frame},
 #'   \code{gap} returns an S3 object of class \code{gap}. 
 #' 
 #'   The \code{percentage} object is a numeric vector with the following elements:
-#'   \describe{
 #'     \item{pctA}{the percentage of respondents in \code{groupA} compared with the whole sample in \code{data}}
 #'     \item{pctAse}{the standard error on the percentage of respondents in
 #'                       \code{groupA}}
@@ -173,10 +177,8 @@
 #'                         is zero}
 #'     \item{dofAB}{degrees of freedom used in calculating
 #'                       \code{diffABpValue}}
-#'   }
 #' 
 #'   The \code{results} object is a numeric data frame with the following elements:
-#'   \describe{
 #'     \item{estimateA}{the mean estimate of \code{groupA} (or the percentage estimate
 #'                      if \code{achievementLevel} or \code{targetLevel} is specified)}
 #'     \item{estimateAse}{the standard error of \code{estimateA}}
@@ -197,7 +199,6 @@
 #'                         for the hypothesis test that \code{diffAB}
 #'                         is zero.}
 #'     \item{dofAB}{degrees of freedom used for the \emph{t}-test on \code{diffAB}}
-#'   }
 #'   
 #'   If the gap was in  achievement levels or percentiles and more
 #'   than one percentile or achievement level is requested,
@@ -209,9 +210,8 @@
 #'   is \code{TRUE}, the additional elements \code{varEstInputs} and
 #'   \code{pctVarEstInputs} also are returned. These can be used for calculating
 #'   covariances with \code{\link{varEstToCov}}.
-#' }
 #' 
-#' \subsection{the data argument is an edsurvey.data.frame.list}{
+#' \strong{the data argument is an edsurvey.data.frame.list}
 #'   When the \code{data} argument is an \code{edsurvey.data.frame.list},
 #'   \code{gap} returns an S3 object of class \code{gapList}.
 #'   
@@ -221,7 +221,6 @@
 #'   the \code{referenceDataIndex} argument.
 #'   
 #'   The \code{percentage} object is a \code{data.frame} with the following elements:
-#'   \describe{
 #'     \item{covs}{a data frame with a column for each column in the \code{covs}. See previous
 #'                 section for more details.}
 #'     \item{...}{all elements in the \code{percentage} object in the
@@ -256,10 +255,8 @@
 #'     \item{diffABABpValue}{the \emph{p}-value associated with the \emph{t}-test used
 #'                         for the hypothesis test that \code{diffABAB}
 #'                         is zero}
-#'   }
 #'
 #'   The \code{results} object is a \code{data.frame} with the following elements:
-#'   \describe{
 #'     \item{...}{all elements in the \code{results} object in the
 #'                previous section}
 #'     \item{diffAA}{the value of \code{groupA} in the reference dataset minus
@@ -296,11 +293,8 @@
 #'     \item{sameSurvey}{a logical value indicating if this line uses the same
 #'                       survey as the reference line. Set to \code{NA} for the
 #'                       reference line.}
-#'   }
 #'
-#' }
-#'
-#' @author Paul Bailey and Trang Nguyen
+#' @author Paul Bailey, Trang Nguyen, and Huade Huo
 #' @importFrom stats formula
 #' @example man/examples/gap.R
 #' @export
@@ -308,9 +302,10 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
                 percentiles=NULL,
                 achievementLevel=NULL,
                 achievementDiscrete=FALSE,
+                stDev=FALSE,
                 targetLevel=NULL,
                 weightVar=NULL, jrrIMax=1,
-                varMethod=c("jackknife", "Taylor"),
+                varMethod=c("jackknife"),
                 omittedLevels=TRUE,
                 defaultConditions=TRUE,
                 recode=NULL,
@@ -319,7 +314,9 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
                 returnSimpleDoF=FALSE,
                 returnSimpleN=FALSE,
                 returnNumberOfPSU=FALSE,
-                noCov=FALSE) {
+                noCov=FALSE,
+                pctMethod=c("unbiased", "simple"),
+                includeLinkingError=FALSE) {
   if(is.character(substitute(groupA))) {
     groupA <- parse(text=groupA)[[1]]
   }
@@ -331,10 +328,13 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
       groupB <- parse(text=groupB)[[1]]
     }
   }
-
+  if(!missing(varMethod)) {
+    warning(paste0("Argument ", dQuote("varMethod"), " deprecated. The ", dQuote("gap") ," function always uses jackknife variance estimation."))
+  }
   # check incoming variables
   call <- match.call()
-  varMethod <- substr(tolower(varMethod[[1]]), 0,1)
+  # get valid pctMethod
+  pctMethod <- match.arg(pctMethod)
  
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
   
@@ -342,8 +342,93 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
   if (!is.null(recode)) {
     data <- recode.sdf(data, recode)
   }
+  
+  # check if linking error is supported for this survey
+  if(!missing(includeLinkingError)) {
+    if(includeLinkingError) {
+      if(!getAttributes(data, "survey") %in% "NAEP") {
+        stop("the argument ", dQuote("includeLinkingError"), " can only be set to ", dQuote("TRUE"), " when EdSurvey suports linking error for the survey. Currently EdSurvey supports linking error for NAEP.")
+      }
+    }
+  }
+  # Set dbaLabels as NULL for linking error with non ESDFL object or 
+  # includeLinkingError set as False
+  if(!includeLinkingError | !inherits(data, "edsurvey.data.frame.list")) {
+    dbaLabels <- NULL
+  }
+  
+  # Get parameters for linking error
+  if (!missing(includeLinkingError)) {
+    if(includeLinkingError) {
+      checkDataClass(data, "edsurvey.data.frame.list")
+      # Get DBA labels from DBA years
+      # 2017 is the first NAEP DBA year
+      allYears <- unlist(itterateESDFL(call("getAttributes", attribute="year"), data))
+      dbaLabels <- data[[2]]$labels[allYears >= 2017]
+      if (!all(dbaLabels %in% data[[2]]$labels)) {
+        stop(paste0(pasteItems(dbaLabels[!dbaLabels %in% data[[2]]$labels]), 
+                    " is not in the ", dQuote("edsurvey.data.frame.list"), " labels."))
+      }
+      
+      uniqueSubject <- unique(unlist(lapply(data$data, getAttributes, "subject")))
+      if (length(uniqueSubject) != 1) {
+        stop("Linking error only support ", dQuote("edsurvey.data.frame.list"), " with a single subject.")
+      }
+      
+      uniqueGrade <- unique(unlist(lapply(data$data, getAttributes, "gradeLevel")))
+      if (length(uniqueGrade) != 1) {
+        stop("Linking error only support ", dQuote("edsurvey.data.frame.list"), " with a single grade level.")
+      }
+      
+      # For achievementDiscrete=TRUE, return "At basic" (not "below basic") if "achievementLevel = "basic"
+      alLinkingErrorhelper <- function(alstrings, discrete) {
+        matchedAL <- NULL
+        for (alstring in alstrings) {
+          if (discrete) {
+            if (grepl("^basic", alstring, ignore.case = TRUE)) {
+              matchedAL <- c(matchedAL, "At basic")
+            } else {
+              matchedAL <- c(matchedAL, 
+                             c("Below basic", "At basic", "At proficient", 
+                               "At advanced")[grepl(alstring, c("Below basic", "At basic", 
+                                                                "At proficient", "At advanced"), 
+                                                    ignore.case = T)])
+            }
+          } else {
+            matchedAL <- c(matchedAL, 
+                           c("At or above basic", 
+                             "At or above proficient",
+                             "At advanced")[
+                               grepl(alstring, c("At or above basic", "At or above proficient", "At advanced"), 
+                                     ignore.case = T)])
+          }
+        }
+        if (length(matchedAL) != length(alstrings)) {
+          stop("Linking error for provided achievement level ", pasteItems(alstrings[!alstrings %in% matchedAL]) , "is not available.")
+        }
+        return(matchedAL)
+      }
+      
+      # Return error if includeLinkingError=TRUE and percentiles not in
+      # c(10, 25, 50, 75, 90)
+      if (!is.null(percentiles)) {
+        if (!all(percentiles %in% c(10, 25, 50, 75, 90))) {
+          stop("NAEP linking error only supported for 10th, 25th, 50th, 75th, 90th percentiles.", 
+               "Set ", dQuote("includeLinkingError"), " to ", dQuote("FALSE"), 
+               "to calculate any percentile without linking error.")
+        }
+        gapStat <- percentiles
+      } else if (!is.null(achievementLevel)) {
+        gapStat <- alLinkingErrorhelper(achievementLevel, achievementDiscrete)
+      } else if (stDev) {
+        gapStat <- "SD"
+      } else {
+        gapStat <- "Mean"
+      }
+    }
+  }
 
-  # deal with the possibility that data is an edsurvey.data.frame.list
+  # deal with the possibility that there is more than one line of results for various possible reasons
   if(inherits(data, "edsurvey.data.frame.list") | length(percentiles) > 1 | length(achievementLevel) > 1) {
     # a flag that is TRUE when there is no information in data$covs. Default to false
     nocovs <- FALSE
@@ -383,7 +468,6 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
     for(i in llvec) {
       # for each element of the edsurvey.data.frame.list
       calli <- call
-      calli$varMethod <- varMethod
       # adjust the call per the needs of this call
       calli$data <- data$datalist[[i]]
       # we need the these inputs to calculate across essurvey.data.frame
@@ -568,14 +652,55 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
         } # End of for(i in 1:i) loop
         # Compute diff statistics (across different edsurvey.data.frame)
         resdf$diffAA <- ifelse(1:nrow(resdf) == refi, NA, resdf$estimateA[refi] - resdf$estimateA)
-        resdf$diffAAse <- ifelse(1:nrow(resdf) == refi, NA, sqrt(resdf$estimateAse[refi]^2 + resdf$estimateAse^2 - 2 * resdf$covAA))
+        if (!is.null(dbaLabels)) {
+          # get linking error
+          leAA <- calLinkingError(X=resdf$estimateA[refi],
+                                  subjectI=uniqueSubject, 
+                                  gradeI=uniqueGrade, 
+                                  dependentVarI=variable, 
+                                  statElementI=gapStat,
+                                  gapI=FALSE)[j]
+          resdf$diffAAse <- ifelse(1:nrow(resdf) == refi, NA, 
+                                   ifelse(resdf$labels %in% dbaLabels, 
+                                          sqrt(resdf$estimateAse[refi]^2 + resdf$estimateAse^2 - 2 * resdf$covAA),
+                                          sqrt(resdf$estimateAse[refi]^2 + resdf$estimateAse^2 - 2 * resdf$covAA + leAA)))
+        } else {
+          resdf$diffAAse <- ifelse(1:nrow(resdf) == refi, NA, sqrt(resdf$estimateAse[refi]^2 + resdf$estimateAse^2 - 2 * resdf$covAA))
+        }
+        
         resdf$diffAApValue <- ifelse(1:nrow(resdf) == refi, NA, 2*(1-pt2(abs(resdf$diffAA/resdf$diffAAse), df=resdf$dofAA)))
         if (!skipB) {
           resdf$diffBB <- ifelse(1:nrow(resdf) == refi, NA, resdf$estimateB[refi] - resdf$estimateB)
-          resdf$diffBBse <- ifelse(1:nrow(resdf) == refi, NA, sqrt(resdf$estimateBse[refi]^2 + resdf$estimateBse^2 - 2 * resdf$covBB))
+          if (!is.null(dbaLabels)) {
+            leBB <- calLinkingError(X=resdf$estimateB[refi],
+                                    subjectI=uniqueSubject, 
+                                    gradeI=uniqueGrade, 
+                                    dependentVarI=variable, 
+                                    statElementI=gapStat,
+                                    gapI=FALSE)[j]
+            resdf$diffBBse <- ifelse(1:nrow(resdf) == refi, NA, 
+                                     ifelse(resdf$labels %in% dbaLabels, 
+                                            sqrt(resdf$estimateBse[refi]^2 + resdf$estimateBse^2 - 2 * resdf$covBB),
+                                            sqrt(resdf$estimateBse[refi]^2 + resdf$estimateBse^2 - 2 * resdf$covBB + leBB)))
+          } else {
+            resdf$diffBBse <- ifelse(1:nrow(resdf) == refi, NA, sqrt(resdf$estimateBse[refi]^2 + resdf$estimateBse^2 - 2 * resdf$covBB))
+          }
           resdf$diffBBpValue <- ifelse(1:nrow(resdf) == refi, NA, 2*(1-pt2(abs(resdf$diffBB/resdf$diffBBse), df=resdf$dofBB)))
           resdf$diffABAB <- ifelse(1:nrow(resdf) == refi, NA, resdf$diffAB[refi] - resdf$diffAB)
-          resdf$diffABABse <- ifelse(1:nrow(resdf) == refi, NA, sqrt(resdf$diffABse[refi]^2 + resdf$diffABse^2 - 2 * resdf$covABAB))
+          if (!is.null(dbaLabels)) {
+            leABAB <- calLinkingError(X=resdf$diffAB[refi],
+                                      subjectI=uniqueSubject, 
+                                      gradeI=uniqueGrade, 
+                                      dependentVarI=variable, 
+                                      statElementI=gapStat,
+                                      gapI=TRUE)[j]
+            resdf$diffABABse <- ifelse(1:nrow(resdf) == refi, NA, 
+                                     ifelse(resdf$labels %in% dbaLabels, 
+                                            sqrt(resdf$diffABse[refi]^2 + resdf$diffABse^2 - 2 * resdf$covABAB),
+                                            sqrt(resdf$diffABse[refi]^2 + resdf$diffABse^2 - 2 * resdf$covABAB + leABAB)))
+          } else {
+            resdf$diffABABse <- ifelse(1:nrow(resdf) == refi, NA, sqrt(resdf$diffABse[refi]^2 + resdf$diffABse^2 - 2 * resdf$covABAB))
+          }
           resdf$diffABABpValue <- ifelse(1:nrow(resdf) == refi, NA, 2*(1-pt2(abs(resdf$diffABAB/resdf$diffABABse), df=resdf$dofABAB)))
         }
         
@@ -685,8 +810,7 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
         resvar0 <- c(resvar0,
                      "diffAA", "covAA", "diffAAse",
                      "diffAApValue", "dofAA")
-      }
-      
+      }   
       addons <- c("achievementLevel", "percentiles")
       resvar <- c(addons[addons %in% names(resdf0)], resvar0)
       if("sameSurvey" %in% names(resdf0) && sum(!is.na(resdf0$sameSurvey)) > 0) {
@@ -710,7 +834,6 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
   } else { # end if(inherits(data, "edsurvey.data.frame.list"))
     calli <- as.list(call)
     calli[[1]] <- as.name("gapHelper")
-    calli$varMethod <- varMethod
     calli$data <- data
     resi <- eval(as.call(calli))
     resi$call <- call
@@ -724,9 +847,9 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
                       percentiles=NULL,
                       achievementLevel=NULL,
                       achievementDiscrete=FALSE,
+                      stDev=FALSE,
                       targetLevel=NULL,
                       weightVar=NULL, jrrIMax=1,
-                      varMethod=c("jackknife", "Taylor"),
                       omittedLevels=TRUE,
                       defaultConditions=TRUE,
                       recode=NULL,
@@ -735,7 +858,9 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
                       returnSimpleDoF=FALSE,
                       returnSimpleN=FALSE,
                       returnNumberOfPSU=FALSE,
-                      noCov=FALSE) {
+                      noCov=FALSE,
+                      pctMethod=c("unbiased", "simple"),
+                      varMethod=NULL) {
   if(is.character(substitute(groupA))) {
     groupA <- parse(text=groupA)[[1]]
   }
@@ -747,7 +872,7 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
       groupB <- parse(text=groupB)[[1]]
     }
   }
- 
+  pctMethod <- match.arg(pctMethod)
   # get the weight var
   # if the weight var is not set, use the default
   if(is.null(weightVar)) {
@@ -757,7 +882,9 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
   } # End of if/else: is.null(weightVar)
   if(min(nchar(wgt)) == 0) {
     # no weight
-    stop(paste0("There is no default weight variable for ",getAttributes(data,"survey")," data, so the argument ",sQuote("weightVar"), " must be specified."))
+    stop(paste0("There is no default weight variable for ",
+                getAttributes(data,"survey")," data, so the argument ",sQuote("weightVar"), 
+                " must be specified."))
   }
   
   varEstInputs <- NULL
@@ -767,19 +894,25 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
   }
   if(!is.null(achievementLevel)) {
     if(type != "mu") {
-      stop(paste0("Only one of ", sQuote("percentiles"), ", ", sQuote("achievementLevel"), ", and ", sQuote("targetLevel"), " can be defined."))
+      stop(paste0("Only one of ", sQuote("percentiles"), ", ", sQuote("achievementLevel"), 
+                  ", ", sQuote("SD"), ", and ", sQuote("targetLevel"), " can be defined."))
     }
     type <- "AL"
-    achievementLevel <- gmatchAttr(achievementLevel, names(getAttributes(data,"achievementLevels")))
-    if (any(!tolower(gsub("^(below |at or above |at )","",achievementLevel, ignore.case = TRUE)) %in% tolower(names(getAttributes(data,"achievementLevels"))))) {
-      stop("Achievement level ",sQuote(achievementLevel), " is not available for the current survey.")
-    }
+    achievementLevel <- gmatchAttr(achievementLevel, getALNames(data, variable))
   }
   if(!is.null(targetLevel)) {
     if(type != "mu") {
-      stop(paste0("Only one of ", sQuote("percentiles"), ", ", sQuote("achievementLevel"), ", and ", sQuote("targetLevel"), " can be defined."))
+      stop(paste0("Only one of ", sQuote("percentiles"), ", ", sQuote("achievementLevel"), 
+                  ", ", sQuote("SD"), ", and ", sQuote("targetLevel"), " can be defined."))
     }
     type <- "eq"
+  }
+  if(stDev) {
+    if(type != "mu") {
+      stop(paste0("Only one of ", sQuote("percentiles"), ", ", sQuote("achievementLevel"), 
+                  ", ", sQuote("SD"), ", and ", sQuote("targetLevel"), " can be defined."))
+    }
+    type <- "stdev"
   }
   # make the data with just groupA
   if (all(as.character(substitute(groupA)) == "default")) {
@@ -812,9 +945,9 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
   }
   if(type == "mu") {
     # gap in mean
-    calllm <- c(list(formula(paste0(variable, " ~ 1")),varMethod=varMethod),
+    calllm <- c(list(formula(paste0(variable, " ~ 1"))),
                 callv,
-                list(returnVarEstInputs=varMethod=="j")) # necessary for covariance est
+                list(returnVarEstInputs=TRUE)) # necessary for covariance est
     calllmA <- c(calllm, list(data=dataA))
     meanA <- do.call(lm.sdf, calllmA)
     coefA <- meanA$coefmat
@@ -834,7 +967,7 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     # make varEstInputs$JK
     maJK <- subset(meanA$varEstInputs$JK, variable=="(Intercept)")
     maJK$variable <- "A"
-    if (!skipB & varMethod == "j") {
+    if (!skipB) {
       mbJK <- subset(meanB$varEstInputs$JK, variable=="(Intercept)")
       mbJK$variable <- "B"
       # calculate the difference
@@ -869,23 +1002,20 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
       # no PVs, so no error from them
       varEstPV <- NULL
     } # end else for if(!is.null(meanA$varEstInput$PV))
-    if(varMethod=="j") {
-      # make varEstInputs
-      row.names(varEstJK) <- NULL
-      row.names(varEstPV) <- NULL
-      varEstInputs <- list(JK=varEstJK, PV=varEstPV)
-    } else {
-      varEstInputs <- NULL
-    }
+    # make varEstInputs
+    row.names(varEstJK) <- NULL
+    row.names(varEstPV) <- NULL
+    varEstInputs <- list(JK=varEstJK, PV=varEstPV)
   } # end if(type == "mu")
   if(type == "pct") {
     # gap at a percentile
     # here the length of percentiles is always one
     callpct <- c(list(variable=variable,
                       percentiles=percentiles,
-                      varMethod=varMethod),
+                      confInt=FALSE,# do not share CI, so do not calculate it
+                      pctMethod=pctMethod), 
                  callv,
-                 returnVarEstInputs=varMethod=="j")
+                 returnVarEstInputs=TRUE)
     callpctA <- c(callpct, list(data=dataA))
     meanA <- do.call(percentile, callpctA)
     resA <- meanA$estimate
@@ -899,60 +1029,56 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
       SEs <- list(estimateAse = meanA$se)
     }
     
-    if(varMethod=="j") {
-      maJK <- attributes(meanA)$varEstInputs$JK
-      maJK$Level <- maJK$variable
-      maJK$variable <- "A"
-      if (!skipB & varMethod=="j") {
-        mbJK <- attributes(meanB)$varEstInputs$JK
-        mbJK$Level <- mbJK$variable
-        mbJK$variable <- "B"
-        # calculate the difference
-        mdJK <- merge(maJK, mbJK, by=c("PV", "JKreplicate","Level"), suffixes=c(".A", ".B"))
-        mdJK$variable <- "A-B"
-        mdJK$value <- mdJK$value.A - mdJK$value.B
-        mdJK$value.A <- mdJK$value.B <- NULL
-        mdJK$variable.A <- mdJK$variable.B <- NULL
-        varEstJK <- rbind(maJK, mbJK, mdJK)
-      } else {
-        varEstJK <- maJK
-      }
-    
-      # make varEstInputs$PV
-      maPV <- attributes(meanA)$varEstInputs$PV
-      maPV$Level <- maPV$variable
-      maPV$variable <- "A"
-    
-      if (!skipB) {
-        mbPV <- attributes(meanB)$varEstInputs$PV
-        mbPV$Level <- mbPV$variable
-        mbPV$variable <- "B"
-        # calculate the difference
-        mdPV <- merge(maPV, mbPV, by=c("PV","Level"), suffixes=c(".A", ".B"))
-        mdPV$variable <- "A-B"
-        mdPV$value <- mdPV$value.A - mdPV$value.B
-        mdPV$value.A <- mdPV$value.B <- NULL
-        mdPV$variable.A <- mdPV$variable.B <- NULL
-        varEstPV <- rbind(maPV, mbPV, mdPV)
-      } else {
-        varEstPV <- maPV
-      }
-    
-      # make varEstInputs
-      row.names(varEstJK) <- NULL
-      row.names(varEstPV) <- NULL
-      varEstInputs <- list(JK=varEstJK, PV=varEstPV)
-    } else { # end if(varMethod=="j")
-      varEstInputs <- NULL
+    maJK <- attributes(meanA)$varEstInputs$JK
+    maJK$Level <- maJK$variable
+    maJK$variable <- "A"
+    if (!skipB) {
+      mbJK <- attributes(meanB)$varEstInputs$JK
+      mbJK$Level <- mbJK$variable
+      mbJK$variable <- "B"
+      # calculate the difference
+      mdJK <- merge(maJK, mbJK, by=c("PV", "JKreplicate","Level"), suffixes=c(".A", ".B"))
+      mdJK$variable <- "A-B"
+      mdJK$value <- mdJK$value.A - mdJK$value.B
+      mdJK$value.A <- mdJK$value.B <- NULL
+      mdJK$variable.A <- mdJK$variable.B <- NULL
+      varEstJK <- rbind(maJK, mbJK, mdJK)
+    } else {
+      varEstJK <- maJK
     }
+  
+    # make varEstInputs$PV
+    maPV <- attributes(meanA)$varEstInputs$PV
+    maPV$Level <- maPV$variable
+    maPV$variable <- "A"
+  
+    if (!skipB) {
+      mbPV <- attributes(meanB)$varEstInputs$PV
+      mbPV$Level <- mbPV$variable
+      mbPV$variable <- "B"
+      # calculate the difference
+      mdPV <- merge(maPV, mbPV, by=c("PV","Level"), suffixes=c(".A", ".B"))
+      mdPV$variable <- "A-B"
+      mdPV$value <- mdPV$value.A - mdPV$value.B
+      mdPV$value.A <- mdPV$value.B <- NULL
+      mdPV$variable.A <- mdPV$variable.B <- NULL
+      varEstPV <- rbind(maPV, mbPV, mdPV)
+    } else {
+      varEstPV <- maPV
+    }
+  
+    # make varEstInputs
+    row.names(varEstJK) <- NULL
+    row.names(varEstPV) <- NULL
+    varEstInputs <- list(JK=varEstJK, PV=varEstPV)
   } # end if (type == 'pct')
   if(type == "AL") {
     # gap in percent at or above an achievement level
     callal <- c(list(achievementVars=variable,
-                     returnVarEstInputs=varMethod=="j",
+                     returnVarEstInputs=TRUE,
                      returnCumulative = !achievementDiscrete),
                 callv)
-    als <- getAttributes(data, "achievementLevels") # get a full achievementLevels
+    als <- getALNames(data, variable)
     callalA <- c(callal, list(data=dataA))
     meanA <- do.call(achievementLevels, callalA)
     if (!skipB) {
@@ -962,164 +1088,201 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     # achievementDiscrete indicates whether we should extract cumulative or discrete achievement level results
     if (achievementDiscrete){
       # get index of desired achievement levels from the results
-      lA <- sapply(achievementLevel, function(al) {
-        if (grepl("below", al, ignore.case = TRUE)) {
-          lal <- al
-        } else {
-          if(!grepl("^at", al, ignore.case=TRUE)) {
-            lal <- paste0("At ",al)
-          } else {
-            lal <- al
-          }
-        }
-        grep(lal,meanA$discrete$Level, ignore.case = TRUE)
-      })
+      if (typeof(als) == "character") {
+        lA <- sapply(achievementLevel, function(al) {
+          lal <- addALPrefix(al=al, als=als, discrete=TRUE)
+          grep(lal, meanA$discrete$Level, ignore.case = TRUE)
+        })
+      } else {
+        lA <- rep(TRUE, length(als[[achievementLevel]]))
+      }
+
       if (length(lA) == 0) {
         stop("Achievement level cannot be found in the results of the call of the function ", sQuote("achievementLevel"), ".")
       }
       if (!skipB) {
-        lB <- sapply(achievementLevel, function(al) {
-          if (grepl("below", al, ignore.case = TRUE)) {
-            lal <- al
-          } else {
-            if(!grepl("^at", al, ignore.case=TRUE)) {
-              lal <- paste0("At ",al)
-            } else {
-              lal <- al
-            }
+        if (typeof(als) == "character") {
+          lB <- sapply(achievementLevel, function(al) {
+            lal <- addALPrefix(al=al, als=als, discrete=TRUE)
+            grep(lal,meanB$discrete$Level, ignore.case = TRUE)
+          })} else {
+            lB <- rep(TRUE, length(als[[achievementLevel]]))
           }
-          grep(lal,meanA$discrete$Level, ignore.case = TRUE)
-        })
         if (length(lB) == 0) {
           stop("Achievement level cannot be found in the results of the call of the function ", sQuote("achievementLevel"), ".")
         }
       }
-      resA <- meanA$discrete$Percent[lA]
+      resA <- meanA$discrete$Percent[unlist(lA)]
       if (!skipB) {
-        resB <- meanB$discrete$Percent[lB]
-        SEs <- list(estimateAse=meanA$discrete$StandardError[lA],
-                    estimateBse=meanB$discrete$StandardError[lB])
+        resB <- meanB$discrete$Percent[unlist(lB)]
+        SEs <- list(estimateAse=meanA$discrete$StandardError[unlist(lA)],
+                    estimateBse=meanB$discrete$StandardError[unlist(lB)])
       } else {
-        SEs <- list(estimateAse=meanA$discrete$StandardError[lA])
+        SEs <- list(estimateAse=meanA$discrete$StandardError[unlist(lA)])
       }
       
     } else {
       # get index of desired achievement levels from the results
-      lA <- sapply(achievementLevel, function(al) {
-        if(grepl("^below", al, ignore.case = TRUE)) { # cumulative should not have Below achievementLevel
-          return(NULL)
-        } else {
-          # if it doesn't have the at prefix, add it
-          if(!grepl("^at", al, ignore.case=TRUE)) {
-            al <- paste0(ifelse(tolower(al) == tolower(names(als[length(als)])),
-                                "At ",
-                                "At or Above "),
-                         al)
-          }
-          grep(al,meanA$cumulative$Level, ignore.case = TRUE)
+      if (typeof(als) == "character") {
+        lA <- sapply(achievementLevel, function(al) {
+            lal <- addALPrefix(al=al, als=als, discrete=FALSE)
+            grep(lal,meanA$cumulative$Level, ignore.case = TRUE)})} 
+      else {
+          lA <- rep(TRUE, length(als[[achievementLevel]]))
         }
-      })
       if (length(lA) == 0) {
         stop("Achievement level cannot be found in the results of the call of the function ", sQuote("achievementLevel"), ".")
       }
       if (!skipB) {
+        if (typeof(als) == "character") {
         lB <- sapply(achievementLevel, function(al) {
-          if (grepl("below", al, ignore.case = TRUE)) {
-            lal <- al
-          } else {
-            if(grepl("^at", al, ignore.case=TRUE)) {
-              lal <- al
-            } else {
-              lal <- paste0(ifelse(tolower(al) == tolower(names(als[length(als)])),"At ", "At or Above "),al)
-            }
-          }
+          lal <- addALPrefix(al=al, als=als, discrete=FALSE)
           grep(lal, meanB$cumulative$Level, ignore.case = TRUE)
-        })
+        })} else {
+          lB <- rep(TRUE, length(als[[achievementLevel]]))
+        }
       }
-      resA <- meanA$cumulative$Percent[lA]
+      resA <- meanA$cumulative$Percent[unlist(lA)]
       if (!skipB) {
-        resB <- meanB$cumulative$Percent[lB]
-        SEs <- list(estimateAse=meanA$cumulative$StandardError[lA],
-                    estimateBse=meanB$cumulative$StandardError[lB])
+        resB <- meanB$cumulative$Percent[unlist(lB)]
+        SEs <- list(estimateAse=meanA$cumulative$StandardError[unlist(lA)],
+                    estimateBse=meanB$cumulative$StandardError[unlist(lB)])
       } else {
-        SEs <- list(estimateAse=meanA$cumulative$StandardError[lA])
+        SEs <- list(estimateAse=meanA$cumulative$StandardError[unlist(lA)])
       }
     }
     # used inside next if, but also outside
-    statisticsLevelOut <- meanA$discrete$Level[lA]
+    statisticsLevelOut <- meanA$discrete$Level[unlist(lA)]
     # get Cov
-    if(varMethod=="j") {
-      if (achievementDiscrete){
-        maJK <- subset(meanA$discVarEstInputs$JK, variable %in% meanA$discrete$Level[lA])
-        maJK$Level <- maJK$variable
-        maJK$variable <- "A"
-        if (!skipB) {
-          mbJK <- subset(meanB$discVarEstInputs$JK, variable %in% meanB$discrete$Level[lB])
-          mbJK$Level <- mbJK$variable
-          mbJK$variable <- "B"
-        }
-      } # end if(achievementDiscrete)
-      else {
-        maJK <- subset(meanA$cumVarEstInputs$JK, variable %in% meanA$cumulative$Level[lA])
-        maJK$Level <- maJK$variable
-        maJK$variable <- "A"
-        if (!skipB & varMethod=="j") {
-          mbJK <- subset(meanB$cumVarEstInputs$JK, variable %in% meanB$cumulative$Level[lB])
-          mbJK$Level <- mbJK$variable
-          mbJK$variable <- "B"
-        } 
-      } # end else if(achievementDiscrete)
+    if (achievementDiscrete){
+      maJK <- subset(meanA$discVarEstInputs$JK, variable %in% meanA$discrete$Level[unlist(lA)])
+      maJK$Level <- maJK$variable
+      maJK$variable <- "A"
       if (!skipB) {
-        mdJK <- merge(maJK, mbJK, by=c("PV", "JKreplicate","Level"), suffixes=c(".A", ".B"))
-        mdJK$variable <- "A-B"
-        mdJK$value <- mdJK$value.A - mdJK$value.B
-        mdJK$value.A <- mdJK$value.B <- NULL
-        mdJK$variable.A <- mdJK$variable.B <- NULL
-        varEstJK <- rbind(maJK, mbJK, mdJK)
-      } else {
-        varEstJK <- maJK
+        mbJK <- subset(meanB$discVarEstInputs$JK, variable %in% meanB$discrete$Level[unlist(lB)])
+        mbJK$Level <- mbJK$variable
+        mbJK$variable <- "B"
       }
-      # make varEstInputs$PV
-      if (achievementDiscrete){
-        maPV <- subset(meanA$discVarEstInputs$PV, variable %in% meanA$discrete$Level[lA])
-        maPV$Level <- maPV$variable
-        maPV$variable <- "A"
-        if (!skipB) {
-          mbPV <- subset(meanB$discVarEstInputs$PV, variable %in% meanB$discrete$Level[lB])
-          mbPV$Level <- mbPV$variable
-          mbPV$variable <- "B"
-        }  
-      } # end if(achievementDiscrete)
-      else {
-        statisticsLevelOut <- meanA$cumulative$Level[lA]
-        maPV <- subset(meanA$cumVarEstInputs$PV, variable %in% meanA$cumulative$Level[lA])
-        maPV$Level <- maPV$variable
-        maPV$variable <- "A"
-        if (!skipB & varMethod=="j") {
-          mbPV <- subset(meanB$cumVarEstInputs$PV, variable %in% meanB$cumulative$Level[lB])
-          mbPV$Level <- mbPV$variable
-          mbPV$variable <- "B"
-        }
-      } # end else if(achievementDiscrete)
-      # calculate the difference
+    } # end if(achievementDiscrete)
+    else {
+      maJK <- subset(meanA$cumVarEstInputs$JK, variable %in% meanA$cumulative$Level[unlist(lA)])
+      maJK$Level <- maJK$variable
+      maJK$variable <- "A"
       if (!skipB) {
-        mdPV <- merge(maPV, mbPV, by=c("PV","Level"), suffixes=c(".A", ".B"))
-        mdPV$variable <- "A-B"
-        mdPV$value <- mdPV$value.A - mdPV$value.B
-        mdPV$value.A <- mdPV$value.B <- NULL
-        mdPV$variable.A <- mdPV$variable.B <- NULL
-        varEstPV <- rbind(maPV, mbPV, mdPV)
-      } else {
-        varEstPV <- maPV
-      }
-      # make varEstInputs
-      row.names(varEstJK) <- NULL
-      row.names(varEstPV) <- NULL
-      varEstInputs <- list(JK=varEstJK, PV=varEstPV)
-    } else { # end if(varMethod=="j")
-      varEstInputs <- NULL
+        mbJK <- subset(meanB$cumVarEstInputs$JK, variable %in% meanB$cumulative$Level[unlist(lB)])
+        mbJK$Level <- mbJK$variable
+        mbJK$variable <- "B"
+      } 
+    } # end else if(achievementDiscrete)
+    if (!skipB) {
+      mdJK <- merge(maJK, mbJK, by=c("PV", "JKreplicate","Level"), suffixes=c(".A", ".B"))
+      mdJK$variable <- "A-B"
+      mdJK$value <- mdJK$value.A - mdJK$value.B
+      mdJK$value.A <- mdJK$value.B <- NULL
+      mdJK$variable.A <- mdJK$variable.B <- NULL
+      varEstJK <- rbind(maJK, mbJK, mdJK)
+    } else {
+      varEstJK <- maJK
     }
+    # make varEstInputs$PV
+    if (achievementDiscrete){
+      maPV <- subset(meanA$discVarEstInputs$PV, variable %in% meanA$discrete$Level[unlist(lA)])
+      maPV$Level <- maPV$variable
+      maPV$variable <- "A"
+      if (!skipB) {
+        mbPV <- subset(meanB$discVarEstInputs$PV, variable %in% meanB$discrete$Level[unlist(lB)])
+        mbPV$Level <- mbPV$variable
+        mbPV$variable <- "B"
+      }  
+    } # end if(achievementDiscrete)
+    else {
+      statisticsLevelOut <- meanA$cumulative$Level[unlist(lA)]
+      maPV <- subset(meanA$cumVarEstInputs$PV, variable %in% meanA$cumulative$Level[unlist(lA)])
+      maPV$Level <- maPV$variable
+      maPV$variable <- "A"
+      if (!skipB) {
+        mbPV <- subset(meanB$cumVarEstInputs$PV, variable %in% meanB$cumulative$Level[unlist(lB)])
+        mbPV$Level <- mbPV$variable
+        mbPV$variable <- "B"
+      }
+    } # end else if(achievementDiscrete)
+    # calculate the difference
+    if (!skipB) {
+      mdPV <- merge(maPV, mbPV, by=c("PV","Level"), suffixes=c(".A", ".B"))
+      mdPV$variable <- "A-B"
+      mdPV$value <- mdPV$value.A - mdPV$value.B
+      mdPV$value.A <- mdPV$value.B <- NULL
+      mdPV$variable.A <- mdPV$variable.B <- NULL
+      varEstPV <- rbind(maPV, mbPV, mdPV)
+    } else {
+      varEstPV <- maPV
+    }
+    # make varEstInputs
+    row.names(varEstJK) <- NULL
+    row.names(varEstPV) <- NULL
+    varEstInputs <- list(JK=varEstJK, PV=varEstPV)
   } # end if (type == "AL")
+  if(type == "stdev") {
+    # gap at a standard deviation
+    # here the length of standard deviation is always one
+    callStDev <- c(list(variable=variable), 
+                   callv,
+                   returnVarEstInputs=TRUE)
+    callStDevA <- c(callStDev, list(data=dataA))
+    meanA <- do.call(SD, callStDevA)
+    resA <- meanA$std
+    statisticsLevelOut <- "SD"
+    if (!skipB) {
+      callStDevB <- c(callStDev, list(data=dataB))
+      meanB <- do.call(SD, callStDevB)
+      resB <- meanB$std
+      SEs <- list(estimateAse=meanA$stdSE, estimateBse=meanB$stdSE)
+    } else {
+      SEs <- list(estimateAse = meanA$stdSE)
+    }
+    maJK <- meanA$varEstInputs$JK
+    maJK$Level <- maJK$variable
+    maJK$variable <- "A"
+    if (!skipB) {
+      mbJK <- meanB$varEstInputs$JK
+      mbJK$Level <- mbJK$variable
+      mbJK$variable <- "B"
+      # calculate the difference
+      mdJK <- merge(maJK, mbJK, by=c("PV", "JKreplicate","Level"), suffixes=c(".A", ".B"))
+      mdJK$variable <- "A-B"
+      mdJK$value <- mdJK$value.A - mdJK$value.B
+      mdJK$value.A <- mdJK$value.B <- NULL
+      mdJK$variable.A <- mdJK$variable.B <- NULL
+      varEstJK <- rbind(maJK, mbJK, mdJK)
+    } else {
+      varEstJK <- maJK
+    }
+    
+    # make varEstInputs$PV
+    maPV <- meanA$varEstInputs$PV
+    maPV$Level <- maPV$variable
+    maPV$variable <- "A"
+    
+    if (!skipB) {
+      mbPV <- meanB$varEstInputs$PV
+      mbPV$Level <- mbPV$variable
+      mbPV$variable <- "B"
+      # calculate the difference
+      mdPV <- merge(maPV, mbPV, by=c("PV","Level"), suffixes=c(".A", ".B"))
+      mdPV$variable <- "A-B"
+      mdPV$value <- mdPV$value.A - mdPV$value.B
+      mdPV$value.A <- mdPV$value.B <- NULL
+      mdPV$variable.A <- mdPV$variable.B <- NULL
+      varEstPV <- rbind(maPV, mbPV, mdPV)
+    } else {
+      varEstPV <- maPV
+    }
+    
+    # make varEstInputs
+    row.names(varEstJK) <- NULL
+    row.names(varEstPV) <- NULL
+    varEstInputs <- list(JK=varEstJK, PV=varEstPV)
+  } # end if (type == 'stDev')
   groupA_0 <- FALSE
   groupB_0 <- FALSE
   if(type == "eq") {
@@ -1128,9 +1291,8 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
                             returnMeans=FALSE,
                             pctAggregationLevel = NULL,
                             returnSepct = TRUE,
-                            varMethod=varMethod,
                             drop = FALSE,
-                            returnVarEstInputs=varMethod=="j"))
+                            returnVarEstInputs=TRUE))
     calleqA <- c(calleq, list(data=dataA))
     meanA <- do.call(edsurveyTable, calleqA)
     
@@ -1152,21 +1314,21 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     }
     
     # make varEstInputs$JK
-    if (!groupA_0 & varMethod=="j") {
+    if (!groupA_0) {
       maJK <- meanA$pctVarEstInputs$JK[meanA$pctVarEstInputs$JK$variable == paste0(variable,"=", targetLevel),]
       maJK$variable <- "A"
     } else  {
       maJK <- NULL
     }
     if (!skipB) {
-      if (!groupB_0 & varMethod=="j") {
+      if (!groupB_0) {
         mbJK <- meanB$pctVarEstInputs$JK[meanB$pctVarEstInputs$JK$variable == paste0(variable,"=", targetLevel),]
         mbJK$variable <- "B"
       } else {
         mbJK <- NULL
       }
       # calculate the difference
-      if (!groupA_0 & !groupB_0 & varMethod=="j") {
+      if (!groupA_0 & !groupB_0) {
         mdJK <- merge(maJK, mbJK, by=c("PV", "JKreplicate"), suffixes=c(".A", ".B"))
         mdJK$variable <- "A-B"
         mdJK$value <- mdJK$value.A - mdJK$value.B
@@ -1252,10 +1414,6 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     vn <- c(parseVars(substitute(groupA), data), parseVars(substitute(groupB), data))
     # add weights and variable itself
     vn <- c(vn, wgt, variable)
-    # add Taylor variables when apropos
-    taylorVars <- if(varMethod == "t") {
-      vn <- c(wgt, c(getPSUVar(data, weightVar), getStratumVar(data, weightVar)))
-    }
     
     if (returnNumberOfPSU){
       # Get stratum and PSU variable
@@ -1421,10 +1579,6 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     vn <- c(parseVars(substitute(groupA), data), parseVars(substitute(groupB), data))
     # add weights and variable itself
     vn <- c(vn, wgt, variable)
-    # add Taylor variables when apropos
-    taylorVars <- if(varMethod == "t") {
-      vn <- c(wgt, c(getPSUVar(data, weightVar), getStratumVar(data, weightVar)))
-    }
     if (returnNumberOfPSU){
       # Get stratum and PSU variable
       stratumVar <- getAttributes(data,"stratumVar")
@@ -1537,11 +1691,42 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
   return(lst)
 }
 
+# @title Linking error for NAEP DBA/PBA gap analysis.
+# @param X a numeric value estimated from digitally based assessments
+# @param subjectI a character value set to "Mathematics" or "Reading" for subject information
+# @param gradeI a character value set to "Grade 4" or "Grade 8" as grade level
+# @param gapI  a logical indicating if the linking error is a gap
+# @param dependentVarI a character value set to one of NAEP math or reading subscales
+# @param statElementI a character vector selected from "Mean", "Row Percent", "10", "25", "50", "75", "90", 
+# "At or above basic", "At or above proficient", "Below basic", "At basic", "At proficient", or "At advanced" indicating the relevant statistic
+# @author Huade Huo
+calLinkingError <- function(X,
+                            subjectI=NULL, 
+                            gradeI=NULL, 
+                            dependentVarI=NULL, 
+                            statElementI=NULL,
+                            gapI=FALSE) {
+  linkingErrorsRDS <- readRDS(system.file("linkingErrors", "linkingErrors.rds", package = "EdSurvey"))
+  linkingErrorRDSi <- linkingErrorsRDS[linkingErrorsRDS$subject %in% subjectI &
+                                       linkingErrorsRDS$dependentVar %in% dependentVarI & 
+                                       linkingErrorsRDS$grade %in% gradeI &
+                                       linkingErrorsRDS$statElement %in% statElementI &
+                                       linkingErrorsRDS$gap %in% gapI, ]
+  linkingErrorRDSi$statElement <- factor(linkingErrorRDSi$statElement, levels = statElementI)
+  linkingErrorRDSi <- linkingErrorRDSi[order(linkingErrorRDSi$statElement),]
+  if (nrow(linkingErrorRDSi) == 0) {
+    stop("Linking error is not avaialble.")
+  }
+  
+  linkingErrori <- linkingErrorRDSi$Aterm * X^2 + linkingErrorRDSi$Bterm * X + linkingErrorRDSi$Cterm
+  return(linkingErrori)
+}
+
 #' @rdname printGap
 #' @title Gap Analysis Printing
 #'
 #' @description Prints labels and a results vector of a gap analysis.
-#' @param x an R object representing a \code{gap} of class \code{gap} or \code{gapList}
+#' @param x an \code{R} object representing a \code{gap} of class \code{gap} or \code{gapList}
 #' @param printPercentage a logical value set to \code{TRUE} to request printing 
 #'                        of the percentage in the groups. Defaults to \code{TRUE}.
 #' @param ... these arguments are not passed anywhere and are included only for compatibility
@@ -1552,7 +1737,7 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
 print.gap <- function(x, ..., printPercentage=TRUE) {
   cat("Call: ")
   print(x$call)
-  cat("\nlabels:\n")
+  cat("\nLabels:\n")
   lab <- data.frame(group=c("A", "B"),
                     definition=c(deparse(x$labels$A), deparse(x$labels$B)),
                     nFullData=c(x$labels$n0A, x$labels$n0B),
@@ -1563,10 +1748,10 @@ print.gap <- function(x, ..., printPercentage=TRUE) {
   }
   print(lab, row.names=FALSE)
   if(printPercentage) {
-    cat("\npercentage:\n")
+    cat("\nPercentage:\n")
     print(x$percentage, row.names=FALSE)
   }
-  cat("\nresults:\n")
+  cat("\nResults:\n")
   print(x$results, row.names=FALSE, ...)
 }
 
@@ -1575,19 +1760,19 @@ print.gap <- function(x, ..., printPercentage=TRUE) {
 #' @export
 print.gapList <- function(x, ..., printPercentage=TRUE) {
   cat("gapList\n")
-  cat("Call: ")
+  cat(paste0("Call: "))
   print(x$call)
-  cat("\nlabels:\n")
+  cat("\nLabels:\n")
   lab <- data.frame(group=c("A", "B"),
                     definition=c(deparse(x$labels$A), deparse(x$labels$B)),
                     stringsAsFactors=FALSE)
   print(lab, row.names=FALSE)
   if(printPercentage) {
-    cat("\npercentage:\n")
+    cat("\nPercentage:\n")
     pct <- data.frame(x$percentage, stringsAsFactors=FALSE)
     print(pct, row.names=FALSE)
   }
-  cat("\nresults:\n")
+  cat("\nResults:\n")
   print(x$results, row.names=FALSE)
 }
 
@@ -1677,7 +1862,7 @@ gmatchAttr <- function(strings, achievementLevelNames) {
   }
   # finalize formatting for errors
   error <- ifelse(nchar(error) > 0, paste0(" matched to ", error), "")
-  error <- ifelse(nchar(out) == 0, " no match", error)
+  error <- ifelse(nchar(out) == 0, paste0(" is not one of the achievement Level for the current survey. Choose one from ", pasteItems(achievementLevelNames)), error)
   # if there is an error, format it and throw it
   if(any(nchar(error) > nchar(out))) {
     evars <- nchar(error)>0
@@ -1686,4 +1871,46 @@ gmatchAttr <- function(strings, achievementLevelNames) {
   }
   out <- trimws(paste(trimws(prefix), trimws(out), sep=" "))
   return(out)
+}
+
+getALNames <- function(data, variable) {
+  al <- getAttributes(data,"achievementLevels")
+  if(is.list(al)) {
+    if(variable %in% names(al)) {
+      al <- al[[variable]]
+    } else {
+      # assumes all achievement levels are the same
+      al <- al[[1]]
+    }
+  }
+  names(al)
+}
+
+addALPrefix <- function(al, als, discrete) {
+  if (discrete) {
+    if (grepl("below", al, ignore.case = TRUE)) {
+      lal <- al
+    } else {
+      if(!grepl("^at", al, ignore.case=TRUE)) {
+        lal <- paste0("At ",al)
+      } else {
+        lal <- al
+      }
+    }
+  } else {
+    if(grepl("^below", al, ignore.case = TRUE)) { # cumulative should not have Below achievementLevel
+      return(NULL)
+    } else {
+      # if it doesn't have the at prefix, add it
+      if(!grepl("^at", al, ignore.case=TRUE)) {
+        lal <- paste0(ifelse(tolower(al) == tolower(als[length(als)]),
+                             "At ",
+                             "At or Above "),
+                      al)
+      } else {
+        lal <- al
+      }
+    }
+  }
+  return(lal)
 }

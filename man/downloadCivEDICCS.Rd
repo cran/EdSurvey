@@ -14,7 +14,7 @@ Provides instructions to download CivED or ICCS data to be processed in \code{re
 }
 \examples{
 \dontrun{
-#view instructions to manually download study data
+# view instructions to manually download study data
 downloadCivEDICCS()
 }
 }

@@ -6,9 +6,9 @@
 #'
 #' @param path a character value of the full directory to the ICCS/CivED extracted SPSS (.sav) set of data
 #' @param countries a character vector of the country/countries to include using
-#'                  the three-digit ISO country code.  
+#'                  the three-digit International Organization for Standardization (ISO) country code.  
 #'                  A list of country codes can be found on Wikipedia at
-#'                  \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes},
+#'                  \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}
 #'                  or other online sources. Consult the \emph{ICCS/CivED User Guide} to help determine what countries
 #'                  are included within a specific testing year of ICCS/CivED. 
 #'                  To select all countries, use a wildcard value of \strong{\code{*}}.
@@ -29,15 +29,15 @@
 #' @param verbose a logical value to either print or suppress status message output.
 #'                The default value is \code{TRUE}.
 #' 
-#' @details Reads in the unzipped files downloaded from the international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}.
+#' @details Reads in the unzipped files downloaded from the international database(s) using the \href{https://www.iea.nl/data-tools/repository}{IEA Study Data Repository}.
 #'          Data files require the SPSS data file (.sav) format using the default filenames.
 #'
 #' @details When using the \code{getData} function with a CivED or ICCS study \code{edsurvey.data.frame},
 #'          the requested data variables are inspected, and it handles any necessary data merges automatically. 
-#'          Note that the \code{school} data will always be returned merged to the \code{student}
+#'          The \code{school} data always will be returned merged to the \code{student}
 #'          data, even if only \code{school} variables are requested.
-#'          Only if a 1999 CivED Grade 8 \code{edsurvey.data.frame} with \code{teacher} data variables is requested by the \code{getData} call, 
-#'          will cause \code{teacher} data to be merged.
+#'          If a 1999 CivED Grade 8 \code{edsurvey.data.frame} with \code{teacher} data variables is requested by the \code{getData} call, 
+#'          it will cause \code{teacher} data to be merged.
 #'          Many \code{students} can be linked to many \code{teachers}, which varies widely between countries, 
 #'          and not all countries contain \code{teacher} data.
 #'          
@@ -61,6 +61,10 @@ readCivEDICCS <- function(path,
                       gradeLvl=c("8", "9", "12"),
                       forceReread=FALSE,
                       verbose=TRUE) {
+  
+  #temporarily adjust any necessary option settings; revert back when done
+  userOp <- options(OutDec = ".")
+  on.exit(options(userOp), add = TRUE)
   
   path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
   
@@ -1691,8 +1695,8 @@ buildICCS_dataList <- function(dataSet, hasICCSData, hasCivEDData, stuLaf, stuFF
                                          levelLabel = "School",
                                          forceMerge = FALSE,
                                          parentMergeLevels = c("Student", "Student"),
-                                         parentMergeVars = c("idcntry", "idstud"),
-                                         mergeVars = c("idcntry", "idstud"),
+                                         parentMergeVars = c("idcntry", "idschool"),
+                                         mergeVars = c("idcntry", "idschool"),
                                          ignoreVars = names(schLaf)[names(schLaf) %in% names(stuLaf)],
                                          isDimLevel = FALSE)
   }

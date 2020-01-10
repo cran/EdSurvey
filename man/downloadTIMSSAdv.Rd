@@ -4,8 +4,12 @@
 \alias{downloadTIMSSAdv}
 \title{Download and Unzip TIMSS Advanced Files}
 \usage{
-downloadTIMSSAdv(root, years = c(1995, 2008, 2015), cache = FALSE,
-  verbose = TRUE)
+downloadTIMSSAdv(
+  root,
+  years = c(1995, 2008, 2015),
+  cache = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{root}{a character string indicating the directory where the TIMSS Advanced
@@ -23,19 +27,19 @@ The default value is \code{TRUE}.}
 }
 \description{
 Uses an Internet connection to download TIMSS Advanced data.
-             Data comes from \href{https://timssandpirls.bc.edu/}{timssandpirls.bc.edu} zip files. This
+             Data come from \href{https://timssandpirls.bc.edu/}{timssandpirls.bc.edu} zip files. This
              function works for 1995, 2008, and 2015 data.
 }
 \examples{
 \dontrun{
-#root argument will vary by operating system conventions
+# root argument will vary by operating system conventions
 downloadTIMSSAdv(year=c(2008, 2015), root = "C:/")
 
-#cache=TRUE will download then process the datafiles
+# cache=TRUE will download then process the datafiles
 downloadTIMSSAdv(year=2015, root = "C:/", cache = TRUE)
 
-#set verbose=FALSE for silent output
-#if year not specified, download all years
+# set verbose=FALSE for silent output
+# if year not specified, download all years
 downloadTIMSSAdv(root="C:/", verbose = FALSE)
 }
 }

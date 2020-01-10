@@ -13,14 +13,14 @@
 #' @param data       an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame},
 #'                   or an \code{edsurvey.data.frame.list}
 #' @param tau        the quantile to be estimated. The value could be set between 0 and 1 with a default of 0.5.
-#' @param weightVar  a character indicating the weight variable to use (see Details).
+#' @param weightVar  a character indicating the weight variable to use.
 #'                   The \code{weightVar} must be one of the weights for the
 #'                   \code{edsurvey.data.frame}. If \code{NULL}, it  uses the default
 #'                   for the \code{edsurvey.data.frame}.
 #' @param jrrIMax    when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
 #'                   sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
-#'                   term (see Details) can be estimated with any number of plausible values, and values larger than the number of 
-#'                   plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
+#'                   term can be estimated with any number of plausible values, and values larger than the number of 
+#'                   plausible values on the survey (including \code{Inf}) will result in all plausible values being used. 
 #'                   Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.
 #' @param relevels   a list. Used to change the contrasts from the
 #'                   default treatment contrasts to the treatment contrasts with a chosen omitted
@@ -36,27 +36,27 @@
 #'                          \code{edsurvey.data.frame} to see the default conditions.
 #' @param recode a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
 #'                  \code{recode=}\code{list(}\code{var1} \code{=} \code{list(}\code{from=} 
-#'                  \code{c("a",} \code{"b",} \code{"c"),} \code{to=} \code{"d"))}. See Examples.
+#'                  \code{c("a",} \code{"b",} \code{"c"),} \code{to=} \code{"d"))}.
 #' @param returnNumberOfPSU a logical value set to \code{TRUE} to return the number of 
 #'                          primary sampling units (PSUs)
 #' @param ... additional parameters passed from \ifelse{latex}{\code{rq}}{\code{\link[quantreg]{rq}}}
 #' 
 #' @details 
 #' 
-#' The function computes an estimate on the tau-th conditional quantile function of the response, 
+#' The function computes an estimate on the \code{tau}-th conditional quantile function of the response, 
 #' given the covariates, as specified by the formula argument. Like \code{lm.sdf()}, the  
 #' function presumes a linear specification for the quantile regression model (i.e., that the 
-#' formula defines a model that is linear in parameters). Unlike \code{lm.sdf()}, Jackknife is the
+#' formula defines a model that is linear in parameters). Unlike \code{lm.sdf()}, the jackknife is the
 #' only applicable variance estimation method used by the function.
 #' 
 #' For further details on quantile regression models and how they are implemented in R, see Koenker
-#'  & Bassett (1978), Koenker (2005), and the vignette from the \code{quantreg} package 
-#' (accessible by \code{vignette("rq",package="quantreg")}), on which this function is 
+#' and Bassett (1978), Koenker (2005), and the vignette from the \code{quantreg} package---
+#' accessible by \code{vignette("rq",package="quantreg")}---on which this function is 
 #' built.
 #' 
-#' For further details on how left-hand side variables, survey sampling weights, and estimates 
-#' variances are correctly handled, see \code{?lm.sdf} or the
-#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics vignette}.
+#' For further details on how left-hand side variables, survey sampling weights, and estimated 
+#' variances are correctly handled, see \code{\link{lm.sdf}} or the vignette titled
+#' \emph{\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistical Methods Used in EdSurvey}}.
 #' 
 #' 
 #'
@@ -67,9 +67,9 @@
 #' Johnson, E. G., & Rust, K. F. (1992). Population inferences and variance estimation for NAEP 
 #' data. \emph{Journal of Education Statistics}, \emph{17}(2), 175--190.
 #'
-#' Koenker, R. W., & Bassett, G. W. (1978). Regression quantiles, \emph{Econometrica}, 46, 33--50.
+#' Koenker, R. W., & Bassett, G. W. (1978). Regression quantiles, \emph{Econometrica, 46,} 33--50.
 #' 
-#' Koenker, R. W. (2005). \emph{Quantile regression}. Cambridge, UK; Cambridge University Press.
+#' Koenker, R. W. (2005). \emph{Quantile regression}. Cambridge, UK: Cambridge University Press.
 #' 
 #' Rubin, D. B. (1987). \emph{Multiple imputation for nonresponse in surveys}. New York, NY: Wiley.
 #'
@@ -89,7 +89,7 @@
 #'    \item{coefmat}{the coefficient matrix (typically produced by the summary of a model)}
 #'    \item{weight}{the name of the weight variable}
 #'    \item{npv}{the number of plausible values}
-#'    \item{njk}{the number of jackknife replicates used; set to \code{NA} when Taylor series variance
+#'    \item{njk}{the number of the jackknife replicates used; set to \code{NA} when Taylor series variance
 #'    estimates are used}
 #'
 #' @seealso \ifelse{latex}{\code{rq}}{\code{\link[quantreg]{rq}}}

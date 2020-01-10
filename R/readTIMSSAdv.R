@@ -4,11 +4,11 @@
 #'              returns an \code{edsurvey.data.frame} with
 #'              information about the file and data.
 #'
-#' @param path a character value to the full directory to the TIMSS Advanced extracted SPSS (.sav) set of data
+#' @param path a character vector to the full directory path to the TIMSS Advanced extracted SPSS (.sav) set of data
 #' @param countries a character vector of the country/countries to include using
 #'                  the three-digit ISO country code.
 #'                  A list of country codes can be found on Wikipedia at
-#'                  \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes},
+#'                  \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}
 #'                  or other online sources. Consult the \emph{TIMSS Advanced User Guide} to help determine what countries
 #'                  are included within a specific testing year of TIMSS Advanced.
 #'                  To select all countries, use a wildcard value of \strong{\code{*}}.
@@ -20,26 +20,29 @@
 #' @param verbose a logical value to either print or suppress status message output.
 #'                The default value is \code{TRUE}.
 #'
-#' @details Reads in the unzipped files downloaded from the TIMSS Advanced international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}.
-#'          Data files require the SPSS data file (.sav) format using the default filenames.
+#' @details Reads in the unzipped files downloaded from the TIMSS Advanced
+#' international database(s) using the
+#' \href{https://www.iea.nl/data-tools/repository}{IEA Study Data Repository}.
+#' Data files require the SPSS data file (.sav) format using the default
+#' filenames.
 #'
-#' @details A TIMSSAdvanced \code{edsurvey.data.frame} includes three distinct data levels:
-#'          \itemize{
-#'               \item student
-#'               \item school
-#'               \item teacher
-#'          }
+#' A TIMSS Advanced \code{edsurvey.data.frame} includes three distinct data levels:
+#' \itemize{
+#'   \item student
+#'   \item school
+#'   \item teacher
+#' }
 #'
-#'          When the \code{getData} function is called using a TIMSS Advanced \code{edsurvey.data.frame},
-#'          the requested data variables are inspected, and it handles any necessary data merges automatically.
-#'          Note that the \code{school} data will always be returned merged to the \code{student}
-#'          data, even if only \code{school} variables are requested.
-#'          Only if \code{teacher} variables are requested by the \code{getData} call, will cause the \code{teacher} data to be merged.
-#'          Many \code{students} can be linked to many \code{teachers}, which varies widely between countries.
+#' When the \code{getData} function is called using a TIMSS Advanced \code{edsurvey.data.frame},
+#' the requested data variables are inspected, and it handles any necessary data merges automatically.
+#' The \code{school} data always will be returned merged to the \code{student}
+#' data, even if only \code{school} variables are requested.
+#' If \code{teacher} variables are requested by the \code{getData} call it will cause the \code{teacher} data to be merged.
+#' Many \code{students} can be linked to many \code{teachers}, which varies widely between countries.
 #'
-#' @details Please note that calling the \code{dim} function for a TIMSS Advanced \code{edsurvey.data.frame} will result in the row count as if the \code{teacher} dataset was merged.
-#'          This row count will be considered the \code{full data N} of the \code{edsurvey.data.frame}, even if no \code{teacher} data were included in an analysis.
-#'          The column count returned by \code{dim} will be the count of unique column variables across all three data levels.
+#' Please note that calling the \code{dim} function for a TIMSS Advanced \code{edsurvey.data.frame} will result in the row count as if the \code{teacher} dataset was merged.
+#' This row count will be considered the \code{full data N} of the \code{edsurvey.data.frame}, even if no \code{teacher} data were included in an analysis.
+#' The column count returned by \code{dim} will be the count of unique column variables across all three data levels.
 #'
 #' @return
 #'  an \code{edsurvey.data.frame} for a single specified country or an \code{edsurvey.data.frame.list} if multiple countries specified
@@ -58,6 +61,10 @@ readTIMSSAdv <- function(path,
                       forceReread=FALSE,
                       verbose=TRUE) {
 
+  #temporarily adjust any necessary option settings; revert back when done
+  userOp <- options(OutDec = ".")
+  on.exit(options(userOp), add = TRUE)
+  
   path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
   subject <- tolower(subject)
 

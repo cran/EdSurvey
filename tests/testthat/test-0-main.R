@@ -20,28 +20,43 @@ test_that("Primer reads in correctly", {
   expect_equal(c(nrow(sdf), ncol(sdf)), c(17606, 302))
 })
 
+context("$ assign")
+test_that("$ assign", {
+  # assign a new variable
+  sdf$a <- sdf$dsex
+  tab <- table(sdf$a, sdf$dsex)
+  expect_equal(tab, assignTableREF)
+  # overwrite a variable, common for recoding
+  # note: dsex has no NAs on the reporting sample
+  sdf$dsex <- ifelse(sdf$dsex %in% "Male", "boy", "girl")
+  tab2 <- table(sdf$a, sdf$dsex)
+  expect_equal(unname(tab2), unname(assignTableREF))
+  sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
+})
+
 context("showPlausibleValues and showWeights verbose output agrees")
 test_that("showPlausibleValues and showWeights verbose output agrees",{
-  spv <- c("There are 6 subject scale(s) or subscale(s) in this edsurvey.data.frame",
-           "  'num_oper' subject scale or subscale with 5 plausible values. They are:",
-           "    'mrps11' 'mrps12' 'mrps13' 'mrps14' 'mrps15'",
-           "  'measurement' subject scale or subscale with 5 plausible values. They are:",
-           "    'mrps21' 'mrps22' 'mrps23' 'mrps24' 'mrps25'",
-           "  'geometry' subject scale or subscale with 5 plausible values. They are:",
-           "    'mrps31' 'mrps32' 'mrps33' 'mrps34' 'mrps35'",
-           "  'data_anal_prob' subject scale or subscale with 5 plausible values. They are:",
-           "    'mrps41' 'mrps42' 'mrps43' 'mrps44' 'mrps45'",
-           "  'algebra' subject scale or subscale with 5 plausible values. They are:",
-           "    'mrps51' 'mrps52' 'mrps53' 'mrps54' 'mrps55'",
-           "  'composite' subject scale or subscale with 5 plausible values (the default). They are:",
-           "    'mrpcm1' 'mrpcm2' 'mrpcm3' 'mrpcm4' 'mrpcm5'")
+  spv <- c("There are 6 subject scale(s) or subscale(s) in this edsurvey.data.frame:", 
+           "'num_oper' subject scale or subscale with 5 plausible values.", 
+           "  The plausible value variables are: 'mrps11', 'mrps12', 'mrps13', 'mrps14', and 'mrps15'", 
+           "", "'measurement' subject scale or subscale with 5 plausible values.", 
+           "  The plausible value variables are: 'mrps21', 'mrps22', 'mrps23', 'mrps24', and 'mrps25'", 
+           "", "'geometry' subject scale or subscale with 5 plausible values.", 
+           "  The plausible value variables are: 'mrps31', 'mrps32', 'mrps33', 'mrps34', and 'mrps35'", 
+           "", "'data_anal_prob' subject scale or subscale with 5 plausible values.", 
+           "  The plausible value variables are: 'mrps41', 'mrps42', 'mrps43', 'mrps44', and 'mrps45'", 
+           "", "'algebra' subject scale or subscale with 5 plausible values.", 
+           "  The plausible value variables are: 'mrps51', 'mrps52', 'mrps53', 'mrps54', and 'mrps55'", 
+           "", "'composite' subject scale or subscale with 5 plausible values (the default).", 
+           "  The plausible value variables are: 'mrpcm1', 'mrpcm2', 'mrpcm3', 'mrpcm4', and 'mrpcm5'", 
+           "")
   co <- capture.output(showPlausibleValues(sdf,verbose=TRUE))
   expect_equal(co, spv)
   skip_on_cran()
-  sw <- c("There are 1 full sample weight(s) in this edsurvey.data.frame",
-          "  'origwt' with 62 JK replicate weights (the default). Jackknife replicate weight variables:",
-          " [1] \"srwt01\" \"srwt02\" \"srwt03\" \"srwt04\" \"srwt05\" \"srwt06\" \"srwt07\" \"srwt08\" \"srwt09\" \"srwt10\" \"srwt11\" \"srwt12\" \"srwt13\" \"srwt14\" \"srwt15\" \"srwt16\" \"srwt17\" \"srwt18\" \"srwt19\" \"srwt20\" \"srwt21\" \"srwt22\" \"srwt23\" \"srwt24\" \"srwt25\" \"srwt26\" \"srwt27\" \"srwt28\" \"srwt29\" \"srwt30\" \"srwt31\" \"srwt32\" \"srwt33\" \"srwt34\" \"srwt35\" \"srwt36\" \"srwt37\" \"srwt38\" \"srwt39\" \"srwt40\" \"srwt41\" \"srwt42\" \"srwt43\" \"srwt44\" \"srwt45\" \"srwt46\" \"srwt47\" \"srwt48\" \"srwt49\" \"srwt50\" \"srwt51\" \"srwt52\" \"srwt53\" \"srwt54\" \"srwt55\"",
-          "[56] \"srwt56\" \"srwt57\" \"srwt58\" \"srwt59\" \"srwt60\" \"srwt61\" \"srwt62\"",
+  sw <- c("There is 1 full sample weight in this edsurvey.data.frame:", 
+          "  'origwt' with 62 JK replicate weights (the default).", "    Jackknife replicate weight variables associated with the full sample weight 'origwt':", 
+          "    'srwt01', 'srwt02', 'srwt03', 'srwt04', 'srwt05', 'srwt06', 'srwt07', 'srwt08', 'srwt09', 'srwt10', 'srwt11', 'srwt12', 'srwt13', 'srwt14', 'srwt15', 'srwt16', 'srwt17', 'srwt18', 'srwt19', 'srwt20', 'srwt21', 'srwt22', 'srwt23', 'srwt24', 'srwt25', 'srwt26', 'srwt27', 'srwt28', 'srwt29', 'srwt30', 'srwt31', 'srwt32', 'srwt33', 'srwt34', 'srwt35', 'srwt36', 'srwt37', 'srwt38', 'srwt39', 'srwt40', 'srwt41', 'srwt42', 'srwt43', 'srwt44',", 
+          "    'srwt45', 'srwt46', 'srwt47', 'srwt48', 'srwt49', 'srwt50', 'srwt51', 'srwt52', 'srwt53', 'srwt54', 'srwt55', 'srwt56', 'srwt57', 'srwt58', 'srwt59', 'srwt60', 'srwt61', and 'srwt62'", 
           "")
   co <- capture.output(showWeights(sdf,verbose=TRUE))
   expect_equal(co, sw)
@@ -60,7 +75,6 @@ test_that("searchSDF",{
   expect_equal(search1, searchSDFVector)
   expect_equal(search2, searchSDFOR)
   expect_equal(search3, searchSDFLevels)
-
 })
 
 context("showCodebook")
@@ -137,6 +151,21 @@ test_that("getData", {
 
   sdf_males <- EdSurvey:::subset(sdf, dsex %in% "Male", verbose=FALSE)
   expect_equal(dim(sdf_males), c(8905, 302))
+
+  # test bad subset, a$bb does not exist
+  expect_error(EdSurvey:::subset(sdf, dsex %in% a$bb, verbose=FALSE))
+  expect_error(EdSurvey:::subset(sdf, dsex %in% bb$a, verbose=FALSE))
+
+  skip_on_cran()
+  # test subset using an element from the parent frame
+  # does not work in testthat with test()
+  if(FALSE) {
+    print(search())
+    env <- new.env(hash = TRUE, parent = .GlobalEnv, size = 1L)
+    assign("a", list(b="Male"), envir = env)
+    sdf_males <- with(env, EdSurvey:::subset(sdf, dsex %in% a$b, verbose=FALSE))
+    expect_equal(dim(sdf_males), c(8905, 302))
+  }
 })
 
 context("getData order of userConditions")
@@ -219,15 +248,13 @@ test_that("lm.sdf",{
   lm1f$residuals <- head(lm1f$residuals)
   lm1f$PV.residuals <- head(lm1f$PV.residuals)
   lm1f$PV.fitted.values <- head(lm1f$PV.fitted.values)
-  lm1f.ref <- readRDS("lm1f.rds")
-  expect_equal(lm1f, lm1f.ref)
+  expect_known_value(lm1f, "lm1f.rds", update=FALSE)
   lm1re <- lm.sdf(composite ~ dsex + b017451, sdf, recode=list(dsex=list(from="Male", to="MALE")))
   lm1re$data <- NULL
   lm1re$residuals <- head(lm1re$residuals)
   lm1re$PV.residuals <- head(lm1re$PV.residuals)
   lm1re$PV.fitted.values <- head(lm1re$PV.fitted.values)
-  lm1re.ref <- readRDS("lm1re.rds")
-  expect_equal(lm1re, lm1re.ref)
+  expect_known_value(lm1re, "lm1re.rds", update=FALSE)
   # test that lfactor levels can be used in relevels argument
   lm1f2 <- lm.sdf(composite ~ dsex + b017451, sdf, jrrIMax=1, relevels=list(dsex=2))
   lm1f2$data <- NULL
@@ -239,9 +266,6 @@ test_that("lm.sdf",{
   expect_equal(lm1f, lm1f2)
   expect_equal(summary(lm1f), summary(lm1f2))
 })
-
-
-  lm1b <- lm.sdf(composite ~ dsex + b017451, sdf)
 
 context("lm.sdf Taylor series")
 test_that("lm.sdf Taylor series",{
@@ -257,8 +281,7 @@ test_that("lm.sdf Taylor series",{
 
   lm1t$PV.residuals <- head(lm1t$PV.residuals)
   lm1t$PV.fitted.values <- head(lm1t$PV.fitted.values)
-  lm1t.ref <- readRDS("lm1t.rds")
-  expect_equal(lm1t, lm1t.ref)
+  expect_known_value(lm1t, "lm1t.rds", update=FALSE)
   lm1jk <- lm.sdf(composite ~ dsex + b017451, sdf, varMethod="jackknife")
   expect_equal(coef(lm1t), coef(lm1jk))
   lm1jk$data <- NULL
@@ -283,8 +306,7 @@ test_that("lm.sdf Taylor series",{
   lm2t$residuals <- head(lm2t$residuals)
   lm2t$PV.residuals <- head(lm2t$PV.residuals)
   lm2t$PV.fitted.values <- head(lm2t$PV.fitted.values)
-  lm2t.ref <- readRDS("lm2t.rds")
-  expect_equal(lm2t, lm2t.ref)
+  expect_known_value(lm2t, "lm2t.rds", update=FALSE)
   lm2jk <- lm.sdf(composite ~ dsex + sdracem + yrsmath, sdf, varMethod="jackknife", relevel=list(dsex="Female"), jrrIMax=1)
   lm2jk$data <- NULL
   lm2jk$residuals <- head(lm2jk$residuals)
@@ -359,7 +381,6 @@ test_that("edsurveyTable with N=0", {
 
   es1 <- edsurveyTable(~b003501 + m815401, data = sdf, omittedLevels = FALSE, pctAggregationLevel = 0)
   expect_equal(nrow(es1$data), nrow(esDFtable))
-
 })
 
 context("edsurveyTable with no rhs variable")
@@ -374,8 +395,12 @@ test_that("edsurveyTable with no rhs variable", {
 context("gap with N=0")
 test_that("gap with N=0", {
   skip_on_cran()
-  gap0 <- gap("b003501",data=sdf, groupA = m815401 %in% "Multiple", groupB = "default", omittedLevels = FALSE, targetLevel = "Multiple",
-              returnSimpleDoF = TRUE, returnVarEstInputs = TRUE, returnSimpleN = TRUE)
+  gap0 <- gap("b003501", data=sdf,
+              groupA = m815401 %in% "Multiple",
+              groupB = "default",
+              omittedLevels = FALSE, targetLevel = "Multiple",
+              returnSimpleDoF = TRUE, returnVarEstInputs = TRUE,
+              returnSimpleN = TRUE)
   gap0c <- capture.output(gap0)
   expect_equal(gap0c,gap0REF)
 })
@@ -395,7 +420,6 @@ test_that("edsurveyTable2pdf",{
 context("edsurveyTable Taylor")
 test_that("edsurveyTable Taylor",{
   skip_on_cran()
-
   es1t <- edsurveyTable(composite ~ dsex + b017451, sdf, jrrIMax=1, varMethod="Taylor")
   es1tc <- capture.output(es1t)
   # compare Taylor to jackknife, only columns that should agree
@@ -461,8 +485,20 @@ context("percentile")
 test_that("percentile",{
   skip_on_cran()
   expect_known_value(pct1 <- percentile("composite", c(0,1,25,50,75,99,100), sdf), "pct1.rds", update=FALSE)
+  # percentiles should be -1* their value when multiplied by -1 and taken in reverse order
+  tmpDat <- getData(data=sdf, varnames=c("composite", "origwt"), addAttributes=TRUE)
+  pvs <- getPlausibleValue(data=sdf, "composite")
+  for(pvi in pvs) {
+    tmpDat[,pvi] <- -1 * tmpDat[,pvi]
+  }
+  pct1i <- percentile("composite", rev(c(0,1,25,50,75,99,100)), data=tmpDat)
+  expect_equal(pct1$estimate, -1*pct1i$estimate)
+  # range should agree with 0th and 100th percentile
+  pct0 <- percentile("mrpcm1", c(0,100), data=sdf)
+  expect_equal(pct0$estimate, range(sdf$mrpcm1))
 })
 
+######################## GAP TESTS FAIL ################
 context("return VarEstInputs")
 test_that("return VarEstInputs",{
   lm1 <- lm.sdf( ~ dsex + b017451, sdf, returnVarEstInputs=TRUE)
@@ -493,6 +529,8 @@ test_that("return VarEstInputs",{
 
 context("gap")
 test_that("gap", {
+  # gap SD
+  expect_known_value(g0 <- gap("composite", sdf, dsex=="Male", dsex=="Female", returnSimpleDoF=TRUE, stDev=TRUE), "gap_main_SD.rds", update=FALSE)
   # gap means
   expect_known_value(g1 <- gap("composite", sdf, dsex=="Male", dsex=="Female", returnSimpleDoF=TRUE), "gap_main_mean.rds", update=FALSE)
   g1q <- gap("composite", sdf, "dsex==\"Male\"", "dsex==\"Female\"", returnSimpleDoF=TRUE)
@@ -536,6 +574,9 @@ test_that("gap", {
                                           "About once a week"),
                                    to=c("Infrequently"))),
                                  returnSimpleDoF=TRUE), "gap_percentage2.rds", update=FALSE)
+  skip_on_cran()
+  # Taylor warning
+  expect_warning(gap("composite", sdf, dsex=="Male", dsex=="Female", varMethod="Taylor"), "deprecated")
 })
 
 
@@ -794,6 +835,16 @@ test_that("edsurvey with $ method",{
   expect_equal(class(sdf$composite),"data.frame")
 })
 
+
+context('levelsSDF n')
+test_that("levelsSDF n",{
+  levelRes <-  levelsSDF(varnames="pared", data=sdf)
+  sum2Res <- summary2(sdf, "pared")
+  mergeRes <- merge(sum2Res$summary, levelRes$pared, by.x="pared", by.y="labels")
+  expect_equal(mergeRes$N, mergeRes$n)
+})
+
+
 context('levelsSDF with multiple recodes')
 test_that("levelsSDF with multiple recodes",{
   # $ method work for existing attributes
@@ -804,8 +855,12 @@ test_that("levelsSDF with multiple recodes",{
   df <- recode.sdf(df, recode = list(pared=list(from=c("Did not finish H.S.","Graduated H.S."),
                                                 to=c("Graduated High School"))))
 
-  levelsSDFoutput <- c("Levels for Variable 't088301' (Lowest level first):", "    8. Omitted",
-  "    0. Multiple", "    9. Yes", "    10. No")
+  levelsSDFoutput <- c("Levels for Variable 't088301' (Lowest level first):",
+                       "    8. Omitted* (n=84)", 
+                       "    0. Multiple* (n=1)",
+                       "    9. Yes (n=14683)",
+                       "    10. No (n=323)",  
+                       "    NOTE: * indicates an omitted level.")
   colsdf <- capture.output(levelsSDF("t088301",df))
   expect_equal(levelsSDFoutput, colsdf)
 })
@@ -832,7 +887,6 @@ test_that("use returnNumberOfPSU", {
   # lm.sdf
   lmPSU <- lm.sdf(composite ~ dsex, data=sdf, returnNumberOfPSU = TRUE)
   expect_equal(lmPSU$nPSU,124)
-
   # gap
   gapPSU <- gap("composite",data=sdf, groupA = dsex %in% "Male", groupB = dsex %in% "Female", returnNumberOfPSU = TRUE)
   expect_equal(capture.output(gapPSU), gapPSUREF)
@@ -864,6 +918,7 @@ test_that('summary2', {
 context("rq.sdf")
 test_that("rq.sdf", {
   skip_on_cran()
+  options(width = 500)
   rq1 <- rq.sdf(composite ~ dsex + b017451, data=sdf, tau = 0.8)
   rq1c <- capture.output(rq1)
   expect_equal(rq1c, rq1REF)

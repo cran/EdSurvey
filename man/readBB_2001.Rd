@@ -2,37 +2,42 @@
 % Please edit documentation in R/readBB_2001.R
 \name{readBB_2001}
 \alias{readBB_2001}
-\title{Connect to B&B 2000-2001 Data}
+\title{Connect to B&B 2000--2001 Data}
 \usage{
-readBB_2001(b01DER_Filepath, b01WT_FilePath, masterTxtFilepath,
-  forceReread = FALSE, verbose = TRUE)
+readBB_2001(
+  b01DER_Filepath,
+  b01WT_FilePath,
+  masterTxtFilepath,
+  forceReread = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
-\item{b01DER_Filepath}{a character value to the main study derived analyticial data file (B01DER.dat).  Located within the ECBW/Data Folder.}
+\item{b01DER_Filepath}{a character value to the main study-derived analytical data file (\code{B01DER.dat}).  Located within the ECBW/Data Folder.}
 
-\item{b01WT_FilePath}{a character value to the study weight data file (B01WT.dat). Located within the ECBW/Data Folder.}
+\item{b01WT_FilePath}{a character value to the study weight data file (\code{B01WT.dat}). Located within the \code{ECBW/Data} Folder.}
 
-\item{masterTxtFilepath}{a character value of the master format file (master.txt) that contains the metadata 
-for the \code{b01DER_Filepath} and \code{b01WT_FilePath}.  Located in the ECBW folder.}
+\item{masterTxtFilepath}{a character value of the master format file (\code{master.txt}) that contains the metadata 
+for the \code{b01DER_Filepath} and \code{b01WT_FilePath}.  Located in the \code{ECBW} folder.}
 
-\item{forceReread}{a logical value to force re-reading of all processed data.
+\item{forceReread}{a logical value to force rereading of all processed data.
 The default value of \code{FALSE} will speed up the read function by using existing read-in data already processed.}
 
-\item{verbose}{a logical value that will determine if you want verbose output while the \code{readBB_2001-K2011} function is running to indicate processing progress.
+\item{verbose}{a logical value that will determine if you want verbose output while the \code{readBB_2001} function is running to indicate processing progress.
 The default value is \code{TRUE}.}
 }
 \value{
-an \code{edsurvey.data.frame} for the B&B 2000-2001 longitudinal dataset.
+an \code{edsurvey.data.frame} for the B&B 2000--2001 longitudinal dataset.
 }
 \description{
-Opens a connection to a Baccalaureate & Beyond 2000-2001 data file and
+Opens a connection to a Baccalaureate & Beyond 2000--2001 data file and
              returns an \code{edsurvey.data.frame} with 
              information about the file and data.
 }
 \details{
-Reads in the specified \code{csvFilename} file for the B&B 2000-2001 longitudinal survey to an \code{edsurvey.data.frame}.
-         The two created cached datafiles will be saved in the same directory and filename as the \code{b01DER_Filepath} file.
-         The two cached datafiles will have a new file extension of \code{.txt} and \code{.meta}.
+Reads the \code{masterTxtFilepath} file to parse the \code{b01DER_Filepath} and \code{b01WT_FilePath} files to an \code{edsurvey.data.frame}.
+         This function creates two cached data files will be saved in the same directory and filename as the \code{b01DER_Filepath} file for the B&B 2000--2001 longitudinal survey.
+         The two cached data files will have file extensions of .txt and .meta.
 }
 \examples{
 \dontrun{
@@ -42,11 +47,14 @@ dervFP <- file.path(getwd(), "Data", "B01DER.dat")
 wgtFP <- file.path(getwd(), "Data", "B01WT.dat")
 mstFP <- file.path(getwd(), "master.txt")
 
-#with verbose output as default
+# with verbose output as default
 bb2001 <- readBB_2001(dervFP, wgtFP, mstFP)
 
-#silent output
+# silent output
 bb2001 <- readBB_2001(dervFP, wgtFP, mstFP, verbose=FALSE)
+
+# force cache update
+bb2001 <- readBB_2001(dervFP, wgtFP, mstFP, forceReread = TRUE)
 }
 }
 \seealso{

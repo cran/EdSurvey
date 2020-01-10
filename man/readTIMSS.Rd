@@ -4,24 +4,26 @@
 \alias{readTIMSS}
 \title{Connect to TIMSS Data}
 \usage{
-readTIMSS(path, countries, gradeLvl, forceReread = FALSE,
-  verbose = TRUE)
+readTIMSS(path, countries, gradeLvl, forceReread = FALSE, verbose = TRUE)
 }
 \arguments{
-\item{path}{a character vector to the full directory path(s) to the TIMSS extracted SPSS (.sav) set of data}
+\item{path}{a character vector to the full directory path(s) to the TIMSS
+extracted SPSS (.sav) set of data}
 
 \item{countries}{a character vector of the country/countries to include using
 the three-digit ISO country code.
 A list of country codes can be found on Wikipedia at
-\url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes},
-or other online sources. Consult the \emph{TIMSS User Guide} documentation to help determine what countries
-are included within a specific testing year of TIMSS and for country code definitions.
+\url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}
+or other online sources. Consult the \emph{TIMSS User Guide}
+documentation to help determine what countries
+are included within a specific testing year of TIMSS and
+for country code definitions.
 To select all countries available, use a wildcard value of \strong{\code{*}}.}
 
 \item{gradeLvl}{a character value to indicate the specific grade level you wish to return
 \itemize{
-     \item{\strong{4} = fourth grade (the default if not specified)}
-     \item{\strong{8} = eighth grade}
+  \item{\strong{4} = fourth grade (the default if not specified)}
+  \item{\strong{8} = eighth grade}
 }}
 
 \item{forceReread}{a logical value to force rereading of all processed data.
@@ -39,48 +41,61 @@ Opens a connection to a TIMSS data file and
              information about the file and data.
 }
 \details{
-Reads in the unzipped files downloaded from the TIMSS international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}.
-         Data files require the SPSS data file (.sav) format using the default filenames.
+Reads in the unzipped files downloaded from the TIMSS international
+database(s) using the \href{https://www.iea.nl/data-tools/repository}{IEA Study Data Repository}.
+Data files require the SPSS data file (.sav) format using the default
+filenames.
 
 A TIMSS \code{edsurvey.data.frame} includes three distinct data levels:
-         \itemize{
-              \item student
-              \item school
-              \item teacher
-         }
+\itemize{
+  \item student
+  \item school
+  \item teacher
+}
 
-         When the \code{getData} function is called using a TIMSS \code{edsurvey.data.frame},
-         the requested data variables are inspected, and it handles any necessary data merges automatically.
-         Note that the \code{school} data will always be returned merged to the \code{student}
-         data, even if only \code{school} variables are requested.
-         Only if \code{teacher} variables are requested by the \code{getData} call, will cause \code{teacher} data to be merged.
-         Many \code{students} can be linked to many \code{teachers}, which varies widely between countries.
+When the \code{getData} function is called using a TIMSS \code{edsurvey.data.frame},
+the requested data variables are inspected, and it handles any necessary data merges automatically.
+The \code{school} data always will be returned merged to the \code{student}
+data, even if only \code{school} variables are requested.
+If \code{teacher} variables are requested by the \code{getData} call, it
+will cause \code{teacher} data to be merged.
+Many \code{students} can be linked to many \code{teachers}, which varies
+widely between countries.
 
-Please note that calling the \code{dim} function for a TIMSS \code{edsurvey.data.frame} will result in the row count as if the \code{teacher} dataset was merged.
-         This row count will be considered the \code{full data N} of the \code{edsurvey.data.frame}, even if no \code{teacher} data were included in an analysis.
-         The column count returned by \code{dim} will be the count of unique column variables across all three data levels.
+Please note that calling the \code{dim} function for a TIMSS
+\code{edsurvey.data.frame} will result in the row count as if the
+\code{teacher} dataset was merged.
+This row count will be considered the \code{full data N} of the
+\code{edsurvey.data.frame}, even if no \code{teacher} data were included in an analysis.
+The column count returned by \code{dim} will be the count of unique column
+variables across all three data levels.
 
-Beginning in TIMSS 2015, a \code{numeracy} dataset was designed to assess mathematics at the end of the primary school cycle
-         for countries where most children are still developing fundamental mathematics skills.
-         The \code{numeracy} dataset is handled automatically for the user and is included within the fourth-grade dataset \code{gradeLvl=4}.
-         Most \code{numeracy} countries have a \code{4th grade} dataset in addition to their \code{numeracy} dataset, but some do not.
-         For countries that have both a \code{numeracy} and \code{4th grade} dataset,
-         the two datasets are combined into one \code{edsurvey.data.frame} for that country.
-         Data variables missing from either dataset are kept, with \code{NA} values inserted for the dataset records where that variable did not exist.
-         Data variables common to both datasets are kept as a single data variable, with records retaining their original values from the source dataset.
-         Consult the \emph{TIMSS User Guide} for further information.
+Beginning with TIMSS 2015, a \code{numeracy} dataset was designed to assess
+mathematics at the end of the primary school cycle
+for countries where most children are still developing fundamental mathematics skills.
+The \code{numeracy} dataset is handled automatically for the user and is
+included within the fourth-grade dataset \code{gradeLvl=4}.
+Most \code{numeracy} countries have a \code{4th grade} dataset in addition
+to their \code{numeracy} dataset, but some do not.
+For countries that have both a \code{numeracy} and a \code{4th grade} dataset,
+the two datasets are combined into one \code{edsurvey.data.frame} for that country.
+Data variables missing from either dataset are kept, with \code{NA} values
+inserted for the dataset records where that variable did not exist.
+Data variables common to both datasets are kept as a single data variable,
+with records retaining their original values from the source dataset.
+Consult the \emph{TIMSS User Guide} for further information.
 }
 \examples{
 \dontrun{
-#single country specified
-fin <- readTIMSS("C:/TIMSS2015", countries = c("fin"), gradeLvl = 4)
+# single country specified
+fin <- readTIMSS("C:/TIMSS/2015", countries = c("fin"), gradeLvl = 4)
 gg <- getData(fin, c("asbg01", "totwgt", "srea"))
 head(gg)
 edsurveyTable(srea ~ asbg01, fin)
 
-#multiple countries returned as edsurvey.data.frame.list, specify all countries with '*' argument
-timss2011 <- readTIMSS("C:/TIMSS2011", countries="*", gradeLvl = 8, verbose = TRUE)
-#print out edsurvey.data.frame.list covariates
+# multiple countries returned as edsurvey.data.frame.list, specify all countries with '*' argument
+timss2011 <- readTIMSS("C:/TIMSS/2011", countries="*", gradeLvl = 8, verbose = TRUE)
+# print out edsurvey.data.frame.list covariates
 timss2011$covs
 }
 }

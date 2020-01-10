@@ -1,5 +1,5 @@
 \dontrun{
-# Download all available data for PIAAC round 1 to "C:/PIAAC/Round 1" folder
+# download all available data for PIAAC round 1 to "C:/PIAAC/Round 1" folder
 # root argument will vary by operating system conventions
 downloadPIAAC(root="C:/")
 }

@@ -2,7 +2,7 @@
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
-# By default uses jackknife variance method using replicate weights
+# by default uses the jackknife variance method using replicate weights
 table(sdf$b013801)
 logit1 <- logit.sdf(I(b013801 %in% c("26-100", ">100")) ~ dsex + b017451, data=sdf)
 # use summary to get detailed results
@@ -18,6 +18,9 @@ summary(logit2)
 
 logit3 <- glm.sdf(I(composite >= 300) ~ dsex + b013801, data=sdf, 
                   family=quasibinomial(link="logit"))
+
+# Wald test for joint hypothesis that all coefficients in b013801 are zero
+waldTest(logit3, "b013801")
 
 summary(logit3)
 }

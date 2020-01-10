@@ -1,27 +1,33 @@
-#' @title Connect to B&B 2008-2012 Data
+#' @title Connect to B&B 2008--2012 Data
 #'
-#' @description Opens a connection to a Baccalaureate & Beyond 2008-2012 data file and
+#' @description Opens a connection to a Baccalaureate & Beyond 2008--2012 data file and
 #'              returns an \code{edsurvey.data.frame} with 
 #'              information about the file and data.
 #'
 #' @param path a character value to the root directory path containing the \code{csvFilename}, \code{formatFilename}, and \code{metadataFilename} data files.
-#' @param csvFilename a character value of the derived datafile (*.csv) containing the raw B&B 2008-2012 data.
-#' @param formatFilename a character value of the format file (*.txt) that describes the layout of the \code{csvFilename}.
-#' @param metadataFilename a character value of the metadata file (*.txt) that describes additional metadata of the \code{csvFilename}.
+#' @param csvFilename a character value of the derived data file (.csv) containing the raw B&B 2008--2012 data.
+#' @param formatFilename a character value of the format file (.txt) that describes the layout of the \code{csvFilename}.
+#' @param metadataFilename a character value of the metadata file (.txt) that describes additional metadata of the \code{csvFilename}.
 #'                    
-#' @details Reads in the specified \code{csvFilename} file for the B&B 2008-2012 longitudinal survey to an \code{edsurvey.data.frame}.
+#' @details Reads in the specified \code{csvFilename} file for the B&B 2008--2012 longitudinal survey to an \code{edsurvey.data.frame}.
 #' 
 #' @return
-#'  an \code{edsurvey.data.frame} for the B&B 2008-2012 longitudinal dataset.
+#'  an \code{edsurvey.data.frame} for the B&B 2008--2012 longitudinal dataset.
 #'
 #' @seealso \code{\link{readECLS_K2011}}, \code{\link{readNAEP}}, and \code{\link{getData}}
 #' @author Tom Fink
 #' @example /man/examples/readBB_2012.R
-#' @export
+#' 
 readBB_2012 <- function(path,
                         csvFilename = "b12derived_datafile.csv",
                         formatFilename = "b12derived_format.txt",
                         metadataFilename = "b12derived_metadata.txt") {
+  
+  #temporarily adjust any necessary option settings; revert back when done
+  userOp <- options(OutDec = ".")
+  on.exit(options(userOp), add = TRUE)
+  
+  path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
   
   if(!dir.exists(path)){
     stop(paste0("Cannot find specified folder path ", sQuote(path), "."))
@@ -38,10 +44,21 @@ readBB_2012 <- function(path,
   
   fileFormat <- getMetaFormatDictionary(file.path(path, metadataFilename), file.path(path, formatFilename)) #get the file format based on the fileformat file and metadata file
   
+  #add certain omitted levels to the fileFormat 'valueLabels' where the valueLabels is empty
+  #the 'format' file used for labels doesn't define these, but the 'makeFile' programs add them in their coding (omitting the id field)
+  #ensure these items are defined as omittedLevels otherwise it will mess up continuous variables being typed as categorical
+  fileFormat$labelValues[nchar(fileFormat$labelValues)==0 & fileFormat$variableName!="id"] <- paste0("-3={Skipped}",
+                                                                                                     "^-6={Out of range}",
+                                                                                                     "^-7={Not administered - abbreviated}",
+                                                                                                     "^-9={Missing}",
+                                                                                                     "^-14={Multiple values possible}")
+  
+  
   lafObj <- laf_open_csv(file.path(path, csvFilename), fileFormat$dataType, fileFormat$variableName, skip=1) #ensure to skip header row
   
   fileFormat <- identifyBBWeights_2012(fileFormat)
   weights <- buildBBWeightList_2012(fileFormat)
+  attr(weights, "default") <- "" #no default weight
 
   pvs <- list() #no plausible values or achievement levels?
   omittedLevels <- c("{Missing}", "{Not applicable}",
@@ -49,7 +66,10 @@ readBB_2012 <- function(path,
                      "{Not administered - abbreviated}", "{No post-bachelor's enrollment}",
                      "{Instrument error}", "{Out of range}",
                      "{Not classified}", "{Independent student}", 
-                     "{Multiple values possible}", "(Missing)", NA)
+                     "{Multiple values possible}", "{Don't know}", 
+                     "{No dependent children}", 
+                     "{Independent student}", "{Dependent student}",
+                     "(Missing)", NA)
 
   edsurvey.data.frame(userConditions = list(),
                       defaultConditions = NULL,
@@ -63,11 +83,11 @@ readBB_2012 <- function(path,
                       gradeLevel = "",
                       achievementLevels = NULL, #no achievement levels
                       omittedLevels = omittedLevels,
-                      survey = "B&B",
+                      survey = "B&B2012",
                       country = "USA",
                       psuVar = NULL,  #psu and stratum are weight specific
                       stratumVar = NULL, 
-                      jkSumMultiplier = 1,
+                      jkSumMultiplier = 0.005, #1/200 replicates
                       validateFactorLabels = FALSE, #the validateFactorLabels will check in `getData` if all values have a defined label, any missing labels will be automatically added.
                       reqDecimalConversion = FALSE) #decimal conversion is not needed
 }
@@ -129,100 +149,6 @@ buildBBWeightList_2012 <- function(fileFormat){
   
   return(weights)
 }
-
-#the .csv files for the RUD data are accompanied by two .txt files
-#the *_metadata.txt and the *_layout.txt
-getMetaFormatDictionary <- function(metaDataFile, formatDataFile){
-  
-  if(!file.exists(metaDataFile)){
-    stop(paste0("No metadata file found at path ", metaDataFile, "."))
-  }
-  
-  if(!file.exists(formatDataFile)){
-    stop(paste0("No format layout file found at path ", formatDataFile, "."))
-  }
-  
-  #prepare return dictionary
-  dict <- list("variableName" = character(0),
-               "Start" = integer(0),
-               "End" = integer(0),
-               "Width" = integer(0),
-               "Decimal" = integer(0),
-               "Labels" = character(0),
-               "labelValues" = character(0),
-               "Type" = character(0),
-               "pvWt" = character(0),
-               "dataType" = character(0),
-               "weights" = character(0))
-  
-  linesFormat <- readLines(formatDataFile)
-  linesMeta <- readLines(metaDataFile)
-  
-  #omit first line as it just states its metadata
-  linesMeta <- linesMeta[-1]
-  
-  colsFormat <- strsplit(linesFormat, "|", fixed=TRUE) #creates a list object
-  colsFormat <- data.frame(t(sapply(colsFormat,c)), stringsAsFactors = FALSE) #convert the list to data.frame
-  colnames(colsFormat) <- c("varname", "format", "recIndex")
-  colsFormat$varname <- tolower(colsFormat$varname)
-  
-  colsMeta <- strsplit(linesMeta, "|", fixed=TRUE)
-  colsMeta <- data.frame(t(sapply(colsMeta,c)), stringsAsFactors = FALSE)
-  colnames(colsMeta) <- c("flag1", "flag2", "varname", "label", "value")
-  
-  #subset the variable labels from the description labels
-  colLbls <- subset(colsMeta, flag1==0)
-  colValLbls <- subset(colsMeta, flag1==1)
-  
-  colsFormat$sortOrd <- 1:nrow(colsFormat)
-  colsFormat <- merge(colsFormat, colLbls, by="varname", all.x=TRUE, all.y=FALSE)
-  colsFormat <- colsFormat[order(colsFormat$sortOrd), ]
-  
-  dict$variableName <- colsFormat$varname
-  dict$Start <- seq_along(1:nrow(colsFormat)) #keep a sort order of sorts
-  dict$End <- rep(NA, nrow(colsFormat))
-  dict$Width <- rep(NA, nrow(colsFormat))
-  dict$Decimal<- rep(NA, nrow(colsFormat))
-  dict$Labels<- colsFormat$label
-  dict$labelValues<- rep("", nrow(colsFormat))
-  dict$Type<- rep("", nrow(colsFormat))
-  dict$pvWt<- rep("", nrow(colsFormat))
-  dict$dataType<- rep("", nrow(colsFormat))
-  dict$weights<- rep("", nrow(colsFormat))
-  
-  dict <- data.frame(dict, stringsAsFactors = FALSE)
-  
-  for(v in dict$variableName){
-    lblSubset <- colValLbls[colValLbls$varname==v, ]
-    
-    keys <- lblSubset$value
-    lbls <- lblSubset$label
-    
-    dict[dict$variableName==v, "labelValues"] <- paste(keys, lbls, collapse = "^", sep = "=")
-  }
-  
-  #now work with the layout file to gather the datatype and the precision
-  lines <- readLines(formatDataFile)
-  cols <- strsplit(lines, "|", fixed=TRUE) #creates a list object
-  cols <- data.frame(t(sapply(cols,c)), stringsAsFactors = FALSE) #convert the list to data.frame
-  
-  numericVars <- colsFormat$varname[grepl("^F", colsFormat$format)] #get the names of all the numeric variables
-  charVars <- colsFormat$varname[!grepl("^F", colsFormat$format)]
-  
-  dict$dataType[tolower(dict$variableName) %in% tolower(numericVars)] <- "numeric"
-  dict$dataType[tolower(dict$variableName) %in% tolower(charVars)] <- "character"
-  
-  #pull out the decimal places and widths
-  dict$Decimal <- as.numeric(ifelse(substr(colsFormat$format,1,1) == "F" & grepl(".", colsFormat$format, fixed = TRUE), sapply(strsplit(colsFormat$format,"\\."), function(x) { tail(x,1) } ), rep(NA, nrow(dict)) ))
-  dict$Width <- gsub("[a-zA-Z]","",sapply(strsplit(colsFormat$format,"\\."), function(x) { head(x,1) } ))
-  
-  #lastly, convert numeric values to integer when they really should be an integer
-  dict$dataType[dict$dataType=="numeric" & is.na(dict$Decimal) & dict$Width < 8] <- "integer"
-  dict$Decimal[dict$dataType=="integer"] <- 0
-  
-  return(dict)
-}
-
 
 buildBBDataList_2012 <- function(lafObj, fileFormat){
   

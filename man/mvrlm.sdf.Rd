@@ -4,17 +4,26 @@
 \alias{mvrlm.sdf}
 \title{Multivariate Regression}
 \usage{
-mvrlm.sdf(formula, data, weightVar = NULL, relevels = list(),
-  jrrIMax = 1, omittedLevels = TRUE, defaultConditions = TRUE,
-  recode = NULL, returnVarEstInputs = FALSE, estMethod = "OLS")
+mvrlm.sdf(
+  formula,
+  data,
+  weightVar = NULL,
+  relevels = list(),
+  jrrIMax = 1,
+  omittedLevels = TRUE,
+  defaultConditions = TRUE,
+  recode = NULL,
+  returnVarEstInputs = FALSE,
+  estMethod = "OLS"
+)
 }
 \arguments{
-\item{formula}{a \ifelse{latex}{\code{Formula}}{\code{\link[Formula]{Formula}}} for the
+\item{formula}{a \ifelse{latex}{\code{Formula} package \code{Formula}}{\code{\link[Formula]{Formula}}} for the
 linear model. See \ifelse{latex}{\code{Formula}}{\code{\link[Formula]{Formula}}};
 left-hand side variables are separated with 
 vertical pipes (\code{|}). See Examples.}
 
-\item{data}{an \code{edsurvey.data.frame} or \code{edsurvey.data.frame.list}}
+\item{data}{an \code{edsurvey.data.frame} or an \code{edsurvey.data.frame.list}}
 
 \item{weightVar}{character indicating the weight variable to use (see Details).
 The \code{weightVar} must be one of the weights for the
@@ -25,16 +34,18 @@ for the \code{edsurvey.data.frame}.}
 default treatment contrasts to treatment contrasts with a chosen omitted
 group (the reference group).
 To do this, the user puts an element on the list with the same name as
-a variable to change contrasts on,
-and then makes the value for that list element equal to the value
+a variable to change contrasts on
+and then make the value for that list element equal to the value
 that should
 be the omitted group (the reference group).}
 
-\item{jrrIMax}{when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
-sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
-term (see Details) can be estimated with any number of plausible values, and values larger than the number of 
-plausible values on the survey (including \code{Inf}) will result in all of the plausible values being used. 
-Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
+\item{jrrIMax}{a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=1}, uses the 
+                  sampling variance from the first plausible value as the component for sampling variance estimation. The \eqn{V_{jrr}} 
+                  term (see
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}})
+                  can be estimated with any number of plausible values, and values larger than the number of 
+                  plausible values on the survey (including \code{Inf}) will result in all plausible values being used. 
+                  Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
 
 \item{omittedLevels}{a logical value. When set to the default value of \code{TRUE}, drops
 those levels of all factor variables that are specified
@@ -47,15 +58,15 @@ to subset the data. Use \code{print} on an
 \code{edsurvey.data.frame} to see the default conditions.}
 
 \item{recode}{a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
-\code{recode} \code{=} \code{list(var1=} \code{list(from=c("a","b","c"),} \code{to ="d"))}. See Examples.}
+\code{recode} \code{=} \code{list(var1=} \code{list(from=c("a","b","c"),} \code{to ="d"))}.}
 
 \item{returnVarEstInputs}{a logical value. Set to \code{TRUE} to return the
 inputs to the jackknife and imputation variance
-estimates. This is intended to allow for
+estimates, which allow for
 computation of covariances between estimates.}
 
 \item{estMethod}{a character value indicating which estimation method to use.
-Default is 'OLS'; other option is 'GLS'.}
+Default is \code{OLS}; other option is \code{GLS}.}
 }
 \value{
 An \code{edsurvey.mvrlm} with elements:
@@ -63,16 +74,16 @@ An \code{edsurvey.mvrlm} with elements:
    \item{formula}{the formula used to fit the model}
    \item{coef}{the estimates of the coefficients}
    \item{se}{the standard error estimates of the coefficients}
-   \item{Vimp}{the estimated variance due to uncertainty in the scores (plausible value variables)}
-   \item{Vjrr}{the estimated variance due to sampling}
+   \item{Vimp}{the estimated variance caused by uncertainty in the scores (plausible value variables)}
+   \item{Vjrr}{the estimated variance caused by sampling}
    \item{M}{the number of plausible values}
    \item{varm}{the variance estimates under the various plausible values}
    \item{coefm}{the values of the coefficients under the various plausible values}
    \item{coefmat}{the coefficient matrix (typically produced by the summary of a model)}
    \item{r.squared}{the coefficient of determination}
    \item{weight}{the name of the weight variable}
-   \item{npv}{number of plausible values}
-   \item{njk}{the number of jackknife replicates used}
+   \item{npv}{the number of plausible values}
+   \item{njk}{the number of the jackknife replicates used}
    \item{varEstInputs}{When \code{returnVarEstInputs} is \code{TRUE},
                        this element is returned. These are
                        used for calculating covariances with
@@ -82,8 +93,8 @@ An \code{edsurvey.mvrlm} with elements:
    \item{residCov}{residual covariance matrix for dependent variables}
    \item{residPV}{residuals for each dependent variable}
    \item{inputs}{coefficient estimation input matrices}
-   \item{n0}{full data n}
-   \item{nUsed}{n used for model}
+   \item{n0}{full data \emph{n}}
+   \item{nUsed}{\emph{n} used for model}
    \item{B}{imputation variance-covariance matrix, before multiplication by (M+1)/M}
    \item{U}{sampling variance-covariance matrix}
 }
@@ -95,7 +106,9 @@ Fits a multivariate linear model that uses weights and variance
 This function implements an estimator that correctly handles multiple left-hand
 side variables that are either numeric or plausible values, allows for survey 
 sampling weights, and estimates variances using the jackknife replication method.
-The vignette titled \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics} describes estimation of the reported statistics. 
+The vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
+describes estimation of the reported statistics. 
 
 The \bold{coefficients} are estimated using the sample weights according to the section 
 \dQuote{Estimation of Weighted Means When Plausible Values Are Not Present}
@@ -108,7 +121,7 @@ the average R-squared using the sample weights for each set of plausible values.
 
 \subsection{Variance estimation of coefficients}{
   All variance estimation methods are shown in the vignette titled
-  \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.  
+  \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}.  
 
   When the predicted value does not have plausible values, the variance of the coefficients
   is estimated according to the section \dQuote{Estimation of Standard Errors
@@ -120,14 +133,14 @@ the average R-squared using the sample weights for each set of plausible values.
 }
 
 For more information on the specifics of multivariate regression, see the vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Multivariate_Regression.pdf}{Multivariate Regression}.
+\href{https://www.air.org/sites/default/files/EdSurvey-Multivariate_Regression.pdf}{Methods and Overview of Using EdSurvey for Multivariate Regression}.
 }
 \examples{
 \dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
-# Use | symbol to separate dependent variables in the left-hand side of formula
+# use | symbol to separate dependent variables in the left-hand side of formula
 mvrlm.fit <- mvrlm.sdf(algebra | geometry ~ dsex + m072801, jrrIMax = 5, data = sdf)
 
 # print method returns coefficients, as does coef method
@@ -137,7 +150,7 @@ coef(mvrlm.fit)
 # for more detailed results, use summary:
 summary(mvrlm.fit)
 
-# Details of model can also be accessed through components of the returned object; for example:
+# details of model can also be accessed through components of the returned object; for example:
 
 # coefficients (one column per dependent variable)
 mvrlm.fit$coef
@@ -145,16 +158,16 @@ mvrlm.fit$coef
 mvrlm.fit$coefmat
 # R-squared values (one per dependent variable)
 mvrlm.fit$r.squared
-# Residual covariance matrix
+# residual covariance matrix
 mvrlm.fit$residCov
 
-# Model residuals and other details are available as well.
+# model residuals and other details are available as well
 
 # show the structure of the residuals objects
 str(mvrlm.fit$residuals)
 str(mvrlm.fit$residPV)
 
-# dependent variables can have plausible values or not (or a combination).
+# dependent variables can have plausible values or not (or a combination)
 
 mvrlm.fit <- mvrlm.sdf(composite | mrps22 ~ dsex + m072801, data = sdf, jrrIMax = 5)
 summary(mvrlm.fit)
@@ -165,20 +178,19 @@ summary(mvrlm.fit)
 mvrlm.fit <- mvrlm.sdf(mrps51 | mrps22 ~ dsex + m072801, data = sdf, jrrIMax = 5)
 summary(mvrlm.fit)
 
-# Hypotheses about coefficient restrictions can also be tested using the Wald test.
+# hypotheses about coefficient restrictions can also be tested using the Wald test
 
 mvr <- mvrlm.sdf(algebra | geometry ~ dsex + m072801, data = sdf)
 
 hypothesis <- c("geometry_dsexFemale = 0", "algebra_dsexFemale = 0")
 
-# test statistics based on the F and chi-squared distribution are available.
+# test statistics based on the F and chi-squared distribution are available
 linearHypothesis(mvr, hypothesis = hypothesis, test = "F")
 linearHypothesis(mvr, hypothesis = hypothesis, test = "Chisq")
-
 }
 }
 \seealso{
-\ifelse{latex}{\code{lm}}{\code{\link[stats]{lm}}}, \ifelse{latex}{\code{lm.sdf}}{\code{\link[EdSurvey]{lm.sdf}}}
+\ifelse{latex}{the stats package \code{lm}}{\code{\link[stats]{lm}}}, \code{\link{lm.sdf}}
 }
 \author{
 Alex Lishinski and Paul Bailey

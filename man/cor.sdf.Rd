@@ -4,10 +4,18 @@
 \alias{cor.sdf}
 \title{Bivariate Correlation}
 \usage{
-cor.sdf(x, y, data, method = c("Pearson", "Spearman", "Polychoric",
-  "Polyserial"), weightVar = "default", reorder = NULL,
-  omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
-  condenseLevels = TRUE)
+cor.sdf(
+  x,
+  y,
+  data,
+  method = c("Pearson", "Spearman", "Polychoric", "Polyserial"),
+  weightVar = "default",
+  reorder = NULL,
+  omittedLevels = TRUE,
+  defaultConditions = TRUE,
+  recode = NULL,
+  condenseLevels = TRUE
+)
 }
 \arguments{
 \item{x}{a character variable name from the \code{data} to be correlated with \code{y}}
@@ -19,7 +27,7 @@ cor.sdf(x, y, data, method = c("Pearson", "Spearman", "Polychoric",
 \item{method}{a character string indicating which correlation coefficient (or covariance) is to be computed.
 One of \code{Pearson} (default), \code{Spearman}, \code{Polychoric}, or \code{Polyserial}.}
 
-\item{weightVar}{character indicating the weight variable to use. See Details.}
+\item{weightVar}{character indicating the weight variable to use. See Details section in \code{\link{lm.sdf}}.}
 
 \item{reorder}{a list of variables to reorder. Defaults to \code{NULL} (no variables are reordered). Can be set as 
 \code{reorder} \code{=} \code{list(var1} \code{=} \code{c("a","b","c"),} \code{var2} \code{=} \code{c("4", "3", "2", "1"))}. See Examples.}
@@ -45,17 +53,17 @@ in the codebook. See Examples.}
 An \code{edsurvey.cor} that has print and summary methods.
 
 The class includes the following elements:
-\item{\code{correlation}}{numeric estimated correlation coefficient}
-\item{\code{Zse}}{standard error of the correlation (\code{Vimp} + \code{Vjrr}). In the case of Pearson, this is calculated in the linear atanh space and so is not a standard error in the usual sense.}
-\item{\code{correlates}}{a vector of length two showing the columns for which the correlation coefficient was calculated}
-\item{\code{variables}}{\code{correlates} that are discrete}
-\item{\code{order}}{a list that shows the order of each variable}
-\item{\code{method}}{the type of correlation estimated}
-\item{\code{Vjrr}}{the jackknife component of the variance estimate. For Pearson, in the atanh space.}
-\item{\code{Vimp}}{the imputation component of the variance estimate. For Pearson, in the atanh space.}
-\item{\code{weight}}{the weight variable used}
-\item{\code{npv}}{the number of plausible values used}
-\item{\code{njk}}{the number of the jackknife replicates used}
+\item{correlation}{numeric estimated correlation coefficient}
+\item{Zse}{standard error of the correlation (\code{Vimp} + \code{Vjrr}). In the case of Pearson, this is calculated in the linear atanh space and is not a standard error in the usual sense.}
+\item{correlates}{a vector of length two showing the columns for which the correlation coefficient was calculated}
+\item{variables}{\code{correlates} that are discrete}
+\item{order}{a list that shows the order of each variable}
+\item{method}{the type of correlation estimated}
+\item{Vjrr}{the jackknife component of the variance estimate. For Pearson, in the atanh space.}
+\item{Vimp}{the imputation component of the variance estimate. For Pearson, in the atanh space.}
+\item{weight}{the weight variable used}
+\item{npv}{the number of plausible values used}
+\item{njk}{the number of the jackknife replicates used}
 }
 \description{
 Computes the correlation of two variables on an \code{edsurvey.data.frame},
@@ -63,7 +71,7 @@ Computes the correlation of two variables on an \code{edsurvey.data.frame},
              The correlation accounts for plausible values and the survey design.
 }
 \details{
-Note that the \code{\link{getData}} arguments and \code{\link{recode.sdf}} may be useful. (See Examples.)
+The \code{\link{getData}} arguments and \code{\link{recode.sdf}} may be useful. (See Examples.)
 The correlation methods are calculated as described in the documentation for the \code{wCorr} package---see \code{browseVignettes(package="wCorr")}.
 }
 \examples{
@@ -85,10 +93,10 @@ c1_polyc
 
 # for categorical variables, users can either keep the original numeric levels of the variables
 # or condense the levels (default)
-# The following call condenses the levels of the variable 'c046501'
+# the following call condenses the levels of the variable 'c046501'
 cor.sdf(x="c046501", y="c044006", data=sdf)
 
-# The following call keeps the original levels of the variable 'c046501'
+# the following call keeps the original levels of the variable 'c046501'
 cor.sdf(x="c046501", y="c044006", data=sdf, condenseLevels = FALSE)
 
 # these take awhile to calculate for large datasets, so limit to a subset
@@ -124,7 +132,7 @@ cor.sdf(x="b017451", y="sdracem", data=sdf, method="Spearman", weightVar="origwt
                                "Once every few weeks", "Never or hardly ever")))
 
 # recode two variables and reorder
-cor.sdf(x="pared", y="b013801", data=subset(sdf, !pared \%in\% "I Don\\'t Know"),
+cor.sdf(x="pared", y="b013801", data=subset(sdf, !pared \%in\% "I Don\'t Know"),
         method="Spearman", weightVar = "origwt",
         recode=list(pared=list(from="Some ed after H.S.", to="Graduated H.S."), 
                     pared=list(from="Graduated college", to="Graduated H.S."),

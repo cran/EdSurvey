@@ -41,7 +41,9 @@ downloadCivEDICCS <- function(years=c(1999, 2009)) {
   
   txt <- c(txt, "\n")
 
-  cat(paste(strwrap(paste(txt, collapse = "\n\n")),collapse="\n"),"\n\n")
+  
+  txt <- paste0(paste(paste(txt, collapse = "\n\n"),collapse="\n"),"\n\n")
+  eout(txt)
   
   nav <- readline(prompt = paste0("Please enter 'Y' if you wish to launch this URL (", linkURL ,") in your browser:  "))
   

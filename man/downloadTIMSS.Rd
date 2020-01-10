@@ -4,8 +4,12 @@
 \alias{downloadTIMSS}
 \title{Download and Unzip TIMSS Files}
 \usage{
-downloadTIMSS(root, years = c(2003, 2007, 2011, 2015), cache = FALSE,
-  verbose = TRUE)
+downloadTIMSS(
+  root,
+  years = c(2003, 2007, 2011, 2015),
+  cache = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{root}{a character string indicating the directory where the TIMSS
@@ -35,8 +39,8 @@ downloadTIMSS(year=c(2015, 2011), root = "C:/")
 # cache=TRUE will download then process the datafiles
 downloadTIMSS(year=2015, root = "C:/", cache = TRUE)
 
-#set verbose=FALSE for silent output
-#if year not specified, download all years
+# set verbose=FALSE for silent output
+# if year not specified, download all years
 downloadTIMSS(root="C:/", verbose = FALSE)
 }
 }

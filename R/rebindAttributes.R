@@ -1,15 +1,15 @@
 #' @title Copy Data Frame Attributes
 #'
 #' @description Many R functions strip attributes from data frame objects. This
-#'              function assigns the attributes from the `attributeData` argument
-#'              to the data frame in the `data` argument.
+#'              function assigns the attributes from the \code{attributeData} argument
+#'              to the data frame in the \code{data} argument.
 #' @param data a \code{data.frame}
 #' @param attributeData an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}
 #'                      that contains the desired attributes
 #'
 #' @return
-#' a \code{data.frame} with a class of \code{light.edsurvey.data.frame} containing
-#' all of the elements of data and the attributes (except
+#' a \code{data.frame} with a class of a \code{light.edsurvey.data.frame} containing
+#' all elements of data and the attributes (except
 #' \code{names} and \code{row.names}) from \code{attributeData}
 #'
 #' @example man/examples/rebindAttributes.R

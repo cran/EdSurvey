@@ -4,8 +4,12 @@
 \alias{downloadPIRLS}
 \title{Download and Unzip PIRLS Files}
 \usage{
-downloadPIRLS(root, years = c(2001, 2006, 2011, 2016), cache = FALSE,
-  verbose = TRUE)
+downloadPIRLS(
+  root,
+  years = c(2001, 2006, 2011, 2016),
+  cache = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{root}{a character string indicating the directory where the PIRLS
@@ -34,8 +38,8 @@ downloadPIRLS(year=c(2006, 2011), root = "C:/")
 # cache=TRUE will download then process the datafiles
 downloadPIRLS(year=2011, root = "C:/", cache = TRUE)
 
-#set verbose=FALSE for silent output
-#if year not specified, download all years
+# set verbose=FALSE for silent output
+# if year not specified, download all years
 downloadPIRLS(root="C:/", verbose = FALSE)
 }
 }

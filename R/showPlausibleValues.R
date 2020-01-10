@@ -22,27 +22,33 @@ showPlausibleValues <- function(data, verbose = FALSE) {
   # Return every plausible value via data$pvvars
   pvvars <- getAttributes(data, "pvvars")
   pvNames <- names(pvvars)
-  cat(paste0("There are ", length(pvNames), " subject scale(s) or subscale(s) in this edsurvey.data.frame\n"))
+  txt <- paste0("There are ", length(pvNames), " subject scale(s) or subscale(s) in this edsurvey.data.frame:\n")
+  eout(txt)
+
   if (length(pvNames) == 0) {
     return(invisible(NULL))
   }
   for (i in 1:length(pvNames)) {
     pvi <- pvvars[[i]]
-    cat(paste0("  ", sQuote(names(pvvars)[i]),
+    txt <- paste0("  ", sQuote(names(pvvars)[i]),
                " subject scale or subscale with ",
                length(pvi$varnames), 
-               " plausible values"))
+               " plausible values")
     if (attributes(pvvars)$default == pvNames[i]) {
         # if there is a default plausible value, return with paste ' (the default)'
-      cat(" (the default).")
+      txt <- paste0(txt, " (the default).")
     } else {
-      cat(".")
+      txt <- paste0(txt, ".")
     } # End of if statment if attributes(data$pvvars)$default == pvNames[i]
+    writeLines(strwrap(txt,
+                       width=getOption("width")*0.9,
+                       exdent=2))
     if (verbose) {
       # if verbose = TRUE, return all plausible value details for each subject scale/subscale
-      cat(" They are:\n    ")
+      txt <- "The plausible value variables are:\n"
       pvi <- getPlausibleValue(pvNames[i], data)
-      cat(paste0("'", pvi, "'"))
+      txt <- paste0(txt, pasteItems(paste0("'", pvi, "'")))
+      eout(txt, indent=2)
     } # end of is statment: if verbrose 
     cat("\n")
   } # End of loop for i in 1:length(pvNames)
@@ -61,7 +67,7 @@ showPlausibleValues <- function(data, verbose = FALSE) {
 #' @details This function will return a set of plausible value names for variables that
 #' \code{\link{hasPlausibleValue}} returns as true.
 #'
-#' @seealso \code{\link{updatePlausibleValue}}, \code{\link{showPlausibleValues}}
+#' @seealso \code{\link{showPlausibleValues}}, \code{\link{updatePlausibleValue}}
 #' @author Michael Lee and Paul Bailey
 #' @example \man\examples\getPlausibleValue.R
 #' @export
@@ -148,7 +154,7 @@ updatePlausibleValue <- function(oldVar, newVar, data) {
 #' @return a Boolean (or vector when \code{var} is a vector) indicating if each element of \code{var} has
 #'         plausible values associated with it
 #'
-#' @details Note that this function returns \code{TRUE} only when the variable passed to it is the name for a set of plausible values but
+#' @details This function returns \code{TRUE} only when the variable passed to it is the name for a set of plausible values but
 #'          not if it is an individual plausible value from such a set. Thus, on the NAEP Primer, \code{composite} has plausible
 #'          values (and so \code{TRUE} would be returned by this function), but any of the plausible values or variable names defined in
 #'          the actual data (such as \code{"mrpcm1"} or \code{"dsex"}) are not.

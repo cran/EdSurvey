@@ -14,7 +14,7 @@ Provides instructions to download ICILS data to be processed in \code{readICILS}
 }
 \examples{
 \dontrun{
-#view instructions to manually download study data
+# view instructions to manually download study data
 downloadICILS()
 }
 }

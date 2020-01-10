@@ -13,14 +13,14 @@ rebindAttributes(data, attributeData)
 that contains the desired attributes}
 }
 \value{
-a \code{data.frame} with a class of \code{light.edsurvey.data.frame} containing
-all of the elements of data and the attributes (except
+a \code{data.frame} with a class of a \code{light.edsurvey.data.frame} containing
+all elements of data and the attributes (except
 \code{names} and \code{row.names}) from \code{attributeData}
 }
 \description{
 Many R functions strip attributes from data frame objects. This
-             function assigns the attributes from the `attributeData` argument
-             to the data frame in the `data` argument.
+             function assigns the attributes from the \code{attributeData} argument
+             to the data frame in the \code{data} argument.
 }
 \examples{
 \dontrun{
@@ -38,7 +38,7 @@ for (i in c("st62q04", "st62q11", "st62q13")) {
   ledf[,i] <- factor(ledf[,i], exclude=omittedLevels)
 }
 
-#after applying some dplyr functions, the "light.edsurvey.data.frame" becomes just "data.frame"
+# after applying some dplyr functions, the "light.edsurvey.data.frame" becomes just "data.frame"
 PISA2012_ledf <- ledf \%>\%        
   rowwise() \%>\% 
   mutate(avg_3 = mean(c(st62q04, st62q11, st62q13), na.rm = TRUE)) \%>\% 

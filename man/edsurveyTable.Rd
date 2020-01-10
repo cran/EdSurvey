@@ -4,11 +4,21 @@
 \alias{edsurveyTable}
 \title{EdSurvey Tables With Conditional Means}
 \usage{
-edsurveyTable(formula, data, weightVar = NULL, jrrIMax = 1,
-  pctAggregationLevel = NULL, returnMeans = TRUE, returnSepct = TRUE,
-  varMethod = c("jackknife", "Taylor"), drop = FALSE,
-  omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
-  returnVarEstInputs = FALSE)
+edsurveyTable(
+  formula,
+  data,
+  weightVar = NULL,
+  jrrIMax = 1,
+  pctAggregationLevel = NULL,
+  returnMeans = TRUE,
+  returnSepct = TRUE,
+  varMethod = c("jackknife", "Taylor"),
+  drop = FALSE,
+  omittedLevels = TRUE,
+  defaultConditions = TRUE,
+  recode = NULL,
+  returnVarEstInputs = FALSE
+)
 }
 \arguments{
 \item{formula}{object of class \ifelse{latex}{\code{formula}}{\code{\link[stats]{formula}}},
@@ -60,7 +70,7 @@ See Examples section.}
 
 \item{returnSepct}{set to \code{TRUE} (the default) to get the \code{SEPCT} column in the returned table described in the Value section.}
 
-\item{varMethod}{a character set to \dQuote{jackknife} or \dQuote{Taylor} that indicates the variance estimation method
+\item{varMethod}{a character set to \code{jackknife} or \code{Taylor} that indicates the variance estimation method
 to be used.}
 
 \item{drop}{a logical value. When set to the default value of \code{FALSE}, when a single column is returned, it is still represented as a \code{data.frame} and is
@@ -73,11 +83,11 @@ in an \code{edsurvey.data.frame}. Use \code{print} on an \code{edsurvey.data.fra
 to subset the data. Use \code{print} on an \code{edsurvey.data.frame} to see the default conditions.}
 
 \item{recode}{a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
-\code{recode} \code{=} \code{list(var1} \code{=} \code{list(from} \code{=} \code{c("a", "b", "c"),} \code{to} \code{=} \code{"c"))}. See Examples.}
+\code{recode} \code{=} \code{list(var1} \code{=} \code{list(from} \code{=} \code{c("a", "b", "c"),} \code{to} \code{=} \code{"c"))}.}
 
 \item{returnVarEstInputs}{a logical value set to \code{TRUE} to return the
 inputs to the jackknife and imputation variance
-estimates. This is intended to allow for
+estimates, which allows for
 the computation
 of covariances between estimates.}
 }
@@ -85,30 +95,30 @@ of covariances between estimates.}
 A table with the following columns:
    \item{RHS levels}{one column for each right-hand side variable. Each row
                      regards students who are at the levels shown in that row.}
-   \item{\code{N}}{count of the number of students in the survey in the \code{RHS levels}}
-   \item{\code{WTD_N}}{the weighted \emph{N} count of students in the survey in \code{RHS levels}}
-   \item{\code{PCT}}{the percentage of students at the aggregation level specified by \code{pctAggregationLevel} (see Arguments).
+   \item{N}{count of the number of students in the survey in the \code{RHS levels}}
+   \item{WTD_N}{the weighted \emph{N} count of students in the survey in \code{RHS levels}}
+   \item{PCT}{the percentage of students at the aggregation level specified by \code{pctAggregationLevel} (see Arguments).
                      See the vignette titled
-        \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+        \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
             in the section
 \dQuote{Estimation of Weighted Percentages} and its first subsection
 \dQuote{Estimation of Weighted Percentages When Plausible Values Are Not Present.}}
-   \item{\code{SE(PCT)}}{the standard  error of the percentage, accounting
+   \item{SE(PCT)}{the standard  error of the percentage, accounting
                          for the survey sampling methodology. When \code{varMethod}
-                         is \code{jackknife}, the calculation of this column is
+                         is the \code{jackknife}, the calculation of this column is
                          described in the vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
  in the section
 \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Jackknife Method.}
                       When \code{varMethod} is set to \code{Taylor}, the calculation of this column is described in
 \dQuote{Estimation of the Standard Error of Weighted Percentages When Plausible Values Are Not Present, Using the Taylor Series Method.}
 }
-   \item{\code{MEAN}}{the mean assessment score for units in the \code{RHS levels}, calculated according to the  vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
+   \item{MEAN}{the mean assessment score for units in the \code{RHS levels}, calculated according to the  vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
 in the section
 \dQuote{Estimation of Weighted Means When Plausible Values Are Present.}}
-   \item{\code{SE(MEAN)}}{the standard error of the \code{MEAN} column (the mean assessment score for units in the \code{RHS levels}), calculated according to the vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}                      
+   \item{SE(MEAN)}{the standard error of the \code{MEAN} column (the mean assessment score for units in the \code{RHS levels}), calculated according to the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}                      
 in the sections
 \dQuote{Estimation of Standard Errors of Weighted Means When Plausible Values Are Present, Using the Jackknife Method}
 or 
@@ -135,7 +145,7 @@ can calculate the average of the subject scale or subscale for students at
 each level of the cross-tabulation table. 
       
 A detailed description of all statistics is given in the vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}.
 }
 \examples{
 \dontrun{

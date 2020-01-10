@@ -13,7 +13,7 @@ an \code{edsurvey.data.frame.list}}
 \description{
 Retrieves a summary of the achievement level cutpoints for a
              selected study represented in an
-             \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame},
+             \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, 
              or an \code{edsurvey.data.frame.list}.
 }
 \examples{

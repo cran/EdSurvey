@@ -13,15 +13,32 @@ glm.sdf(formula, family = binomial(link = "logit"), data,
   omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
   returnNumberOfPSU=FALSE, returnVarEstInputs = FALSE)
 
-logit.sdf(formula, data, weightVar = NULL, relevels = list(),
-  varMethod = c("jackknife", "Taylor"), jrrIMax = 1,
-  omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
-  returnNumberOfPSU = FALSE, returnVarEstInputs = FALSE)
+logit.sdf(
+  formula,
+  data,
+  weightVar = NULL,
+  relevels = list(),
+  varMethod = c("jackknife", "Taylor"),
+  jrrIMax = 1,
+  omittedLevels = TRUE,
+  defaultConditions = TRUE,
+  recode = NULL,
+  returnNumberOfPSU = FALSE,
+  returnVarEstInputs = FALSE
+)
 
-probit.sdf(formula, data, weightVar = NULL, relevels = list(),
-  varMethod = c("jackknife", "Taylor"), jrrIMax = 1,
-  omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
-  returnVarEstInputs = FALSE)
+probit.sdf(
+  formula,
+  data,
+  weightVar = NULL,
+  relevels = list(),
+  varMethod = c("jackknife", "Taylor"),
+  jrrIMax = 1,
+  omittedLevels = TRUE,
+  defaultConditions = TRUE,
+  recode = NULL,
+  returnVarEstInputs = FALSE
+)
 }
 \arguments{
 \item{formula}{a \ifelse{latex}{\code{formula}}{\code{\link[stats]{formula}}} for the
@@ -50,13 +67,15 @@ should be the group to be omitted.}
 \item{varMethod}{a character set to \dQuote{jackknife} or \dQuote{Taylor} that indicates the variance
 estimation method to be used. See Details.}
 
-\item{jrrIMax}{the \eqn{V_{jrr}} term (see Details) can be estimated with
-any positive number of plausible values and is estimated on 
-the lower
-of the number of available plausible values and \code{jrrIMax}. When
-\code{jrrIMax} is set to \code{Inf}, all plausible values will be used.
-Higher values of \code{jrrIMax} lead to longer computing times and more
-accurate variance estimates.}
+\item{jrrIMax}{the \code{Vjrr} sampling variance term (see 
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}})
+                  can be estimated with
+                  any positive number of plausible values and is estimated on 
+                  the lower
+                  of the number of available plausible values and \code{jrrIMax}. When
+                  \code{jrrIMax} is set to \code{Inf}, all plausible values will be used.
+                  Higher values of \code{jrrIMax} lead to longer computing times and more
+                  accurate variance estimates.}
 
 \item{omittedLevels}{a logical value. When set to the default value of \code{TRUE}, drops
 those levels of all factor variables that are specified
@@ -69,14 +88,14 @@ to subset the data. Use \code{print} on an
 \code{edsurvey.data.frame} to see the default conditions.}
 
 \item{recode}{a list of lists to recode variables. Defaults to \code{NULL}. Can be set as
-\code{recode=} \code{list(}\code{var1=} \code{list(from=} \code{c("a",} \code{"b",} \code{"c"),} \code{to=}\code{"d"))}. See Examples.}
+\code{recode=} \code{list(}\code{var1=} \code{list(from=} \code{c("a",} \code{"b",} \code{"c"),} \code{to=}\code{"d"))}.}
 
 \item{returnNumberOfPSU}{a logical value set to \code{TRUE} to return the number of 
 primary sampling units (PSUs)}
 
 \item{returnVarEstInputs}{a logical value set to \code{TRUE} to return the
 inputs to the jackknife and imputation variance
-estimates. This is intended to allow for
+estimates, which allow for
 the computation
 of covariances between estimates.}
 }
@@ -86,16 +105,16 @@ An \code{edsurveyGlm} with the following elements:
    \item{formula}{the formula used to fit the model}
    \item{coef}{the estimates of the coefficients}
    \item{se}{the standard error estimates of the coefficients}
-   \item{Vimp}{the estimated variance due to uncertainty in the scores (plausible value variables)}
-   \item{Vjrr}{the estimated variance due to sampling}
+   \item{Vimp}{the estimated variance caused by uncertainty in the scores (plausible value variables)}
+   \item{Vjrr}{the estimated variance from sampling}
    \item{M}{the number of plausible values}
-   \item{nPSU}{the number of PSUs used in calculation}
+   \item{nPSU}{the number of PSUs used in the calculation}
    \item{varm}{the variance estimates under the various plausible values}
    \item{coefm}{the values of the coefficients under the various plausible values}
    \item{coefmat}{the coefficient matrix (typically produced by the summary of a model)}
    \item{weight}{the name of the weight variable}
    \item{npv}{the number of plausible values}
-   \item{njk}{the number of jackknife replicates used}
+   \item{njk}{the number of the jackknife replicates used}
    \item{varMethod}{always \code{jackknife}}
    \item{varEstInputs}{when \code{returnVarEstInputs} is \code{TRUE},
                        this element is returned. These are
@@ -106,15 +125,15 @@ An \code{edsurveyGlm} with the following elements:
 Fits a logit or probit that
              uses weights and variance estimates
              appropriate for the \code{edsurvey.data.frame},
-             \code{light.edsurvey.data.frame}, or \code{edsurvey.data.frame.list}.
+             the \code{light.edsurvey.data.frame}, or the \code{edsurvey.data.frame.list}.
 }
 \details{
 This function implements an estimator that correctly handles left-hand side
 variables that are logical, allows for survey sampling weights, and estimates
-variances using jackknife replication or Taylor series.
+variances using the jackknife replication or Taylor series.
 The vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}
-describes estimation of the reported statistics. 
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}
+describes estimation of the reported statistics and how it depends on \code{varMethod}. 
 
 The coefficients are estimated
 using the sample weights according to the section
@@ -131,7 +150,7 @@ is given by \deqn{t=\frac{\hat{\beta}}{\sqrt{\mathrm{var}(\hat{\beta})}}} where
 \eqn{ \hat{\beta} } is the estimated coefficient and \eqn{\mathrm{var}(\hat{\beta})} is
 its variance of that estimate.
 
-Note that \code{logit.sdf} and \code{probit.sdf} are included for convenience only;
+\code{logit.sdf} and \code{probit.sdf} are included for convenience only;
 they give the same results as a call to \code{glm.sdf} with the binomial family
 and the link function named in the function call (logit or probit).
 By default, \code{glm} fits a logistic regression when \code{family} is not set, 
@@ -140,7 +159,7 @@ Other types of generalized linear models are not supported.
 
 \subsection{Variance estimation of coefficients}{
   All variance estimation methods are shown in the vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics}.
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}}.
   When the predicted
   value does not have plausible values and \code{varMethod} is set to
   \code{jackknife}, the variance of the coefficients
@@ -168,12 +187,23 @@ Other types of generalized linear models are not supported.
         Plausible Values Are Present, Using the Taylor Series Method.}
 }
 }
+\section{Testing}{
+
+Of the common hypothesis tests for joint parameter testing, only the Wald
+test is widely used with plausible values and sample weights. As such, it
+replaces, if imperfectly, the Akaike Information Criteria (AIC), the
+likelihood ratio test, chi-squared, and analysis of variance (ANOVA, including \emph{F}-tests).
+See \code{\link{waldTest}} or
+the vignette titled
+\href{https://www.air.org/sites/default/files/EdSurvey-WaldTest.pdf}{\emph{Methods and Overview of Using EdSurvey for Running Wald Tests}}.
+}
+
 \examples{
 \dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
-# By default uses jackknife variance method using replicate weights
+# by default uses the jackknife variance method using replicate weights
 table(sdf$b013801)
 logit1 <- logit.sdf(I(b013801 \%in\% c("26-100", ">100")) ~ dsex + b017451, data=sdf)
 # use summary to get detailed results
@@ -189,6 +219,9 @@ summary(logit2)
 
 logit3 <- glm.sdf(I(composite >= 300) ~ dsex + b013801, data=sdf, 
                   family=quasibinomial(link="logit"))
+
+# Wald test for joint hypothesis that all coefficients in b013801 are zero
+waldTest(logit3, "b013801")
 
 summary(logit3)
 }

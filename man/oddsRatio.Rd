@@ -2,7 +2,7 @@
 % Please edit documentation in R/glm.sdf.R
 \name{oddsRatio}
 \alias{oddsRatio}
-\title{Odds Ratios for \code{edsurveyGlm} Models}
+\title{Odds Ratios for edsurveyGlm Models}
 \usage{
 oddsRatio(model)
 }

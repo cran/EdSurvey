@@ -4,8 +4,12 @@
 \alias{showCodebook}
 \title{Summary Codebook}
 \usage{
-showCodebook(data, fileFormat = NULL, labelLevels = FALSE,
-  includeRecodes = FALSE)
+showCodebook(
+  data,
+  fileFormat = NULL,
+  labelLevels = FALSE,
+  includeRecodes = FALSE
+)
 }
 \arguments{
 \item{data}{an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
@@ -28,17 +32,12 @@ a \ifelse{latex}{\code{data.frame}}{\code{\link[base]{data.frame}}} that shows t
                        or an \code{edsurvey.data.frame.list}
 }
 \description{
-Retrieves variable names, variable labels, and value labels for an \code{edsurvey.data.frame},
-\code{light.edsurvey.data.frame}, or \code{edsurvey.data.frame.list}.
+Retrieves variable names, variable labels, and value labels for an 
+             \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 }
 \examples{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
-
-# return codebook information for all codebooks in an edsurvey.data.frame; commonly use View()
-\dontrun{
-View(showCodebook(sdf))
-}
 
 # search both the student and school files, returning levels for variable values
 showCodebook(sdf, c("student","school"), labelLevels = TRUE, includeRecodes = FALSE)
@@ -51,6 +50,11 @@ showCodebook(sdf, c("student"), labelLevels = FALSE, includeRecodes = TRUE)
 # return codebook information for the student file, including variable value levels
 # and recoded variables
 showCodebook(sdf, c("student","school"), labelLevels = FALSE, includeRecodes = TRUE)
+
+# return codebook information for all codebooks in an edsurvey.data.frame; commonly use View()
+\dontrun{
+View(showCodebook(sdf))
+}
 }
 \author{
 Michael Lee and Paul Bailey

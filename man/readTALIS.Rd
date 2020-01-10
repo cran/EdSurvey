@@ -4,19 +4,26 @@
 \alias{readTALIS}
 \title{Connect to TALIS Data}
 \usage{
-readTALIS(path, countries, isced = "b", dataLevel = "teacher",
-  forceReread = FALSE, verbose = TRUE)
+readTALIS(
+  path,
+  countries,
+  isced = "b",
+  dataLevel = "teacher",
+  forceReread = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{path}{a character vector to the full directory path(s) to the TALIS SPSS files (.sav)}
 
 \item{countries}{a character vector of the country/countries to include using the 
-three-digit ISO country code. A list of country codes can be found in the TALIS codebook or you can use
+three-digit ISO country code. A list of country codes can be found in
+the TALIS codebook, or you can use
 \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}.
 You can use \code{*} to indicate all countries available.}
 
 \item{isced}{a character value that is one of \code{a}, \code{b}, or \code{c}. \code{a} stands for \emph{Primary Level}, 
-\code{b} is for \emph{Lower Secondary Level}; and, \code{c} is for \emph{Upper Secondary Level}. Default to \code{b}.}
+\code{b} is for \emph{Lower Secondary Level}, and \code{c} is for \emph{Upper Secondary Level}. Default to \code{b}.}
 
 \item{dataLevel}{a character value that indicates which data level to be used. It can be \code{teacher} (the default) or \code{school}.}
 
@@ -36,28 +43,28 @@ Opens a connection to a TALIS data file and
              information about the file and data.
 }
 \details{
-Reads in the unzipped files downloaded from the TALIS database using the OECD Repository (\url{http://www.oecd.org/skills/piaac/}).
+Reads in the unzipped files downloaded from the TALIS database using the OECD Repository (\url{https://www.oecd.org/education/talis/}).
        If \code{dataLevel} is set to be \code{teacher}, it treats the teacher data file as the main dataset and merges school data into teacher data for
        each country. If \code{dataLevel} is \code{school}, it uses only the school data file. To conduct a school-level analysis with teacher variables,
        it is recommended that users aggregate teacher-level data first before merging it to school files.
 }
 \examples{
 \dontrun{
-# The following call returns an edsurvey.data.frame to TALIS 2013 
+# the following call returns an edsurvey.data.frame to TALIS 2013 
 # for US teacher-level data at secondary level
 usa2013 <- readTALIS(path = "C:/TALIS/2013", isced = "b",
                      dataLevel = "teacher", countries = "usa")
 
-# Extract a data.frame with a few variables
+# extract a data.frame with a few variables
 gg <- getData(usa2013, c("tt2g05b", "tt2g01"))  
 head(gg)
 
-# Conduct a preliminary analysis on the edsurvey.data.frame
+# conduct an analysis on the edsurvey.data.frame
 edsurveyTable(tt2g05b ~ tt2g01, data = usa2013) 
 }
 }
 \references{
-Organisation for Economic Co-operation and Development. (2014a). \emph{TALIS 2013 technical report}. Paris, France: Author. Retrieved from \emph{\url{http://www.oecd.org/education/school/TALIS-technical-report-2013.pdf}}
+Organisation for Economic Co-operation and Development. (2014). \emph{TALIS 2013 technical report}. Paris, France: Author. Retrieved from \emph{\url{http://www.oecd.org/education/school/TALIS-technical-report-2013.pdf}}
 }
 \seealso{
 \code{\link{getData}} and \code{\link{downloadTALIS}}

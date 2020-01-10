@@ -1,0 +1,26 @@
+
+m1SummaryREF <- c(
+"Call:",
+"mixed.sdf(formula = mmat ~ itsex + (1 | idclass), data = usa8dat, ", 
+"    weightVars = c(\"w1\", \"w2\"), weightTransformation = FALSE, ", 
+"    verbose = FALSE)",
+"",
+"Formula: mmat ~ itsex + (1 | idclass)", 
+"",
+"Plausible Values: 5",
+"Number of Groups:",
+"  Group Var Observations Level", 
+"1   idclass          457     2",
+"2  Residual         8912     1", 
+"", "Variance terms:",
+"                    variance Std. Error Std.Dev.", 
+"idclass.(Intercept)     3525      511.6    59.37",
+"Residual                2657      124.1    51.54", 
+"",
+"Fixed Effects:",
+"            Estimate Std. Error t value", 
+"(Intercept)   504.15       5.33   94.59",
+"itsexBOY        6.26       2.03    3.09", 
+"",
+"Intraclass Correlation= 0.570")
+

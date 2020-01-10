@@ -1,7 +1,7 @@
 # @author Paul Bailey
 #' @method [ light.edsurvey.data.frame
 #' @export
-"[.light.edsurvey.data.frame" <- function(x,i, ...) {
+"[.light.edsurvey.data.frame" <- function(x,i, j, ...) {
   # do the subset like it's a data.frame
   res <- NextMethod("[")
   if(is.vector(res)) {

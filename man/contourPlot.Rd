@@ -4,8 +4,7 @@
 \alias{contourPlot}
 \title{Overlaid Scatter and Contour Plots}
 \usage{
-contourPlot(x, y, m = 30L, xrange, yrange, xkernel, ykernel,
-  nlevels = 9L, ...)
+contourPlot(x, y, m = 30L, xrange, yrange, xkernel, ykernel, nlevels = 9L, ...)
 }
 \arguments{
 \item{x}{numeric vector of the \code{x} data to be plotted}
@@ -17,7 +16,7 @@ contourPlot(x, y, m = 30L, xrange, yrange, xkernel, ykernel,
 \item{xrange}{numeric vector of length two indicating \code{x}-range of plot;
 defaults to range(x)}
 
-\item{yrange}{numeric vector of length two indicating \code{y}-range of plot.
+\item{yrange}{numeric vector of length two indicating \code{y}-range of plot;
 defaults to range(y)}
 
 \item{xkernel}{numeric indicating the standard deviation of Normal

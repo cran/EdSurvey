@@ -4,12 +4,19 @@
 \alias{edsurveyTable2pdf}
 \title{PDF File From an edsurveyTable}
 \usage{
-edsurveyTable2pdf(data, formula, caption = NULL, filename = "",
-  toCSV = "", returnMeans = TRUE, estDigits = 2, seDigits = 3)
+edsurveyTable2pdf(
+  data,
+  formula,
+  caption = NULL,
+  filename = "",
+  toCSV = "",
+  returnMeans = TRUE,
+  estDigits = 2,
+  seDigits = 3
+)
 }
 \arguments{
-\item{data}{an \code{edsurveyTable}. See Value 
-in \code{\link[EdSurvey]{edsurveyTable}}.}
+\item{data}{the result of a call to \code{\link{edsurveyTable}}}
 
 \item{formula}{a formula of the form \code{LHS ~ RHS} to cast the \code{edsurveyTable} 
 results from long format to wide format. This formula takes the form 
@@ -17,7 +24,7 @@ results from long format to wide format. This formula takes the form
 The order of the entries in the formula is essential.}
 
 \item{caption}{character vector of length one or two containing the table's caption or title. 
-If length is two, the second item is the "short caption" used when LaTeX generates 
+If the length is two, the second item is the \dQuote{short caption} used when LaTeX generates 
 a \code{List of Tables}. 
 Set to \code{NULL} to suppress the caption. Default value is \code{NULL}.}
 
@@ -26,8 +33,8 @@ table will be saved in the working directory (\code{getwd()}).
 Use \code{filename = "CONSOLE"} to 
 print LaTeX code in R console without generating a PDF file.}
 
-\item{toCSV}{a character string containing filenames and paths of \code{.csv} table output.
-\code{""} indicates no \code{.csv} output. \code{toCSV} is 
+\item{toCSV}{a character string containing filenames and paths of .csv table output.
+\code{""} indicates no .csv output. \code{toCSV} is 
 independent to \code{filename}, so both
 a csv file and PDF file would be generated if both \code{filename} 
 and \code{toCSV} were specified.}
@@ -41,10 +48,10 @@ in \code{\link[EdSurvey]{edsurveyTable}}.}
 Negative values are allowed. See Details.}
 
 \item{seDigits}{an integer indicating the number of decimal places to be used for standard errors. 
-Negative values are allowed. See Details.}
+Negative values are allowed.}
 }
 \description{
-Produces the LaTeX code and compiles as a PDF file from the \code{edsurveyTable} results.
+Produces the LaTeX code and compiles to a PDF file from the \code{edsurveyTable} results.
 }
 \details{
 Rounding to a negative number of digits means rounding to a power of 10, 
@@ -52,7 +59,7 @@ so, for example, \code{estDigits = -2} rounds estimates to the nearest hundred.
 }
 \note{
 For more details, see the vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-LaTeXtables.pdf}{Producing \code{LaTeX} Tables From \code{edsurveyTable} Results With \code{edsurveyTable2pdf}}.
+\href{https://www.air.org/sites/default/files/EdSurvey-LaTeXtables.pdf}{\emph{Producing \code{LaTeX} Tables From \code{edsurveyTable} Results With \code{edsurveyTable2pdf}}}.
 }
 \examples{
 \dontrun{
@@ -75,8 +82,8 @@ edsurveyTable2pdf(est1, b017451~dsex,
                   returnMeans = TRUE, estDigits = 2, seDigits = 3)
 
 # create a pdf file using the percentage of students at the 
-# aggregation level specified by \\code{pctAggregationLevel}
-# Output will be saved as "C:/example table.pdf"
+# aggregation level specified by \code{pctAggregationLevel}
+# output will be saved as "C:/example table.pdf"
 edsurveyTable2pdf(est1, 
                   b017451~dsex, 
                   "C:/example table.pdf",

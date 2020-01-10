@@ -4,22 +4,34 @@
 \alias{readNAEP}
 \title{Connect to NAEP Data}
 \usage{
-readNAEP(path, defaultWeight = "origwt", defaultPvs = "composite",
-  omittedLevels = c("Multiple", NA, "Omitted"), frPath = NULL)
+readNAEP(
+  path,
+  defaultWeight = "origwt",
+  defaultPvs = "composite",
+  omittedLevels = c("Multiple", NA, "Omitted"),
+  frPath = NULL
+)
 }
 \arguments{
-\item{path}{a character value indicating the full filepath location and name of the (.dat) data file}
+\item{path}{a character value indicating the full filepath location and name
+of the (.dat) data file}
 
-\item{defaultWeight}{a character value that indicates the default weight specified in the resulting \code{edsurvey.data.frame}.
+\item{defaultWeight}{a character value that indicates the default weight
+specified in the resulting \code{edsurvey.data.frame}.  
 Default value is \code{origwt} if not specified.}
 
-\item{defaultPvs}{a character value that indicates the default plausible value specified in the resulting \code{edsurvey.data.frame}.
+\item{defaultPvs}{a character value that indicates the default plausible value
+specified in the resulting \code{edsurvey.data.frame}.
 Default value is \code{composite} if not specified.}
 
 \item{omittedLevels}{a character vector indicating which factor levels/labels
-should be excluded. When set to the default value of \code{c('Multiple',NA,'Omitted')}, adds the vector to the \code{edsurvey.data.frame}.}
+should be excluded. When set to the default value of
+\code{c('Multiple',NA,'Omitted')}, adds the vector to
+the \code{edsurvey.data.frame}.}
 
-\item{frPath}{a character value indicating the location of the \code{fr2} parameter layout file included with the data companion to parse the specified \code{filepath} data file}
+\item{frPath}{a character value indicating the location of the \code{fr2}
+parameter layout file included with the data companion to
+parse the specified \code{filepath} data file}
 }
 \value{
 An \code{edsurvey.data.frame} containing the following elements:
@@ -48,7 +60,8 @@ Opens a connection to an NAEP data file residing
              information about the file and data.
 }
 \details{
-The function uses the \code{frPath} file layout (.fr2) data to read in the fixed-width data file (.dat), and builds the \code{edsurvey.data.frame}.
+The function uses the \code{frPath} file layout (.fr2) data to read in the
+fixed-width data file (.dat) and builds the \code{edsurvey.data.frame}.
 }
 \examples{
 # read in the example data (generated, not real student data)

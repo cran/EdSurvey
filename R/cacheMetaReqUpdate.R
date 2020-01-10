@@ -21,7 +21,7 @@ cacheMetaReqUpdate <- function(cacheFileMetaVer, surveyName=NULL){
   surveyDef <- c("NAEP", #NAEP Dataset
                "TIMSS", "TIMSS Advanced", "PIRLS", "ePIRLS", "ICILS", "ICCS", "CivED", #IEA Datasets
                "PIAAC", "PISA", "TALIS", #OECD Datasets
-               "ECLS_K", "ECLS_K2011", "ELS", "HSLS", "B&B2001") #NCES longitudinal Dataset
+               "ECLS_K", "ECLS_K2011", "ELS", "HSLS", "B&B2001", "B&B2003", "HS&B", "BPS1994") #NCES longitudinal Dataset
   
   #build our lookup table
   surveyLookup <- data.frame(survey=surveyDef, cacheVer=vector("integer", length(surveyDef)), stringsAsFactors = FALSE)
@@ -36,7 +36,7 @@ cacheMetaReqUpdate <- function(cacheFileMetaVer, surveyName=NULL){
   surveyLookup[surveyLookup$survey=="ICCS", "cacheVer"] <- 3
   surveyLookup[surveyLookup$survey=="CivED", "cacheVer"] <- 5
   surveyLookup[surveyLookup$survey=="PIAAC", "cacheVer"] <- 3
-  surveyLookup[surveyLookup$survey=="PISA", "cacheVer"] <- 4
+  surveyLookup[surveyLookup$survey=="PISA", "cacheVer"] <- 5
   surveyLookup[surveyLookup$survey=="TALIS", "cacheVer"] <- 4
   surveyLookup[surveyLookup$survey=="ECLS_K", "cacheVer"] <- 1
   surveyLookup[surveyLookup$survey=="ECLS_K2011", "cacheVer"] <- 1
@@ -44,6 +44,9 @@ cacheMetaReqUpdate <- function(cacheFileMetaVer, surveyName=NULL){
   surveyLookup[surveyLookup$survey=="HSLS", "cacheVer"] <- 2
   surveyLookup[surveyLookup$survey=="ECLS_B", "cacheVer"] <- 1
   surveyLookup[surveyLookup$survey=="B&B2001", "cacheVer"] <- 1
+  surveyLookup[surveyLookup$survey=="B&B2003", "cacheVer"] <- 1
+  surveyLookup[surveyLookup$survey=="HS&B", "cacheVer"] <- 1
+  surveyLookup[surveyLookup$survey=="BPS1994", "cacheVer"] <- 1
   
   if(!any(surveyLookup$survey %in% surveyName)){
     warning("Survey name not recognized while checking cache (.meta) version. Forcing cache (.meta) file to be updated.")

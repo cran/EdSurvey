@@ -4,23 +4,32 @@
 \alias{readICILS}
 \title{Connect to ICILS Data}
 \usage{
-readICILS(path, countries, dataSet = c("student", "teacher"),
-  forceReread = FALSE, verbose = TRUE)
+readICILS(
+  path,
+  countries,
+  dataSet = c("student", "teacher"),
+  forceReread = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
-\item{path}{a character value to the full directory to the ICILS extracted SPSS (.sav) set of data}
+\item{path}{a character value to the full directory path to the ICILS
+extracted SPSS (.sav) set of data}
 
 \item{countries}{a character vector of the country/countries to include using
 the three-digit ISO country code.
 A list of country codes can be found on Wikipedia at
-\url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes},
-or other online sources. Consult the \emph{ICILS User Guide} to help determine what countries
+\url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}
+or other online sources. Consult the \emph{ICILS User Guide}
+to help determine what countries
 are included within a specific testing year of ICILS.
 To select all countries, use a wildcard value of \strong{\code{*}}.}
 
-\item{dataSet}{a character value of either \code{student} (the default if not specified) or \code{teacher} to
+\item{dataSet}{a character value of either \code{student} (the default if
+not specified) or \code{teacher} to
 indicate which set of data is returned.
-The student-level and teacher-level datasets cannot both be returned at the same time, unlike other IEA datasets.}
+The student-level and teacher-level datasets cannot both be
+returned at the same time, unlike other IEA datasets.}
 
 \item{forceReread}{a logical value to force rereading of all processed data.
 The default value of \code{FALSE} will speed up the \code{readICILS} function
@@ -30,7 +39,8 @@ by using existing read-in data already processed.}
 The default value is \code{TRUE}.}
 }
 \value{
-an \code{edsurvey.data.frame} for a single specified country or an \code{edsurvey.data.frame.list} if multiple countries specified
+an \code{edsurvey.data.frame} for a single specified country or an
+\code{edsurvey.data.frame.list} if multiple countries specified
 }
 \description{
 Opens a connection to an ICILS data file residing
@@ -38,8 +48,10 @@ Opens a connection to an ICILS data file residing
              information about the file and data.
 }
 \details{
-Reads in the unzipped files downloaded from the ICILS international database(s) using the \href{http://rms.iea-dpc.org/}{IEA Study Data Repository}.
-         Data files require the SPSS data file (.sav) format using the default filenames.
+Reads in the unzipped files downloaded from the ICILS international
+dataset(s) using the
+\href{https://www.iea.nl/data-tools/repository}{IEA Study Data Repository}.
+Data files require the SPSS data file (.sav) format using the default filenames.
 }
 \examples{
 \dontrun{
@@ -53,5 +65,5 @@ edsurveyTable(cil ~ is1g18b, pol)
 \code{\link{readNAEP}}, \code{\link{readTIMSS}}, and \code{\link{getData}}
 }
 \author{
-Tom Fink
+Tom Fink and Jeppe Bundsgaard (updated for 2018)
 }

@@ -1,7 +1,7 @@
 #' @title Summary Codebook
 #'
-#' @description Retrieves variable names, variable labels, and value labels for an \code{edsurvey.data.frame},
-#' \code{light.edsurvey.data.frame}, or \code{edsurvey.data.frame.list}.
+#' @description Retrieves variable names, variable labels, and value labels for an 
+#'              \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 #'
 #' @param data            an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or
 #'                        an \code{edsurvey.data.frame.list}
@@ -76,17 +76,12 @@ showCodebook <- function(data, fileFormat = NULL, labelLevels = FALSE, includeRe
 
     # function used to include recoded levels to the database connection done by the user via recode.sdf
     parseLevelRecodes <- function(data, variableName, variableLevel) {
+      pasteLevels <- function(...) { paste(..., sep="=", collapse="^") }
       for (i in 1:nrow(data)) {
         if (data[[variableLevel]][i] != "") {
-          varLevels <- levelsSDF(data[[variableName]][i], sdf)
-          varLevels <- unlist(varLevels, use.names = FALSE)
-          varLevelsSplit <- c()
-          for (ii in 1:length(varLevels)) {
-            x <- varLevels[[ii]]
-            varLevelsSplit <- c(varLevelsSplit, x)
-          }
-          varLevelsSplitPaste <- paste(varLevelsSplit, collapse = "^")
-          data$labelValueRecodes[[i]] <- varLevelsSplitPaste
+          varLevels <- levelsSDF(data[[variableName]][i], data=sdf, showOmitted=FALSE, showN=FALSE)[[1]]
+          varLevels <- do.call(pasteLevels,varLevels)
+          data$labelValueRecodes[[i]] <- varLevels
         } else {
           data$labelValueRecodes[[i]] <- paste0("")
         }

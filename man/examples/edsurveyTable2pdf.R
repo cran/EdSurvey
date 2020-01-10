@@ -19,7 +19,7 @@ edsurveyTable2pdf(est1, b017451~dsex,
 
 # create a pdf file using the percentage of students at the 
 # aggregation level specified by \code{pctAggregationLevel}
-# Output will be saved as "C:/example table.pdf"
+# output will be saved as "C:/example table.pdf"
 edsurveyTable2pdf(est1, 
                   b017451~dsex, 
                   "C:/example table.pdf",

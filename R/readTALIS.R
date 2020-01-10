@@ -6,18 +6,19 @@
 #'              
 #' @param path a character vector to the full directory path(s) to the TALIS SPSS files (.sav)
 #' @param countries a character vector of the country/countries to include using the 
-#'        three-digit ISO country code. A list of country codes can be found in the TALIS codebook or you can use
-#'        \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}.
-#'        You can use \code{*} to indicate all countries available.
+#'                  three-digit ISO country code. A list of country codes can be found in
+#'                  the TALIS codebook, or you can use
+#'                  \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}.
+#'                  You can use \code{*} to indicate all countries available.
 #' @param isced a character value that is one of \code{a}, \code{b}, or \code{c}. \code{a} stands for \emph{Primary Level}, 
-#'        \code{b} is for \emph{Lower Secondary Level}; and, \code{c} is for \emph{Upper Secondary Level}. Default to \code{b}.
+#'        \code{b} is for \emph{Lower Secondary Level}, and \code{c} is for \emph{Upper Secondary Level}. Default to \code{b}.
 #' @param dataLevel a character value that indicates which data level to be used. It can be \code{teacher} (the default) or \code{school}.
 #' @param forceReread a logical value to force rereading of all processed data. Defaults to \code{FALSE}.
 #'        Setting \code{forceReread} to be \code{TRUE} will cause PISA data to be reread and increase processing time.
 #' @param verbose a logical value that will determine if you want verbose output while the function is running to indicate the progress.
 #'        Defaults to \code{TRUE}.
 #'
-#' @details Reads in the unzipped files downloaded from the TALIS database using the OECD Repository (\url{http://www.oecd.org/skills/piaac/}).
+#' @details Reads in the unzipped files downloaded from the TALIS database using the OECD Repository (\url{https://www.oecd.org/education/talis/}).
 #'        If \code{dataLevel} is set to be \code{teacher}, it treats the teacher data file as the main dataset and merges school data into teacher data for
 #'        each country. If \code{dataLevel} is \code{school}, it uses only the school data file. To conduct a school-level analysis with teacher variables,
 #'        it is recommended that users aggregate teacher-level data first before merging it to school files. 
@@ -31,7 +32,7 @@
 #' @example man/examples/readTALIS.R
 #' 
 #' @references 
-#'  Organisation for Economic Co-operation and Development. (2014a). \emph{TALIS 2013 technical report}. Paris, France: Author. Retrieved from \emph{\url{http://www.oecd.org/education/school/TALIS-technical-report-2013.pdf}}
+#'  Organisation for Economic Co-operation and Development. (2014). \emph{TALIS 2013 technical report}. Paris, France: Author. Retrieved from \emph{\url{http://www.oecd.org/education/school/TALIS-technical-report-2013.pdf}}
 #' @importFrom data.table fwrite
 #' @importFrom readr read_csv
 #' @importFrom haven read_sav
@@ -43,6 +44,11 @@ readTALIS <- function(path,
                       dataLevel = "teacher",
                       forceReread = FALSE,
                       verbose = TRUE) {
+  
+  #temporarily adjust any necessary option settings; revert back when done
+  userOp <- options(OutDec = ".")
+  on.exit(options(userOp), add = TRUE)
+  
   path <- normalizePath(path, winslash = "/") # to match IEA read-in function
   forceRead <- forceReread # to match IEA read-in function
   sdf <- list() # list to store edsurvey.data.frame elements

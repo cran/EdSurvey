@@ -17,7 +17,7 @@
 #' @param datalist   a list of \code{edsurvey.data.frame}s to be combined
 #' @param cov        a character vector that indicates what varies across
 #'                   the \code{edsurvey.data.frame} objects.
-#'                   See Examples. Guessed if not supplied. For example,
+#'                   Guessed if not supplied. For example,
 #'                   if several \code{edsurvey.data.frame}s for several
 #'                   different countries are supplied, then \code{cov} would
 #'                   be set to the country.
@@ -25,8 +25,8 @@
 #'                   same length
 #'                   as \code{datalist}. Not needed if \code{cov} exists or can be
 #'                   guessed. See Examples.
-#' @param sdfA       an \code{edsurvey.data.frame} or \code{edsurvey.data.frame.list} to be combined
-#' @param sdfB       an \code{edsurvey.data.frame} or \code{edsurvey.data.frame.list} to be combined
+#' @param sdfA       an \code{edsurvey.data.frame} or an \code{edsurvey.data.frame.list} to be combined
+#' @param sdfB       an \code{edsurvey.data.frame} or an \code{edsurvey.data.frame.list} to be combined
 #' @param labelsA    a character vector that specifies \code{labels} for \code{sdfA} when creating 
 #'                   the new \code{edsurvey.data.frame.list}. \code{labelsA} would be ignored
 #'                   if \code{sdfA} is an \code{edsurvey.data.frame.list} with labels supplied.
@@ -54,24 +54,24 @@
 #' @return
 #' \code{edsurvey.data.frame.list} returns an \code{edsurvey.data.frame.list} with
 #' elements
-#' \item{\code{datalist}}{a list of \code{edsurvey.data.frame} objects}
-#' \item{\code{covs}}{a character vector of key variables that vary within
+#' \item{datalist}{a list of \code{edsurvey.data.frame} objects}
+#' \item{covs}{a character vector of key variables that vary within
 #'                    the \code{edsurvey.data.frame.list}.
 #'                    When labels are included, they will be included in
 #'                    \code{covs}. In the unusual circumstance that \code{sdfA} or \code{sdfB}
-#'                    is an \code{edsurvey.data.frame.list},
+#'                    is an \code{edsurvey.data.frame.list}
 #'                    has \code{covs}, and labels are not supplied, the \code{covs}
 #'                    are simply pasted together with colons between them.}
 #'
 #' \code{append.edsurvey.data.frame.list} returns an \code{edsurvey.data.frame.list} with
 #' elements
-#' \item{\code{datalist}}{a list of \code{edsurvey.data.frame} objects}
-#' \item{\code{covs}}{a character vector of key variables that vary within
+#' \item{datalist}{a list of \code{edsurvey.data.frame} objects}
+#' \item{covs}{a character vector of key variables that vary within
 #'                    the \code{edsurvey.data.frame.list}.
 #'                    When labels are included, they will be included in
 #'                    \code{covs}.}
 #' 
-#' @author Paul Bailey and Huade Huo
+#' @author Paul Bailey, Huade Huo
 #'
 #' @example man/examples/edsurvey.data.frame.list.R 
 #' @aliases append.edsurvey.data.frame.list 
@@ -116,7 +116,7 @@ edsurvey.data.frame.list <- function(datalist, cov=NULL, labels=NULL) {
         if(i==1 & ncol(covs)==1) {
           # we have removed all of the columns.
           # So, the user asked us to automatically identify attributes that varried and we could not.
-          # warn them ane just use LETTERS as labels
+          # warn them and just use LETTERS as labels
           warning("Cannot identify attributes that vary across elements in datalist. Using generated labels instead.")
           let <- LETTERS
           while(length(let) < nrow(covs)) {

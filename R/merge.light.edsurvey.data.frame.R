@@ -1,7 +1,7 @@
 #' @name merge
 #' @title EdSurvey Merge
 #'
-#' @description Takes a \code{data.frame} or a \code{light.edsurvey.data.frame} and merge, with a \code{light.edsurvey.data.frame}.
+#' @description Takes a \code{data.frame} or a \code{light.edsurvey.data.frame} and merges with a \code{light.edsurvey.data.frame}.
 #'
 #' @param x a \code{light.edsurvey.data.frame}. The attributes of the resulting \code{light.edsurvey.data.frame} 
 #'          are taken from \code{x}.

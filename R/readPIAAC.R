@@ -4,21 +4,32 @@
 #'              returns an \code{edsurvey.data.frame} with 
 #'              information about the file and data.
 #'              
-#' @param path a character value to the full directory to the PIAAC .csv files and Microsoft Excel codebook
-#' @param countries a character vector of the country/countries to include using the 
-#'        three-digit ISO country code. A list of country codes can be found in the PIAAC codebook or \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}.
-#'        If files are downloaded using \code{\link{downloadPIAAC}}, a country dictionary text file can be
-#'        found in the filepath. You can use \code{*} to indicate all countries available.
-#' @param forceReread a logical value to force rereading of all processed data. Defaults to \code{FALSE}.
-#'        Setting \code{forceReread} to be \code{TRUE} will cause PIAAC data to be reread and increase processing time.
-#' @param verbose a logical value that will determine if you want verbose output while the function is running to indicate the progress.
-#'        Defaults to \code{TRUE}.
+#' @param path a character value to the full directory path to the PIAAC .csv
+#'             files and Microsoft Excel codebook
+#' @param countries a character vector of the country/countries to include 
+#'                  using the three-digit ISO country code. A list of country
+#'                  codes can be found in the PIAAC codebook or
+#'                  \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}.
+#'                  If files are downloaded using \code{\link{downloadPIAAC}},
+#'                  a country dictionary text file can be
+#'                  found in the filepath. You can use \code{*} to indicate
+#'                  all countries available.
+#' @param forceReread a logical value to force rereading of all processed data.
+#'                    Defaults to \code{FALSE}.
+#'                    Setting \code{forceReread} to be \code{TRUE} will cause
+#'                    PIAAC data to be reread and increase the processing time.
+#' @param verbose a logical value that will determine if you want verbose
+#'                output while the function is running to indicate the progress.
+#'                Defaults to \code{TRUE}.
 #'
-#' @details Reads in the unzipped .csv files downloaded from the PIAAC Database using the OECD Repository (\url{http://www.oecd.org/skills/piaac/}). Users can use
-#'        \code{\link{downloadPIAAC}} to download all required files automatically. 
+#' @details
+#' Reads in the unzipped .csv files downloaded from the PIAAC dataset using
+#' the OECD repository (\url{http://www.oecd.org/skills/piaac/}). Users can use
+#' \code{\link{downloadPIAAC}} to download all required files automatically. 
+#' 
 #' @return
-#'  an \code{edsurvey.data.frame} for a single specified country or 
-#'   an \code{edsurvey.data.frame.list} if multiple countries specified
+#' an \code{edsurvey.data.frame} for a single specified country or 
+#' an \code{edsurvey.data.frame.list} if multiple countries specified
 #' @seealso \code{\link{getData}} and \code{\link{downloadPIAAC}}
 #' @author Trang Nguyen
 #' 
@@ -34,10 +45,15 @@ readPIAAC <- function(path,
                       countries, 
                       forceReread = FALSE,
                       verbose = TRUE) {
+  
+  #temporarily adjust any necessary option settings; revert back when done
+  userOp <- options(OutDec = ".")
+  on.exit(options(userOp), add = TRUE)
+  
   filepath <- normalizePath(path, winslash = "/") # to match IEA read-in function
   forceRead <- forceReread # to match IEA read-in function
   
-  csvfiles <- list.files(filepath, pattern = "^prg.*\\.csv$", full.names = F,ignore.case = T)
+  csvfiles <- list.files(filepath, pattern = "^prg.*\\.csv$", full.names=FALSE, ignore.case=TRUE)
   all_countries <- unique(tolower(substr(csvfiles, 4,6)))
   if (unlist(countries)[1] == "*") {
     countries <- all_countries
@@ -81,7 +97,7 @@ readPIAAC <- function(path,
   for (i in uniquePvTypes) {
     vars <- tolower(pv_subset$variableName[tolower(pv_subset$Type) == i])
     temp_list <- list(varnames = vars)
-    checkregex <- sapply(achievement$regex, grepl, i, ignore.case = T)
+    checkregex <- sapply(achievement$regex, grepl, i, ignore.case = TRUE)
     subject <- achievement$subjects[which(checkregex)]
     temp_list$achievementLevel <- sort(achievement$achievementLevels[[subject]])
     pvs[[i]] <- temp_list
@@ -250,7 +266,7 @@ processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
 
 # Reads in excel codebook to return a data.frame fileFormat
 processFileFormatReturnFF <- function(filepath) {
-  ffname <- list.files(filepath,pattern = "codebook.*\\.xls", ignore.case = T, full.names = F)
+  ffname <- list.files(filepath,pattern = "codebook.*\\.xls", ignore.case = TRUE, full.names = FALSE)
   ffname <- file.path(filepath,ffname)
   if (!file.exists(ffname) || length(ffname) == 0) {
     stop(paste0("The codebook Excel file does not exist. It is recommended that users use downloadPIAAC to get all necessary files for the database."))
@@ -264,7 +280,7 @@ processFileFormatReturnFF <- function(filepath) {
                    Labels = toupper(codebook$variable$Label),
                    Width = codebook$variable$Width,
                    Decimal = codebook$variable$Decimals,
-                   dataType = tolower(codebook$variable$Type), stringsAsFactors = F)
+                   dataType = tolower(codebook$variable$Type), stringsAsFactors = FALSE)
   ff$dataType <- ifelse(grepl("^i",ff$dataType),"integer",
                         ifelse(grepl("^n", ff$dataType), "numeric",
                                ifelse(grepl("^s",ff$dataType),"character",NA)))
@@ -310,13 +326,13 @@ processFileFormatReturnFF <- function(filepath) {
   # suffix for pvs and weights
   ff$pvWt <- ""
   ff$pvWt <- mapply(function(v,t) {
-    if (!grepl("^pv",v, ignore.case = T)) {
+    if (!grepl("^pv",v, ignore.case = TRUE)) {
       return("")
     } else {
-      gsub(paste("pv",t,sep = "|"),"",v, ignore.case = T)
+      gsub(paste("pv",t,sep = "|"), "", v, ignore.case=TRUE)
     }
   }, ff$variableName, ff$Type)
-  ff$pvWt[grepl("^SPFWT", ff$variableName, ignore.case = T)] <- gsub("[^0-9]","",ff$variableName[grepl("^SPFWT", ff$variableName,ignore.case = T)])
+  ff$pvWt[grepl("^SPFWT", ff$variableName, ignore.case=TRUE)] <- gsub("[^0-9]", "", ff$variableName[grepl("^SPFWT", ff$variableName, ignore.case=TRUE)])
   ff$pvWt[is.na(ff$pvWt)] <- ""
   ff$weights <- ff$pvWt == 0
   ff$pvWt[ff$pvWt == 0] <- ""

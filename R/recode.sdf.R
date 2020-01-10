@@ -7,7 +7,7 @@
 #'        or an \code{edsurvey.data.frame.list}
 #' @param recode a list of recoding rules. See Examples for the format of recoding rules.
 #' 
-#' @return an object of the same class as \code{x} with the recode added to it
+#' @return an object of the same class as \code{x} with the \code{recode} added to it
 #' @usage recode.sdf(x, recode)
 #' 
 #' @author Trang Nguyen and Paul Bailey
@@ -146,9 +146,8 @@ checkRecode <- function(x, recode) {
       stop(paste0("More than one 'To' value found in the ", sQuote(v) ," element of the 'recode' argument."))
     }
     varlevels <- levelsSDF(v,x)[[1]]
-    # strsplit returns a list regardless of the length of i, so must unlist
-    levs <- unname(sapply(varlevels, function(i) strsplit(i,"=")[[1]][1]))
-    labs <- unname(sapply(varlevels, function(i) strsplit(i,"=")[[1]][2]))
+    levs <- varlevels$level
+    labs <- varlevels$labels
     if (any(!tolower(from) %in% c(tolower(labs), tolower(levs)))) {
       warning(paste0("When recoding, could not find the level(s) ",
                      pasteItems(dQuote(from[which(!tolower(from) %in% tolower(c(labs,levs)))])),

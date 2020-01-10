@@ -1,7 +1,7 @@
 #' @title Modify Variable Names
 #'
-#' @description Renames variables in an \code{edsurvey.data.frame},
-#' a \code{light.edsurvey.data.frame} or an \code{edsurvey.data.frame.list}.
+#' @description Renames variables in an \code{edsurvey.data.frame}, 
+#' a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 #' This function often is used when users want to conduct a gap analysis across
 #'  years but variable names differ across two years of data. 
 #'
@@ -14,7 +14,7 @@
 #'                         variable if the corresponding new name already exists in the data. 
 #'                         Defaults to \code{TRUE}.
 #'
-#' @details Note that all variable names are coerced to lowercase to comply with
+#' @details All variable names are coerced to lowercase to comply with
 #'          the \code{EdSurvey} standard.
 #'
 #' @return an object of the same class as \code{x} with new variable names

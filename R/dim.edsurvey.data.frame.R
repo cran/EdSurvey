@@ -9,7 +9,7 @@
 #'         of rows and the second element being the number of columns.
 #'         
 #'         For an \code{edsurvey.data.frame.list}, returns a list of length 
-#'         two, where the first list element is named \code{nrow} and is a 
+#'         two, where the first element is named \code{nrow} and is a 
 #'         numeric vector containing the number of rows for each element of the 
 #'         \code{edsurvey.data.frame.list}. The second element is named
 #'         \code{ncol} and is the number of columns for each element.
@@ -61,8 +61,10 @@ nrow2.edsurvey.data.frame <- function(x) {
 #' @author Trang Nguyen
 #' @export
 dimnames.edsurvey.data.frame <- function(x) {
-  nameVals <- c()
-  
+  # grab cache variable names
+  nameVals <- colnames(x$cache)
+  # these two are not intended to be shown
+  nameVals <- nameVals[!nameVals %in% c("ROWID", "DEFAULT")]
   for(di in x$dataList){
     if(!is.null(di$lafObject)){
       nameVals <- c(nameVals, names(di$lafObject))

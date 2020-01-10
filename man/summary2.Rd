@@ -4,15 +4,19 @@
 \alias{summary2}
 \title{Summarize edsurvey.data.frame Variables}
 \usage{
-summary2(data, variable, weightVar = attr(getAttributes(data, "weights"),
-  "default"), omittedLevels = FALSE)
+summary2(
+  data,
+  variable,
+  weightVar = attr(getAttributes(data, "weights"), "default"),
+  omittedLevels = FALSE
+)
 }
 \arguments{
-\item{data}{an \code{edsurvey.data.frame} or \code{light.edsurvey.data.frame}}
+\item{data}{an \code{edsurvey.data.frame}, an \code{edsurvey.data.frame.list}, or \code{light.edsurvey.data.frame}}
 
 \item{variable}{character vector of variable names}
 
-\item{weightVar}{character weight variable name. Default to be the default weight of \code{data} if it exists.
+\item{weightVar}{character weight variable name. Default is the default weight of \code{data} if it exists.
 If the given survey data do not have a default weight,
 the function will produce unweighted statistics instead. 
 Can be set to \code{NULL} to return unweighted statistics.}
@@ -23,16 +27,13 @@ Use print on an \code{edsurvey.data.frame} to see the omitted levels. Defaults t
 \value{
 summary of weighted or unweighted statistics of a given variable in an \code{edsurvey.data.frame}  
 
-For categorical variables, summary results are a crosstab of all variables and include:
-\describe{
+For categorical variables, the summary results are a crosstab of all variables and include the following:
   \item{[variable name]}{level of the variable in the column name that the row regards. There is one column per element of \code{variable}.}
-  \item{N}{number of cases for each category. Weighted N is also produced if users choose to produce weighted statistics.}
-  \item{Percent}{percentage of each category. Weighted percent is also produced if users choose to produce weighted statistics.}
+  \item{N}{number of cases for each category. Weighted N also is produced if users choose to produce weighted statistics.}
+  \item{Percent}{percentage of each category. Weighted percent also is produced if users choose to produce weighted statistics.}
   \item{SE}{standard error of the percentage statistics}
- }
  
-For continuous variables, summary results are by variable and include:
-\describe{
+For continuous variables, the summary results are by variable and include the following:
   \item{Variable}{name of the variable the row regards}
   \item{N}{total number of cases (both valid and invalid cases)}
   \item{Min.}{smallest value of the variable}
@@ -44,25 +45,23 @@ For continuous variables, summary results are by variable and include:
   \item{SD}{standard deviation or weighted standard deviation}
   \item{NA's}{number of \code{NA} in variable and in weight variables}
   \item{Zero-weights}{number of zero-weight cases if users choose to produce weighted statistics}
-}
 
 If the weight option is chosen, the function produces weighted percentile and standard deviation. Refer to the vignette titled 
-\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistics} and
+\emph{\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{Statistical Methods Used in EdSurvey}} and
 the vignette titled
-\href{https://www.air.org/sites/default/files/EdSurvey-Percentiles.pdf}{Percentile}
+\emph{\href{https://www.air.org/sites/default/files/EdSurvey-Percentiles.pdf}{Methods Used for Estimating Percentiles in EdSurvey}}
 for how the function calculates these statistics (with and without plausible values).
 }
 \description{
-Summarizes edsurvey.data.frame variables.
+Summarizes \code{edsurvey.data.frame} variables.
 }
 \examples{
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
 # print out summary of weighted statistics of a continuous variable
 summary2(sdf, "composite")
-
-\dontrun{
 # print out summary of weighted statistics of a variable, including omitted levels
 summary2(sdf, "b017451", omittedLevels = FALSE)
 # make a crosstab

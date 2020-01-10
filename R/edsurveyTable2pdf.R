@@ -1,23 +1,22 @@
 #' @title PDF File From an edsurveyTable
 #' 
-#' @description Produces the LaTeX code and compiles as a PDF file from the \code{edsurveyTable} results.
+#' @description Produces the LaTeX code and compiles to a PDF file from the \code{edsurveyTable} results.
 #' 
-#' @param data an \code{edsurveyTable}. See Value 
-#'             in \code{\link[EdSurvey]{edsurveyTable}}.
+#' @param data the result of a call to \code{\link{edsurveyTable}}
 #' @param formula a formula of the form \code{LHS ~ RHS} to cast the \code{edsurveyTable} 
 #'                results from long format to wide format. This formula takes the form 
 #'                \code{LHS ~ RHS} (e.g., \code{var1 + var2 ~ var3}). 
 #'                The order of the entries in the formula is essential. 
 #' @param caption character vector of length one or two containing the table's caption or title. 
-#'                If length is two, the second item is the "short caption" used when LaTeX generates 
+#'                If the length is two, the second item is the \dQuote{short caption} used when LaTeX generates 
 #'                a \code{List of Tables}. 
 #'                Set to \code{NULL} to suppress the caption. Default value is \code{NULL}.
 #' @param filename a character string containing filenames and paths. By default (\code{filename = ""}),
 #'                 table will be saved in the working directory (\code{getwd()}). 
 #'                 Use \code{filename = "CONSOLE"} to 
 #'                 print LaTeX code in R console without generating a PDF file.
-#' @param toCSV a character string containing filenames and paths of \code{.csv} table output.
-#'              \code{""} indicates no \code{.csv} output. \code{toCSV} is 
+#' @param toCSV a character string containing filenames and paths of .csv table output.
+#'              \code{""} indicates no .csv output. \code{toCSV} is 
 #'              independent to \code{filename}, so both
 #'              a csv file and PDF file would be generated if both \code{filename} 
 #'              and \code{toCSV} were specified.
@@ -28,7 +27,7 @@
 #' @param estDigits an integer indicating the number of decimal places to be used for estimates. 
 #' Negative values are allowed. See Details.
 #' @param seDigits an integer indicating the number of decimal places to be used for standard errors. 
-#' Negative values are allowed. See Details.
+#' Negative values are allowed.
 #' 
 #' @details 
 #' 
@@ -37,7 +36,7 @@
 #' 
 #' @note 
 #' For more details, see the vignette titled
-#' \href{https://www.air.org/sites/default/files/EdSurvey-LaTeXtables.pdf}{Producing \code{LaTeX} Tables From \code{edsurveyTable} Results With \code{edsurveyTable2pdf}}.
+#' \href{https://www.air.org/sites/default/files/EdSurvey-LaTeXtables.pdf}{\emph{Producing \code{LaTeX} Tables From \code{edsurveyTable} Results With \code{edsurveyTable2pdf}}}.
 #' 
 #' @example /man/examples/edsurveyTable2pdf.R
 #' @author Huade Huo
