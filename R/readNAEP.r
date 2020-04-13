@@ -90,7 +90,7 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
     # Remove special characters in the filedir
     filedirEscapeRegex <- dirname(filedir)
     for (c in strsplit(".*+?^${}()|[]", "")[[1]]) {
-      filedirEscapeRegex <- gsub(pattern = c, replacement = paste0("\\", c), filedirEscapeRegex, fixed = T)
+      filedirEscapeRegex <- gsub(pattern = c, replacement = paste0("\\", c), filedirEscapeRegex, fixed = TRUE)
     }
     frName <- grep(paste0(filedirEscapeRegex,"/select/parms$"), list.dirs(dirname(filedir)), value=TRUE, ignore.case=TRUE)
     if(length(frName) == 0) {
@@ -230,7 +230,7 @@ readMRC <- function(filename) {
   t <- try(mrcFile <- readLines(filename), silent=TRUE)
 
   # Split mrcFile by "\n"
-  mrcFile <- strsplit(mrcFile , "\n", fixed=T)
+  mrcFile <- strsplit(mrcFile , "\n", fixed=TRUE)
   mrcFile <- unlist(mrcFile)
 
   # read in the variables from the file,t his is based on the information ETS

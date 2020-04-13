@@ -337,7 +337,7 @@ calc.glm.sdf <- function(formula,
   taylorVars <- c()
   psuVar <- getPSUVar(data,weightVar)
   stratumVar <- getStratumVar(data,weightVar)
-  if(stratumVar == "JK1" & varMethod == "t") {
+  if ("JK1" %in% stratumVar & varMethod == "t") {
     varMethod <- "j"
     warning("Cannot use Taylor series estimation on a one-stage simple random sample.")
   }
@@ -921,18 +921,21 @@ calc.glm.sdf <- function(formula,
     res <- c(res, list(nPSU=nrow(unique(edf[,c(stratumVar, psuVar)]))))
   }
   # add waldDenomBaseDof if relevant
-  if(all(c(stratumVar, psuVar) %in% colnames(edf))) {
-    res <- c(res, list(waldDenomBaseDof=waldDof(edf, stratumVar, psuVar)))
-  } 
-  if("stratumVar" %in% names(data) && "JK1" %in% data$stratumVar) {
-    res <- c(res, list(waldDenomBaseDof="JK1"))
-  }
+  if (!is.null(stratumVar) && !is.null(psuVar)){
+    if(all(c(stratumVar, psuVar) %in% colnames(edf))) {
+      res <- c(res, list(waldDenomBaseDof=waldDof(edf, stratumVar, psuVar)))
+    } 
+    if("JK1" %in% getStratumVar(data)) {
+      res <- c(res, list(waldDenomBaseDof="JK1"))
+    }
+  }  
   res <- c(res, list(n0=nrow2.edsurvey.data.frame(data), nUsed=nrow(edf)))
   if(inherits(data, "edsurvey.data.frame")) {
     res <- c(res, list(data=data))
   } else {
     res <- c(res, list(lm0=lm0))
   }
+    
   class(res) <- "edsurveyGlm"
   return(res)
 }

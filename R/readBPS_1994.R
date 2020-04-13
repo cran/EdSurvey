@@ -158,9 +158,9 @@ readBPS_1994 <- function(b94DAT_Filepath,
                       omittedLevels = omittedLevels,
                       survey = "BPS1994",
                       country = "USA",
-                      psuVar = "",  #psu and stratum are weight specific
-                      stratumVar = "", 
-                      jkSumMultiplier = 1,
+                      psuVar = NULL,  #psu and stratum are weight specific
+                      stratumVar = NULL, 
+                      jkSumMultiplier = 1, #has 35 replicate weights, but sum multiplier is set to 1
                       validateFactorLabels = FALSE, #the validateFactorLabels will check in `getData` if all values have a defined label, any missing labels will be automatically added.
                       reqDecimalConversion = FALSE) #decimal conversion is not needed
   

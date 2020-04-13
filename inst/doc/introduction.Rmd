@@ -18,7 +18,7 @@ The `EdSurvey` package also seamlessly takes advantage of the `LaF` package to r
 
 Several vignettes are available to assist in analyzing NCES data:
 
-* [*Using EdSurvey to Analyze NCES Data: An Illustration of Analyzing NAEP Primer*](https://www.air.org/sites/default/files/EdSurvey.pdf) is an introduction to the basics of using the `EdSurvey` package for analyzing NCES data, using the NAEP Primer as an example. The vignette covers topics such as preparing the R environment for processing, creating summary tables, running linear regression models, and correlating variables.
+* [*Using EdSurvey to Analyze NCES Data: An Illustration of Analyzing NAEP Primer*](https://www.air.org/sites/default/files/Edsurvey.pdf) is an introduction to the basics of using the `EdSurvey` package for analyzing NCES data, using the NAEP Primer as an example. The vignette covers topics such as preparing the R environment for processing, creating summary tables, running linear regression models, and correlating variables.
 
 * [*Exploratory Data Analysis on NCES Data*](https://www.air.org/sites/default/files/EdSurvey-EDA.pdf) provides examples of conducting exploratory data analysis on NAEP data.
 

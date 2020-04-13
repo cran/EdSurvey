@@ -92,7 +92,7 @@ readNLS72 <- function(NLS7286_PRI_FilePath,
       cat(paste0("Processing SAS syntax file.\n"))
     }
     
-    fileFormat <- parseSAS_FileFormat(NLS7286_SASSyntax_Path) #get the file format from the master.txt file
+    fileFormat <- parseSAS_FileFormat_HSB(NLS7286_SASSyntax_Path) #get the file format from the master.txt file
     
     #this definition interferes with LaF FWF width spacing, so remove it
     fileFormat <- subset(fileFormat, fileFormat$variableName!="id_hstest")

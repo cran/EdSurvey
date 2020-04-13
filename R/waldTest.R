@@ -153,16 +153,16 @@ calc.waldTest <- function(model = model, coefficients = coefficients, H0 = H0) {
 # @return
 # an integer that is the denominator dof (less subtracting the number of coefficients)
 waldDof <- function(data, stratumVar, psuVar) {
-  if(stratumVar %in% "JK1") {
+  if("JK1" %in% stratumVar) {
     return("JK1")
   }
   if(!inherits(data, "data.frame")) {
     stop("Data must be a data.frame.")
   }
-  if(!stratumVar %in% colnames(data)) {
+  if(!is.null(stratumVar) && !stratumVar %in% colnames(data)) {
     stop("Data must have stratumVar ", sQuote(stratumVar), " on it.")
   }
-  if(!psuVar %in% colnames(data)) {
+  if(!is.null(psuVar) && !psuVar %in% colnames(data)) {
     stop("Data must have psuVar ", sQuote(psuVar), " on it.")
   }
   # return the number of unique PSU/strata, with no more than minN per stratum.

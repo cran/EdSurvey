@@ -34,7 +34,7 @@
 #'
 #' @seealso \code{\link{readECLS_K2011}}, \code{\link{readNAEP}}, and \code{\link{getData}}
 #' @author Tom Fink
-#' @example /man/examples/readBB_2003.R
+#' @example /man/examples/readHSB_SO.R
 #' 
 readHSB_Sophomore <- function(HSO8092_PRI_FilePath,
                               HSO8092_SASSyntax_Path,
@@ -80,6 +80,8 @@ readHSB_Sophomore <- function(HSO8092_PRI_FilePath,
                      "{REFUAL}", "{REFUSAL}", "{UNC VERBATIM}", 
                      "{UNC. VERBATIM}", "{UNCODABLE VERBATIM}", 
                      "{INSTRUMENT NONRESP}", "{MULTIPLE RESPONSE}",
+                     "NOT IN SUBGROUP", "{Missing}", "MISSING DATE",
+                     "NO BA EARNED",
                      "(Missing)", NA)
   
   #force reprocess if called for
@@ -92,7 +94,11 @@ readHSB_Sophomore <- function(HSO8092_PRI_FilePath,
       cat(paste0("Processing SAS syntax file.\n"))
     }
     
-    fileFormat <- parseSAS_FileFormat(HSO8092_SASSyntax_Path) #get the file format from the master.txt file
+    fileFormat <- parseSAS_FileFormat_HSB(HSO8092_SASSyntax_Path) #get the file format from the master.txt file
+
+    #special fixes for the fileFormat label values due to inconsistancies with the SAS script formattings
+    fileFormat$labelValues[fileFormat$variableName=="decflag2"] <- "0=NOT DECEASED^1=DECD IN 1ST FOLLOWUP^2=DECD IN 2ND FOLLOWUP^3=DECD IN 3RD FOLLOWUP^4=DECD IN 4TH FOLLOWUP"
+    fileFormat$labelValues[fileFormat$variableName=="pfaminc2"] <- "1=Less than 8,000^2=8,000-14,999^3=15,000-19,999^4=20,000-24,999^5=25,000-29,999^6=30,000-39,999^7=40,000-49,999^8=50,000-more^-1={Missing}"
     
     #the REPCODE field contains both the stratum and PSU in one field, redefine the fileformat to split it into two vars for analysis
     rowIdx <- which(fileFormat$variableName=="repcode", arr.ind = TRUE)
@@ -123,7 +129,7 @@ readHSB_Sophomore <- function(HSO8092_PRI_FilePath,
     lafObj <- laf_open_fwf(HSO8092_PRI_FilePath, fileFormat$dataType, fileFormat$Width, fileFormat$variableName)
     
     fileFormat <- identifyHSB_SOWeights(fileFormat)
-    fileFormat <- valueLabelCleanupFF(fileFormat, omittedLevels, c("{NONE}", "{$ ZERO}", "{NON-PARTICIPANT}"))
+    fileFormat <- valueLabelCleanupFF(fileFormat, omittedLevels, c("{$ ZERO}", "{NON-PARTICIPANT}"))
     fileFormat <- writeCacheWithRepWgt_HSB(lafObj, fileFormat, "repcode_str", "repcode_psu", cacheFilename, verbose)
     
     #write cache file and .meta
@@ -160,8 +166,8 @@ readHSB_Sophomore <- function(HSO8092_PRI_FilePath,
                       country = "USA",
                       psuVar = "repcode_psu",
                       stratumVar = "repcode_str", 
-                      jkSumMultiplier = 0.5,
-                      validateFactorLabels = FALSE, #the validateFactorLabels will check in `getData` if all values have a defined label, any missing labels will be automatically added.
+                      jkSumMultiplier = 1/184,
+                      validateFactorLabels = TRUE, #the validateFactorLabels will check in `getData` if all values have a defined label, any missing labels will be automatically added.
                       reqDecimalConversion = FALSE) #decimal conversion is not needed
 }
 

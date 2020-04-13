@@ -36,7 +36,7 @@ cacheMetaReqUpdate <- function(cacheFileMetaVer, surveyName=NULL){
   surveyLookup[surveyLookup$survey=="ICCS", "cacheVer"] <- 3
   surveyLookup[surveyLookup$survey=="CivED", "cacheVer"] <- 5
   surveyLookup[surveyLookup$survey=="PIAAC", "cacheVer"] <- 3
-  surveyLookup[surveyLookup$survey=="PISA", "cacheVer"] <- 5
+  surveyLookup[surveyLookup$survey=="PISA", "cacheVer"] <- 6
   surveyLookup[surveyLookup$survey=="TALIS", "cacheVer"] <- 4
   surveyLookup[surveyLookup$survey=="ECLS_K", "cacheVer"] <- 1
   surveyLookup[surveyLookup$survey=="ECLS_K2011", "cacheVer"] <- 1

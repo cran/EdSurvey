@@ -81,9 +81,9 @@ showCodebook <- function(data, fileFormat = NULL, labelLevels = FALSE, includeRe
         if (data[[variableLevel]][i] != "") {
           varLevels <- levelsSDF(data[[variableName]][i], data=sdf, showOmitted=FALSE, showN=FALSE)[[1]]
           varLevels <- do.call(pasteLevels,varLevels)
-          data$labelValueRecodes[[i]] <- varLevels
+          data$labelValueRecodes[i] <- varLevels
         } else {
-          data$labelValueRecodes[[i]] <- paste0("")
+          data$labelValueRecodes[i] <- ""
         }
       }
       data
@@ -97,24 +97,27 @@ showCodebook <- function(data, fileFormat = NULL, labelLevels = FALSE, includeRe
     # if label levels aren't returned AND output should include recodes, parse out the "^" and the value level and replace it with "; "
     if(all(includeRecodes & !labelLevels)) {
       varsData$labelValueRecodes <- as.character(lapply(strsplit(varsData$labelValueRecodes, "^", fixed=TRUE),function(x) {
-                paste(sapply(strsplit(x, "\\="), `[`, 2), collapse = "; ")
+                paste(sapply(strsplit(x, "\\="), function(z) { z[2] }), collapse = "; ")
               }))
       } 
 
     # if label levels aren't returned, parse out the "^" and the value level and replace it with "; "
     if(!labelLevels) {
       varsData$labelValues <- as.character(lapply(strsplit(varsData$labelValues, "^", fixed=TRUE),function(x) {
-                paste(sapply(strsplit(x, "\\="), `[`, 2), collapse = "; ")
+                paste(sapply(strsplit(x, "=", fixed=TRUE), function(z) { z[2] }), collapse = "; ")
               }))
     }
 
     # if labelLevels are returned, parse out the "^" and replace it with "; "
     if(labelLevels) {
       if(includeRecodes) {
-        varsData$labelValueRecodes <-gsub("\\^", "; ", varsData$labelValueRecodes)
+        varsData$labelValueRecodes <-gsub("^", "; ", varsData$labelValueRecodes, fixed=TRUE)
       } 
-      varsData$labelValues <-gsub("\\^", "; ", varsData$labelValues)
+      varsData$labelValues <-gsub("^", "; ", varsData$labelValues, fixed=TRUE)
     } 
+  }
+  if(version$major %in% "3" && "fileFormat" %in% colnames(varsData) ) {
+    varsData$fileFormat <- as.character(varsData$fileFormat)
   }
   return(varsData)
 }

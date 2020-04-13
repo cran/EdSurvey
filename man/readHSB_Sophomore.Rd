@@ -50,20 +50,19 @@ and \code{repcode_psu} for the primary sampling unit (PSU) value in the resultin
 }
 \examples{
 \dontrun{
-setwd("C:/B&B2003/ecbw/B03")
+wrkFld <- "C:/HSB/SOPHOMORE"
 
-dasFP <- file.path(getwd(), "Data", "B03DAS.dat")
-wgtFP <- file.path(getwd(), "Data", "B03WEIGHT.dat")
-mstFP <- file.path(getwd(), "master.txt")
+dataPath <- file.path(wrkFld, "REVISED_ASCII", "HSO8092_REV.PRI")
+sasPath <- file.path(wrkFld, "SAS_EXTRACT_LOGIC", "HSBso_READ_HSO8092.SAS")
 
 # with verbose output as default
-bb2003 <- readBB_2003(dasFP, wgtFP, mstFP)
+hsbSO <- readHSB_Sophomore(dataPath, sasPath)
 
 # silent output
-bb2003 <- readBB_2003(dasFP, wgtFP, mstFP, verbose=FALSE)
+hsbSO <- readHSB_Sophomore(dataPath, sasPath, verbose = FALSE)
 
-# force data cache update
-bb2003 <- readBB_2003(dasFP, wgtFP, mstFP, forceReread = TRUE)
+# force cache update
+hsbSO <- readHSB_Sophomore(dataPath, sasPath, forceReread = TRUE)
 }
 }
 \seealso{

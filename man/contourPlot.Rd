@@ -4,7 +4,18 @@
 \alias{contourPlot}
 \title{Overlaid Scatter and Contour Plots}
 \usage{
-contourPlot(x, y, m = 30L, xrange, yrange, xkernel, ykernel, nlevels = 9L, ...)
+contourPlot(
+  x,
+  y,
+  m = 30L,
+  xrange,
+  yrange,
+  xkernel,
+  ykernel,
+  nlevels = 9L,
+  colors = heat.colors(nlevels),
+  ...
+)
 }
 \arguments{
 \item{x}{numeric vector of the \code{x} data to be plotted}
@@ -26,6 +37,10 @@ defaults to range(y)}
 \code{y} kernel to use in generating contour plot}
 
 \item{nlevels}{integer with the number of levels of the contour plot}
+
+\item{colors}{colors to use, specified as in \ifelse{latex}{\code{par}}{\code{\link[graphics]{par}}}.
+Defaults to the \ifelse{latex}{\code{heat.colors}}{\code{\link[grDevices]{heat.colors}}}
+with \code{nlevels}. When specified, \code{colors} overrides \code{nlevels}.}
 
 \item{\dots}{additional arguments to be passed to a plot call that generates the
 scatter plot and the contour plot}

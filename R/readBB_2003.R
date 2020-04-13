@@ -244,7 +244,7 @@ readBB_2003 <- function(b03DAS_Filepath,
                       country = "USA",
                       psuVar = NULL,  #psu and stratum are weight specific
                       stratumVar = NULL, 
-                      jkSumMultiplier = 0.0227272727272727, #1/44 replicates
+                      jkSumMultiplier = 1/44, #weights have 44 replicates
                       validateFactorLabels = FALSE, #the validateFactorLabels will check in `getData` if all values have a defined label, any missing labels will be automatically added.
                       reqDecimalConversion = FALSE) #decimal conversion is not needed
 }

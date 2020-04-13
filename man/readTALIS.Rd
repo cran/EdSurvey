@@ -70,5 +70,5 @@ Organisation for Economic Co-operation and Development. (2014). \emph{TALIS 2013
 \code{\link{getData}} and \code{\link{downloadTALIS}}
 }
 \author{
-Trang Nguyen
+Paul Bailey and Trang Nguyen
 }

@@ -13,10 +13,7 @@
 #' @param verbose a logical value to either print or suppress status message output.
 #'                The default value is \code{TRUE}.
 #' 
-#' @importFrom xml2 read_html
 #' @importFrom readxl read_excel
-#' @importFrom stringr str_subset
-#' @importFrom rvest html html_nodes html_attr
 #' @author Paul Bailey and Trang Nguyen
 #' @example man/examples/downloadPIAAC.R
 #' @export
@@ -38,29 +35,32 @@ downloadPIAAC <- function(root, cycle=1, cache=FALSE, verbose=TRUE) {
   }
   
   if(cycle == 1) {
-    url0 <- "https://webfs.oecd.org"
-    url <- paste0(url0, "/piaac/puf-data/CSV/")
+    data_files <- c("/piaac/puf-data/CSV/prgautp1.csv", "/piaac/puf-data/CSV/prgbelp1.csv",
+                    "/piaac/puf-data/CSV/prgcanp1.csv", "/piaac/puf-data/CSV/prgchlp1.csv",
+                    "/piaac/puf-data/CSV/prgczep1.csv", "/piaac/puf-data/CSV/prgdeup1.csv",
+                    "/piaac/puf-data/CSV/prgdnkp1.csv", "/piaac/puf-data/CSV/prgecup1.csv",
+                    "/piaac/puf-data/CSV/prgespp1.csv", "/piaac/puf-data/CSV/prgestp1.csv",
+                    "/piaac/puf-data/CSV/prgfinp1.csv", "/piaac/puf-data/CSV/prgfrap1.csv",
+                    "/piaac/puf-data/CSV/prggbrp1.csv", "/piaac/puf-data/CSV/prggrcp1.csv",
+                    "/piaac/puf-data/CSV/prghunp1.csv", "/piaac/puf-data/CSV/prgirlp1.csv",
+                    "/piaac/puf-data/CSV/prgisrp1.csv", "/piaac/puf-data/CSV/prgitap1.csv",
+                    "/piaac/puf-data/CSV/prgjpnp1.csv", "/piaac/puf-data/CSV/prgkazp1.csv",
+                    "/piaac/puf-data/CSV/prgkorp1.csv", "/piaac/puf-data/CSV/prgltup1.csv",
+                    "/piaac/puf-data/CSV/prgmexp1.csv", "/piaac/puf-data/CSV/prgnldp1.csv",
+                    "/piaac/puf-data/CSV/prgnorp1.csv", "/piaac/puf-data/CSV/prgnzlp1.csv",
+                    "/piaac/puf-data/CSV/prgperp1.csv", "/piaac/puf-data/CSV/prgpolp1.csv",
+                    "/piaac/puf-data/CSV/prgrusp1.csv", "/piaac/puf-data/CSV/prgsgpp1.csv",
+                    "/piaac/puf-data/CSV/prgsvkp1.csv", "/piaac/puf-data/CSV/prgsvnp1.csv",
+                    "/piaac/puf-data/CSV/prgswep1.csv", "/piaac/puf-data/CSV/prgturp1.csv",
+                    "/piaac/puf-data/CSV/prgusap1_2012.csv", "/piaac/puf-data/CSV/Prgusap1_2017.csv")
   }
   
-  temp <- tryCatch({
-    xml <- read_html(url)
-    xml <- html_nodes(xml,"a")
-    xml <- html_attr(xml, "href")
-    data_files <- str_subset(xml, "\\.csv$")
-  }, error = function(cond) {
-    message("Error occurs when collecting downloadable file links. Error: ", cond)
-    return(0)
-  })
-  if (length(temp) == 0) {
-    cat("There is no file to be downloaded.\n")
-    return(NULL)
-  }
-  
+  url0 <- "https://webfs.oecd.org"
   codebook <- 'http://www.oecd.org/site/piaac/International%20Codebook_PIAAC%20Public-use%20File%20(PUF)%20Variables%20and%20Values.xlsx' 
   for (f in data_files) {
     fn <- basename(f)
     if(!file.exists(file.path(yroot,fn))) {
-      download.file(paste0(url0,f),file.path(yroot,fn), mode = "w", method = "auto")
+      download.file(paste0(url0, f), file.path(yroot, fn), mode = "w", method = "auto")
     } else {
       if (verbose) {
         cat(paste0("Found downloaded cycle ",cycle, " PIAAC file ",fn, ".\n"))

@@ -234,7 +234,7 @@ parseSPSSFileFormat <- function (inSPSSyntax){
       varLblList <- list()
     }else{
       if(substr(tempStr,1,1)=="\""){ #check if first character is a double-quote as the value will be in double-quotes in addition to the varlabel
-        xMatch <- regexpr("^[\"].*[\"]\\s", tempStr) #find first quoted item with space after
+        xMatch <- regexpr("^[\"].+?[\"]\\s", tempStr) #find first quoted item with space after.  use ? to indicate lazy quantifier here, or can cause issue if double quotes in string
       }else{
         xMatch <- regexpr("^[^\"]*", tempStr) #find all characters before first double-quote char
       }
@@ -828,8 +828,8 @@ num.decimals <- function(x) {
   nchar(x)
 }
 
-#parses the .SAS syntax file into a fileFormat object for use with the HS&B Study and NLS-72 study.
-parseSAS_FileFormat <- function(sasFile){
+#parses the .SAS syntax file into a fileFormat object for use with the HS&B Study and NLS-72 study ONLY as currently tested and validated.
+parseSAS_FileFormat_HSB <- function(sasFile){
   
   #prepare return dictionary
   dict <- list("variableName" = character(0),
@@ -1016,7 +1016,7 @@ parseSAS_FileFormat <- function(sasFile){
       }
       
       #add the val and desc to the list only if it's valid 
-      if(isValidSASValueLable(val, desc)){
+      if(isValidSASValueLable_HSB(val, desc)){
         if(grepl(",", val, fixed=TRUE)){ #multiple values specified for a specific label
           val <- unlist(strsplit(val, ",", fixed=TRUE))
           desc <- rep(desc, times=length(val))
@@ -1047,7 +1047,7 @@ parseSAS_FileFormat <- function(sasFile){
         desc <- substr(desc, 2, nchar(desc)-1)
       }
       
-      if(isValidSASValueLable(val, desc)){
+      if(isValidSASValueLable_HSB(val, desc)){
         if(grepl(",", val, fixed=TRUE)){ #multiple values specified for a specific label
           val <- unlist(strsplit(val, ",", fixed=TRUE))
           desc <- rep(desc, times=length(val))
@@ -1075,8 +1075,8 @@ parseSAS_FileFormat <- function(sasFile){
   return(ff)
 }
 
-#determine which value/label pairs are actually a valid SAS label; used with parseSAS_FileFormat 
-isValidSASValueLable <- function(value, label){
+#determine which value/label pairs are actually a valid SAS label; used with parseSAS_FileFormat_HSB
+isValidSASValueLable_HSB <- function(value, label){
   
   #NA's can cause issue in validation checks below
   value[is.na(value)] <- ""

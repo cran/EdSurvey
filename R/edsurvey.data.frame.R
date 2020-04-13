@@ -316,7 +316,6 @@ dataListItem <- function(lafObject,
   if (length(parentMergeVars)!=length(mergeVars)){
     stop(paste0("The lengths of ", dQuote("parentMergeVars"), " and ", dQuote("mergeVars"), " must be equal."))
   }
-
   res <- list(lafObject = lafObject,
               fileFormat = fileFormat,
               levelLabel = levelLabel,

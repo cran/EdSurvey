@@ -34,7 +34,7 @@
 #'
 #' @seealso \code{\link{readECLS_K2011}}, \code{\link{readNAEP}}, and \code{\link{getData}}
 #' @author Tom Fink
-#' @example /man/examples/readBB_2003.R
+#' @example /man/examples/readHSB_SR.R
 #' 
 readHSB_Senior <- function(HSR8086_PRI_FilePath,
                            HSR8086_SASSyntax_Path,
@@ -91,10 +91,11 @@ readHSB_Senior <- function(HSR8086_PRI_FilePath,
       cat(paste0("Processing SAS syntax file.\n"))
     }
     
-    fileFormat <- parseSAS_FileFormat(HSR8086_SASSyntax_Path) #get the file format from the master.txt file
+    fileFormat <- parseSAS_FileFormat_HSB(HSR8086_SASSyntax_Path) #get the file format from the master.txt file
     
-    #Specific HS&B Senior fixed-width bug/miscalculation in SAS syntax. Save major headaches!
-    fileFormat$Width[fileFormat$variableName=="bytest"] <- 5 #the bytest field should only be 5 length not 6, throws off the rest of definitions
+    #the bypart field is defined in the layout file, but doesn't actually exist in the datafile!
+    #this causes all sorts of FWF issues when reading in the original .PRI file as well as subsequent output
+    fileFormat <- subset(fileFormat, fileFormat$variableName != "bypart") 
     
     #the REPCODE field contains both the stratum and PSU in one field, redefine the fileformat to split it into two vars for analysis
     rowIdx <- which(fileFormat$variableName=="repcode", arr.ind = TRUE)
@@ -125,7 +126,7 @@ readHSB_Senior <- function(HSR8086_PRI_FilePath,
     lafObj <- laf_open_fwf(HSR8086_PRI_FilePath, fileFormat$dataType, fileFormat$Width, fileFormat$variableName)
     
     fileFormat <- identifyHSB_SRWeights(fileFormat)
-    fileFormat <- valueLabelCleanupFF(fileFormat, omittedLevels, c("{NONE}", "{$ ZERO}", "{NON-PARTICIPANT}"))
+    fileFormat <- valueLabelCleanupFF(fileFormat, omittedLevels, c("{$ ZERO}", "{NON-PARTICIPANT}"))
     fileFormat <- writeCacheWithRepWgt_HSB(lafObj, fileFormat, "repcode_str", "repcode_psu", cacheFilename, verbose)
     
     #write cache file and .meta
@@ -162,8 +163,8 @@ readHSB_Senior <- function(HSR8086_PRI_FilePath,
                       country = "USA",
                       psuVar = "repcode_psu",
                       stratumVar = "repcode_str", 
-                      jkSumMultiplier = 0.5,
-                      validateFactorLabels = FALSE, #the validateFactorLabels will check in `getData` if all values have a defined label, any missing labels will be automatically added.
+                      jkSumMultiplier = 1/184, #184 replicate weights
+                      validateFactorLabels = TRUE, #the validateFactorLabels will check in `getData` if all values have a defined label, any missing labels will be automatically added.
                       reqDecimalConversion = FALSE) #decimal conversion is not needed
 }
 
@@ -278,7 +279,7 @@ writeCacheWithRepWgt_HSB <- function(dataLaF, fileFormat, stratumVar, psuVar, ca
   #write out the cachefile
   cacheFull <- cbind(dataLaF[], wgtDFAll)
   
-  writeDF_FWF(cacheFull, newFF, cachePath)
+  newFF <- writeDF_FWF(df=cacheFull, fileFormat=newFF, savePath=cachePath, verbose=verbose)
   
   return(newFF)
 }

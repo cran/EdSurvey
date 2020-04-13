@@ -1455,7 +1455,8 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     }))
     seA <- 100 * sqrt(getAttributes(data, "jkSumMultiplier") * sum( (pctJK[,1] - pctA)^2 ))
     seB <- 100 * sqrt(getAttributes(data, "jkSumMultiplier") * sum( (pctJK[,2] - pctB)^2 ))
-    varJK <- data.frame(PV=rep(0, 3*nrow(pctJK)),
+    varJK <- data.frame(stringsAsFactors=FALSE,
+                        PV=rep(0, 3*nrow(pctJK)),
                         JKreplicate=rep(1:nrow(pctJK),3),
                         variable=rep(c("A", "B", "A-B"), each=nrow(pctJK)),
                         value=c(pctJK[,1] - pctA,
@@ -1484,17 +1485,19 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     
     # start return vector, first name achievement level
     vec <- switch(type,
-                  pct=data.frame(percentiles=as.numeric(percentiles), stringsAsFactors=FALSE),
-                  AL=data.frame(achievementLevel=gsub("Below","below",as.character(statisticsLevelOut)), stringsAsFactors=FALSE),
+                  pct=data.frame(stringsAsFactors=FALSE, percentiles=as.numeric(percentiles)),
+                  AL=data.frame(stringsAsFactors=FALSE, achievementLevel=gsub("Below","below",as.character(statisticsLevelOut))),
                   data.frame())
     if(returnSimpleDoF) {
       # add dofA and dofB if requested
       if(nrow(vec) > 0) {
         vec <- cbind(vec,
-                     data.frame(estimateA=resA, estimateAse=SEs[[1]], dofA=JRdfA,
+                     data.frame(stringsAsFactors=FALSE,
+                                estimateA=resA, estimateAse=SEs[[1]], dofA=JRdfA,
                                 estimateB=resB, estimateBse=SEs[[2]], dofB=JRdfB))
       } else { # this is equivalent to  if (type %in%  c("mu","eq"))
-        vec <- data.frame(estimateA=resA, estimateAse=SEs[[1]], dofA=JRdfA,
+        vec <- data.frame(stringsAsFactors=FALSE,
+                          estimateA=resA, estimateAse=SEs[[1]], dofA=JRdfA,
                           estimateB=resB, estimateBse=SEs[[2]], dofB=JRdfB)
       }
     } # end if(returnSimpleDoF) 
@@ -1502,36 +1505,42 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
       # otherwise, no dofA or dofB
       if(nrow(vec) > 0) {
         vec <- cbind(vec,
-                     data.frame(estimateA=resA, estimateAse=SEs[[1]],
+                     data.frame(stringsAsFactors=FALSE,
+                                estimateA=resA, estimateAse=SEs[[1]],
                                 estimateB=resB, estimateBse=SEs[[2]]))
       } else { # this is equivalent to  if (type %in%  c("mu","eq"))
-        vec <- data.frame(estimateA=resA, estimateAse=SEs[[1]],
+        vec <- data.frame(stringsAsFactors=FALSE,
+                          estimateA=resA, estimateAse=SEs[[1]],
                           estimateB=resB, estimateBse=SEs[[2]])
       }
     }
     diffp <- 2*(1-pt2(abs(diff/diffSE), df=JRdf))
     vec <- cbind(vec,
-                 data.frame(diffAB=diff, covAB=unname(cov),
+                 data.frame(stringsAsFactors=FALSE,
+                            diffAB=diff, covAB=unname(cov),
                             diffABse= diffSE,
                             diffABpValue=diffp,
                             dofAB=JRdf))
     row.names(vec) <- NULL
     if(returnSimpleDoF) {
-      percentage <- data.frame(pctA=pctA,
+      percentage <- data.frame(stringsAsFactors=FALSE,
+                               pctA=pctA,
                                pctAse=seA,
                                dofA=pctDoFA,
                                pctB=pctB,
                                pctBse=seB,
                                dofB=pctDoFB)
     } else {
-      percentage <- data.frame(pctA=pctA,
+      percentage <- data.frame(stringsAsFactors=FALSE,
+                               pctA=pctA,
                                pctAse=seA,
                                pctB=pctB,
                                pctBse=seB)
     }
     pdiffp <- 2*(1-pt2(abs(pctA - pctB)/seAB, df=pctJRdf))
     percentage <- cbind(percentage,
-                        data.frame(diffAB=pctA - pctB,
+                        data.frame(stringsAsFactors=FALSE,
+                                   diffAB=pctA - pctB,
                                    covAB=100*100*covAB,
                                    diffABse=seAB,
                                    diffABpValue=pdiffp,
@@ -1611,7 +1620,8 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
       c(pctA=wA/w0, pctB = 0)
     }))
     seA <- 100 * sqrt(getAttributes(data, "jkSumMultiplier") * sum( (pctJK[,1] - pctA)^2 ))
-    varJK <- data.frame(PV=rep(0, nrow(pctJK)),
+    varJK <- data.frame(stringsAsFactors=FALSE,
+                        PV=rep(0, nrow(pctJK)),
                         JKreplicate=1:nrow(pctJK),
                         variable="A",
                         value= pctJK[,1] - pctA
@@ -1622,34 +1632,36 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
     pctA <- 100 * pctA
     # start return vector, first name achievement level
     vec <- switch(type,
-                  pct=data.frame(percentiles=as.numeric(percentiles), stringsAsFactors=FALSE),
-                  AL=data.frame(achievementLevel=gsub("Below","below",as.character(statisticsLevelOut)), stringsAsFactors=FALSE),
+                  pct=data.frame(stringsAsFactors=FALSE, percentiles=as.numeric(percentiles)),
+                  AL=data.frame(stringsAsFactors=FALSE, achievementLevel=gsub("Below","below",as.character(statisticsLevelOut))),
                   data.frame())
     if(returnSimpleDoF) {
       # add dofA and dofB if requested
       if(nrow(vec) > 0) {
         vec <- cbind(vec,
-                     data.frame(estimateA=resA, estimateAse=SEs[[1]], dofA=JRdfA))
+                     data.frame(stringsAsFactors=FALSE, estimateA=resA, estimateAse=SEs[[1]], dofA=JRdfA))
       } else {
-        vec <- data.frame(estimateA=resA, estimateAse=SEs[[1]], dofA=JRdfA)
+        vec <- data.frame(stringsAsFactors=FALSE, estimateA=resA, estimateAse=SEs[[1]], dofA=JRdfA)
       }
     } else {
       # otherwise, no dofA or dofB
       if(nrow(vec) > 0) {
         vec <- cbind(vec,
-                     data.frame(estimateA=resA, estimateAse=SEs[[1]]))
+                     data.frame(stringsAsFactors=FALSE, estimateA=resA, estimateAse=SEs[[1]]))
         
       } else {
-        vec <- data.frame(estimateA=resA, estimateAse=SEs[[1]])
+        vec <- data.frame(stringsAsFactors=FALSE, estimateA=resA, estimateAse=SEs[[1]])
       }
     }
     row.names(vec) <- NULL
     if(returnSimpleDoF) {
-      percentage <- data.frame(pctA=pctA,
+      percentage <- data.frame(stringsAsFactors=FALSE,
+                               pctA=pctA,
                                pctAse=seA,
                                dofA=pctDoFA)
     } else {
-      percentage <- data.frame(pctA=pctA,
+      percentage <- data.frame(stringsAsFactors=FALSE,
+                               pctA=pctA,
                                pctAse=seA)
       
     }
@@ -1738,11 +1750,11 @@ print.gap <- function(x, ..., printPercentage=TRUE) {
   cat("Call: ")
   print(x$call)
   cat("\nLabels:\n")
-  lab <- data.frame(group=c("A", "B"),
+  lab <- data.frame(stringsAsFactors=FALSE,
+                    group=c("A", "B"),
                     definition=c(deparse(x$labels$A), deparse(x$labels$B)),
                     nFullData=c(x$labels$n0A, x$labels$n0B),
-                    nUsed=c(x$labels$nUsedA, x$labels$nUsedB),
-                    stringsAsFactors=FALSE)
+                    nUsed=c(x$labels$nUsedA, x$labels$nUsedB))
   if (!is.null(x$labels$nPSUA)) {
     lab$nPSU <- c(x$labels$nPSUA, x$labels$nPSUB)
   }
@@ -1763,9 +1775,9 @@ print.gapList <- function(x, ..., printPercentage=TRUE) {
   cat(paste0("Call: "))
   print(x$call)
   cat("\nLabels:\n")
-  lab <- data.frame(group=c("A", "B"),
-                    definition=c(deparse(x$labels$A), deparse(x$labels$B)),
-                    stringsAsFactors=FALSE)
+  lab <- data.frame(stringsAsFactors=FALSE,
+                    group=c("A", "B"),
+                    definition=c(deparse(x$labels$A), deparse(x$labels$B)))
   print(lab, row.names=FALSE)
   if(printPercentage) {
     cat("\nPercentage:\n")

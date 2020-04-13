@@ -83,8 +83,8 @@ test_that("showCodebook",{
   sdfRecode <- recode.sdf(sdf, recode = list(dsex = list(from = c("Male"), to = c("MALE"))))
   cb2 <- showCodebook(sdfRecode, c("student","school"), labelLevels = FALSE, includeRecodes = TRUE)
 
-  expect_equal(cb, readRDS(file="showCodebook.rds"))
-  expect_equal(cb2, readRDS(file="showCodebookRecodes.rds"))
+  expect_known_value(cb, file="showCodebook.rds", update=FALSE)
+  expect_known_value(cb2, file="showCodebookRecodes.rds", update=FALSE)
 })
 
 context("getData")
@@ -235,7 +235,9 @@ test_that("lm.sdf",{
   expect_equal(slm1, slm1_read)
   skip_on_cran()
   lm1S <- lm.sdf( ~ dsex + b017451, sdf, standardizeWithSamplingVar=TRUE)
-  slm1Scoef <- capture.output(summary(lm1S, src=TRUE)$coefmat)
+  withr::with_options(list(digits=4),
+                      slm1Scoef <- capture.output(summary(lm1S, src=TRUE)$coefmat)
+                     )
   expect_equal(slm1Scoef, stdCoefREF)
   lm10 <- lm.sdf(composite ~ dsex + b017451, sdf)
   lm10$data <- NULL
@@ -312,9 +314,8 @@ test_that("lm.sdf Taylor series",{
   lm2jk$residuals <- head(lm2jk$residuals)
   lm2jk$PV.residuals <- head(lm2jk$PV.residuals)
   lm2jk$PV.fitted.values <- head(lm2jk$PV.fitted.values)
-  lm2.ref <- readRDS("lm2.rds")
-  lm2.ref$call <- lm2jk$call <- NULL
-  expect_equal(lm2jk, lm2.ref)
+  lm2jk$call <- NULL
+  expect_known_value(lm2jk, "lm2.rds", update=FALSE)
   expect_equal(coef(lm2t), coef(lm2jk))
 })
 
@@ -686,8 +687,8 @@ test_that("cor.sdf no level condensation", {
   expect_equal(cor_nocondenseC, cor_nocondenseREF)
 })
 
-context("unweighted cor works")
-test_that("unweighted cor works", {
+context("unweighted cor")
+test_that("unweighted cor", {
   skip_on_cran()
   b1a <- cor.sdf("m815401", "b017451",method="Pearson", sdf,weightVar = "origwt")
   b1b <- cor.sdf("m815401", "b017451",method="Pearson", sdf,weightVar = NULL)
@@ -773,7 +774,9 @@ test_that("glm", {
 
   skip_on_cran()
   # test logit with PVs
-  co <- capture.output(summary(logit1))
+  withr::with_options(list(digits=4),
+                       co <- capture.output(summary(logit1))
+                     )
   expect_equal(co, logit1REF)
   logit2t <- logit.sdf(I(iep %in% "Yes" & b017451 %in% "Every day") ~ dsex + b013801, data=sdf, varMethod="Taylor")
   co <- capture.output(summary(logit2t))
@@ -781,7 +784,7 @@ test_that("glm", {
 })
 
 context("Wald test")
-test_that("Wald test works", {
+test_that("Wald test", {
   # glm example
   skip_on_cran()
   myLogit <- logit.sdf(dsex ~ b017451 + b003501, data = sdf, returnNumberOfPSU=TRUE)
@@ -842,6 +845,11 @@ test_that("levelsSDF n",{
   sum2Res <- summary2(sdf, "pared")
   mergeRes <- merge(sum2Res$summary, levelRes$pared, by.x="pared", by.y="labels")
   expect_equal(mergeRes$N, mergeRes$n)
+  sum2ResB <- summary2(sdf, c("dsex", "pared"))
+  withr::with_options(list(digits=2),
+                       co <- capture.output(sum2ResB)
+                      )
+  expect_equal(co, sum2ResBREF)
 })
 
 
@@ -870,15 +878,15 @@ test_that("dplyr integration",{
   skip_if_not_installed("dplyr")
   require(dplyr)
   x <- sdf %>%
-     getData(varnames=c("composite", "geometry", "dsex", "b017451","c052601", "origwt"), addAttributes = TRUE) %>%
-     mutate(avg_5 = (as.numeric(mrpcm1) + as.numeric(mrpcm2) + as.numeric(mrpcm3) + as.numeric(mrpcm4) + as.numeric(mrpcm5))/5) %>%
-     rebindAttributes(sdf) %>%
-     lm.sdf(composite - geometry ~ avg_5, data=.)
+       getData(varnames=c("composite", "geometry", "dsex", "b017451","c052601", "origwt"), addAttributes=TRUE) %>%
+       mutate(avg_5 = (as.numeric(mrpcm1) + as.numeric(mrpcm2) + as.numeric(mrpcm3) + as.numeric(mrpcm4) + as.numeric(mrpcm5))/5) %>%
+       rebindAttributes(sdf) %>%
+       lm.sdf(composite - geometry ~ avg_5, data=.)
   co <- capture.output(summary(x))
   expect_equal(co, dplO)
 })
 
-context('use returnNumberOfPSU=TRUE')
+context('use returnNumberOfPSU')
 test_that("use returnNumberOfPSU", {
   skip_on_cran()
   # percentile
@@ -905,7 +913,9 @@ test_that('summary2', {
   expect_equal(sPV, sPVREF)
 
   # Weighted discrete
-  sDiscrete_w <- capture.output(summary2(sdf,c("b017451","dsex")))
+  withr::with_options(list(digits=2),
+                      sDiscrete_w <- capture.output(summary2(sdf,c("b017451","dsex")))
+                      )
   expect_equal(sDiscrete_w, sDiscrete_wREF)
 
   # Unweighted discrete

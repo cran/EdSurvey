@@ -50,24 +50,24 @@ summary2 <- function(data, variable,
   if (inherits(data, c("edsurvey.data.frame.list"))) {
     return(itterateESDFL(match.call(),data))
   }
-  checkDataClass(data,c("light.edsurvey.data.frame","edsurvey.data.frame"))
+  checkDataClass(data, c("light.edsurvey.data.frame", "edsurvey.data.frame"))
   callc <- match.call()
   if (is.null(weightVar) || !weightVar %in% colnames(data)) {
     callc$weightVar <- NULL
-    edf <- getData(data,variable, omittedLevels = omittedLevels, includeNaLabel = !omittedLevels)
+    edf <- getData(data, variable, omittedLevels = omittedLevels, includeNaLabel = !omittedLevels)
     N <- nrow(edf)
-    if(length(unique(typeOfVariable(variable,data))) > 1) {
+    if(length(unique(typeOfVariable(variable, data))) > 1) {
       stop("Summarize only discrete or only continious variables together.")
     }
-    if (unique(typeOfVariable(variable,data)) == "discrete") {
-      ret <- as.data.frame(ftable(edf[,variable], exclude = NULL))
+    if (unique(typeOfVariable(variable, data)) == "discrete") {
+      ret <- as.data.frame(ftable(edf[ , variable], exclude = NULL))
       colnames(ret) <- c(variable, "N")
       ret$Percent <- ret$N/N * 100
     } else {
       ret <- lapply(1:ncol(edf), function(i) {
         descriptiveContinuous(edf[[i]])
       })
-      ret <- cbind("Variable" = names(edf), as.data.frame(do.call('rbind',ret)))
+      ret <- cbind("Variable" = names(edf), as.data.frame(do.call('rbind', ret)))
     }
     ret <- list(summary=ret)
     ret$call <- callc
@@ -76,7 +76,7 @@ summary2 <- function(data, variable,
   } # end if (is.null(weightVar) || !weightVar %in% colnames(data))
   
   callc$weightVar <- weightVar
-  data <- getData(data,c(variable, weightVar), omittedLevels = omittedLevels,
+  data <- getData(data, c(variable, weightVar), omittedLevels = omittedLevels,
                   addAttributes = TRUE, includeNaLabel = !omittedLevels, drop = FALSE)
   if(length(unique(typeOfVariable(variable, data))) > 1) {
     stop("The summary2 function requires that all variables are discrete or all variables are continuous.")
@@ -86,10 +86,11 @@ summary2 <- function(data, variable,
                          data=data,returnMeans=FALSE,
                          omittedLevels = omittedLevels,
                          weightVar = weightVar)
-    colnames(ret$data)[3] <- "Weighted N"
-    colnames(ret$data)[4] <- "Weighted Percent"
-    colnames(ret$data)[5] <- "Weighted Percent SE"
-    ret <- ret$data[,1:5]
+    ret <- ret$data
+    # change col names
+    colnames(ret)[colnames(ret) == "WTD_N"] <- "Weighted N"
+    colnames(ret)[colnames(ret) == "PCT"] <- "Weighted Percent"
+    colnames(ret)[colnames(ret) == "SE(PCT)"] <- "Weighted Percent SE"
   } else { # end # end if(typeOfVariable(variable,data) == "discrete")
     variableR <- variable
     # build a data.frame, robust to vector "variable"

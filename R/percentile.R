@@ -160,7 +160,8 @@ percentile <- function(variable, percentiles, data,
       tryCatch(eval(call),
                error = function(cond) {
                  message("Error in processing dataset ",sQuote(i), cond)
-                 return(data.frame(percentile = percentiles,
+                 return(data.frame(stringsAsFactors=FALSE,
+                                   percentile = percentiles,
                                    estimate = rep(NA,lp),
                                    se = rep(NA,lp),
                                    confInt.ci_lower = rep(NA,lp),
@@ -566,12 +567,14 @@ percentile <- function(variable, percentiles, data,
     }
     # 4) Calculate final results
     if(confInt) {
-      res <- data.frame(percentile=percentiles, estimate=r0, se=sqrt(V),
+      res <- data.frame(stringsAsFactors=FALSE,
+                        percentile=percentiles, estimate=r0, se=sqrt(V),
                         df=dof,
                         confInt=ci,
                         nsmall=nsmall0)
     } else {
-      res <- data.frame(percentile=percentiles, estimate=r0, se=sqrt(V),
+      res <- data.frame(stringsAsFactors=FALSE,
+                        percentile=percentiles, estimate=r0, se=sqrt(V),
                         df=dof,
                         nsmall=nsmall0)
     }

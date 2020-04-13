@@ -285,8 +285,9 @@ calcEdsurveyTable <- function(formula,
   
   # check yvar and rhs_vars
   # rhs_vars must be  discrete variables
-  if (!all(typeOfVariable(rhs_vars,data) %in% "discrete")) {
-    warning("Variables on the right-hand side of the formula must be discrete. Nondiscrete variables will be removed from the formula.")
+  if (!all(typeOfVariable(rhs_vars, data) %in% "discrete")) {
+    nd <- which(!typeOfVariable(rhs_vars, data) %in% "discrete")
+    warning(paste0("Variables on the right-hand side of the formula must be discrete. Nondiscrete variables will be removed from the formula. Non-discrete variables: ", pasteItems(rhs_vars[nd])))
     rhs_vars <- rhs_vars[typeOfVariable(yvar,data) %in% "discrete"]
   }
   
@@ -506,10 +507,12 @@ calcEdsurveyTable <- function(formula,
             }
             for(i in 1:nrow(wtdn)) {
               level <- paste(rhs_vars, wtdn_[i,rhs_vars], sep="=", collapse=":")
-              pctVarEstInputsJKi <- data.frame(PV=0,
+              pctVarEstInputsJKi <- data.frame(stringsAsFactors=FALSE,
+                                               PV=0,
                                                JKreplicate=jki,
                                                variable=level_[i],
-                                               value=(wtdn[i,last_column]/wtdn[i,'twti'] - wtdn[i,"PCT"]/100)
+                                               value=(wtdn[i,last_column]/wtdn[i,'twti'] - wtdn[i,"PCT"]/100
+                                               )
               )
               pctVarEstInputsJK <- rbind(pctVarEstInputsJK, pctVarEstInputsJKi)
             }

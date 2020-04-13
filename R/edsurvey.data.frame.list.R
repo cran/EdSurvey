@@ -107,7 +107,7 @@ edsurvey.data.frame.list <- function(datalist, cov=NULL, labels=NULL) {
                 thisAttr
               }, simplify=TRUE)
             }, simplify=FALSE)
-    covs <- data.frame(covs)
+    covs <- data.frame(stringsAsFactors=FALSE, covs)
   }
 
   if(searching) {
@@ -135,7 +135,7 @@ edsurvey.data.frame.list <- function(datalist, cov=NULL, labels=NULL) {
       stop(paste0("Length of argument ", sQuote("labels")," must be the same as the length of the ", sQuote("datalist"), " argument."))
     }
     if(is.null(covs)) {
-      covs <- data.frame(labels=labels)
+      covs <- data.frame(stringsAsFactors=FALSE, labels=labels)
     } else {
       covs$labels <- labels
     }

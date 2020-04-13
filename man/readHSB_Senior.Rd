@@ -50,20 +50,19 @@ cache data.
 }
 \examples{
 \dontrun{
-setwd("C:/B&B2003/ecbw/B03")
+wrkFld <- "C:/HSB/SENIOR"
 
-dasFP <- file.path(getwd(), "Data", "B03DAS.dat")
-wgtFP <- file.path(getwd(), "Data", "B03WEIGHT.dat")
-mstFP <- file.path(getwd(), "master.txt")
+dataPath <- file.path(wrkFld, "REVISED_ASCII", "HSR8086_REV.PRI")
+sasPath <- file.path(wrkFld, "SAS_EXTRACT_LOGIC", "HSBsr_READ_HSR8086.SAS")
 
 # with verbose output as default
-bb2003 <- readBB_2003(dasFP, wgtFP, mstFP)
+hsbSR <- readHSB_Senior(dataPath, sasPath)
 
 # silent output
-bb2003 <- readBB_2003(dasFP, wgtFP, mstFP, verbose=FALSE)
+hsbSR <- readHSB_Senior(dataPath, sasPath, verbose = FALSE)
 
-# force data cache update
-bb2003 <- readBB_2003(dasFP, wgtFP, mstFP, forceReread = TRUE)
+# force cache update
+hsbSR <- readHSB_Senior(dataPath, sasPath, forceReread = TRUE)
 }
 }
 \seealso{

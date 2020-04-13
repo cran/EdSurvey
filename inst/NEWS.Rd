@@ -1,6 +1,38 @@
 \name{NEWS}
 \title{NEWS for EdSurvey}
 
+\section{Changes in version 2.5.0}{
+  \subsection{NEW DATA}{
+    \itemize{
+      \item Added support for the 2007-2008 Beginning Teacher Longitudinal Study (see \code{readBTLS}) for Waves 1 to 5.
+    }
+  }
+  \subsection{DATA UPDATES}{
+    \itemize{
+      \item \code{readPISA} uses less memory when reading in PISA 2015 data. This is because it now uses the \code{haven} package's \code{read_sav} new \code{skip} and \code{n_max} arguments to read in portions of files. This should save time on read in.
+      \item Other PISA files were changed to use base R read functions, this results in a different ordering of columns in 2012 and 2015.
+      \item Some PISA 2003 variables were read in as an integer and are now in as a real values, mostly hours variables.
+      \item After the OECD files were updated, \code{downloadPIAAC} and \code{readPIAAC} now properly use the 2012 USA file for Cycle 1.
+    }
+  }
+  \subsection{TECHNICAL}{
+    \itemize{
+      \item To allow both 4.0 and 3.6 compatibility, an \code{edsurvey.data.frame.list} now stores \code{covs} as characters in preference to factors.
+      \item \code{EdSurvey} is no longer imports \code{readr}, \code{rvest}, \code{stringi}, \code{stringr}, or \code{xml2}. In addition, \code{RColorBrewer} was imported but is now suggested.
+      \item \code{ContourPlot} now uses \code{heat.colors} by default.
+      \item Several data files were stored in text format in functions and are now stored in \code{inst/extdata} as \code{rds} files.
+      \item The news for 2.4.0 was edited to note that the \code{gap} linking error in NAEP is only for mathematics and reading.
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item \code{lm.sdf} now rounds the printed coefficients matrix in the standard way.
+      \item Fixed a bug in \code{edsurveyTable} that caused it to return incorrectly labeled output if multiple covariates were tabbed with weights.
+      \item A broken link in the vignette was fixed.
+    }
+  }
+}
+
 \section{Changes in version 2.4.0}{
   \subsection{NEW DATA}{
     \itemize{
@@ -22,7 +54,7 @@
     \itemize{
       \item The \code{mixed.sdf} function now correctly aggregates results and has its methodology documented. It no longer supports binomial models and has several arguments deprecated as a result.
       \item The \code{gap} function argument \code{varMethod} is deprecated. The function uses only jackknife variance estimation.
-      \item The \code{gap} function now accounts for linking error between NAEP paper and digitally based assessments.
+      \item The \code{gap} function now accounts for linking error between NAEP paper and digitally based assessments for mathematics and reading.
       \item The \code{subset} function used to fail when a global variable shared a name with a column on the data; it now works.
       \item The \code{percentile} function has been updated to a formula that generates survey percentiles that are robust to transformation. For example, if the values are multiplied by a constant, then the percentiles move by that same constant.
       \item The \code{lm.sdf} function header now prints the number of plausible values used (when they are used) as well as the number of plausible values used in the sampling variance (\code{jrrIMax}).

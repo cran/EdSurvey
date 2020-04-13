@@ -16,19 +16,24 @@
 #' @param ykernel numeric indicating the standard deviation of Normal
 #'                \code{y} kernel to use in generating contour plot
 #' @param nlevels integer with the number of levels of the contour plot
+#' @param colors colors to use, specified as in \ifelse{latex}{\code{par}}{\code{\link[graphics]{par}}}.
+#'               Defaults to the \ifelse{latex}{\code{heat.colors}}{\code{\link[grDevices]{heat.colors}}}
+#'               with \code{nlevels}. When specified, \code{colors} overrides \code{nlevels}.
+#'               
 #' @param \dots additional arguments to be passed to a plot call that generates the
 #'             scatter plot and the contour plot
 #' @author Yuqi Liao and Paul Bailey
 #' @example man/examples/contourPlot.R
-#' @importFrom RColorBrewer brewer.pal
 #' @importFrom stats dnorm sd
 #' @importFrom graphics plot contour
+#' @importFrom grDevices heat.colors
 #' @export
 contourPlot <- function(x, y,
                         m=30L,
                         xrange, yrange,
                         xkernel, ykernel,
                         nlevels=9L,
+                        colors=heat.colors(nlevels),
                         ...) {
   z <- matrix(NA, nrow=m, ncol=m)
   xydf <- data.frame(x=as.numeric(x), y=as.numeric(y))
@@ -85,7 +90,6 @@ contourPlot <- function(x, y,
   z <- z * 1 / sum(z)
   # plot points
   plot(x, y, col="grey", ...)
-  pal <- brewer.pal(nlevels, "Blues")
   # add contour plot
-  contour(xc,yc,z, col=pal, add=TRUE, lwd=2, nlevels=nlevels)
+  contour(xc,yc,z, col=colors, add=TRUE, lwd=2, nlevels=length(colors))
 }

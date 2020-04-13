@@ -45,6 +45,7 @@ test_that("ESDFL cor", {
   expect_equal(c1,c1234[[1]])
   expect_equal(c3,c1234[[3]])
 })
+skip_on_cran()
 
 context("ESDFL edsurveyTable")
 test_that("ESDFL edsurveyTable",{
@@ -61,7 +62,6 @@ test_that("ESDFL edsurveyTable",{
     mostattributes(ss[,i]) <- attributes(et1$data[,i+1])
   }
   expect_equal(capture.output(etB$data), capture.output(ss))
-  skip_on_cran()
   expect_equal(et1c, et1REF)
 })
 
@@ -96,7 +96,6 @@ test_that("ESDFL error handling",{
                  "An error occurred while working on a dataset \"E locations\". The results from that dataset will be excluded. Error message:")
   g3 <- gap("composite", sdfl, groupA= dsex=="Male")
   expect_equivalent(g2$results[2,], g3$results[2,])  
-  skip_on_cran()
   expect_equal(et2c, et2REF)
 })
 
@@ -180,7 +179,7 @@ test_that("ESDFL subset and print",{
   expect_equal(d1$ncol[3], ncol(subset(sdfC, dsex=="Female")))
   
   # inside = TRUE 
-  expect_equal(d1, dim(subset(sdfl,eval("dsex == \"Male\""), inside = TRUE)))
+  expect_equal(d1, dim(subset(sdfl, eval("dsex == \"Male\""), inside = TRUE)))
   
   # expected message and error
   expect_warning(sdfl_e <- subset(sdfl, dsex1 == "Male"))

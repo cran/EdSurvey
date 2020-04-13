@@ -312,7 +312,7 @@ calc.lm.sdf <- function(formula,
     }
   }
   # in PIAAC there is sometimes an SRS, that is not appropriate for Taylor
-  if(stratumVar == "JK1" & varMethod == "t") {
+  if ("JK1" %in% stratumVar & varMethod == "t") {
     varMethod <- "j"
     warning("Cannot use Taylor series estimation on a one-stage simple random sample.")
   }
@@ -556,7 +556,8 @@ calc.lm.sdf <- function(formula,
 
         # store results for building varEstInputs$JK (veiJK)
         dfl <- lapply(1:ncol(coefa), function(coli) {
-          data.frame(PV=rep(pvi, nrow(coefa)),
+          data.frame(stringsAsFactors=FALSE,
+                     PV=rep(pvi, nrow(coefa)),
                      JKreplicate=1:nrow(coefa),
                      variable=names(coef(lmi))[coli],
                      value=coefa[,coli])
@@ -709,7 +710,8 @@ calc.lm.sdf <- function(formula,
     V <- Vimp + Vjrr
     coefmPV <- t( t(coefm) - apply(coefm, 2, mean))
     dfl <- lapply(1:ncol(coefmPV), function(coli) {
-      data.frame(PV=1:nrow(coefmPV),
+      data.frame(stringsAsFactors=FALSE,
+                 PV=1:nrow(coefmPV),
                  variable=rep(names(coef(lm0))[coli], nrow(coefmPV)),
                  value=coefmPV[,coli])
     })
@@ -739,7 +741,8 @@ calc.lm.sdf <- function(formula,
       coefa <- t( (t(coefa) - co0)) # conservative JK estimator
       # gt var est inputs
       dfl <- lapply(1:ncol(coefa), function(coli) {
-        data.frame(PV=rep(1, nrow(coefa)),
+        data.frame(stringsAsFactors=FALSE,
+                   PV=rep(1, nrow(coefa)),
                    JKreplicate=1:nrow(coefa),
                    variable=names(coef(lmi))[coli],
                    value=coefa[,coli])
@@ -969,6 +972,16 @@ calc.lm.sdf <- function(formula,
   }
   res <- c(res, list(Xstdev=std, varSummary=varSummary))
   class(res) <- "edsurveyLm"
+  # fix factor/character 3/4 issue
+  if(version$major %in% "3")
+    if("varSummary" %in% names(res) ) {
+    for(i in 1:length(res$varSummary)) {
+      if("Variable" %in% colnames(res$varSummary[[i]]$summary)) {
+        res$varSummary[[i]]$summary$Variable <- as.character(res$varSummary[[i]]$summary$Variable)
+      }
+    }
+  }
+
   return(res)
 }
 

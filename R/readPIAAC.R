@@ -36,10 +36,7 @@
 #' @example man/examples/readPIAAC.R
 #' @references
 #'  Organisation for Economic Co-operation and Development. (2016). \emph{Technical report of the survey of adult skills (PIAAC)} (2nd ed.). Paris, France: Author. Retrieved from \emph{\url{http://www.oecd.org/skills/piaac/PIAAC_Technical_Report_2nd_Edition_Full_Report.pdf}}
-#' @importFrom data.table fread fwrite
 #' @importFrom readxl read_excel
-#' @importFrom readr read_csv cols
-#' @importFrom stringr str_replace_all
 #' @export
 readPIAAC <- function(path, 
                       countries, 
@@ -197,11 +194,15 @@ processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
   if(length(fname) == 0) {
     stop("Missing PIAAC data file(s) for country (",countryCode, ") in the path ",sQuote(filepath),".")
   }
+  # if using updated data with 2012 and 2017 version of US data, just grab 2012 data.
+  if("prgusap1_2012.csv" %in% fname) {
+    fname <- "prgusap1_2012.csv"
+  }
   if(length(fname) > 1) {
     stop(paste0(countryCode,": there is more than one csv files."))
   }
   fname <- fname[1]
-  dat <- read_csv(file.path(filepath,fname), col_types = cols(.default = "c"))
+  dat <- read.csv(file.path(filepath,fname), colClasses = "character", na.strings="")
   colnames(dat) <- toupper(colnames(dat))
   
   # checking whether any missing columns in the data file
@@ -222,7 +223,9 @@ processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
       names(replv) <- sapply(repl, function(x) {
         x[1]
       })
-      dat[[ci]] <- str_replace_all(dat[[ci]],replv)
+      for (replvi in 1:length(replv)) {
+        dat[[ci]] <- gsub(pattern=names(replv)[replvi], replacement=replv[replvi], x=dat[[ci]])
+      }
     }
     
     
@@ -236,7 +239,7 @@ processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
     }
   }
   # write out processed csv files
-  fwrite(dat,file.path(filepath,gsub("\\.csv$",".txt",fname)), col.names = FALSE, na = "")
+  write.csv(dat, file.path(filepath,gsub("\\.csv$",".txt",fname)), col.names = FALSE, na = "")
   
   # return output
   dataList$student <- getCSVLaFConnection(file.path(filepath,gsub("\\.csv",".txt",fname)),
@@ -355,261 +358,12 @@ processFileFormatReturnFF <- function(filepath) {
 }
 
 countryDictPIAAC <- function(countryCode) {
-  text <- "CODE	Country
-ABW	Aruba
-  AFG	Afghanistan
-  AFRI	Africa
-  AGO	Angola
-  AIA	Anguilla
-  ALB	Albania
-  AND	Andorra
-  ANT	Netherlands Antilles
-  ARE	United Arab Emirates
-  ARG	Argentina
-  ASIA	Asia
-  ASM	American Samoa
-  ATG	Antigua and Barbuda
-  AUS	Australia
-  AUT	Austria
-  BDI	Burundi
-  BEL	Belgium
-  BEN	Benin
-  BFA	Burkina Faso
-  BGD	Bangladesh
-  BGR	Bulgaria
-  BHR	Bahrain
-  BHS	Bahamas
-  BLZ	Belize
-  BMU	Bermuda
-  BOL	Bolivia
-  BRA	Brazil
-  BRB	Barbados
-  BRN	Brunei Darussalam
-  BTN	Bhutan
-  BWA	Botswana
-  CAF	Central African Republic
-  CAN	Canada
-  CCK	Cocos (Keeling) Islands
-  CHE	Switzerland
-  CHL	Chile
-  CHN	China
-  CMR	Cameroon
-  COD	Congo, Dem. Rep. Of
-  COG	Congo
-  COK	Cook Islands
-  COL	Colombia
-  COM	Comoros
-  CPV	Cape Verde
-  CRI	Costa Rica
-  CSFR	Former Czechoslovakia
-  CZE	Czech Republic
-  SVK	Slovak Republic
-  CUB	Cuba
-  CYM	Cayman Islands
-  CYP	Cyprus
-  DEU	Germany
-  DJI	Djibouti
-  DMA	Dominica
-  DNK	Denmark
-  DOM	Dominican Republic
-  DZA	Algeria
-  ECU	Ecuador
-  EGY	Egypt
-  ERI	Eritrea
-  ESH	Western Sahara
-  ESP	Spain
-  EST\tEstonia
-  ETH	Ethiopia
-  EURO	Europe
-  FIN	Finland
-  FJI	Fiji
-  FLK	Falkland Islands
-  FRA	France
-  FSM	Micronesia, Federated states of
-  FYUG	Former Yugoslavia
-  FYUG-BIH	Bosnia-Herzegovina
-  FYUG-HRV	Croatia
-  FYUG-MKD	Macedonia
-  SVN	Slovenia
-  FYUG-YUG	Serbia and Montenegro
-  GAB	Gabon
-  GBR	United Kingdom
-  GHA	Ghana
-  GIB	Gibraltar
-  GIN	Guinea
-  GMB	Gambia
-  GNB	Guinea-Bissau
-  GNQ	Equatorial Guinea
-  GRC	Greece
-  GRD	Grenada
-  GTM	Guatemala
-  GUM	Guam
-  GUY	Guyana
-  HKG	Hong Kong
-  HND	Honduras
-  HTI	Haiti
-  HUN	Hungary
-  IDN	Indonesia
-  IND	India
-  IOT	British Indian Ocean Territory
-  IRL	Ireland
-  IRN	Iran
-  IRQ	Iraq
-  ISL	Iceland
-  ISR	Israel
-  ITA	Italy
-  JAM	Jamaica
-  JOR	Jordan
-  JPN	Japan
-  KEN	Kenya
-  KHM	Cambodia
-  KIR	Kiribati
-  KNA	Saint Kitts and Nevis
-  KOR\tSouth Korea
-  KOREA-NO	North Korea
-  KOREA-NS	South Korea
-  KOREA-SO	North and South Korea
-  KWT	Kuwait
-  LAO	Laos
-  LBN	Lebanon
-  LBR	Liberia
-  LBY	Libya
-  LCA	Saint Lucia
-  LIE	Liechtenstein
-  LKA	Sri Lanka
-  LSO	Lesotho
-  LTU\tLithuania
-  LUX	Luxembourg
-  MAC	Macau
-  MAR	Morocco
-  MCO	Monaco
-  MDG	Madagascar
-  MDV	Maldives
-  MEX	Mexico
-  MHL	Marshall Islands
-  MLI	Mali
-  MLT	Malta
-  MMR	Myanmar
-  MNG	Mongolia
-  MNP	Northern Mariana Islands
-  MOZ	Mozambique
-  MRT	Mauritania
-  MSR	Montserrat
-  MUS	Mauritius
-  MWI	Malawi
-  MYS	Malaysia
-  NAM	Namibia
-  NER	Niger
-  NFK	Norfolk Islands
-  NGA	Nigeria
-  NIC	Nicaragua
-  NIU	Niue
-  NLD	Netherlands
-  NOAM	North America
-  NOR	Norway
-  NPL	Nepal
-  NRU	Nauru
-  NZL	New Zealand
-  OCEA	Oceania
-  OMN	Oman
-  OTH	Other
-  PAK	Pakistan
-  PAN	Panama
-  PCN	Pitcairn
-  PER	Peru
-  PHL	Philippines
-  PLW	Pacific Islands (Palau)
-  PNG	Papua New Guinea
-  POL	Poland
-  PRI	Puerto Rico
-  PRT	Portugal
-  PRY	Paraguay
-  PSE	Occupied Palestinian Territory
-  QAT	Qatar
-  ROU	Romania
-  RWA	Rwanda
-  SAU	Saudi Arabia
-  SCAC	South and Central America
-  SDN	Sudan
-  SEN	Senegal
-  SGP	Singapore
-  SHN	Saint Helena
-  SJM	Svalbard and Jan Mayen Islands
-  SLB	Solomon Islands
-  SLE	Sierra Leone
-  SLV	El Salvador
-  SMR	San Marino
-  SOM	Somalia
-  STP	Sao Tome and Principe
-  SUR	Suriname
-  SWE	Sweden
-  SWZ	Swaziland
-  SYC	Seychelles
-  SYR	Syria
-  TCA	Turks and Caicos Islands
-  TCD	Chad
-  TGO	Togo
-  THA	Thailand
-  TKL	Tokelau
-  TLS	Timor-Leste
-  TMP	East Timor
-  TON	Tonga
-  TTO	Trinidad and Tobago
-  TUN	Tunisia
-  TUR	Turkey
-  TUV	Tuvalu
-  TWN	Chinese Taipei
-  TZA	United Republic of Tanzania
-  UGA	Unknown
-  UNK	Unknown
-  URY	Uruguay
-  USA	United States
-  USSR	Former USSR
-  USSR-ARM	Armenia
-  USSR-AZE	Azerbaidjan
-  USSR-BLR	Belarus
-  USSR-EST	Estonia
-  USSR-GEO	Georgia
-  USSR-KAZ	Kazakhstan
-  USSR-KGZ	Kirghizistan
-  USSR-LTU	Lithuania
-  USSR-LVA	Latvia
-  USSR-MDA	Moldova
-  RUS	Russia
-  USSR-TJK	Tadjikistan
-  USSR-UKR	Ukraine
-  USSR-UZB	Uzbekistan
-  VCT	Saint Vincent and the Grenadines
-  VEN	Venezuela
-  VGB	British Virgin Islands
-  VIR	United States Virgin Islands
-  VNM	Vietnam
-  VUT	Vanuatu
-  WSM	Samoa
-  YEM	Yemen
-  ZAF	South Africa
-  ZMB	Zambia
-  ZWE	Zimbabwe"
-  dict <- fread(text, sep = "\t", verbose = FALSE)
+  dict <- readRDS(system.file("extdata", "PIAACDict.rds", package="EdSurvey"))
   return(dict$Country[dict$CODE == toupper(countryCode)][1])
 }
 
 piaacAchievementLevelHelp <- function(round) {
-  text <- "domain,cutpoints,level,regex
-Numeracy,176,Level 1,num
-  Numeracy,226,Level 2,num
-  Numeracy,276,Level 3,num
-  Numeracy,326,Level 4,num
-  Numeracy,376,Level 5,num
-  Literacy,176,Level 1,lit
-  Literacy,226,Level 2,lit
-  Literacy,276,Level 3,lit
-  Literacy,326,Level 4,lit
-  Literacy,376,Level 5,lit
-  Problem Solving,241,Level 1,psl
-  Problem Solving,291,Level 2,psl
-  Problem Solving,341,Level 3,psl"
-  dict <- read_csv(text)
+  dict <- readRDS(system.file("extdata", "PIAACAL.rds", package="EdSurvey"))
   dict$level <- paste0("Proficiency ", dict$level)
   ret <- list()
   ret$subjects <- unique(dict$domain)

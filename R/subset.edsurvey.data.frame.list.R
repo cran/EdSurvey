@@ -78,9 +78,6 @@ subset.edsurvey.data.frame.list <- function(x, subset, inside=FALSE, drop = FALS
     res$datalist[index_removed] <- NULL
     res$covs <- res$covs[-index_removed,names(res$covs),drop=FALSE]
     row.names(res$covs) <- NULL
-    for (i in 1:ncol(res$covs)) {
-      res$covs[,i] <- droplevels(res$covs[,i])
-    }
   }
   
   # if there is no element left

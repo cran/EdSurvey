@@ -20,17 +20,10 @@ if (!dir.exists(edsurveyHome)) {
 }
 
 # Test =================
-# Check multiple-path read-in
-test_that("PISA multiple path read-in", {
-  multiESDFL <- readPISA(paste0(edsurveyHome, c("PISA/2009", "PISA/2012", "PISA/2015")), countries="usa", verbose=FALSE)
-  expect_is(multiESDFL, "edsurvey.data.frame.list")
-  expect_equal(colnames(multiESDFL$covs), c("subject", "year", "country"))
-  expect_equal(length(multiESDFL$datalist), 3)
-})
  
 # 1. Check data read-in
 test_that("PISA data reads in correctly", {
-  expect_silent(downloadPISA(root=edsurveyHome, year=c(2006, 2009, 2012, 2015), cache=FALSE, verbose = FALSE))
+  expect_silent(downloadPISA(root=edsurveyHome, year=c(2003, 2006, 2009, 2012, 2015), cache=FALSE, verbose = FALSE))
   expect_silent(downloadPISA(root=edsurveyHome, year=2012, database="CBA", cache=FALSE, verbose = FALSE))
   expect_silent(usaINT2015 <<- readPISA(paste0(edsurveyHome, "PISA/2015"), countries = "usa", verbose = FALSE))
   expect_silent(usaINT2012 <<- readPISA(paste0(edsurveyHome, "PISA/2012"), countries = "usa", verbose = FALSE))
@@ -49,7 +42,15 @@ test_that("PISA data reads in correctly", {
   expect_equal(dim(usaINT2012), c(4978,1262))
   expect_equal(dim(qcnCBA2012), c(5177,1345))
   expect_equal(dim(jpn2009), c(6088,981))
-  expect_equal(dim(aus2006), c(14170,1019))
+  expect_equal(dim(aus2006), c(14170,1021))
+})
+
+# Check multiple-path read-in
+test_that("PISA multiple path read-in", {
+  multiESDFL <- readPISA(paste0(edsurveyHome, c("PISA/2009", "PISA/2012", "PISA/2015")), countries="usa", verbose=FALSE)
+  expect_is(multiESDFL, "edsurvey.data.frame.list")
+  expect_equal(colnames(multiESDFL$covs), c("subject", "year", "country"))
+  expect_equal(length(multiESDFL$datalist), 3)
 })
 
 context("PISA showPlausibleValues and showWeights verbose output agrees")

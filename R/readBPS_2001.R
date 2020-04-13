@@ -76,9 +76,9 @@ readBPS_2001 <- function(path = getwd(),
                       omittedLevels = omittedLevels,
                       survey = "BPS",
                       country = "USA",
-                      psuVar = NULL, #psuVar==bps09psu; stratumVar==bps09str; IT SHOULD BE THESE VARIABLES ACCORDING TO DOCUMENTATION FOR TAYLOR; BUT NOT IN DERIVED FILE?  
-                      stratumVar = NULL, 
-                      jkSumMultiplier = 0.005, #1/200 BRR replicates
+                      psuVar = "b01arep",
+                      stratumVar = "b01astr", 
+                      jkSumMultiplier = 1/51, #1/51 BRR replicates
                       validateFactorLabels = FALSE, #the validateFactorLabels will check in `getData` if all values have a defined label, any missing labels will be automatically added.
                       reqDecimalConversion = FALSE) #decimal conversion is not needed
 }

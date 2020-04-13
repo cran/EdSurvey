@@ -33,6 +33,8 @@ test_that("LESDF cbind function",{
   expect_equal(cbind(data.frame(V1 = c(1,2)), c(3,4)), base::cbind(data.frame(V1 = c(1,2)), c(3,4)))
 })
 
+skip_on_cran()
+
 context("LESDF rbind function")
 test_that("LESDF cbind function",{
   sm1 <- getData(sdf, c('composite', 'dsex', 'origwt'), dropUnusedLevels=FALSE, defaultConditions=FALSE, omittedLevels=FALSE, addAttributes=TRUE)
