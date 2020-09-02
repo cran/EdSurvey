@@ -4,7 +4,13 @@
 \alias{readPIAAC}
 \title{Connect to PIAAC Data}
 \usage{
-readPIAAC(path, countries, forceReread = FALSE, verbose = TRUE)
+readPIAAC(
+  path,
+  countries,
+  forceReread = FALSE,
+  verbose = TRUE,
+  usaOption = "12_14"
+)
 }
 \arguments{
 \item{path}{a character value to the full directory path to the PIAAC .csv
@@ -17,7 +23,8 @@ codes can be found in the PIAAC codebook or
 If files are downloaded using \code{\link{downloadPIAAC}},
 a country dictionary text file can be
 found in the filepath. You can use \code{*} to indicate
-all countries available.}
+all countries available. For the \code{usa}, the year must 
+be specified using: \code{usa12_14} or  \code{usa17}.}
 
 \item{forceReread}{a logical value to force rereading of all processed data.
 Defaults to \code{FALSE}.
@@ -27,6 +34,11 @@ PIAAC data to be reread and increase the processing time.}
 \item{verbose}{a logical value that will determine if you want verbose
 output while the function is running to indicate the progress.
 Defaults to \code{TRUE}.}
+
+\item{usaOption}{a character value of \code{12_14} or \code{17} that specifies 
+what year of the USA survey should be used when loading all countries by 
+using \code{*} in the \code{countries} argument. This will only make a difference 
+when loading all countries. Defaults to \code{12_14}.}
 }
 \value{
 an \code{edsurvey.data.frame} for a single specified country or 
@@ -45,7 +57,7 @@ the OECD repository (\url{http://www.oecd.org/skills/piaac/}). Users can use
 \examples{
 \dontrun{
 # the following call returns an edsurvey.data.frame to PIAAC for Canada
-can <- readPIAAC("C:/PIAAC", countries = "can")
+can <- readPIAAC("~/PIAAC/Cycle 1/", countries = "can")
 
 # extract a data.frame with a few variables
 gg <- getData(can, c("c_d05","ageg10lfs"))  
@@ -54,7 +66,6 @@ head(gg)
 # conduct an analysis on the edsurvey.data.frame
 edsurveyTable(~ c_d05 + ageg10lfs, data = can)
 }
-
 }
 \references{
 Organisation for Economic Co-operation and Development. (2016). \emph{Technical report of the survey of adult skills (PIAAC)} (2nd ed.). Paris, France: Author. Retrieved from \emph{\url{http://www.oecd.org/skills/piaac/PIAAC_Technical_Report_2nd_Edition_Full_Report.pdf}}

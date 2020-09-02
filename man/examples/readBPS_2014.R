@@ -1,6 +1,6 @@
 \dontrun{
 # using default filenames
-bps14 <- readBPS_2014(path = "C:/BPS/2012")
+bps14 <- readBPS_2014(path = "~/BPS/2012")
 dim(bps14)
 
 # parameters specified without default filenames

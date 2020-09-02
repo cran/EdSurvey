@@ -6,7 +6,7 @@
 #' @param root a character string indicating the directory where the PISA data should
 #'             be stored. Files are placed in a folder named PISA/[year].
 #' @param years an integer vector of the assessment years to download. Valid years are 2000, 2003,
-#'              2006, 2009, 2012, and 2015.
+#'              2006, 2009, 2012, 2015, and 2018.
 #' @param database a character vector to indicate which database to download from. For 2012,
 #'              three databases are available (\code{INT} = International, \code{CBA} = Computer-Based Assessment, and
 #'              \code{FIN} = Financial Literacy). For other years, only \code{INT} is available (for example, if PISA 
@@ -21,21 +21,26 @@
 #' The function uses
 #' \ifelse{latex}{\code{download.file}}{\code{\link[utils]{download.file}}}
 #' to download files from provided URLs. Some machines might require a different
-#' user agent in HTPP(S) requests. If the downloading gives an error or behaves
+#' user agent in HTTP(S) requests. If the downloading gives an error or behaves
 #' unexpectedly (e.g., a zip file cannot be unzipped or a data file is
 #' significantly smaller than expected), users can toggle \code{HTTPUserAgent}
 #' options to find one that works for their machines. One common alternative option is 
 #'
 #' \code{options(HTTPUserAgent="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/53.0")}
 #' 
+#' @details
+#' Beginning in the 2018 data files, the \code{SPSS_STU_COG.zip} source data file is a \code{DEFLATE64} compressed zip file.
+#' This means that the user must manually extract the contained \code{CY07_MSU_STU_COG.sav} file using an external zip
+#' program capable of handling \code{DEFLATE64} zip format, as existing R functions are unable to handle this zip format natively.
+#' 
 #' @seealso \code{\link{readPISA}}, \ifelse{latex}{\code{download.file}}{\code{\link[utils]{download.file}}}, \ifelse{latex}{\code{options}}{\code{\link[base]{options}}}
 #' @author Yuqi Liao, Paul Bailey, and Trang Nguyen
 #' @example man/examples/downloadPISA.R
 #' @importFrom utils unzip
 #' @export
-downloadPISA <- function(root, years=c(2000, 2003, 2006, 2009, 2012, 2015), database=c("INT","CBA","FIN"), cache=FALSE, verbose=TRUE) {
+downloadPISA <- function(root, years=c(2000, 2003, 2006, 2009, 2012, 2015, 2018), database=c("INT","CBA","FIN"), cache=FALSE, verbose=TRUE) {
   # valid years for PISA
-  validYears <- c(2000, 2003, 2006, 2009, 2012, 2015)
+  validYears <- c(2000, 2003, 2006, 2009, 2012, 2015, 2018)
   years <- as.numeric(years)
   if (missing(database)) {
     # if database is not specified, default to be INT because usually users do not want to download all databases
@@ -74,10 +79,10 @@ downloadPISA <- function(root, years=c(2000, 2003, 2006, 2009, 2012, 2015), data
         fn <- basename(f)
         if(!file.exists(file.path(yroot,fn))) {
           #options(HTTPUserAgent="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/53.0")
-          if(grepl("http",f, ignore.case = T)) {
-            download.file(f,file.path(yroot,fn),quiet = !verbose)
+          if(grepl("http",f, ignore.case = TRUE)) {
+            download.file(f,file.path(yroot,fn),quiet = !verbose, mode = "wb")
           } else {
-            download.file(paste0("http://www.oecd.org/",f),file.path(yroot,fn), quiet = !verbose)
+            download.file(paste0("http://www.oecd.org/",f),file.path(yroot,fn), quiet = !verbose, mode = "wb")
           }
         } else {
           if (verbose) {
@@ -86,7 +91,7 @@ downloadPISA <- function(root, years=c(2000, 2003, 2006, 2009, 2012, 2015), data
         }
       }
       # Unzipping files
-      zFiles <- list.files(yroot,pattern = "\\.zip$", ignore.case = T, full.names = F)
+      zFiles <- list.files(yroot,pattern = "\\.zip$", ignore.case = TRUE, full.names = FALSE)
       zFiles <- file.path(yroot,zFiles)
       for (z in zFiles) {
         lst <- tryCatch(unzip(z, list = TRUE),
@@ -102,7 +107,15 @@ downloadPISA <- function(root, years=c(2000, 2003, 2006, 2009, 2012, 2015), data
             if (verbose) {
               cat(paste0(" unzipping ",lst$Name[i],"\n"))
             }
-            unzip(z,files=lst$Name[i], exdir = yroot)
+            
+            tryCatch(unzip(z, files=lst$Name[i], exdir = yroot),
+                     warning = function(w){
+                       if(w$message=="zip file is corrupt"){
+                         message("Zip format for file ",z," is not supported. Users need to manually unzip this file. See ?downloadPISA for more information.")
+                       }else{
+                         warning(w)
+                       }
+                     })
                     
             if(basename(lst$Name[i]) != lst$Name[i]) {
               file.rename(file.path(yroot, lst$Name[i]), file.path(yroot, basename(lst$Name[i])))
@@ -121,6 +134,10 @@ downloadPISA <- function(root, years=c(2000, 2003, 2006, 2009, 2012, 2015), data
 
 pisaURLDat <- function(year, database = "INT") {
   text <- "year	database	type	url
+2018	INT	data	https://webfs.oecd.org/pisa2018/SPSS_STU_QQQ.zip
+2018	INT	data	https://webfs.oecd.org/pisa2018/SPSS_SCH_QQQ.zip
+2018	INT	data	https://webfs.oecd.org/pisa2018/SPSS_STU_COG.zip
+2018	INT	data	https://webfs.oecd.org/pisa2018/SPSS_STU_TIM.zip
 2015	INT	data	http://webfs.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_QQQ.zip
 2015	INT	data	http://webfs.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_SCH_QQQ.zip
 2015	INT	data	http://webfs.oecd.org/pisa/PUF_SPSS_COMBINED_CMB_STU_COG.zip

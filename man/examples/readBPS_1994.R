@@ -1,5 +1,5 @@
 \dontrun{
-setwd("C:/BPS1994/")
+setwd("~/BPS1994/")
 
 datFP <- file.path(getwd(), "BPS94", "STUDENT.DAT")
 mstFP <- file.path(getwd(), "ECBW", "BP4", "MASTER.TXT")

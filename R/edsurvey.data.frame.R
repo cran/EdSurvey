@@ -45,9 +45,11 @@
 #' @param validateFactorLabels a Boolean that indicates whether the \code{getData} function needs to validate factor variables
 #' @param forceLower a Boolean; when set to \code{TRUE}, will automatically lowercase variable names
 #' @param reqDecimalConversion a Boolean; when set to \code{TRUE}, a \code{getData} call will multiply the raw file value by a decimal multiplier
+#' @param fr2Path a character file location for NAEP assessments to identify the locaiton of the codebook file in \code{fr2} format
 #' @param x an \code{edsurvey.data.frame}
 #' @param i a character, the column name to extract
 #' @param attribute a character, name of an attribute to get or set
+#' @param table an \code{edsurvey.data.frame} or \code{edsurvey.data.frame.list} where \code{x} is searched for
 #' @param value outside of the assignment context, new value of the given \code{attribute}
 #' @param weightVar a character indicating the full sample weights
 #' @param name a character vector of the column to edit
@@ -168,7 +170,8 @@ edsurvey.data.frame <- function(userConditions,
                                 recodes=NULL,
                                 validateFactorLabels=FALSE,
                                 forceLower=TRUE,
-                                reqDecimalConversion=TRUE) {
+                                reqDecimalConversion=TRUE,
+                                fr2Path=NULL) {
   if (is.list(achievementLevels)) {
     achievementLevels <- lapply(achievementLevels, function(l) {
       sort(l)})
@@ -180,7 +183,7 @@ edsurvey.data.frame <- function(userConditions,
       if(min(nchar(names(achievementLevels)))==0) {
         stop(paste0("The argument ", sQuote("achievementLevels"), " must have nonmissing names for each level."))
       }
-      for (pvi in 1:length(pvvars)) {
+      for (pvi in seq_along(pvvars)) {
         # setup achievement levels for all plausible value variables
         temp = list(varnames = pvvars[[pvi]]$varnames)
         temp$achievementLevel <- achievementLevels
@@ -225,12 +228,13 @@ edsurvey.data.frame <- function(userConditions,
               recodes=recodes,
               dim0=c(0,0), #update after it's reclassed to an edsurvey.data.frame
               validateFactorLabels=validateFactorLabels,
-              reqDecimalConversion=reqDecimalConversion)
+              reqDecimalConversion=reqDecimalConversion,
+              fr2Path=fr2Path)
   # form cache, first grab dim
   ROWID <- 1
   # make cache
   res$cache <- data.frame(ROWID=ROWID)
-  class(res) <- "edsurvey.data.frame"
+  class(res) <- c("edsurvey.data.frame", "edsurvey.data")
   # use getData on this, as of yet incomplete edsurvey.data.frame
   # to get row IDs
   # supressWarnings because it is just about nrow
@@ -244,7 +248,7 @@ edsurvey.data.frame <- function(userConditions,
   # change back to a list to allow assignment of the cache
   res$cache <- cache
   # return to edsurvey.data.frame
-  class(res) <- "edsurvey.data.frame"
+  class(res) <- c("edsurvey.data.frame", "edsurvey.data")
   res$dim0 <- c(nrow(res), length(colnames(res)))
   # we discovered that not closing a LaF connections leads to memory leaks.
   # so, close all of the connections when it is complete (constructed).
@@ -324,8 +328,6 @@ dataListItem <- function(lafObject,
               parentMergeVars = parentMergeVars,
               mergeVars = mergeVars,
               ignoreVars = ignoreVars,
-              rowCount = nrow(lafObject[,1]),
-              colCount = ncol(lafObject[1,]),
               isDimLevel = isDimLevel)
 
   return(res)
@@ -433,9 +435,9 @@ subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
     #condition_call <- iparse(condition_call, parent.frame())
   } # Enf of if esle statmet: if imside is true 
   # apply filter
-  x[["userConditions"]] <- c(x[["userConditions"]],list(condition_call))
+  x[["userConditions"]] <- c(x[["userConditions"]], list(condition_call))
   # test filter
-  tryCatch(getData(x, colnames(x)[1]),
+  tryCatch(getData(x, colnames(x)[1], returnJKreplicates=FALSE),
            error=function(e) {
              subsetVars <- all.vars(condition_call)
              for (v in subsetVars) {
@@ -464,7 +466,7 @@ subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
   suppressWarnings(
     z <- getData(x, varnames=i,
                  dropUnusedLevels=FALSE, omittedLevels=FALSE,
-                 addAttributes=TRUE)
+                 addAttributes=TRUE, returnJKreplicates=FALSE)
     )
   z[j, ]
 }
@@ -485,7 +487,7 @@ subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
   suppressWarnings(
     z <- getData(x, varnames=j,
                  dropUnusedLevels=FALSE, omittedLevels=FALSE,
-                 addAttributes=TRUE)
+                 addAttributes=TRUE, returnJKreplicates=FALSE)
     )
   z[i, ]
 }
@@ -503,10 +505,144 @@ subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
     class(x) <- cl0
     invisible(x)
   } else {
+    if(name %in% c("ROWID", "DEFAULT")) {
+      stop("Colum names must not be reserved words (ROWID or DEFAULT).")
+    }
     cl0 <- class(x)
     class(x) <- "list"
-    x$cache[x$cache$DEFAULT,name] <- value
+    if(is.null(value)) {
+      x$cache[ , name] <- NULL
+      class(x) <- cl0
+      return(invisible(x))
+    }
+    # because of "mySDF$name[subset] <-" it is possible for a new factor to be valid
+    # but for the below assignment to appear invalid, this clears the cache and
+    # overwrite, which always works
+    if(name %in% colnames(x$cache) && inherits(x$cache[,name], "factor")) {
+      x$cache[,name] <- NULL
+    }
+    # cannot subset assign non-primative lfactors, so do not try
+    if(inherits(value, "lfactor")) {
+      value <- as.factor(value)
+    }
+    x$cache[x$cache$DEFAULT, name] <- value
     class(x) <- cl0
     invisible(x)
   }
+}
+
+
+#' @method + edsurvey.data
+#' @export
+"+.edsurvey.data" <- function(e1, e2) {
+  if(inherits(e1, "edsurvey.data.frame") & inherits(e2, "edsurvey.data.frame")) {
+    return(edsurvey.data.frame.list(list(e1, e2)))
+  } else {
+    if( (inherits(e1, "edsurvey.data.frame.list") & inherits(e2, "edsurvey.data.frame.list"))) {
+      datalist <- c(e1$datalist, e2$datalist)
+      return(edsurvey.data.frame.list(datalist))
+    }
+    if( (inherits(e1, "edsurvey.data.frame") | inherits(e1, "edsurvey.data.frame.list")) &
+        (inherits(e2, "edsurvey.data.frame") | inherits(e2, "edsurvey.data.frame.list")) ) {
+        datalist <- list()
+        if(inherits(e1, "edsurvey.data.frame.list")) {
+          datalist <- c(e1$datalist, list(e2))
+        }
+        if(inherits(e2, "edsurvey.data.frame.list")) {
+          datalist <- c(list(e1), e2$datalist)
+        }
+        return(edsurvey.data.frame.list(datalist))
+    } else {
+      stop(paste0(dQuote(.Generic), " not defined for ", pasteItems(dQuote(class(e1))), " and ", pasteItems(dQuote(class(e2)))))
+    }
+  }
+}
+
+#' @method == edsurvey.data
+#' @export
+"==.edsurvey.data" <- function(e1, e2) {
+  equals.edsurvey.data(e1, e2, notFunction = identity)
+}
+
+#' @method != edsurvey.data
+#' @export
+"!=.edsurvey.data" <- function(e1, e2) {
+  equals.edsurvey.data(e1, e2, notFunction = function(x) { return(!x) })
+}
+
+equals.edsurvey.data <- function(e1, e2, notFunction) {
+  if(inherits(e1, "edsurvey.data.frame") & inherits(e2, "edsurvey.data.frame")) {
+    return(notFunction(sameSurvey(e1, e2)))
+  }
+  if(inherits(e1, "edsurvey.data.frame.list") & inherits(e2, "edsurvey.data.frame.list")) {
+    d1 <- e1$datalist
+    d2 <- e2$datalist
+    if(length(d1) != length(d2) & min(c(length(d1), length(d2))) != 1) {
+      stop("Objects do not have the same number of elements in them.")
+    }
+    return(notFunction(unlist(lapply(1:length(d1) , function(x) { sameSurvey(d1[[x]], d2[[x]]) }))))
+  }
+  if( (inherits(e1, "edsurvey.data.frame") | inherits(e1, "edsurvey.data.frame.list")) &
+      (inherits(e2, "edsurvey.data.frame") | inherits(e2, "edsurvey.data.frame.list")) ) {
+    # one is an edsurvey.data.frame, the other an edsurvey.data.frame.list
+    if(inherits(e1, "edsurvey.data.frame.list")) {
+      return(notFunction(unlist(lapply(e1$datalist, function(x) { sameSurvey(x, e2) }))))
+    }
+    if(inherits(e2, "edsurvey.data.frame.list")) {
+      return(notFunction(unlist(lapply(e2$datalist, function(x) { sameSurvey(e1, x) }))))
+    }
+  }
+  return(FALSE)
+}
+
+
+#' @rdname edsurvey-class
+#' @export
+setMethod("%in%", signature(x = "edsurvey.data.frame"),
+          function(x, table) {
+            matchESDF(x, table)
+          })
+
+#' @rdname edsurvey-class
+#' @export
+setMethod("%in%", signature(x = "edsurvey.data.frame.list"),
+          function(x, table) {
+            matchESDFL(x, table)
+          })
+
+matchESDF <- function(x, table, nomatch = NA_integer_, uncomparables=NULL) {
+  if(inherits(table, "edsurvey.data.frame")) {
+    sameSurvey(x, table)
+  }
+  if(inherits(table, "edsurvey.data.frame.list")) {
+    dlist <- table$datalist
+    for(i in 1:length(dlist)) {
+      if(sameSurvey(x, dlist[[i]])) {
+        return(TRUE)
+      }
+      return(FALSE)
+    }
+  }
+  return(FALSE)
+}
+
+
+matchESDFL <- function(x, table, nomatch = NA_integer_, uncomparables=NULL) {
+  # x is an edsurvey.data.frame.list
+  dlistx <- x$datalist
+  res <- rep(FALSE, length(dlistx))
+  if(inherits(table, "edsurvey.data.frame")) {
+    for(j in 1:length(dlistx)) {
+      res[j] <- sameSurvey(dlistx[[j]], table)
+    }
+  }
+  if(inherits(table, "edsurvey.data.frame.list")) {
+    dlist <- table$datalist
+    for(i in 1:length(dlist)) {
+      for(j in 1:length(dlistx)) {
+        res[j] <- res[j] || sameSurvey(dlistx[[j]], dlist[[i]])
+      }
+    }
+  }
+  return(res)
 }

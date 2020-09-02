@@ -312,6 +312,10 @@ buildPVVARS_TIMSSAdv <- function(fileFormat, defaultPV = "mmat"){
 
   pvFields <- subset(fileFormat, nchar(fileFormat$Type)>0) #type is identified in writeTibbleToFWFReturnFileFormat function
   constructs <- unique(pvFields$Type)
+  
+  #drop the international benchmark contructs as they are not true plausible values, only discrete numerics
+  constructs <- constructs[!grepl("^(m|p)ibm$", constructs, ignore.case = TRUE)]
+  
   pvvars <- vector("list", length(constructs))
   names(pvvars) <- constructs
 
@@ -538,7 +542,7 @@ exportTIMSSAdvToCSV <- function(folderPath, exportPath, cntryCodes, subject, ...
 
   sdfList <- readTIMSSAdv(folderPath, cntryCodes, subject, ...)
 
-  if (class(sdfList) == "edsurvey.data.frame.list"){
+  if (inherits(sdfList, "edsurvey.data.frame.list")) {
     for(i in 1:length(sdfList$datalist)){
 
       sdf  <- sdfList$datalist[[i]]
@@ -551,7 +555,7 @@ exportTIMSSAdvToCSV <- function(folderPath, exportPath, cntryCodes, subject, ...
       write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
       cat(paste(cntry, "completed.\n"))
     }
-  } else if (class(sdfList) == "edsurvey.data.frame"){
+  } else if (inherits(sdfList, "edsurvey.data.frame")) {
 
     sdf <- sdfList
     cntry <- sdf$country

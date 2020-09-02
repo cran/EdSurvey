@@ -1,5 +1,5 @@
 \dontrun{
-wrkFld <- "C:/HSB/SENIOR"
+wrkFld <- "~/HSB/SENIOR"
 
 dataPath <- file.path(wrkFld, "REVISED_ASCII", "HSR8086_REV.PRI")
 sasPath <- file.path(wrkFld, "SAS_EXTRACT_LOGIC", "HSBsr_READ_HSR8086.SAS")

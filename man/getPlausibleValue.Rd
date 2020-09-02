@@ -24,10 +24,12 @@ This function will return a set of plausible value names for variables that
 \code{\link{hasPlausibleValue}} returns as true.
 }
 \examples{
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
 getPlausibleValue(var="composite", data=sdf)
+}
 }
 \seealso{
 \code{\link{showPlausibleValues}}, \code{\link{updatePlausibleValue}}

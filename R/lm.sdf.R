@@ -371,6 +371,10 @@ calc.lm.sdf <- function(formula,
       warning("Removing ", sum(incomplete), " rows with NA PSU of stratum variables from analysis.")
       edf <- edf[!incomplete,]
     }
+    # check for NAs in stratumVar and psuVar
+    if(sum(is.na(edf[,c(stratumVar, psuVar)])) != 0) {
+      stop("Taylor series variance estimation requested but stratum or PSU variables contian an NA value.")
+    }
   }
   
   # remove non-positive (full sample) weights
@@ -433,11 +437,11 @@ calc.lm.sdf <- function(formula,
   yvars <- yvar
   lyv <- length(yvars)
   if(any(pvy)) {
-    yvars <- paste0("outcome",1:length(getPlausibleValue(yvars[max(pvy)], data)))
+    yvars <- paste0("outcome", 1:length(getPlausibleValue(yvars[max(pvy)], data)))
   } else {
     # no PVs, just make sure that this variable is numeric
-    edf[,"yvar"] <- as.numeric(eval(formula[[2]],edf))
-    formula <- update(formula, new=substitute( yvar ~ ., list(yvar=as.name(yvar))))
+    edf[,"yvar"] <- as.numeric(eval(formula[[2]], edf))
+    formula <- update(formula, new=substitute( yvar ~ . , list(yvar=as.name(yvar))))
     yvars <- "yvar"
   } # End of if statment: any(pvy)
 
@@ -450,11 +454,11 @@ calc.lm.sdf <- function(formula,
       # first, by PV, rename the ith PVs to be e.g. composite
       for(yvi in 1:length(pvy)) {
         if(pvy[yvi]) {
-          edf[,yvar[yvi]] <- edf[,getPlausibleValue(yvar[yvi], data)[i]]
+          edf[,yvar[yvi]] <- edf[ , getPlausibleValue(yvar[yvi], data)[i]]
         }
       }
       # then set yvars[i] (e.g. outcome1) to be the evaluation at this PV point
-      edf[,yvars[i]] <- as.numeric(eval(formula[[2]],edf))
+      edf[,yvars[i]] <- as.numeric(eval(formula[[2]], edf))
     }
     # finally, correctly set yvar0
     edf$yvar0 <- edf[,yvar0]
@@ -706,7 +710,7 @@ calc.lm.sdf <- function(formula,
     r2 <- mean(r2s)
     coef <- apply(coefm, 2, mean)
     # variance due to sampling
-    Vjrr <- apply(varm[1:jrrIMax,,drop=FALSE], 2, mean)
+    Vjrr <- apply(varm[1:jrrIMax, , drop=FALSE], 2, mean)
     V <- Vimp + Vjrr
     coefmPV <- t( t(coefm) - apply(coefm, 2, mean))
     dfl <- lapply(1:ncol(coefmPV), function(coli) {
@@ -718,7 +722,7 @@ calc.lm.sdf <- function(formula,
     coefmPV <- do.call(rbind, dfl)
     varEstInputs[["PV"]] <- coefmPV
     if(standardizeWithSamplingVar) {
-      VSjrr <- apply(varmS[1:jrrIMax,,drop=FALSE], 2, mean)
+      VSjrr <- apply(varmS[1:jrrIMax, , drop=FALSE], 2, mean)
       VSimp <- (M+1)/M * apply(coefmS, 2, var)
       VS <- VSimp + VSjrr
     }
@@ -959,10 +963,16 @@ calc.lm.sdf <- function(formula,
     }
   }
   if(returnNumberOfPSU) {
-    res <- c(res, list(nPSU=nrow(unique(edf[,c(stratumVar, psuVar)]))))
+    if(sum(is.na(edf[,c(stratumVar, psuVar)])) == 0) {
+      res <- c(res, list(nPSU=nrow(unique(edf[,c(stratumVar, psuVar)]))))
+    } else {
+      warning("Cannot return number of PSUs because the stratum or PSU variables contain NA values.")
+    }
   }
   if(all(c(stratumVar, psuVar) %in% colnames(edf))) {
-    res <- c(res, list(waldDenomBaseDof=waldDof(edf, stratumVar, psuVar)))
+    if(sum(is.na(edf[,c(stratumVar, psuVar)])) == 0) {
+      res <- c(res, list(waldDenomBaseDof=waldDof(edf, stratumVar, psuVar)))
+    }
   }
   res <- c(res, list(n0=nrow2.edsurvey.data.frame(data), nUsed=nrow(edf)))
   if(inherits(data, "edsurvey.data.frame")) {
@@ -1063,7 +1073,8 @@ print.summary.edsurveyLm <- function(x, ...) {
   
   cat(paste0("Coefficients:\n"))
   csind <- which(colnames(x$coefmat) %in% c("coef", "se", "stdCoef", "stdSE"))
-  printCoefmat(x$coefmat, P.values=TRUE, has.Pvalue=TRUE, cs.ind=csind)
+  # with standardized coefficients it produces a bogus warning for the intercept
+  suppressWarnings(printCoefmat(x$coefmat, P.values=TRUE, has.Pvalue=TRUE, cs.ind=csind))
   cat("\n")
   cat(paste0("Multiple R-squared: ", round(x$r.squared,4), "\n\n"))
 }

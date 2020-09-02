@@ -14,6 +14,11 @@
 #' @param verbose a logical value to either print or suppress status message output.
 #'                The default value is \code{TRUE}.
 #'                
+#' @details
+#' Beginning for the ECLS_K 2011 Study Grade 5 data files, the \code{ChildK5p.zip} source data file is a \code{DEFLATE64} compressed zip file.
+#' This means that the user must manually extract the contained \code{childK5p.dat} file using an external zip
+#' program capable of handling \code{DEFLATE64} zip format. As existing R functions are unable to handle this zip format natively.               
+#'                
 #' @author Tom Fink
 #' @seealso \code{\link{readECLS_K1998}} and \code{\link{readECLS_K2011}}
 #' @example man\examples\downloadECLS_K.R
@@ -46,8 +51,8 @@ downloadECLS_K <- function(root, years=c(1998, 2011), cache=FALSE, verbose=TRUE)
   d1998 <- c("https://nces.ed.gov/edat/data/zip/ECLSK_1998-99_v1_0_ASCII_Datasets.zip",
              "https://nces.ed.gov/edat/data/zip/ECLSK_1998-99_v1_0_CodeBook_Layout.zip")
   
-  d2011 <- d <- c("https://nces.ed.gov/ecls/data/ChildK4p.zip",
-                  "https://nces.ed.gov/ecls/data/ECLSK2011_K4PUF.sps")
+  d2011 <- d <- c("https://nces.ed.gov/ecls/data/2019/ChildK5p.zip",
+                  "https://nces.ed.gov/ecls/data/2019/ECLSK2011_K5PUF.sps")
   
   if(!year %in% validYears) {
     stop(paste0("Only known years are ", pasteItems(validYears), "."))
@@ -94,7 +99,16 @@ downloadECLS_K <- function(root, years=c(1998, 2011), cache=FALSE, verbose=TRUE)
           if(verbose) {
             cat(paste0("  Unzipping ",sQuote(lst$Name[i]),".\n"))
           }
-          unzip(file.path(yroot,bn), files=lst$Name[i], exdir = yroot)
+          
+          tryCatch(unzip(file.path(yroot,bn), files=lst$Name[i], exdir = yroot),
+                   warning = function(w){
+                     if(w$message=="zip file is corrupt"){
+                       message("Zip format for file ", file.path(yroot,bn), " is not supported. Users need to manually unzip this file. See ?downloadECLS_K for more information.")
+                     }else{
+                       warning(w)
+                     }
+                   })
+          
           if(basename(lst$Name[i]) != lst$Name[i]) {
             file.rename(file.path(yroot,lst$Name[i]), file.path(yroot,basename(lst$Name[i])))
           }

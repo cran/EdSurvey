@@ -142,6 +142,13 @@ readHSLS <- function(path = getwd(),
                      NA,
                      "(Missing)")
   
+  #cleaup any '0=ZERO' labels as those are a problem for analysis
+  processedData$fileFormat$data <- valueLabelCleanupFF(processedData$fileFormat$data, omittedLevels, c("Zero", "zero", "ZERO")) #cleanup
+  
+  if(!is.null(processedData$fileFormat$wgt)){
+    processedData$fileFormat$wgt <- valueLabelCleanupFF(processedData$fileFormat$wgt, omittedLevels, c("Zero", "zero", "ZERO")) #cleanup
+  }
+  
   # return the edsurvey.data.frame
   edsurvey.data.frame(userConditions = list(),
                       defaultConditions = NULL,

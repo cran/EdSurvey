@@ -124,7 +124,7 @@ buildBPSWeightList_2014 <- function(fileFormat){
 # Omitted levels are enclosed in "{}"
 getOmittedLevels <- function(fileFormat) {
   
-  omittedLevs <- unique(sapply(fileFormat$labelValues, function(x) regmatches(x[1], gregexpr("(?=\\{).*?(?<=\\})", x, perl=T))[[1]]))
+  omittedLevs <- unique(sapply(fileFormat$labelValues, function(x) regmatches(x[1], gregexpr("(?=\\{).*?(?<=\\})", x, perl=TRUE))[[1]]))
   omittedLevs <- unique(unlist(omittedLevs))
   omittedLevs <- append(omittedLevs, '(Missing)')
   omittedLevs <- append(omittedLevs, NA)

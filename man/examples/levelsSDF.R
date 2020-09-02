@@ -1,3 +1,4 @@
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
@@ -15,3 +16,4 @@ df2 <- getData(data=sdf, varnames=c("dsex", "t088301"),
                                         to=c("No"))),
                addAttributes=TRUE)
 levelsSDF(varnames=c("dsex","t088301"), data=df2)
+}

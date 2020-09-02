@@ -91,6 +91,7 @@ inputs used for calculating covariances with \code{\link{varEstToCov}}.
 Calculate the standard deviation of a numeric variable in an \code{edsurvey.data.frame}.
 }
 \examples{
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
@@ -115,6 +116,7 @@ sdfl <- edsurvey.data.frame.list(list(sdfA, sdfB, sdfC, sdfD),
 sdfl$covs
 
 SD(data = sdfl, variable = "composite")
+}
 }
 \author{
 Paul Bailey and Huade Huo

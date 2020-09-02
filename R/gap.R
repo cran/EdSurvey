@@ -342,34 +342,47 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
   if (!is.null(recode)) {
     data <- recode.sdf(data, recode)
   }
+
+  if(inherits(data, "edsurvey.data.frame") | inherits(data, "light.edsurvey.data.frame")) {
+    survey <- getAttributes(data, "survey")
+  } else{
+    robustSurvey <- function(dat) {
+      res <- tryCatch(getAttributes(dat, "survey"),
+                      error=function(e) {
+                        NULL
+                      })
+      return(res)
+    }
+    survey <- unique(unlist(lapply(data$data, robustSurvey)))
+  }
   
   # check if linking error is supported for this survey
-  if(!missing(includeLinkingError)) {
-    if(includeLinkingError) {
-      if(!getAttributes(data, "survey") %in% "NAEP") {
-        stop("the argument ", dQuote("includeLinkingError"), " can only be set to ", dQuote("TRUE"), " when EdSurvey suports linking error for the survey. Currently EdSurvey supports linking error for NAEP.")
-      }
+  if(!missing(includeLinkingError) && includeLinkingError) {
+    checkDataClass(data, "edsurvey.data.frame.list")
+    if(!c("NAEP", "PISA") %in% survey) {
+      stop("the argument ", dQuote("includeLinkingError"), " can only be set to ", dQuote("TRUE"), " when EdSurvey suports linking error for the survey. Currently EdSurvey supports linking error for NAEP and PISA.")
     }
   }
   # Set dbaLabels as NULL for linking error with non ESDFL object or 
   # includeLinkingError set as False
-  if(!includeLinkingError | !inherits(data, "edsurvey.data.frame.list")) {
-    dbaLabels <- NULL
-  }
+  dbaLabels <- NULL
   
+  # gapStat required for PISA regardless of linking error
+  if("PISA" %in% survey) {     
+    if (!is.null(percentiles)) {
+      gapStat <- "percentile"
+    } else if (!is.null(achievementLevel)) {
+      gapStat <- "AL"
+    } else if (stDev) {
+      gapStat <- "SD"
+    } else {
+      gapStat <- "Mean"
+    }
+  }
   # Get parameters for linking error
-  if (!missing(includeLinkingError)) {
-    if(includeLinkingError) {
-      checkDataClass(data, "edsurvey.data.frame.list")
-      # Get DBA labels from DBA years
-      # 2017 is the first NAEP DBA year
-      allYears <- unlist(itterateESDFL(call("getAttributes", attribute="year"), data))
-      dbaLabels <- data[[2]]$labels[allYears >= 2017]
-      if (!all(dbaLabels %in% data[[2]]$labels)) {
-        stop(paste0(pasteItems(dbaLabels[!dbaLabels %in% data[[2]]$labels]), 
-                    " is not in the ", dQuote("edsurvey.data.frame.list"), " labels."))
-      }
-      
+  if (!missing(includeLinkingError) && includeLinkingError)  {
+    # the following is only for NAEP which has linking error within survey
+    if("NAEP" %in% survey) {     
       uniqueSubject <- unique(unlist(lapply(data$data, getAttributes, "subject")))
       if (length(uniqueSubject) != 1) {
         stop("Linking error only support ", dQuote("edsurvey.data.frame.list"), " with a single subject.")
@@ -379,7 +392,7 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
       if (length(uniqueGrade) != 1) {
         stop("Linking error only support ", dQuote("edsurvey.data.frame.list"), " with a single grade level.")
       }
-      
+        
       # For achievementDiscrete=TRUE, return "At basic" (not "below basic") if "achievementLevel = "basic"
       alLinkingErrorhelper <- function(alstrings, discrete) {
         matchedAL <- NULL
@@ -392,7 +405,7 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
                              c("Below basic", "At basic", "At proficient", 
                                "At advanced")[grepl(alstring, c("Below basic", "At basic", 
                                                                 "At proficient", "At advanced"), 
-                                                    ignore.case = T)])
+                                                    ignore.case = TRUE)])
             }
           } else {
             matchedAL <- c(matchedAL, 
@@ -400,7 +413,7 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
                              "At or above proficient",
                              "At advanced")[
                                grepl(alstring, c("At or above basic", "At or above proficient", "At advanced"), 
-                                     ignore.case = T)])
+                                     ignore.case = TRUE)])
           }
         }
         if (length(matchedAL) != length(alstrings)) {
@@ -408,15 +421,21 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
         }
         return(matchedAL)
       }
-      
-      # Return error if includeLinkingError=TRUE and percentiles not in
-      # c(10, 25, 50, 75, 90)
+        
+      # Get DBA labels from DBA years
+      # 2017 is the first NAEP DBA year
+      allYears <- unlist(itterateESDFL(call("getAttributes", attribute="year"), data))
+      dbaLabels <- data[[2]]$labels[allYears >= 2017]
+      if (!all(dbaLabels %in% data[[2]]$labels)) {
+        stop(paste0(pasteItems(dbaLabels[!dbaLabels %in% data[[2]]$labels]), 
+                    " is not in the ", dQuote("edsurvey.data.frame.list"), " labels."))
+      }
+      if (!is.null(percentiles) && !all(percentiles %in% c(10, 25, 50, 75, 90))) {
+        stop("NAEP linking error only supported for 10th, 25th, 50th, 75th, 90th percentiles.", 
+             "Set ", dQuote("includeLinkingError"), " to ", dQuote("FALSE"), 
+             "to calculate any percentile without linking error.")
+      }
       if (!is.null(percentiles)) {
-        if (!all(percentiles %in% c(10, 25, 50, 75, 90))) {
-          stop("NAEP linking error only supported for 10th, 25th, 50th, 75th, 90th percentiles.", 
-               "Set ", dQuote("includeLinkingError"), " to ", dQuote("FALSE"), 
-               "to calculate any percentile without linking error.")
-        }
         gapStat <- percentiles
       } else if (!is.null(achievementLevel)) {
         gapStat <- alLinkingErrorhelper(achievementLevel, achievementDiscrete)
@@ -605,6 +624,27 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
                   resdf$covABAB[i] <- varEstToCov(resi$varEstInputs, refVarEstInputs, "A-B", jkSumMultiplier=getAttributes(data$datalist[[i]], "jkSumMultiplier"))
                 }
                 resdf$sameSurvey[i] <- TRUE
+              } else {
+                if("PISA" %in% survey) {
+                  linke <- 0
+                  if(includeLinkingError & gapStat %in% c("Mean", "percentile", "SD")) {
+                    if(variable %in% c("read", "math", "scie")) {
+                      yearref <- getAttributes(data$datalist[[refi]], "year")
+                      yeari <- getAttributes(data$datalist[[i]], "year")
+                      if(yeari != yearref) {
+                        linke <- calLinkingErrorPISA(subject=variable, years=c(yearref, yeari))
+                      }
+                    } else {
+                      warning("No published linking error for variable ", dQuote(variable),"\n")
+                    }
+                  }
+                  covvars <- c("covAA", "covBB", "covABAB")
+                  for(cvi in 1:length(covvars)) {
+                    if(covvars[cvi] %in% colnames(resdf)) {
+                      resdf[i,covvars[cvi]] <- -1/2 * linke^2
+                    }
+                  }
+                }
               }
             } else { # end if(i != refi)
               # if this is refi, set these to NULL
@@ -860,7 +900,8 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
                       returnNumberOfPSU=FALSE,
                       noCov=FALSE,
                       pctMethod=c("unbiased", "simple"),
-                      varMethod=NULL) {
+                      varMethod=NULL,
+                      includeLinkingError=NULL) {
   if(is.character(substitute(groupA))) {
     groupA <- parse(text=groupA)[[1]]
   }
@@ -1701,6 +1742,54 @@ gapHelper <- function(variable, data, groupA = "default", groupB = "default",
   }
   class(lst) <- "gap"
   return(lst)
+}
+
+# @title Linking error for PISA 2015 and subsequent DBA v prior PBA
+# @param years a vector of two years involved, including 2000, 2003, 2006, 2009, 2012, 2015 or 2018
+# @param subject, one of "read", "math", or "scei"
+# The linking error for PISA is entirely cross year and one value
+# @author Paul Bailey
+calLinkingErrorPISA <- function(subject=c("read", "math", "scie"),
+                                years=c(2000, 2003, 2006, 2009, 2012, 2015, 2018)) {
+  years <- as.numeric(years)
+  linkingErrorsFinance <- data.frame(subject=rep("fin", 3),
+                                     yearSmall=c(2012, 2015, 2012),
+                                     yearBig=c(2018, 2018, 2015),
+                                     error=c(5.55, 9.37, 5.3309),
+                                     stringsAsFactors=FALSE)
+  linkingErrorsRead <- data.frame(subject=rep("read", 11),
+                                  yearSmall=c(  2000,   2003,   2006,   2009,   2012, 2000, 2003, 2006, 2009, 2012,2015),
+                                  yearBig=  c(  2015,   2015,   2015,   2015,   2015, 2018, 2018, 2018, 2018, 2018,2018),
+                                  error=    c(6.8044, 5.3907, 6.6064, 3.4301, 5.2535, 4.04, 7.77, 5.24, 3.52, 3.74, 3.93),
+                                  stringsAsFactors=FALSE)
+  linkingErrorsMath <- data.frame(subject=rep("math", 9),
+                                  yearSmall=c(2003,    2006,   2009,   2012, 2003, 2006, 2009, 2012, 2015),
+                                  yearBig=  c(2015,    2015,   2015,   2015, 2018, 2018, 2018, 2018, 2018),
+                                  error=    c(5.6080, 3.511, 3.7853, 3.5462, 2.80, 3.18, 3.54, 3.34, 2.33),
+                                  stringsAsFactors=FALSE)
+  linkingErrorsScei <- data.frame(subject=rep("scei", 7),
+                                  yearSmall=c(  2006,   2009,   2012, 2006, 2009, 2012, 2015),
+                                  yearBig=  c(  2015,   2015,   2015, 2018, 2018, 2018, 2018),
+                                  error=    c(4.4821, 4.5016, 3.9228, 3.47, 3.59, 4.01, 1.51),
+                                  stringsAsFactors=FALSE)
+  linkingErrorsPISA <- rbind(linkingErrorsFinance, linkingErrorsRead, linkingErrorsMath, linkingErrorsScei)
+  sbj <- match.arg(subject)
+  years <- years[years %in% c(2000, 2003, 2006, 2009, 2012, 2015, 2018)]
+  if(length(years) != 2) {
+    stop("Argument ", dQuote("years"), " must have 2 valid years so there are two years to contrast.")
+  }
+  lep <- linkingErrorsPISA[linkingErrorsPISA$subject == sbj, ]
+   
+  res <- expand.grid(yearSmall = years, yearBig = years)
+  res <- res[res$yearSmall < res$yearBig, ]
+  res <- merge(lep, res, by=c("yearSmall", "yearBig"), all=FALSE)
+  if(nrow(res) == 0) {
+    return(0)
+  }
+  if(nrow(res) > 1) {
+    stop("Multiple returns.")
+  }
+  return(res$error)
 }
 
 # @title Linking error for NAEP DBA/PBA gap analysis.

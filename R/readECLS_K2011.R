@@ -23,8 +23,8 @@
 #' @example man/examples/readECLS_K2011.R
 #' @export
 readECLS_K2011 <- function(path = getwd(),
-                           filename = "childK4p.dat",
-                           layoutFilename = "ECLSK2011_K4PUF.sps",
+                           filename = "childK5p.dat",
+                           layoutFilename = "ECLSK2011_K5PUF.sps",
                            forceReread = FALSE,
                            verbose = TRUE) {
 
@@ -166,7 +166,7 @@ processECLS_K2011 <- function (files,
       if(verbose){
         cat(paste0("Processing SPSS syntax file.\n"))
       }
-      fileFormat <- parseSPSSFileFormat(files$layoutFile)
+      fileFormat <- parseSPSSFileFormat2(files$layoutFile)
     }else{
       stop(paste0("File layout file must be either an ASCII (.txt) layout file or an SPSS (.sps) syntax file."))
     }
@@ -352,7 +352,11 @@ identifyECLSK2011Weights <- function(fileFormat){
                "W7C27P_7A0", "W7C27P_2T70", "W7C27P_7B0", "W7C27P_2T270", "W7C27P_7T270", "W7CF7P_70", "W7CF7P_2T170",
                "W8C8P_20", "W8C18P_20", "W8C18P_80", "W8C28P_8A0", "W8C28P_8B0", "W8CF8P_80", "W8C18P_2T280", "W8C18P_8T28A0",
                "W8C18P_8T28B0", "W8C18P_8T180", "W8C28P_2T280", "W8CF8P_2T180", "W8C18P_8T80", "W8C18P_8T8Z0", "W8C18P_8T28C0", "W8C18P_8T28Z0",
-               "W8C28P_8T80", "W8C28P_8T8Z0", "W8C28P_2T80", "W8C28P_2T8Z0", "W8C28P_8T280", "W8C28P_8T28Z0")
+               "W8C28P_8T80", "W8C28P_8T8Z0", "W8C28P_2T80", "W8C28P_2T8Z0", "W8C28P_8T280", "W8C28P_8T28Z0",
+               "W9C9P_20", "W9C19P_20", "W9C19P_90", "W9C29P_9A0", "W9C29P_9B0",
+               "W9C19P_2T290", "W9C19P_9T29A0", "W9C19P_9T29B0", "W9C29P_2T290", "W9C19P_9T90", "W9C19P_9T9Z0",
+               "W9C19P_9T29C0", "W9C19P_9T29Z0", "W9C29P_9T90", "W9C29P_9T9Z0", "W9C29P_2T90",
+               "W9C29P_2T9Z0", "W9C29P_9T290", "W9C29P_9T29Z0", "W9C790", "W9C79P_9T790")
 
   #TRUE/FALSE on if the variable is a weight at all
   fileFormat$weights <- tolower(fileFormat$variableName) %in% tolower(wgtVars)
@@ -425,4 +429,203 @@ buildECLS_K2011_dataList <- function(LaF, FF){
                                      isDimLevel = TRUE)
 
   return(dataList)
+}
+
+
+
+#reads an SPSS (.sps) snytax file and prepares the fileformat from the SPSS syntax file
+#expects a very specific format of SPSS file and will only be applicable for the format found with ECLS_K, BTLS, and HSTS data sets
+#going foward looking into possible packages to use for parsing SPSS/SAS scripts that would be more reliable/handle other formats
+parseSPSSFileFormat2 <- function (inSPSSyntax){
+  
+  dict <- list("variableName" = character(0),
+               "Start" = integer(0),
+               "End" = integer(0),
+               "Width" = integer(0),
+               "Decimal" = integer(0),
+               "Labels" = character(0),
+               "labelValues" = character(0),
+               "Type" = character(0),
+               "pvWt" = character(0),
+               "dataType" = character(0),
+               "weights" = character(0),
+               "RecordIndex" = character(0))
+  
+  # Read in spss control files
+  con <- file(inSPSSyntax, open="r")
+  controlFile <- readLines(con)
+  close.connection(con)
+  
+  #prep for processing
+  controlFile <- gsub("[^[:print:]]","", controlFile) #remove unprintable characters
+  controlFile <- trimws(controlFile,which = "both") #remove leading or ending whitespace
+  controlFile <- controlFile[controlFile != ""] #remove blank rows
+  
+  
+  # STEP 1 - GET DATA LIST call info, FWF POSITIONS, and DATA TYPE
+  dataList_StartPos <- which(grepl("^DATA LIST", controlFile, ignore.case = FALSE), arr.ind = TRUE)
+  dataList_EndPos <- which(grepl("\\.$", controlFile[dataList_StartPos:length(controlFile)]), arr.ind = TRUE)[1]
+  
+  dataList_EndPos <- (dataList_EndPos + dataList_StartPos) - 1 #offset here since we started at the start position in our lookup
+  dataListLines <- controlFile[(dataList_StartPos + 1):dataList_EndPos] #skip the 'data list' row as it's not needed
+
+  recordIndexPos <- which(dataListLines %in% dataListLines[substr(dataListLines,1,1)=="/"]) #record index are defined such as '/2', '/3', etc.  we want to keep these positions as the .dat has multiple rows for one piece of data
+  names(recordIndexPos) <- 1:length(recordIndexPos)
+  
+  dataListLines <- dataListLines[trimws(dataListLines, which="both")!=""]
+  dataListLines <- dataListLines[substr(dataListLines,1,1)!="."] #remove unneeded rows
+  
+  recIndex <- c()
+  ri <- 0 #will change to one when first line is noted
+  for(lc in dataListLines){
+    if (substr(lc,1,1)=="/"){
+      ri <- ri + 1
+    }else{
+      recIndex <- c(recIndex, ri)
+    }
+  }
+  dataListLines <- dataListLines[substr(dataListLines,1,1)!="/"] #remove the table indexes now that we don't need them
+  
+  xMatch <- regexpr("^\\w+", dataListLines) #get first word
+  varName <- tolower(trimws(regmatches(dataListLines, xMatch), which="both")) #use lower case variable names
+  names(dataListLines) <- varName #store the variable name here for later use
+  
+  xMatch <- regexpr(" \\d+[ ]*-\\d+", dataListLines) #get digits of fwf ###-###
+  pos <- trimws(regmatches(dataListLines, xMatch), which="both")
+  
+  xMatch <- regexpr("\\d+[ ]*-", pos) #get digits before '-' char
+  posStart <- trimws(gsub("-", "", regmatches(pos, xMatch)), which="both")
+  posStart <- as.integer(posStart)
+  
+  xMatch <- regexpr("-\\d+", pos)  #get digits after '-' char           
+  posEnd <- trimws(gsub("-", "", regmatches(pos, xMatch)), which="both")
+  posEnd <- as.integer(posEnd)
+  
+  
+  #grab extra info contained in parens()
+  xMatch <- regexpr("[(].*[)]", dataListLines)
+  extraInfo <- toupper(trimws(regmatches(dataListLines,xMatch), which="both"))
+  
+  #setup default data type and decimal
+  xType <- rep("numeric", times=length(varName))
+  names(xType) <- varName
+  xDec <- rep(0, times=length(varName))
+  names(xDec) <- varName
+  
+  #change character type
+  xType[names(xType) %in% names(extraInfo[extraInfo=="(A)"])] <- "character"
+  xDec[names(xDec) %in% names(extraInfo[extraInfo=="(A)"])] <- NA
+  
+  #change the numeric type
+  xType[names(xType) %in% names(extraInfo[grepl("\\d+", extraInfo, ignore.case=TRUE)])] <- "numeric"
+  xMatch <- regexpr("\\d+", extraInfo)
+  xDec[names(xDec) %in% names(extraInfo[grepl("\\d+", extraInfo, ignore.case=TRUE)])] <- as.integer(regmatches(extraInfo, xMatch))
+  
+  #update the dictionary
+  dict$variableName <- varName
+  dict$Start <- posStart
+  dict$End <- posEnd
+  dict$Width <- (dict$End - dict$Start) + 1
+  dict$Decimal <- xDec
+  dict$dataType <- xType
+  dict$RecordIndex <- recIndex
+  #########################
+  
+  #STEP 2 - Get the VARIABLE LABEL section and apply it to the correct variables
+  varLabel_StartPos <- which(grepl("^VARIABLE LABEL", controlFile, ignore.case = FALSE), arr.ind = TRUE)
+  varLabel_EndPos <- which(grepl("\\.$", controlFile[varLabel_StartPos:length(controlFile)]), arr.ind = TRUE)[1]
+  
+  varLabel_EndPos <- (varLabel_EndPos + varLabel_StartPos) - 1 #offset here since we started at the start position in our lookup
+  varLabelLines <- controlFile[(varLabel_StartPos + 1):varLabel_EndPos] #skip the 'data list' row as it's not needed
+  
+  varLabelLines <- varLabelLines[length(trimws(varLabelLines, which = "both"))>0 & varLabelLines!="."] #remove any junk lines
+  
+  #get variable name
+  xMatch <- regexpr("^\\w+", varLabelLines) #get first word
+  varName <- trimws(regmatches(varLabelLines, xMatch), which="both")
+  
+  xMatch <- regexpr("\\s[\"].*[\"]", varLabelLines) #find the text between the double quotes in the string
+  varLabel <- trimws(regmatches(varLabelLines, xMatch), which="both") 
+  varLabel <- substr(varLabel, 2, nchar(varLabel)-1) #remove the beginning and end double quotes
+  
+  #apply the variable labels mapped to the variables
+  dict$Labels <- rep("", length(dict$variableName))
+  dict$Labels[tolower(dict$variableName)==tolower(varName)] <- varLabel
+  #=======================
+  
+  #STEP 3 - Gather the Value Labels for the variables
+  #prep for gathering the value labels::should look into doing this in one chunk as well, but difficult with the varnames being used as the markers
+  dict$labelValues <- rep("", times = length(dict$variableName)) #so we don't have NA values in the labels and it's of proper length
+  
+  valLabel_StartPos <- which(grepl("^VALUE LABELS", controlFile, ignore.case = FALSE), arr.ind = TRUE)
+  valLabel_EndPos <- which(grepl("\\.$", controlFile[valLabel_StartPos:length(controlFile)]), arr.ind = TRUE)[1]
+  
+  valLabel_EndPos <- (valLabel_EndPos + valLabel_StartPos) - 1 #offset here since we started at the start position in our lookup
+  valLabelLines <- controlFile[(valLabel_StartPos + 1):valLabel_EndPos] #skip the 'data list' row as it's not needed
+  
+  valLabelLines <- valLabelLines[length(trimws(valLabelLines, which = "both"))>0 & valLabelLines!="."] #remove any junk lines
+
+  varName <- ""
+  varIdx <- which(grepl("^/", valLabelLines), arr.ind = TRUE) #first character starts with '/' character, then variable name
+  varIdxMap <- rep("", length(valLabelLines)) #map every line to it's parent variable
+  
+  varNames <- tolower(trimws(gsub("/", "", valLabelLines[varIdx], fixed = TRUE), which = "both"))
+  varIdxMap[varIdx] <- varNames
+  
+  #build an index map of the variables and which lines are associated with what variables
+  iVar <- ""
+  for(i in seq_along(varIdxMap)){
+    testVal <- varIdxMap[i]
+    
+    if(iVar=="" || nchar(testVal)>0){
+      iVar <- testVal
+    }
+    if(testVal=="" && nchar(iVar)>0){
+      varIdxMap[i] <- iVar
+    }
+  }
+  
+  #set names for lookups later
+  names(valLabelLines) <- varIdxMap
+  valLabelLines <- trimws(valLabelLines[-varIdx], which="both") #drop the lines with just the variable names
+
+  xMatch <- regexpr("^[\"].*[\"]\\s|^[^\"]*", valLabelLines) #matches on quoted items and non-quoted items
+
+  varValue <- trimws(regmatches(valLabelLines, xMatch), which="both")
+  isQuoted <- grepl("^[\"]", valLabelLines)
+  varValue[isQuoted] <- substr(varValue[isQuoted], 2,nchar(varValue[isQuoted])-1)
+  names(varValue) <- varIdxMap[-varIdx] #reapply the names here in case they got out of wack with gathering the values
+
+  #test if a numeric range such as '1 - 20' or '1 - 10' is specified
+  keepVar <- rep(TRUE, times = length(varValue))
+  keepVar <- !grepl("//d* - //d*", varValue, ignore.case = TRUE) #this specifies a range of values, it's not a true value label
+  
+  #now grab the labels themselves
+  xMatch <- regexpr("\\s[\"].*[\"]$", valLabelLines)
+  valLabels <- trimws(regmatches(valLabelLines, xMatch), which="both")
+  valLabels <- substr(valLabels, 2, nchar(valLabels)-1)
+  
+  #fix any label char values that don't display correctly.
+  #The actual character is a 'replacement char' (\uFFFD) but it's raw is converted to three seperate chars: (\u00EF) (\u00BF) (\u00BD)
+  valLabels <- gsub("\u00EF\u00BF\u00BD", "'", valLabels, ignore.case = TRUE)
+  valLabels <- gsub("\u00E2", "'", valLabels, ignore.case = TRUE) #converts an latin small 'a' with circumflex (u00E2) to apostraphe (u0027)
+  
+  #apply the labels to the dictionary in our fileFormat specification
+  for(iVar in unique(names(varValue))){
+    iVarVal <- varValue[names(varValue)==iVar & keepVar==TRUE]
+    iValLbl <- valLabels[names(valLabels)==iVar & keepVar==TRUE]
+    
+    dict$labelValues[dict$variableName==iVar] <- paste(iVarVal, iValLbl, sep="=", collapse="^")
+  }
+
+  #need to populate the Type, pvWt and weights dict sublists so we can convert the list to a data.frame
+  dict$Type <- rep("", times = length(dict$variableName))
+  dict$pvWt <- rep("", times = length(dict$variableName))
+  dict$weights <- rep(FALSE, times = length(dict$variableName))
+  
+  #need to update the position start/end variables as the positions are thrown off by having SPSS tables defined::tables will be removed
+  dict$Start <-  c(1,1 + cumsum(dict$Width))[1:length(dict$Width)]
+  dict$End <- cumsum(dict$Width)
+  
+  return(data.frame(dict, stringsAsFactors = FALSE))
 }

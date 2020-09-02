@@ -14,7 +14,9 @@ cor.sdf(
   omittedLevels = TRUE,
   defaultConditions = TRUE,
   recode = NULL,
-  condenseLevels = TRUE
+  condenseLevels = TRUE,
+  fisherZ = if (match.arg(method) \%in\% "Pearson") {     TRUE } else {     FALSE },
+  jrrIMax = Inf
 )
 }
 \arguments{
@@ -48,6 +50,20 @@ levels and rank the levels of the variable before
 calculating the correlation. When set to \code{FALSE},
 the numeric levels of the variable remain the same as
 in the codebook. See Examples.}
+
+\item{fisherZ}{for standard error and mean calculations, set to \code{TRUE} to use
+the Fisher Z-transformation (see details), or \code{FALSE}
+to use no transformation of the data. The \code{fisherZ} argument defaults
+to Fisher Z-transformation for Pearson and no transformation  
+for other correlation types.}
+
+\item{jrrIMax}{a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=Inf}, uses the 
+                  sampling variance from all plausible values as the component for sampling variance estimation. The \code{Vjrr} 
+                  term (see 
+\href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}})
+                  can be estimated with any number of plausible values, and values larger than the number of 
+                  plausible values on the survey (including \code{Inf}) will result in all plausible values being used. 
+                  Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.}
 }
 \value{
 An \code{edsurvey.cor} that has print and summary methods.
@@ -64,6 +80,12 @@ The class includes the following elements:
 \item{weight}{the weight variable used}
 \item{npv}{the number of plausible values used}
 \item{njk}{the number of the jackknife replicates used}
+\item{n0}{the original number of observations}
+\item{nUsed}{the number of observations used in the analysis---after any conditions and any listwise deletion of missings is applied}
+\item{se}{the standard error of the correlation, in the correlation ([-1,1]) space}
+\item{ZconfidenceInterval}{the confidence interval of the correlation in the transformation space}
+\item{confidenceInterval}{the confidence interval of the correlation in the correlation ([-1,1]) space}
+\item{transformation}{the name of the transformation used when calculating standard errors}
 }
 \description{
 Computes the correlation of two variables on an \code{edsurvey.data.frame},
@@ -73,6 +95,12 @@ Computes the correlation of two variables on an \code{edsurvey.data.frame},
 \details{
 The \code{\link{getData}} arguments and \code{\link{recode.sdf}} may be useful. (See Examples.)
 The correlation methods are calculated as described in the documentation for the \code{wCorr} package---see \code{browseVignettes(package="wCorr")}.
+
+The Fisher Z-transformation is both a variance stabilizing  and normalizing transformation
+for the Pearson correlation coefficient (Fisher, 1915).
+The transformation takes the inverse hybarbolic tangent of the correlation coefficients and then calculates all variances and confidence intervals.
+These are then transformed back to the correlation space (values between -1 and 1, inclusive) using the hyperbolic tangent function.
+The Taylor series approximation (or delta method) is applied for the standard errors.
 }
 \examples{
 \dontrun{
@@ -141,6 +169,9 @@ cor.sdf(x="pared", y="b013801", data=subset(sdf, !pared \%in\% "I Don\'t Know"),
                     b013801=list(from="26-100", to="Less than 100")),
         reorder=list(b013801=c("Less than 100", ">100")))
 }
+}
+\references{
+Fisher, R. A. (1915). Frequency distribution of the values of the correlation coefficient in samples from an indefinitely large population. \emph{Biometrika}, \emph{10}(4), 507--521.
 }
 \seealso{
 \ifelse{latex}{\code{cor}}{\code{\link[stats]{cor}}} and \ifelse{latex}{\code{weightedCorr}}{\code{\link[wCorr]{weightedCorr}}}

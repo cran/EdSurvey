@@ -7,6 +7,7 @@
 #' 
 #' @example man/examples/downloadICILS.R
 #' @seealso \code{\link{readICILS}}
+#' @importFrom utils browseURL
 #' @export
 downloadICILS <- function(years=c(2013)) {
   if(is.null(years)){

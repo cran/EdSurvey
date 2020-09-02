@@ -4,10 +4,12 @@
 \alias{oddsRatio}
 \title{Odds Ratios for edsurveyGlm Models}
 \usage{
-oddsRatio(model)
+oddsRatio(model, alpha = 0.05)
 }
 \arguments{
 \item{model}{an \code{edsurveyGlm} model}
+
+\item{alpha}{the alpha level for the confidence level}
 }
 \value{
 An \code{oddsRatio.edsurveyGlm} object with the following elements:

@@ -16,9 +16,10 @@
 #' @param ykernel numeric indicating the standard deviation of Normal
 #'                \code{y} kernel to use in generating contour plot
 #' @param nlevels integer with the number of levels of the contour plot
-#' @param colors colors to use, specified as in \ifelse{latex}{\code{par}}{\code{\link[graphics]{par}}}.
+#' @param densityColors colors to use, specified as in \ifelse{latex}{\code{par}}{\code{\link[graphics]{par}}}.
 #'               Defaults to the \ifelse{latex}{\code{heat.colors}}{\code{\link[grDevices]{heat.colors}}}
 #'               with \code{nlevels}. When specified, \code{colors} overrides \code{nlevels}.
+#' @param pointColors color for the plot points
 #'               
 #' @param \dots additional arguments to be passed to a plot call that generates the
 #'             scatter plot and the contour plot
@@ -33,7 +34,8 @@ contourPlot <- function(x, y,
                         xrange, yrange,
                         xkernel, ykernel,
                         nlevels=9L,
-                        colors=heat.colors(nlevels),
+                        densityColors=heat.colors(nlevels),
+                        pointColors="gray",
                         ...) {
   z <- matrix(NA, nrow=m, ncol=m)
   xydf <- data.frame(x=as.numeric(x), y=as.numeric(y))
@@ -89,7 +91,7 @@ contourPlot <- function(x, y,
   # normalize z
   z <- z * 1 / sum(z)
   # plot points
-  plot(x, y, col="grey", ...)
+  plot(x, y, col=pointColors, ...)
   # add contour plot
-  contour(xc,yc,z, col=colors, add=TRUE, lwd=2, nlevels=length(colors))
+  contour(xc,yc,z, col=densityColors, add=TRUE, lwd=2, nlevels=length(densityColors))
 }

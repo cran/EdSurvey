@@ -1,3 +1,4 @@
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
@@ -14,6 +15,5 @@ showCodebook(sdf, c("student"), labelLevels = FALSE, includeRecodes = TRUE)
 showCodebook(sdf, c("student","school"), labelLevels = FALSE, includeRecodes = TRUE)
 
 # return codebook information for all codebooks in an edsurvey.data.frame; commonly use View()
-\dontrun{
 View(showCodebook(sdf))
 }

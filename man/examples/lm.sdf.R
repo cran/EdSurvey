@@ -33,5 +33,4 @@ lm4 <- lm.sdf(composite ~ dsex + b017451, data=sdf,
                                        to=c("Frequently"))))
 # Note: "Infrequently" is the dropped level for the recoded b017451
 summary(lm4)
-
 }

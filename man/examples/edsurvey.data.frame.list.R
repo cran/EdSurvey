@@ -1,3 +1,4 @@
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
@@ -17,14 +18,20 @@ sdfl <- edsurvey.data.frame.list(list(sdfA, sdfB, sdfC, sdfD),
                                           "C locations",
                                           "D locations"))
 
+# alternative method of building
+sdfl2 <- sdfA + sdfB + sdfC
+
+# check contents
+sdfA %in% sdfl
+# note %in% checks by survey (NAEP 2005 Math for sdf,
+# sdfA, sdfB, sdfC, and sdfD) not by subset, so this also return TRUE
+sdfD %in% sdfl2
 
 # this shows how these datasets will be described
 sdfl$covs 
-\dontrun{
 # get the gaps between Male and Female for each data set
 gap1 <- gap("composite", sdfl, dsex=="Male", dsex=="Female")
 gap1
-}
 
 # make combine sdfA and sdfB
 sdfl1a <- edsurvey.data.frame.list(list(sdfA, sdfB),
@@ -46,3 +53,4 @@ sdfl4 <- append.edsurvey.data.frame.list(
   sdfD,
   labelsB = "D locations")
 identical(sdfl, sdfl4) #TRUE
+}

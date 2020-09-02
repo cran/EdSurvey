@@ -344,11 +344,11 @@ calc.mvrlm.sdf <- function(formula,
     # apply the weights to X first
     X <- W * X
     # replace X with block diagonal X  
-    X <- do.call(bdiag, args = replicate(n = nDV, X, simplify = F))
+    X <- do.call(bdiag, args = replicate(n = nDV, X, simplify = FALSE))
     # apply the weights to Y first
     Y <- W * Y
     # replace Y with version of Y that works
-    Y <- do.call(rbind, replicate(n = nDV, Y, simplify = F))
+    Y <- do.call(rbind, replicate(n = nDV, Y, simplify = FALSE))
     solve((t(X) %*% omega) %*% X) %*% ((t(X) %*% omega) %*% Y)
   }
   
@@ -626,7 +626,7 @@ calc.mvrlm.sdf <- function(formula,
     M <- pvi 
     Vimp <- (M+1)/M * apply(coefm, 2, var)
     
-    R2 <- colMeans(r2s, na.rm = T)
+    R2 <- colMeans(r2s, na.rm = TRUE)
     names(R2) <- yvar
     
     coef <- apply(coefm, 2, mean)
@@ -651,7 +651,7 @@ calc.mvrlm.sdf <- function(formula,
     out <- list()
     for(i in 1:nDV){
       co <- unlist(lapply(coefm, function(x){x[,i]}))
-      out[[length(out) + 1]] <- matrix(co, nrow = length(coefm), ncol = length(coefInputs$coefNames), byrow = T)
+      out[[length(out) + 1]] <- matrix(co, nrow = length(coefm), ncol = length(coefInputs$coefNames), byrow = TRUE)
     }
     
     coefm <- out
@@ -779,9 +779,9 @@ calc.mvrlm.sdf <- function(formula,
   # format variance estimation inputs appropriately for dof calculation
   if(sum(pvy) > 0){
     varEstInputs$PV <- data.frame(varEstInputs$PV)
-    varEstInputs$PV <- stack(varEstInputs$PV, drop = T, stringsAsFactors = FALSE)
+    varEstInputs$PV <- stack(varEstInputs$PV, drop = TRUE, stringsAsFactors = FALSE)
     
-    levels(varEstInputs$PV$ind) <- unlist(lapply(coefmat, rownames), use.names = F)
+    levels(varEstInputs$PV$ind) <- unlist(lapply(coefmat, rownames), use.names = FALSE)
     
     colnames(varEstInputs$PV) <- c("value", "variable")
     

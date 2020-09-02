@@ -67,7 +67,7 @@ The column count returned by \code{dim} will be the count of unique column varia
 }
 \examples{
 \dontrun{
-swe <- readTIMSSAdv("C:/TIMSSAdvanced/Math/2015",
+swe <- readTIMSSAdv("~/TIMSSAdv/2015",
                     countries = c("swe"), subject = "math")
 gg <- getData(swe, c("itsex", "totwgt", "malg"))
 head(gg)

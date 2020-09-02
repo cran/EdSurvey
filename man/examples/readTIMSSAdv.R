@@ -1,5 +1,5 @@
 \dontrun{
-swe <- readTIMSSAdv("C:/TIMSSAdvanced/Math/2015",
+swe <- readTIMSSAdv("~/TIMSSAdv/2015",
                     countries = c("swe"), subject = "math")
 gg <- getData(swe, c("itsex", "totwgt", "malg"))
 head(gg)

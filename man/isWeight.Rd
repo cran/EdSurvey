@@ -24,6 +24,7 @@ Note that this function returns \code{TRUE} only when the \code{var} element is 
          for making estimates but not if it is one of the individual jackknife replicates.
 }
 \examples{
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
@@ -32,6 +33,7 @@ isWeight(var="origwt", data=sdf)
 
 # FALSE
 isWeight(var="dsex", data=sdf)
+}
 }
 \author{
 Michael Lee and Paul Bailey

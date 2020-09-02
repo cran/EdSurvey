@@ -155,19 +155,34 @@ percentile <- function(variable, percentiles, data,
     ln <- length(names(call))
     # this pmatch will return a vector like c(0,0,1,0) if `data` is the third element
     datapos <- which.max(pmatch(names(call), "data", 0L))
+    warns <- c()
     results <- sapply(1:ll, function(i) {
       call[[datapos]] <- data$datalist[[i]]
-      tryCatch(eval(call),
+      tryCatch(suppressWarnings(eval(call)),
                error = function(cond) {
-                 message("Error in processing dataset ",sQuote(i), cond)
-                 return(data.frame(stringsAsFactors=FALSE,
-                                   percentile = percentiles,
-                                   estimate = rep(NA,lp),
-                                   se = rep(NA,lp),
-                                   confInt.ci_lower = rep(NA,lp),
-                                   confInt.ci_upper = rep(NA,lp)))
+                 warns <<- c(warns, dQuote(paste(data$covs[i,], collapse=" ")))
+                 nullRes <- data.frame(stringsAsFactors=FALSE,
+                                       percentile = percentiles,
+                                       estimate = rep(NA,lp),
+                                       se = rep(NA,lp),
+                                       df = rep(NA,lp))
+                 if(confInt){
+                   nullRes$confInt.ci_lower <- rep(NA,lp)
+                   nullRes$confInt.ci_upper <- rep(NA,lp)
+                 }
+                 nullRes$nsmall <- rep(NA, lp)
+                 print(nullRes)
+                 return(nullRes)
                })
     }, simplify=FALSE)
+    if(length(warns) > 0) {
+      if(length(warns)>1) {
+        datasets <- "datasets"
+      } else {
+        datasets <- "dataset"
+      }
+      warning(paste0("Could not process ", datasets, " ", pasteItems(warns), ". Try running this call with just the affected ", datasets, " for more details."))
+    }
 
     # a block consists of the covs and the results for a percentile level:
     resdf <- cbind(data$covs, t(sapply(1:ll, function(ii) { results[[ii]][1,] }, simplify=TRUE)))
@@ -225,7 +240,6 @@ percentile <- function(variable, percentiles, data,
         warning("Warning: Stratum and PSU variable are required for this call and are not on the incoming data. Ignoring returnNumberOfPSU=TRUE.")
         returnNumberOfPSU <- FALSE
       }
-      
     }
     getDataArgs <- list(data=data,
                         varnames=getDataVarNames,
@@ -241,7 +255,7 @@ percentile <- function(variable, percentiles, data,
       getDataArgs <- c(getDataArgs, list(defaultConditions=defaultConditions))
     }
     # edf is the actual data
-    edf <- do.call(getData, getDataArgs)
+    suppressWarnings(edf <- do.call(getData, getDataArgs))
     # check that there is some data to work with
     if(any(edf[,wgt] <= 0)) {
       warning("Removing rows with 0 weight from analysis.")
@@ -359,12 +373,13 @@ percentile <- function(variable, percentiles, data,
     Vimp <- rep(0, ncol(r))
     if(nrow(r) > 1) {
       # imputation variance with M correction (see stats vignette)
-      Vimp <- (M+1)/M * apply(r, 2, var)
+      # [r - mean(r)]^2
+      Vimp <- (M+1)/(M * (M-1)) * apply( (t(t(r) - apply(r, 2, mean)))^2, 2, sum) # will be 0 when there are no PVs
     }
     r0 <- apply(r, 2, mean)
     nsmall0 <- apply(nsmall, 2, mean)
     # variance due to sampling
-    Vjrr <- getAttributes(data, "jkSumMultiplier") * apply(varm[1:jrrIMax,,drop=FALSE], 2, mean)
+    Vjrr <- getAttributes(data, "jkSumMultiplier") * apply(varm[1:jrrIMax, , drop=FALSE], 2, mean)
     V <- Vimp + Vjrr
     # again, build varEstInputs for dof calculation
     varEstInputsPV <- r
@@ -442,11 +457,11 @@ percentile <- function(variable, percentiles, data,
         M <- length(variables)
         if(M > 1) {
           # imputation variance estimator, see stats vignette
-          pVimp <- (M+1)/(M * (M-1)) * apply(pVimp,2,sum) # will be 0 when there are no PVs
+          pVimp <- (M+1)/(M * (M-1)) * apply(pVimp, 2, sum) # will be 0 when there are no PVs
         } else {
           pVimp <- 0
         }
-        pVjrr <- apply(pVjrr,2,mean, na.rm=TRUE)
+        pVjrr <- getAttributes(data, "jkSumMultiplier") * apply(pVjrr, 2, mean, na.rm=TRUE)
         pV <- pVimp + pVjrr
       } else { # end if(varMethod=="j")
         # Taylor series method for confidence intervals
@@ -519,17 +534,14 @@ percentile <- function(variable, percentiles, data,
             pVimp[vari,] <- sapply(1:length(r0), function(ri) {
               # find the values below this percentile
               xpw$below <- (xpw$x < r0[ri])
+              s1 <- sum(xpw$w[xpw$below]) / sum(xpw$w) 
               s0 <- mu0[ri]
-              sum(sapply(1:length(jkw), function(jki) {
-                xpw$w <- edf[[jkw[jki]]]
-                s1 <- sum(xpw$w[xpw$below]) / sum(xpw$w)
-                (s1 - s0)^2
-              }))
+              return((s1 - s0)^2)
             })
           }
         }
         pVjrr <- apply(pVjrr,2,mean, na.rm=TRUE)
-        pVimp <- (M+1)/(M * (M-1)) * apply(pVimp,2,sum) # will be 0 when there are no PVs
+        pVimp <- (M+1)/(M * (M-1)) * apply(pVimp, 2, sum) # will be 0 when there are no PVs
         pV <- pVimp + pVjrr
       } # end else for if(varMethod=="j")
       latent_ci_min <- percentiles + 100 * sqrt(pV) * qt(alpha/2,df=62)
@@ -584,7 +596,11 @@ percentile <- function(variable, percentiles, data,
     attr(res, "n0") <- nrow2.edsurvey.data.frame(data)
     attr(res, "nUsed") <- nrow(edf)
     if (returnNumberOfPSU) {
-      attr(res, "nPSU") <- nrow(unique(edf[,c(stratumVar,psuVar)]))
+      if(sum(is.na(edf[,c(stratumVar, psuVar)])) == 0) {
+        attr(res, "nPSU") <- nrow(unique(edf[,c(stratumVar,psuVar)]))
+      } else {
+        warning("Cannot return number of PSUs because the stratum or PSU variables contain NA values.")
+      }
     }
     attr(res, "call") <- call
     class(res) <- c("percentile", "data.frame")

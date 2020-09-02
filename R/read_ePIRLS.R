@@ -291,6 +291,10 @@ buildPVVARS_ePIRLS <- function(fileFormat, defaultPV = "rrea"){
   
   pvFields <- subset(fileFormat, nchar(fileFormat$Type)>0) #type is identified in writeTibbleToFWFReturnFileFormat function
   constructs <- unique(pvFields$Type)
+  
+  #drop the international benchmark contructs as they are not true plausible values, only discrete numerics
+  constructs <- constructs[!grepl("^(e|r)ibm$", constructs, ignore.case = TRUE)]
+  
   pvvars <- vector("list", length(constructs))
   names(pvvars) <- constructs
   
@@ -528,7 +532,7 @@ export_ePIRLSToCSV <- function(folderPath, exportPath, cntryCodes, ...){
   
   sdfList <- read_ePIRLS(folderPath, cntryCodes, ...)
   
-  if (class(sdfList) == "edsurvey.data.frame.list"){
+  if (inherits(sdfList, "edsurvey.data.frame.list")) {
     for(i in 1:length(sdfList$datalist)){
       
       sdf  <- sdfList$datalist[[i]]

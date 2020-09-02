@@ -1,7 +1,19 @@
 \dontrun{
+#TALIS 2018 - school level data for all countries
+talis18 <- readTALIS(path = "~/TALIS/2018", 
+                     isced = "b", 
+                     dataLevel = "school", 
+                     countries = "*")
+
+#unweighted summary
+result <- summary2(talis18, "tc3g01", weightVar = "")
+
+#print usa results to console
+result$usa
+
 # the following call returns an edsurvey.data.frame to TALIS 2013 
 # for US teacher-level data at secondary level
-usa2013 <- readTALIS(path = "C:/TALIS/2013", isced = "b",
+usa2013 <- readTALIS(path = "~/TALIS/2013", isced = "b",
                      dataLevel = "teacher", countries = "usa")
 
 # extract a data.frame with a few variables

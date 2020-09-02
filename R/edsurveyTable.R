@@ -153,22 +153,54 @@ edsurveyTable <- function(formula,
     ll <- length(data$datalist)
     
     labels <- as.character(c(1:ll))
+    warns <- c()
+    errs <- c()
     for(i in 1:ll) {
       sdf <- data$datalist[[i]]
-      temp <- tryCatch(result <-calcEdsurveyTable(formula, sdf, weightVar, jrrIMax, pctAggregationLevel,
-                                                  returnMeans, returnSepct, varMethod, drop, 
-                                                  omittedLevels,
-                                                  defaultConditions=defaultConditions, recode,
-                                                  defaultConditionsMissing=missing(defaultConditions),
-                                                  returnVarEstInputs=returnVarEstInputs),
-                       error=function(cond) {
-                         message(paste("Error on dataset ", labels[i], ": ", cond, sep=""))
-                       }
-      ) 
-      if(class(temp) == "edsurveyTable") {
+      # withCallingHandlers logs warnings in the code, and the calcEdSurveyTable call continues (invokeRestart)
+      # errors are dealt with by stopping execution and logging the error in the tryCatch
+      # if there is an error the variable "result" will be the updated error message. 
+      # otherwise it is an edsurveyTable.
+      withCallingHandlers(result <- tryCatch(calcEdsurveyTable(formula, sdf, weightVar, jrrIMax, pctAggregationLevel,
+                                                               returnMeans, returnSepct, varMethod, drop, 
+                                                               omittedLevels,
+                                                               defaultConditions=defaultConditions, recode,
+                                                               defaultConditionsMissing=missing(defaultConditions),
+                                                               returnVarEstInputs=returnVarEstInputs),
+                                             error=function(cond) {
+                                               # in tryCatch, stop execution, return updated errs character
+                                               # could also <<- errs
+                                               return(c(errs, dQuote(paste(data$covs[i,], collapse=" "))))
+                                             }),
+                       warning=function(cond) {
+                         # this happens when a warning comes up and executes in calcEdsurveyTable
+                         # adds this dataset to the list with warnings, then continues execution, ignoring additional warnings
+                         warns <<- c(warns, dQuote(paste(data$covs[i,], collapse=" ")))
+                         invokeRestart("muffleWarning")
+                       })
+      if(inherits(result, "character")) {
+        errs <- result
+      }   
+      if(inherits(result, "edsurveyTable")) {
         res2[[labels[i]]] <- result
       }
     } #end of for(i in 1:ll)
+    if(length(errs)>0) {
+      if(length(errs)>1) {
+        datasets <- "datasets"
+      } else {
+        datasets <- "dataset"
+      }
+      warning(paste0("Could not process ", datasets, " ", pasteItems(errs), ". Try running this call with just the affected ", datasets, " for more details."))
+    }
+    if(length(warns)>0) {
+      if(length(warns)>1) {
+        datasets <- "datasets"
+      } else {
+        datasets <- "dataset"
+      }
+      warning(paste0("Warnings from ", datasets, " ", pasteItems(warns), ". Try running this call with just the affected ", datasets, " for more details."))
+    }
     cmbRes <- NULL
     listi <- 0
     while(is.null(cmbRes)) {
@@ -182,21 +214,46 @@ edsurveyTable <- function(formula,
     cmbD <- cmbRes$data
     # grab the column names
     cnames <- colnames(cmbD)
+
     for(i in 1:ncol(data$covs)) {
       # copy over this column from covs
-      cmbD[,colnames(data$covs)[i]] <- rep(data$covs[listi,i], nrow(cmbD))
+      cmbD[,colnames(data$covs)[i]] <- rep(data$covs[listi, i], nrow(cmbD))
       cnames <- c(colnames(data$covs)[i], cnames)
     }
     # reorder columns so covs come first
-    cmbD0 <- cmbD <- cmbD[,cnames]
-    while(listi < length(labels)) {
-      listi <- listi + 1
+    cmbDi <- cmbD0 <- cmbD <- cmbD[,cnames]
+    # we need these for NULL data
+    rhs_vars <- all.vars(formula[[3]])
+    for(listi in 1:length(labels)) {
       if(!is.null(res2[[labels[listi]]])) {
         cmbDi <- (res2[[labels[listi]]])$data
         for(i in 1:ncol(data$covs)) {
-          cmbDi[,colnames(data$covs)[i]] <- rep(data$covs[listi,i], nrow(cmbDi))
+
+          cmbDi[,colnames(data$covs)[i]] <- rep(data$covs[listi, i], nrow(cmbDi))
         }
-        cmbD <- rbind(cmbD, cmbDi[,cnames])
+        if(listi==1) {
+          cmbD <- cmbDi[ , cnames]
+        } else {
+          cmbD <- rbind(cmbD, cmbDi[ , cnames])
+        }
+      } else {
+        # res is NULL
+        # set everything to NA
+        for(i in 1:ncol(cmbDi)) {
+          # leave in RHS variables
+          if(!colnames(cmbDi)[i] %in% rhs_vars) {
+            cmbDi[ , i] <- NA
+          }
+        }
+        # add covs data back
+        for(i in 1:ncol(data$covs)) {
+          cmbDi[ , colnames(data$covs)[i]] <- rep(data$covs[listi, i], nrow(cmbDi))
+        }
+        if(listi==1) {
+          cmbD <- cmbDi[ , cnames]
+        } else {
+          cmbD <- rbind(cmbD, cmbDi[ , cnames])
+        }
       }
     }
     # add column labels back
@@ -326,11 +383,9 @@ calcEdsurveyTable <- function(formula,
     yvar0 <- yvars[1]
   }
   
-  
-  
   ## 2) get the data                            
   #We need to get all the weights
-  wgtl <- getAttributes(data,"weights")[[wgt]]
+  wgtl <- getAttributes(data, "weights")[[wgt]]
   # build the replicate weight vector
   wgtall <- paste0(wgtl$jkbase, wgtl$jksuffixes)
   if (!returnMeans) {
@@ -349,15 +404,22 @@ calcEdsurveyTable <- function(formula,
   }
   # only call with defaultConditions if it was in the call to edsurveyTable
   if(defaultConditionsMissing) {
-    edf  <- getData(data, reqvar, includeNaLabel=includeNaLabel,
-                    returnJKreplicates=(varMethod=="j" & (returnMeans | returnSepct)), dropUnusedLevels=dropUnusedLevels, 
-                    drop= drop,
-                    omittedLevels=omittedLevels, recode=recode, addAttributes=TRUE)
+    suppressWarnings(edf  <- getData(data, reqvar, includeNaLabel=includeNaLabel,
+                                     returnJKreplicates=(varMethod=="j" & (returnMeans | returnSepct)),
+                                     dropUnusedLevels=dropUnusedLevels, 
+                                     drop= drop,
+                                     omittedLevels=omittedLevels,
+                                     recode=recode,
+                                     addAttributes=TRUE))
   } else {
-    edf  <- getData(data, reqvar, includeNaLabel=includeNaLabel,
-                    returnJKreplicates=(varMethod=="j" & (returnMeans | returnSepct)), dropUnusedLevels=dropUnusedLevels, 
-                    drop= drop,
-                    omittedLevels=omittedLevels, defaultConditions=defaultConditions, recode=recode, addAttributes=TRUE)
+    suppressWarnings(edf  <- getData(data, reqvar, includeNaLabel=includeNaLabel,
+                                     returnJKreplicates=(varMethod=="j" & (returnMeans | returnSepct)),
+                                     dropUnusedLevels=dropUnusedLevels, 
+                                     drop= drop,
+                                     omittedLevels=omittedLevels,
+                                     defaultConditions=defaultConditions,
+                                     recode=recode,
+                                     addAttributes=TRUE))
   }
   if((returnMeans | returnSepct) & any(edf[,wgt] <= 0)) {
     warning("Removing rows with 0 weight from analysis.")
@@ -369,7 +431,7 @@ calcEdsurveyTable <- function(formula,
   }
   
   if (nrow(edf) == 0) {
-    stop("The requested data has 0 rows, so crosstab analysis cannot be done.")
+    stop("The requested data has 0 rows, this analysis cannot be done.")
   }
   
   njk <- length(wgtl$jksuffixes)

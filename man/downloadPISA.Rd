@@ -6,7 +6,7 @@
 \usage{
 downloadPISA(
   root,
-  years = c(2000, 2003, 2006, 2009, 2012, 2015),
+  years = c(2000, 2003, 2006, 2009, 2012, 2015, 2018),
   database = c("INT", "CBA", "FIN"),
   cache = FALSE,
   verbose = TRUE
@@ -17,7 +17,7 @@ downloadPISA(
 be stored. Files are placed in a folder named PISA/[year].}
 
 \item{years}{an integer vector of the assessment years to download. Valid years are 2000, 2003,
-2006, 2009, 2012, and 2015.}
+2006, 2009, 2012, 2015, and 2018.}
 
 \item{database}{a character vector to indicate which database to download from. For 2012,
 three databases are available (\code{INT} = International, \code{CBA} = Computer-Based Assessment, and
@@ -40,21 +40,25 @@ Uses an Internet connection to download PISA data to a
 The function uses
 \ifelse{latex}{\code{download.file}}{\code{\link[utils]{download.file}}}
 to download files from provided URLs. Some machines might require a different
-user agent in HTPP(S) requests. If the downloading gives an error or behaves
+user agent in HTTP(S) requests. If the downloading gives an error or behaves
 unexpectedly (e.g., a zip file cannot be unzipped or a data file is
 significantly smaller than expected), users can toggle \code{HTTPUserAgent}
 options to find one that works for their machines. One common alternative option is 
 
 \code{options(HTTPUserAgent="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/53.0")}
+
+Beginning in the 2018 data files, the \code{SPSS_STU_COG.zip} source data file is a \code{DEFLATE64} compressed zip file.
+This means that the user must manually extract the contained \code{CY07_MSU_STU_COG.sav} file using an external zip
+program capable of handling \code{DEFLATE64} zip format, as existing R functions are unable to handle this zip format natively.
 }
 \examples{
 \dontrun{
 # download PISA 2012 data (for all three databases)
-downloadPISA(years = 2012, database = c("INT","CBA","FIN"), root="C:/")
+downloadPISA(years = 2012, database = c("INT","CBA","FIN"), root="~/")
 
 # download PISA 2009, 2012, and 2015 data (International Database only) 
 # to C:/PISA/2009, C:/PISA/2012, and C:/PISA/2015 folders, respectively
-downloadPISA(years = c(2009,2012,2015), root="C:/")  
+downloadPISA(years = c(2009,2012,2015), root="~/")  
 }
 }
 \seealso{

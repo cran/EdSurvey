@@ -21,10 +21,10 @@ if (!dir.exists(edsurveyHome)) {
 context("ECLS_K data reads in correctly")
 test_that("ECLS_K data reads in correctly",{
   expect_silent(downloadECLS_K(years=c(1998, 2011), root=edsurveyHome, verbose=FALSE))
-  expect_silent(eclsk11 <<- readECLS_K2011(file.path(edsurveyHome, "ECLS_K", "2011"), filename = "childK4p.dat", layoutFilename = "ECLSK2011_K4PUF.sps", verbose = FALSE))
+  expect_silent(eclsk11 <<- readECLS_K2011(file.path(edsurveyHome, "ECLS_K", "2011"), filename = "childK5p.dat", layoutFilename = "ECLSK2011_K5PUF.sps", verbose = FALSE))
 
   expect_is(eclsk11, "edsurvey.data.frame")
-  expect_equal(dim(eclsk11), c(18174, 21443)) #18174 obs::21443 cols
+  expect_equal(dim(eclsk11), c(18174, 26060)) #18174 obs::26060 cols
 
   expect_silent(eclsk98 <<- readECLS_K1998(file.path(edsurveyHome, "ECLS_K", "1998"), filename="eclsk_98_99_k8_child_v1_0.dat", layoutFilename = "Layout_k8_child.txt", verbose = FALSE))
   expect_is(eclsk98, "edsurvey.data.frame")
@@ -55,7 +55,7 @@ test_that("ECLS_K rename.sdf", {
 context("ECLS_K Taylor Series")
 test_that("ECLS_K Taylor Series", {
   skip_on_cran()
-  lmTaylor <- lm.sdf(x8mscalk4 ~  x12sesl, weightVar = "w8c28p_8t280", varMethod = "Taylor",
+  lmTaylor <- lm.sdf(x8mscalk5 ~  x12sesl, weightVar = "w8c28p_8t280", varMethod = "Taylor",
                      data = eclsk11)
   withr::with_options(list(digits=7), lmTaylorOutput <- capture.output(summary(lmTaylor)))
   expect_equal(lmTaylorOutput, lmTaylorREF)
@@ -66,7 +66,7 @@ test_that("ECLS_K Taylor Series", {
 
 context("ECLS_K Wald test")
 test_that("ECLS_K Wald test", {
-  suppressWarnings(glmTaylor <- logit.sdf(I(x8mscalk4>122) ~  x12sesl, weightVar = "w8c28p_8t280", data = eclsk11))
+  suppressWarnings(glmTaylor <- logit.sdf(I(x8mscalk5>122) ~  x12sesl, weightVar = "w8c28p_8t280", data = eclsk11))
   summary(glmTaylor)
   wt2 <- waldTest(glmTaylor, coeff=2)
   # the Wald chi-square test should equal t-test
@@ -84,8 +84,8 @@ test_that("ECLS_K summary2", {
 
 context("ECLS_K suggestWeights")
 test_that("ECLS_K suggestWeights", {
-  expect_equal(expect_warning(suggestWeights("x8mscalk4", eclsk11), "experimental"), "w8c8p_20")
-  expect_equal(expect_warning(suggestWeights(c("x7mscalk4","x8mscalk4", "x_chsex_r", "x_raceth_r"), eclsk11, TRUE), "experimental"), 
+  expect_equal(expect_warning(suggestWeights("x8mscalk5", eclsk11), "experimental"), "w8c8p_20")
+  expect_equal(expect_warning(suggestWeights(c("x7mscalk5","x8mscalk5", "x_chsex_r", "x_raceth_r"), eclsk11, TRUE), "experimental"), 
                               c("w8c28p_8a0", "w8c28p_2t80", "w8c28p_2t8z0", "w8c28p_8b0", "w8c28p_2t280", "w8cf8p_80", "w8c28p_8t280", "w8c28p_8t28z0", "w8c18p_8t180", "w8cf8p_2t180"))
-  expect_equal(expect_warning(suggestWeights(c("x8mscalk4", "x_chsex_r", "x12sesl"), eclsk11), "experimental"), "w8c8p_20")
+  expect_equal(expect_warning(suggestWeights(c("x8mscalk5", "x_chsex_r", "x12sesl"), eclsk11), "experimental"), "w8c8p_20")
 })

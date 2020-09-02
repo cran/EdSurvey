@@ -40,6 +40,7 @@ this function is difficult to use (with \code{inside} set to the default value o
 See Examples for how to call this function from within another function.
 }
 \examples{
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
@@ -89,9 +90,9 @@ dsdf <- subset(x=sdf, subset=cond, inside=TRUE)
 # check the result
 table(getData(data=dsdf, varnames="dsex"))
 
-# returns data, but uses substantial memory
-\dontrun{
-head(sdf[c("origwt","m145101")])
+# both of these return data, but uses substantial memory
+head(sdf[ , c("origwt","m145101")])
+head(sdf[[c("origwt","m145101")]])
 
 # subset an edsurvey.data.frame.list
 sdfA <- subset(sdf, scrpsu \%in\% c(5,45,56))

@@ -55,7 +55,7 @@ Data files require the SPSS data file (.sav) format using the default filenames.
 }
 \examples{
 \dontrun{
-pol <- readICILS("C:/ICILS/2013", countries = "pol", dataSet = "student")
+pol <- readICILS("~/ICILS/2013", countries = "pol", dataSet = "student")
 gg <- getData(pol, c("idstud", "cil", "is1g18b"))
 head(gg)
 edsurveyTable(cil ~ is1g18b, pol)

@@ -34,7 +34,7 @@ Reads in the unzipped derived data files from the BPS longitudinal database of t
 \examples{
 \dontrun{
 # using default filenames
-bps09 <- readBPS_2009(path = "C:/BPS/2009")
+bps09 <- readBPS_2009(path = "~/BPS/2009")
 dim(bps09)
 
 # parameters specified without default filenames

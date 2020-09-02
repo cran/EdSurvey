@@ -302,7 +302,11 @@ readICILS <- function(path,
 
       processedData$gradeLevel <- "Grade 8"
 
-      processedData$omittedLevels <- c('Multiple', NA, 'OMITTED', 'OMITTED OR INVALID', 'LOGICALLY NOT APPLICABLE', 'MISSING', 'NOT ADMINISTERED/MISSING BY DESIGN', 'PRESENTED BUT NOT ANSWERED/INVALID', 'NOT REACHED', 'NOT APPLICABLE', 'NOT STATED', '(Missing)')
+      processedData$omittedLevels <- c(NA, "OMITTED", "OMITTED OR INVALID", 
+                                       "LOGICALLY NOT APPLICABLE", "MISSING", "NOT ADMINISTERED/MISSING BY DESIGN", 
+                                       "PRESENTED BUT NOT ANSWERED/INVALID", "NOT REACHED", "NOT APPLICABLE", "NOT STATED",
+                                       "NOT ADMINISTERED OR MISSING BY DESIGN", "PRESENTED BUT NOT ANSWERED OR INVALID",
+                                       "(Missing)")
 
       processedData$survey <- "ICILS"
       processedData$country <- getICILSCountryName(cntry)
@@ -564,7 +568,7 @@ exportICILSToCSV <- function(folderPath, exportPath, cntryCodes, dataSet, ...){
 
   sdfList <- readICILS(folderPath, cntryCodes, dataSet, ...)
 
-  if (class(sdfList) == "edsurvey.data.frame.list"){
+  if (inherits(sdfList, "edsurvey.data.frame.list")) {
     for(i in 1:length(sdfList$datalist)){
 
       sdf  <- sdfList$datalist[[i]]
@@ -577,7 +581,7 @@ exportICILSToCSV <- function(folderPath, exportPath, cntryCodes, dataSet, ...){
       write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
       cat(paste(cntry, "completed.\n"))
     }
-  } else if (class(sdfList) == "edsurvey.data.frame"){
+  } else if (inherits(sdfList, "edsurvey.data.frame")) {
 
     sdf <- sdfList
     cntry <- sdf$country

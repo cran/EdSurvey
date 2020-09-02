@@ -1,5 +1,5 @@
 \dontrun{
-usaG4.15 <- readTIMSS("C:/TIMSS2015", "usa", 4)
+usaG4.15 <- readTIMSS("~/TIMSS/2015", "usa", 4)
 usaG4.15.renamed <- rename.sdf(usaG4.15,
                                c("itsex", "mmat"),
                                c("gender", "math_overall"))

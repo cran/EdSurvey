@@ -135,28 +135,36 @@ achievementLevels <- function(achievementVars = NULL,
   
   if(inherits(data, "edsurvey.data.frame.list")) {
     ll <- length(data$datalist)
-    labels <- as.character(data$covs$labels)
+    labels <- apply(data$covs, 1, function(x) { paste(as.character(x), collapse=":") })
     if(is.null(labels)) {
       labels <- as.character(c(1:ll))
     }
     
+    warns <- c()
     for(i in 1:ll) {
       sdf <- data$datalist[[i]]
-      temp <- tryCatch(alResult <- calAL(achievementVars, aggregateBy, sdf, cutpoints, returnDiscrete,
+      temp <- tryCatch(suppressWarnings(alResult <- calAL(achievementVars, aggregateBy, sdf, cutpoints, returnDiscrete,
                                          returnCumulative, weightVar, jrrIMax, omittedLevels, defaultConditions,
                                          recode,
                                          defaultConditionsMissing=missing(defaultConditions),
                                          returnVarEstInputs=returnVarEstInputs,
-                                         returnNumberOfPSU=returnNumberOfPSU),
+                                         returnNumberOfPSU=returnNumberOfPSU)),
                        error = function(cond) {
-                         message(paste("An error occurred while working on dataset", labels[i], " excluding results from this dataset."))
-                         message(cond)
+                         warns <<- c(warns, labels[i])
                          return(NULL)
                        }
       )
       if(class(temp) == "achievementLevels") {
         alResultDfList[[labels[i]]] <- alResult
       }
+    }
+    if(length(warns)>0) {
+      if(length(warns)>1) {
+        datasets <- "datasets"
+      } else {
+        datasets <- "dataset"
+      }
+      warning(paste0("Could not process ", datasets, " ", pasteItems(warns), ". Try running this call with just the affected ", datasets, " for more details."))
     }
     class(alResultDfList) <- "achievementLevels"
     alResultDfList
@@ -258,7 +266,8 @@ calAL <- function(achievementVars = NULL,
   if(!defaultConditionsMissing) {
     getDataArgs <- c(getDataArgs, list(defaultConditions=defaultConditions))
   }
-  edfDT <- do.call(getData, getDataArgs)
+  # avoid 0 rows warning
+  suppressWarnings(edfDT <- do.call(getData, getDataArgs))
   edfDT <- setDT(edfDT)
   edfDTnrow <- nrow(edfDT)
   stratumAndPSU <- NULL
@@ -489,7 +498,7 @@ assertArgument <- function(arguments, data){
          "edfDT" = {
            # check if there is any data
            if(nrow(arguments) <= 0) {
-             stop(paste0(sQuote("data"), " must have more than 0 rows after a call to ", sQuote("getData"), "."))
+             stop(paste0("No data to analyze. Check if there are complete cases."))
            }
          },
          "cutpoints" = {
@@ -569,7 +578,8 @@ calculateAL <- function(recodeEdfResults, pvs, jrrIMax, returnVarEstInputs,
   jrr_dt <- lapply(1:jrrIMax, function(i) {
     recodeEdfResults[,lapply(.SD,sum), by = c(paste0(pvs[i],"_lvl"),achievementVars), .SDcols = jkWeights][,PV:=i]
   })
-  jrr_dt <- rbindlist(jrr_dt)
+
+  jrr_dt <- rbindlist(jrr_dt, use.names = FALSE)
   names(jrr_dt)[1] <- "Level"
   # end jrr_dt
   
@@ -580,7 +590,7 @@ calculateAL <- function(recodeEdfResults, pvs, jrrIMax, returnVarEstInputs,
                        by = c(paste0(pvs[i],"_lvl"), achievementVars), 
                        .SDcols = "stratumAndPSU"][,PV:=i]
     })
-    nPSU_dt <- rbindlist(nPSU_dt)
+    nPSU_dt <- rbindlist(nPSU_dt, use.names = FALSE)
     names(nPSU_dt)[1] <- "Level"
     names(nPSU_dt)[names(nPSU_dt) == "stratumAndPSU"] <- "nPSU"
   }
@@ -685,7 +695,7 @@ print.achievementLevels <- function(x, printCall=TRUE, printDiscrete=TRUE, print
     }
     
     if(length(ll) != 1) {
-      cat("Output for dataset ", i, "\n")
+      cat("\n\nOutput for dataset ", i, "\n")
     }
     
     if(printCall) {

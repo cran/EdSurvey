@@ -20,10 +20,12 @@ Returns the jackknife replicate weights on an \code{edsurvey.data.frame}, a \cod
              an \code{edsurvey.data.frame.list} associated with a weight variable.
 }
 \examples{
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
 getWeightJkReplicates(var="origwt", data=sdf)
+}
 }
 \author{
 Michael Lee and Paul Bailey

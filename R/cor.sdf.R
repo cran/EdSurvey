@@ -25,10 +25,28 @@
 #'                       calculating the correlation. When set to \code{FALSE},
 #'                       the numeric levels of the variable remain the same as
 #'                       in the codebook. See Examples.
+#' @param fisherZ for standard error and mean calculations, set to \code{TRUE} to use
+#'                the Fisher Z-transformation (see details), or \code{FALSE}
+#'                to use no transformation of the data. The \code{fisherZ} argument defaults
+#'                to Fisher Z-transformation for Pearson and no transformation  
+#'                for other correlation types.
+#' @param jrrIMax    a numeric value; when using the jackknife variance estimation method, the default estimation option, \code{jrrIMax=Inf}, uses the 
+#'                   sampling variance from all plausible values as the component for sampling variance estimation. The \code{Vjrr} 
+#'                   term (see 
+#' \href{https://www.air.org/sites/default/files/EdSurvey-Statistics.pdf}{\emph{Statistical Methods Used in EdSurvey}})
+#'                   can be estimated with any number of plausible values, and values larger than the number of 
+#'                   plausible values on the survey (including \code{Inf}) will result in all plausible values being used. 
+#'                   Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.
 #' 
 #' @details 
 #' The \code{\link{getData}} arguments and \code{\link{recode.sdf}} may be useful. (See Examples.)
 #' The correlation methods are calculated as described in the documentation for the \code{wCorr} package---see \code{browseVignettes(package="wCorr")}.
+#'
+#' The Fisher Z-transformation is both a variance stabilizing  and normalizing transformation
+#' for the Pearson correlation coefficient (Fisher, 1915).
+#' The transformation takes the inverse hybarbolic tangent of the correlation coefficients and then calculates all variances and confidence intervals.
+#' These are then transformed back to the correlation space (values between -1 and 1, inclusive) using the hyperbolic tangent function.
+#' The Taylor series approximation (or delta method) is applied for the standard errors.
 #'
 #' @return
 #' An \code{edsurvey.cor} that has print and summary methods.
@@ -45,9 +63,18 @@
 #' \item{weight}{the weight variable used}
 #' \item{npv}{the number of plausible values used}
 #' \item{njk}{the number of the jackknife replicates used}
+#' \item{n0}{the original number of observations}
+#' \item{nUsed}{the number of observations used in the analysis---after any conditions and any listwise deletion of missings is applied}
+#' \item{se}{the standard error of the correlation, in the correlation ([-1,1]) space}
+#' \item{ZconfidenceInterval}{the confidence interval of the correlation in the transformation space}
+#' \item{confidenceInterval}{the confidence interval of the correlation in the correlation ([-1,1]) space}
+#' \item{transformation}{the name of the transformation used when calculating standard errors}
 #' 
 #' @seealso \ifelse{latex}{\code{cor}}{\code{\link[stats]{cor}}} and \ifelse{latex}{\code{weightedCorr}}{\code{\link[wCorr]{weightedCorr}}}
 #' @author Paul Bailey; relies heavily on the \code{wCorr} package, written by Ahmad Emad and Paul Bailey
+#'
+#' @references
+#' Fisher, R. A. (1915). Frequency distribution of the values of the correlation coefficient in samples from an indefinitely large population. \emph{Biometrika}, \emph{10}(4), 507--521.
 #'
 #' @example man/examples/cor.sdf.R
 #' @importFrom wCorr weightedCorr
@@ -63,7 +90,9 @@ cor.sdf <- function(x,
                     omittedLevels=TRUE, 
                     defaultConditions=TRUE,
                     recode = NULL,
-                    condenseLevels = TRUE) {
+                    condenseLevels = TRUE,
+                    fisherZ = if(match.arg(method) %in% "Pearson") {TRUE} else {FALSE},
+                    jrrIMax=Inf) {
   if (inherits(data, c("edsurvey.data.frame.list"))) {
     # use itterateESDFL to do this call to every element of the edsurvey.data.frame.list
     return(itterateESDFL(match.call(),data))
@@ -72,13 +101,42 @@ cor.sdf <- function(x,
   vars <- c(x,y)
   # test input
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
-
+  
   if(inherits(data[[x]],"character")) {
-    stop(paste0("The argument ",sQuote("x"), " must be of a class numeric, factor, or lfactor."))
+    stop(paste0("The argument ", sQuote("x"), " must be of a class numeric, factor, or lfactor."))
   }
   if(inherits(data[[y]],"character")) {
-    stop(paste0("The argument ",sQuote("y"), " must be of a class numeric, factor, or lfactor."))
+    stop(paste0("The argument ", sQuote("y"), " must be of a class numeric, factor, or lfactor."))
   } 
+
+  # fix transformation
+  if(!inherits(fisherZ, "logical")) {
+    stop(paste0("The argument ", dQuote("fisherZ"), " must be TRUE or FALSE."))
+  }
+
+  if(fisherZ) {
+    transformation <- FisherZTrans()
+  } else {
+    transformation <- identityTrans()
+  }
+
+  if(!all(c("name", "trans", "itrans", "setrans") %in% names(transformation))) {
+    stop(paste0("The argument ", sQuote("transformation"),
+                " must be a list with three elements, each a function, named ",
+                sQuote("trans"), ",",
+                sQuote("itrans"), ", and ",
+                sQuote("setrans"), "."))
+  }
+  if(!all(inherits(transformation$name, "character"),
+          inherits(transformation$trans, "function"), 
+          inherits(transformation$itrans, "function"),
+          inherits(transformation$setrans, "function"))) {
+    stop(paste0("The argument ", sQuote("transformation"),
+                " must be a list with three elements, each a function, named ",
+                sQuote("trans"), ",",
+                sQuote("itrans"), ", and ",
+                sQuote("setrans"), "."))
+  }
 
   if(nrow(data) <= 0) {
     stop(paste0(sQuote("data"), " must have more than 0 rows."))
@@ -243,32 +301,26 @@ cor.sdf <- function(x,
   for(i in 1:npv) {
     if(pm %in% c(1,2)) {
       # Pearson or Spearman
-      diagVar[i] <- weightedCorr(xvarlsdf[,min(i,npvx)],yvarlsdf[,min(i,npvy)], method=method, weights=lsdf[,wgt], fast=TRUE, ML=FALSE)
+      diagVar[i] <- weightedCorr(xvarlsdf[ , min(i, npvx)], yvarlsdf[ , min(i, npvy)], method=method, weights=lsdf[,wgt], fast=TRUE, ML=FALSE)
     } 
     if(pm %in% c(3)) {
       # polychoric
-      diagVar[i] <- weightedCorr(xvarlsdf[,min(i,npvx)],yvarlsdf[,min(i,npvy)], method="polychoric", weights=lsdf[,wgt], fast=TRUE, ML=FALSE)
+      diagVar[i] <- weightedCorr(xvarlsdf[ , min(i, npvx)], yvarlsdf[ , min(i, npvy)], method="polychoric", weights=lsdf[ , wgt], fast=TRUE, ML=FALSE)
     }
     if(pm %in% c(4)) {
       # polyserial
-      diagVar[i] <- weightedCorr(xvarlsdf[,min(i,npvx)],yvarlsdf[,min(i,npvy)], method="polyserial", weights=lsdf[,wgt], fast=TRUE, ML=FALSE)
+      diagVar[i] <- weightedCorr(xvarlsdf[ , min(i, npvx)], yvarlsdf[ , min(i, npvy)], method="polyserial", weights=lsdf[ , wgt], fast=TRUE, ML=FALSE)
     }
   }
 
   # for Pearson we will do a forward transform and inverse transform
   # to keep the code simple we simply set the transofmr an intervse transform
   # to the identity function for everything that is not Pearson
-  trans <- if(pm==1) {
-    atanh
-  } else {
-    function(x) { x }
-  } 
-  itrans <- if(pm==1) {
-    tanh
-  } else {
-    function(x) { x }
-  } 
-  #fisherTransformation for Pearson
+  trans <- transformation$trans 
+  itrans <- transformation$itrans
+  setrans <- transformation$setrans
+
+  # potentially transform estimates
   ft <- trans(diagVar)
 
   # estimated correlation coefficient
@@ -278,27 +330,35 @@ cor.sdf <- function(x,
 
   # for each jackknife replicate
   jkwgtdf <- lsdf[,paste0(wgtl$jkbase, wgtl$jksuffixes), drop=FALSE] #dataframe of jk replicate weights
-  diagVarWgt <- matrix(NA,ncol=length(xvarlsdf),nrow=length(wgts))
+  jrrIMax <- min(npv, max(1,jrrIMax))
+  diagVarWgt <- matrix(NA, ncol=jrrIMax, nrow=length(wgts))
   
+  # make jrrIMax
   # rerun with JK replicate weights
-  for(jki in 1:length(wgts)) {
-    for(i in 1:npv) {
+  for(i in 1:jrrIMax) {
+    for(jki in rev(1:length(wgts))) {
+      posFilter <- jkwgtdf[ , jki] > 0
       if(pm %in% c(1,2)) {
-        diagVarWgt[jki,i] <- (trans(weightedCorr(xvarlsdf[,min(i,npvx)],yvarlsdf[,min(i,npvy)], method=method, weights=jkwgtdf[,jki], fast=TRUE, ML=FALSE)) - ft[i])^2
+        diagVarWgt[jki, i] <- (trans(weightedCorr(xvarlsdf[posFilter, min(i, npvx)], yvarlsdf[posFilter, min(i, npvy)],
+                                                 method=method, weights=jkwgtdf[posFilter, jki], fast=TRUE, ML=FALSE)) - ft[i])
       }
       if(pm %in% c(3)) {
-        diagVarWgt[jki,i] <- (trans(weightedCorr(xvarlsdf[,min(i,npvx)],yvarlsdf[,min(i,npvy)], method="polychoric", weights=jkwgtdf[,jki], fast=TRUE, ML=FALSE)) - ft[i])^2
+        diagVarWgt[jki, i] <- (trans(weightedCorr(xvarlsdf[posFilter, min(i, npvx)], yvarlsdf[posFilter , min(i, npvy)],
+                                                 method="polychoric", weights=jkwgtdf[posFilter, jki], fast=TRUE, ML=FALSE)) - ft[i])
       }
       if(pm %in% c(4)) {
-        diagVarWgt[jki,i] <- (trans(weightedCorr(xvarlsdf[,min(i,npvx)],yvarlsdf[,min(i,npvy)], method="polyserial", weights=jkwgtdf[,jki], fast=TRUE, ML=FALSE)) - ft[i])^2
+        diagVarWgt[jki, i] <- (trans(weightedCorr(xvarlsdf[posFilter, min(i, npvx)], yvarlsdf[posFilter, min(i, npvy)],
+                                                 method="polyserial", weights=jkwgtdf[posFilter, jki], fast=TRUE, ML=FALSE)) - ft[i])
       }
-    } # End of for statment i in 1:npv
-  } # End of for statment jki in 1:length(wgts)
-
+    } # End of for statment jki in 1:length(wgts)
+  } # End of for statment i in 1:npv
   # see documentation for defintion of Vjrr, Vimp, M
   # one Vjrr per plausible value (PB)
-  preVjrr = apply(diagVarWgt, 2, sum)
-  Vjrr = mean(preVjrr)
+
+  preVjrr = getAttributes(data, "jkSumMultiplier") * apply(diagVarWgt^2, 2, sum)
+
+  Vjrr = mean(preVjrr, na.rm=TRUE)
+
   # then Vimp = ((M+1)/M) * [variance of main estimate (mcc) across the PVs.]
   # M= number of plausible values
   M <- length(diagVar)
@@ -308,15 +368,44 @@ cor.sdf <- function(x,
   # se is root variance
   Zse <- sqrt(V)
 
+  if(length(diagVar) > 1) {
+    # multiple PVs
+    veJK <- data.frame(stringsAsFactors=FALSE,
+                       PV=rep(1:ncol(diagVarWgt), each=nrow(diagVarWgt)),
+                       JKreplicate=rep(1:nrow(diagVarWgt), ncol(diagVarWgt)),
+                       variable="cor",
+                       value=as.vector(diagVarWgt)) # as.vector stacks the columns of diagVarWgt
+    vePV <- data.frame(stringsAsFactors=FALSE,
+                       PV=1:npv,
+                       variable=rep("cor", npv),
+                       value=diagVar - mean(diagVar))
+    varEstInputs <- list(JK=veJK, PV=vePV)
+  } else {
+    # non-PV variables
+    J <- length(diagVarWgt)
+    veJK <- data.frame(stringsAsFactors=FALSE,
+                       PV=rep(1, J),
+                       JKreplicate=1:J,
+                       variable=rep("cor", J),
+                       value=diagVarWgt)
+    varEstInputs <- list(JK=veJK)
+  }
+
   if(weightVar=="one") {
     cor <- list(correlation=mcc, Zse=NA, correlates=vars, variables=variables, order=varOrder, method=method,
-                Vjrr=NA, Vimp=NA, weight="unweighted", npv=M, njk=NA)
+                Vjrr=NA, Vimp=NA, weight="unweighted", npv=M, njk=NA, se=NA, ZconfidenceInterval=NA, confidenceInterval=NA)
   } else { # else if weightVar is not "one"
+    dof <- DoFCorrection(varEstInputs, varA="cor", method="JR")
+    tstat <- qt(p=0.975, df=dof)
+    Zci <- premcc + c(-1,1) * tstat * Zse
+    ci <- itrans(Zci)
+    se <- setrans(premcc, Zse)
     cor <- list(correlation=mcc, Zse=Zse, correlates=vars, variables=variables, order=varOrder, method=method,
-                Vjrr=Vjrr, Vimp=Vimp, weight=weightVar, npv=M, njk=length(wgtl$jksuffixes))
+                Vjrr=Vjrr, Vimp=Vimp, weight=weightVar, npv=M, njk=length(wgtl$jksuffixes),
+                se=se, ZconfidenceInterval=Zci, confidenceInterval=ci)
   } # End of if statment: if weightVar is "one"
   cor <- c(cor, list(n0=nrow2.edsurvey.data.frame(data), nUsed=nrow(lsdf)))
-
+  cor <- c(cor, list(transformation=transformation$name))
   class(cor) <- "edsurveyCor"
   return(cor)
 }
@@ -330,8 +419,9 @@ print.edsurveyCor <- function(x, digits = getOption("digits"), ...) {
   cat(paste0("full data n: ", x$n0, "\n"))
   cat(paste0("n used: ", x$nUsed, "\n"))
   cat("\n")
-  cat(paste0("Correlation: ", signif(x$correlation, digits=digits), collapse=""))
-  cat("\n")
+  cat(paste0("Correlation: ", paste0(signif(x$correlation, digits=digits), collapse=""), "\n"))
+  cat(paste0("Standard Error: ", paste0(signif(x$se, digits=digits), collapse=""), "\n"))
+  cat(paste0("Confidence Interval: [",paste0(signif(x$confidenceInterval, digits=digits), collapse=", "), "]\n"))
   if(length(x$order)>0) {
     cat("\nCorrelation Levels:\n")
     for(var in 1:length(x$order)) {
@@ -341,4 +431,24 @@ print.edsurveyCor <- function(x, digits = getOption("digits"), ...) {
       } # end of i in 1:length(x$order[[var]])
     } # End of for(var in 1:length(x$order))
   } # End of length(x$order)>0
+}
+
+FisherZTrans <- function() {
+  list(name="Fisher Z",
+       trans = atanh,
+       itrans = tanh,
+       setrans = function(z, Zse) {
+                   sqrt(Zse^2 * (1-tanh(z)^2)^2)
+                 }
+      )
+}
+
+identityTrans <- function() {
+  list(name="identity",
+       trans = identity,
+       itrans = identity,
+       setrans = function(Z, Zse) {
+                   identity(Zse)
+                 }
+      )
 }

@@ -59,7 +59,7 @@ Please note that calling the \code{dim} function for an ePIRLS \code{edsurvey.da
 }
 \examples{
 \dontrun{
-usa <- read_ePIRLS("C:/ePIRLS/2016", countries = c("usa"))
+usa <- read_ePIRLS("~/ePIRLS/2016", countries = c("usa"))
 gg <- getData(usa, c("itsex", "totwgt", "erea"))
 head(gg)
 edsurveyTable(erea ~ itsex, usa)

@@ -21,6 +21,7 @@ getSPSSFileFormat <- function(spssDF) {
   colInfo$type <- substr(colInfo$format, 1, 1)
   colInfo$dataType[colInfo$type=="A"] <- "character"
   colInfo$dataType[colInfo$type=="F" & colInfo$size < 9 & colInfo$decimal==0] <- "integer"
+  colInfo$dataType[colInfo$type=="F" & colInfo$size >= 9 & colInfo$decimal==0] <- "numeric"
   colInfo$dataType[colInfo$type=="F" & colInfo$decimal>0] <- "numeric"
   
   ff <- data.frame(variableName=colInfo$names, stringsAsFactors=FALSE)

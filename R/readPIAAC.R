@@ -13,7 +13,8 @@
 #'                  If files are downloaded using \code{\link{downloadPIAAC}},
 #'                  a country dictionary text file can be
 #'                  found in the filepath. You can use \code{*} to indicate
-#'                  all countries available.
+#'                  all countries available. For the \code{usa}, the year must 
+#'                  be specified using: \code{usa12_14} or  \code{usa17}.
 #' @param forceReread a logical value to force rereading of all processed data.
 #'                    Defaults to \code{FALSE}.
 #'                    Setting \code{forceReread} to be \code{TRUE} will cause
@@ -21,6 +22,11 @@
 #' @param verbose a logical value that will determine if you want verbose
 #'                output while the function is running to indicate the progress.
 #'                Defaults to \code{TRUE}.
+#' @param usaOption a character value of \code{12_14} or \code{17} that specifies 
+#'                  what year of the USA survey should be used when loading all countries by 
+#'                  using \code{*} in the \code{countries} argument. This will only make a difference 
+#'                  when loading all countries. Defaults to \code{12_14}.
+#'
 #'
 #' @details
 #' Reads in the unzipped .csv files downloaded from the PIAAC dataset using
@@ -41,20 +47,26 @@
 readPIAAC <- function(path, 
                       countries, 
                       forceReread = FALSE,
-                      verbose = TRUE) {
+                      verbose = TRUE,
+                      usaOption = "12_14") {
   
   #temporarily adjust any necessary option settings; revert back when done
   userOp <- options(OutDec = ".")
+  userOp2 <- options(scipen = 999)
   on.exit(options(userOp), add = TRUE)
+  on.exit(options(userOp2), add = TRUE)
   
   filepath <- normalizePath(path, winslash = "/") # to match IEA read-in function
   forceRead <- forceReread # to match IEA read-in function
   
   csvfiles <- list.files(filepath, pattern = "^prg.*\\.csv$", full.names=FALSE, ignore.case=TRUE)
+  
   all_countries <- unique(tolower(substr(csvfiles, 4,6)))
   if (unlist(countries)[1] == "*") {
+    all <- TRUE # keeping track of a "*" for usaOption
     countries <- all_countries
   } else {
+    all <- FALSE
     countries <- tolower(unlist(countries))
   }
   
@@ -104,6 +116,23 @@ readPIAAC <- function(path,
   # Process data for each country
   sdf <- list()
   for (cntry in countries) {
+    
+    # check usaOption if star is used 
+    if(cntry == "usa" &  all){
+      if(usaOption == "17"){
+        cntry <- paste0(cntry,"17")
+      } 
+      else {
+        if(usaOption == "12_14"){
+          cntry <- paste0(cntry,"12_14")
+        } else {
+          stop(paste0(dQuote("usaOption") , " must either be ", sQuote("12_14"), ", or ", sQuote("17"), " not: ", sQuote(usaOption)))
+        }
+      }
+
+    }
+    
+    # process 
     processedData <- processCountryPIAAC(filepath, cntry,ff,forceRead, verbose)
     processedData$userConditions <- list()
     processedData$defaultConditions <- NULL
@@ -190,21 +219,48 @@ processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
   if (verbose) {
     cat("Processing data for country code ", dQuote(countryCode),".\n")
   }
-  fname = list.files(filepath,pattern = paste0(countryCode,".*\\.csv"), full.names = FALSE, ignore.case = TRUE)
-  if(length(fname) == 0) {
-    stop("Missing PIAAC data file(s) for country (",countryCode, ") in the path ",sQuote(filepath),".")
-  }
-  # if using updated data with 2012 and 2017 version of US data, just grab 2012 data.
-  if("prgusap1_2012.csv" %in% fname) {
-    fname <- "prgusap1_2012.csv"
-  }
-  if(length(fname) > 1) {
-    stop(paste0(countryCode,": there is more than one csv files."))
-  }
-  fname <- fname[1]
-  dat <- read.csv(file.path(filepath,fname), colClasses = "character", na.strings="")
-  colnames(dat) <- toupper(colnames(dat))
+  # Reading country csv file 
+  # If Country code is USA, special processing, else regular 
+  if(grepl("usa",countryCode)) {
+    origCC <- countryCode
+    date <- gsub("usa(.*)","\\1", countryCode)
+    countryCode <- "usa"
+    # Is it US 17 or 2012 
+    if(grepl("17", date)) {
+      # usa 17
+      fname = list.files(filepath,pattern = paste0(countryCode,".*2017\\.csv"), full.names = FALSE, ignore.case = TRUE)
+      if(length(fname) > 1) {
+        stop(paste0(sQuote(countryCode),": there is more than one csv files."))
+      }
+      fname <- fname[1]
+      # 17 is "|" delimited
+      dat <- read.csv(file.path(filepath,fname), header = TRUE, sep = ,"|",colClasses = "character", na.strings="", stringsAsFactors = FALSE)
+      
+    } else {
+      if(grepl("12_14", date)){
+        # usa 12
+        fname = list.files(filepath,pattern = paste0(countryCode,".*1\\.csv"), full.names = FALSE, ignore.case = TRUE)
+        if(length(fname) > 1) {
+          stop(paste0(countryCode,": there is more than one csv files."))
+        } 
+        fname <- fname[1]
+        dat <- read.csv(file.path(filepath,fname), header = TRUE, colClasses = "character", na.strings="", stringsAsFactors = FALSE)
+      } else {
+        stop(paste0(dQuote("usaOption") , " must either be ", sQuote("12_14"), ", or ", sQuote("17"), " not: ", sQuote(origCC)))
+      } # end US cases 
+    } 
+  } else {
+    # non-US cases 
+    fname = list.files(filepath,pattern = paste0(countryCode,".*\\.csv"), full.names = FALSE, ignore.case = TRUE)
+    if(length(fname) > 1) {
+      stop(paste0(countryCode,": there is more than one csv files."))
+    }
+    fname <- fname[1]
+    dat <- read.csv(file.path(filepath,fname), header = TRUE, colClasses = "character", na.strings="", stringsAsFactors = FALSE)
+  } # end reading country csv file 
   
+  colnames(dat) <- toupper(colnames(dat))
+
   # checking whether any missing columns in the data file
   # replace with NAs
   missingcolumns <- setdiff(ff$variableName, colnames(dat))
@@ -233,13 +289,12 @@ processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
     if(ff$dataType[ci] != "character") {
       temp <- dat[[ci]]
       suppressWarnings(temp <- as.numeric(temp))
-      temp <- format(temp, digits = ff$Width[ci])
       temp <- ifelse(grepl("NA",temp),NA,temp)
       dat[[ci]] <- temp
     }
   }
-  # write out processed csv files
-  write.csv(dat, file.path(filepath,gsub("\\.csv$",".txt",fname)), col.names = FALSE, na = "")
+  # write out processed csv files, must use write.table as write.csv ALWAYS includes col.names even if col.names=FALSE is set
+  write.table(dat, file.path(filepath,gsub("\\.csv$",".txt",fname)), sep = ",", col.names = FALSE, na = "", row.names = FALSE)
   
   # return output
   dataList$student <- getCSVLaFConnection(file.path(filepath,gsub("\\.csv",".txt",fname)),
@@ -359,7 +414,21 @@ processFileFormatReturnFF <- function(filepath) {
 
 countryDictPIAAC <- function(countryCode) {
   dict <- readRDS(system.file("extdata", "PIAACDict.rds", package="EdSurvey"))
-  return(dict$Country[dict$CODE == toupper(countryCode)][1])
+  ussr <- c("arm", "aze", "blr", "est", "geo", "kaz", "kgz", "ltu", "lva", "mda", "tjk", "ukr", "uzb")
+  if(countryCode %in% c("usa12_14", "usa17")){
+    date <- ifelse(countryCode == "usa12_14", "'12","'17")
+    countryCode <- "usa"
+    return(paste(dict$Country[dict$CODE == toupper(countryCode)][1], date))
+  } 
+  else {
+    if(countryCode %in% ussr){
+      
+      return(paste(dict$Country[dict$CODE == toupper(paste0('ussr-',countryCode))][1]))
+    }  else {
+      return(paste(dict$Country[dict$CODE == toupper(countryCode)][1]))
+    }
+  }
+  
 }
 
 piaacAchievementLevelHelp <- function(round) {

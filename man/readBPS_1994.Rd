@@ -35,7 +35,7 @@ Reads in the student BPS 1990 to 1994 cohort data file to an \code{edsurvey.data
 }
 \examples{
 \dontrun{
-setwd("C:/BPS1994/")
+setwd("~/BPS1994/")
 
 datFP <- file.path(getwd(), "BPS94", "STUDENT.DAT")
 mstFP <- file.path(getwd(), "ECBW", "BP4", "MASTER.TXT")

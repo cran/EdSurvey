@@ -22,6 +22,7 @@ a \code{light.edsurvey.data.frame} with the same attributes as \code{x}
 Takes a \code{data.frame} or a \code{light.edsurvey.data.frame} and merges with a \code{light.edsurvey.data.frame}.
 }
 \examples{
+\dontrun{
 # read in NAEP primer data
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 lsdf <- getData(data=sdf, varnames=c("dsex", "b017451"), addAttributes = TRUE)
@@ -38,7 +39,7 @@ df2 <- data.frame(dsex = c("Male","Female"), b017451 = c(1,2))
 merged_lsdf2 <- merge(lsdf,df2, by = "dsex")
 names(merged_lsdf2) # "dsex"      "b017451.x" "b017451.y"
 head(merged_lsdf2) # shows merge results
-
+}
 }
 \seealso{
 \ifelse{latex}{\code{merge}}{\code{\link[base]{merge}}}

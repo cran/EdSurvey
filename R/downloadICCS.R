@@ -7,6 +7,7 @@
 #' 
 #' @example man/examples/downloadICCS.R
 #' @seealso \code{\link{readCivEDICCS}}
+#' @importFrom utils browseURL
 #' @export
 downloadCivEDICCS <- function(years=c(1999, 2009)) {
   

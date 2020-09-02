@@ -13,7 +13,8 @@ contourPlot(
   xkernel,
   ykernel,
   nlevels = 9L,
-  colors = heat.colors(nlevels),
+  densityColors = heat.colors(nlevels),
+  pointColors = "gray",
   ...
 )
 }
@@ -38,9 +39,11 @@ defaults to range(y)}
 
 \item{nlevels}{integer with the number of levels of the contour plot}
 
-\item{colors}{colors to use, specified as in \ifelse{latex}{\code{par}}{\code{\link[graphics]{par}}}.
+\item{densityColors}{colors to use, specified as in \ifelse{latex}{\code{par}}{\code{\link[graphics]{par}}}.
 Defaults to the \ifelse{latex}{\code{heat.colors}}{\code{\link[grDevices]{heat.colors}}}
 with \code{nlevels}. When specified, \code{colors} overrides \code{nlevels}.}
+
+\item{pointColors}{color for the plot points}
 
 \item{\dots}{additional arguments to be passed to a plot call that generates the
 scatter plot and the contour plot}

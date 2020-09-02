@@ -56,6 +56,7 @@ The method used to compute the degrees of freedom is in the vignette titled
 in the section \dQuote{Estimation of Degrees of Freedom.}
 }
 \examples{
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
@@ -76,6 +77,7 @@ unname(coef(lm1)["dsexFemale"] - coef(lm1)["b017451Every day"])
 sqrt(lm1$coefmat["dsexFemale", "se"]^2
      + lm1$coefmat["b017451Every day", "se"]^2
      - 2 * covFEveryDay)
+}
 }
 \author{
 Paul Bailey

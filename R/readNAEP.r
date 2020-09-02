@@ -175,12 +175,23 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
     attributes(weights)$default <- defaultWeight
   }
   
-  
-  if(!defaultPvs %in% names(pvs)) {
-    warning(paste0("Updating name of default plausible value since ",sQuote(defaultPvs), " not found. Setting to ", sQuote(names(pvs[1])), "."))
-    defaultPvs <- names(pvs)[1]
+  if(is.null(defaultPvs) || all(is.na(defaultPvs))){
+    warning(paste0("Argument ", sQuote("defaultPvs"), " not specified. There will not be a default PV value."))
+  }else{
+    if(!defaultPvs[1] %in% names(pvs)){
+      if(length(pvs)>0){
+        warning(paste0("Updating name of default plausible value since ",sQuote(defaultPvs[1]), " not found. Setting to ", sQuote(names(pvs[1])), "."))
+        defaultPvs <- names(pvs)[1]
+      }else{
+        warning(paste0("No plausible values found. If plausible value(s) expected, check the ", sQuote("defaultPvs"), " argument."))
+      }
+    }#end if(!defaultPvs %in% names(pvs))
   }
-  attributes(pvs)$default <- defaultPvs
+
+  if(length(pvs)>0){
+    attributes(pvs)$default <- defaultPvs[1]
+  }
+  
   #Getting description of data
   f <- list()
   if(filename != "sdfexample") {
@@ -220,7 +231,8 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
                       country = "USA",
                       psuVar = "jkunit",
                       stratumVar = "repgrp1",
-                      jkSumMultiplier = 1)
+                      jkSumMultiplier = 1,
+                      fr2Path=frName)
 }
 
 # @author Paul Bailey & Ahmad Emad

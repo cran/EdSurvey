@@ -1,3 +1,4 @@
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
@@ -22,3 +23,4 @@ sdfl <- edsurvey.data.frame.list(list(sdfA, sdfB, sdfC, sdfD),
 sdfl$covs
 
 SD(data = sdfl, variable = "composite")
+}

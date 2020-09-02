@@ -1,6 +1,56 @@
 \name{NEWS}
 \title{NEWS for EdSurvey}
 
+\section{Changes in version 2.6.0}{
+  \subsection{DATA UPDATES}{
+    \itemize{
+      \item ECLS_B is now a supported dataset with the \code{readECLS_B} function.
+      \item \code{downloadECLS_K} and \code{readECLS_K2011} now download and read in, respectively, the latest ECLS-K:2011 K-5 data.
+      \item \code{readTALIS} was updated to work with TALIS 2018.
+      \item \code{downloadPISA} added support for 2018 and now downloads 2018 data. OECD compressed the 2018 PISA with an algorithm not implemented in R (DEFLATE64), and so users are instructed to uncompress it outside of R and EdSurvey before using the data.
+      \item \code{readPIAAC} was updated to work with files OECD released in early 2020. This includes adding a \code{usaOption} argument that allows the user to select between the  2012-2014 file and the 2017 file for U.S. data.
+      \item \code{readICILS} was updated to work with files IEA released early in 2020.
+      \item EdSurvey now supports NAEP assessments with no plausible value variables, such as some National Indian Education Study (NIES) data.
+      \item EdSurvey now supports TIMSS 2019 pre-release files, including bridge files.
+      \item For \code{readHSLS} and \code{readELS} we bug an issue parsing \code{.sav} variable format definitions relating to integer definitions with a display of more than 10 digits. We believe this does not change how EdSurvey reads in any public use files. The issue can arise if the user converts restricted use files with Stat/Transfer.
+      \item Some IEA datasets have convenience variables that EdSurvey incorrectly identified as plausible value variables that are discretized plausible values. EdSurvey already internally generates similar convenience variables based on the existing plausible values and does not use the IEA variables. As of 2.6.0, these columns are not linked as plausible variables and are ignored. Affected datasets include TIMSS, TIMSS Advanced, PIRLS, and ePIRLS.
+    }
+  }
+  \subsection{STATISTICS}{
+    \itemize{
+      \item \code{cor.sdf} now reports standard errors linearized back to the correlation space in the result value \code{se}. It also reports the confidence interval in the Fisher-Z space as \code{ZconfidenceInterval} and a confidence interval mapped back to the correlation space (without linearization) as \code{confidenceInterval}.
+      \item \code{cor.sdf} now allows users to select the Fisher-Z transformation or no transformation with the \code{transformation} argument. The default of using the Fisher Z for Pearson and no transformation for other correlation types remains the same.
+      \item \code{cor.sdf} now allows the user to set a value of \code{jrrIMax} to allow faster computation.
+      \item Updated \code{oddsRatio} to use t-statistic instead of Z, and to identify the confidence interval in the linear space and then convert.
+    }
+  }
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item The \code{+} function now works on \code{edsurvey.data.frame} and/or \code{edsurvey.data.frame.list} objects to build an \code{edsurvey.data.frame.list}. See \code{?edsurvey.data.frame.list} for examples.
+      \item The \code{\%in\%} function now works on \code{edsurvey.data.frame.list} objects, identifying if a survey is in an \code{edsurvey.data.frame.list}. See \code{?edsurvey.data.frame.list} for examples.
+      \item \code{percentile}, \code{achievementLevels}, and \code{edsurveyTable} now warns when an \code{edsurvey.data.frame.list} is passed to it with an \code{edsurvey.data.frame} on it that cannot return valid results for the requested statistics. The output is \code{NA} for these surveys. 
+      \item \code{gap} now supports linking error in PISA for math, reading, and science when a user sets \code{includeLinkingError} to \code{TRUE}.
+      \item \code{contourPlot} deprecated the argument \code{colors} which only set density colors. Instead, the function now uses \code{densityColors} and \code{pointColors}, which set the density and point colors separately. This will cause calls to \code{contourPlot} that use \code{colors} to not function with 2.6.0.
+      \item When a \code{summary2} call is made with a \code{light.edsurvey.data.frame}, unfilled levels will not be returned in the table anymore.
+      \item Users can now assign a variable with $, including subsets. Variables on the original data cannot be removed but can be overwritten. All changes are for the session only and do not change the data on the disk.
+    }
+  }
+  \subsection{TECHNICAL}{
+    \itemize{
+      \item \code{getData} now closes LaF connections regardless of how it exits (e.g., with an error). This should improve the stability of the package.
+      \item An \code{edsurvey.data.frame} now can specify a \code{fr2path}. This is used only for NAEP surveys and no functionality depends on it, but it may be used in the future. The value of \code{fr2path} may always be set to \code{NA}.
+      \item \code{achievementLevels} now warns when an \code{edsurvey.data.frame.list} is passed to it with an \code{edsurvey.data.frame} on it that cannot return valid results for the requested statistics. The output is \code{NA} for these surveys. 
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item \code{cor.sdf} and \code{percentile} incorrectly calculated standard errors when the pre-multiplier for the replicate weights was not one. Users can see that for a survey using \code{getAttributes(data, "jkSumMultiplier")} for their data.
+      \item \code{cor.sdf}  previously failed to calculate some correlations when some records had non-zero full sample weights and zero replicate weights. Now results are still calculated.
+      \item With TIMSS data, when a user updated a teacher-level variable, it used to prevent the user from using the \code{edsurvey.data.frame} for non-teacher-level analysis. We fixed this issue. Thanks to Anders Astrup Christensen for identifying this issue and sharing reproducible code that is now incorporated into the package as a test.
+    }
+  }
+}
+
 \section{Changes in version 2.5.0}{
   \subsection{NEW DATA}{
     \itemize{

@@ -5,6 +5,8 @@
 \alias{edsurvey.data.frame}
 \alias{$.edsurvey.data.frame}
 \alias{$<-.edsurvey.data.frame}
+\alias{\%in\%,edsurvey.data.frame,ANY-method}
+\alias{\%in\%,edsurvey.data.frame.list,ANY-method}
 \alias{getAttributes}
 \alias{setAttributes}
 \alias{getPSUVar}
@@ -32,12 +34,17 @@ edsurvey.data.frame(
   recodes = NULL,
   validateFactorLabels = FALSE,
   forceLower = TRUE,
-  reqDecimalConversion = TRUE
+  reqDecimalConversion = TRUE,
+  fr2Path = NULL
 )
 
 \method{$}{edsurvey.data.frame}(x, i)
 
 \method{$}{edsurvey.data.frame}(x, name) <- value
+
+\S4method{\%in\%}{edsurvey.data.frame,ANY}(x, table)
+
+\S4method{\%in\%}{edsurvey.data.frame.list,ANY}(x, table)
 
 getAttributes(data, attribute = NULL)
 
@@ -93,6 +100,8 @@ Examples include \code{Student}, \code{teacher}, \code{school},
 
 \item{reqDecimalConversion}{a Boolean; when set to \code{TRUE}, a \code{getData} call will multiply the raw file value by a decimal multiplier}
 
+\item{fr2Path}{a character file location for NAEP assessments to identify the locaiton of the codebook file in \code{fr2} format}
+
 \item{x}{an \code{edsurvey.data.frame}}
 
 \item{i}{a character, the column name to extract}
@@ -100,6 +109,8 @@ Examples include \code{Student}, \code{teacher}, \code{school},
 \item{name}{a character vector of the column to edit}
 
 \item{value}{outside of the assignment context, new value of the given \code{attribute}}
+
+\item{table}{an \code{edsurvey.data.frame} or \code{edsurvey.data.frame.list} where \code{x} is searched for}
 
 \item{data}{an \code{edsurvey.data.frame}}
 
@@ -216,6 +227,7 @@ use the \code{setAttributes} method.
 }
 
 \examples{
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
@@ -232,6 +244,7 @@ getAttributes(sdf, "omittedLevels") #[1] "Multiple" NA         "Omitted"
 # update default omitted levels of NAEP primer data
 sdf <- setAttributes(sdf, "omittedLevels", c("Multiple", "Omitted", NA, "(Missing)"))
 getAttributes(sdf, "omittedLevels") #[1] "Multiple"  "Omitted"   NA          "(Missing)"
+}
 }
 \seealso{
 \code{\link{rebindAttributes}}

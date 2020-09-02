@@ -132,17 +132,30 @@ edsurvey.data.frame.list <- function(datalist, cov=NULL, labels=NULL) {
   
   if(!is.null(labels)) {
     if(length(labels) != length(datalist)) {
-      stop(paste0("Length of argument ", sQuote("labels")," must be the same as the length of the ", sQuote("datalist"), " argument."))
+      makeError <- FALSE
+      if(!inherits(labels, "data.frame")) {
+        makeError <- TRUE
+      }
+      if(nrow(labels) != length(datalist)) {
+        makeError <- TRUE
+      }
+      if(makeError) {
+        stop(paste0("Length of argument ", sQuote("labels")," must be the same as the length of the ", sQuote("datalist"), " argument."))
+      }
     }
     if(is.null(covs)) {
-      covs <- data.frame(stringsAsFactors=FALSE, labels=labels)
+      if(is.data.frame(labels)) {
+        covs <- labels
+      } else {
+        covs <- data.frame(stringsAsFactors=FALSE, labels=labels)
+      }
     } else {
       covs$labels <- labels
     }
   }
   # final results
   res <- list(datalist=datalist, covs=covs)
-  class(res) <- "edsurvey.data.frame.list"
+  class(res) <- c("edsurvey.data.frame.list", "edsurvey.data")
   return(res)
 }
 
@@ -191,3 +204,4 @@ append.edsurvey.data.frame.list <- function(sdfA, sdfB, labelsA=NULL, labelsB=NU
                                   labels = c(getDataLabel(sdfA, labelsA), 
                                              getDataLabel(sdfB, labelsB))))
 }
+

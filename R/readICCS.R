@@ -1360,7 +1360,7 @@ exportCivEDICCSToCSV <- function(folderPath, exportPath, cntryCodes, dataSet, gr
       write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
       cat(paste(cntry, "completed.\n"))
     }
-  } else if (class(sdfList) == "edsurvey.data.frame"){
+  } else if (inherits(sdfList, "edsurvey.data.frame")) {
     
     sdf <- sdfList
     cntry <- sdf$country
@@ -1690,15 +1690,18 @@ buildICCS_dataList <- function(dataSet, hasICCSData, hasCivEDData, stuLaf, stuFF
                                           ignoreVars = NULL,
                                           isDimLevel = TRUE)
     
-    dataList[["School"]] <- dataListItem(lafObject = schLaf,
-                                         fileFormat = schFF,
-                                         levelLabel = "School",
-                                         forceMerge = FALSE,
-                                         parentMergeLevels = c("Student", "Student"),
-                                         parentMergeVars = c("idcntry", "idschool"),
-                                         mergeVars = c("idcntry", "idschool"),
-                                         ignoreVars = names(schLaf)[names(schLaf) %in% names(stuLaf)],
-                                         isDimLevel = FALSE)
+    if(!is.null(schLaf)){
+      dataList[["School"]] <- dataListItem(lafObject = schLaf,
+                                           fileFormat = schFF,
+                                           levelLabel = "School",
+                                           forceMerge = FALSE,
+                                           parentMergeLevels = c("Student", "Student"),
+                                           parentMergeVars = c("idcntry", "idschool"),
+                                           mergeVars = c("idcntry", "idschool"),
+                                           ignoreVars = names(schLaf)[names(schLaf) %in% names(stuLaf)],
+                                           isDimLevel = FALSE)
+    }
+
   }
   
   if(hasICCSData==TRUE && dataSet=="teacher"){
@@ -1733,27 +1736,33 @@ buildICCS_dataList <- function(dataSet, hasICCSData, hasCivEDData, stuLaf, stuFF
                                           parentMergeVars = NULL,
                                           mergeVars = NULL,
                                           ignoreVars = NULL,
-                                          isDimLevel = FALSE)
+                                          isDimLevel = TRUE)
     
-    dataList[["School"]] <- dataListItem(lafObject = schLaf,
-                                         fileFormat = schFF,
-                                         levelLabel = "School",
-                                         forceMerge = FALSE,
-                                         parentMergeLevels = c("Student", "Student"),
-                                         parentMergeVars = c("idcntry", "idschool"),
-                                         mergeVars = c("idcntry", "idschool"),
-                                         ignoreVars = names(schLaf)[names(schLaf) %in% names(stuLaf)],
-                                         isDimLevel = FALSE)
+    if(!is.null(schLaf)){
+      dataList[["School"]] <- dataListItem(lafObject = schLaf,
+                                           fileFormat = schFF,
+                                           levelLabel = "School",
+                                           forceMerge = FALSE,
+                                           parentMergeLevels = c("Student", "Student"),
+                                           parentMergeVars = c("idcntry", "idschool"),
+                                           mergeVars = c("idcntry", "idschool"),
+                                           ignoreVars = names(schLaf)[names(schLaf) %in% names(stuLaf)],
+                                           isDimLevel = FALSE)
+    }
     
-    dataList[["Teacher"]] <- dataListItem(lafObject = tchLaf,
-                                         fileFormat = tchFF,
-                                         levelLabel = "Teacher",
-                                         forceMerge = FALSE,
-                                         parentMergeLevels = c("Student", "Student"),
-                                         parentMergeVars = c("idcntry", "idstud"),
-                                         mergeVars = c("idcntry", "idstud"),
-                                         ignoreVars = names(tchLaf)[names(tchLaf) %in% names(stuLaf)],
-                                         isDimLevel = TRUE)
+    if(!is.null(tchLaf)){
+      dataList[["Teacher"]] <- dataListItem(lafObject = tchLaf,
+                                           fileFormat = tchFF,
+                                           levelLabel = "Teacher",
+                                           forceMerge = FALSE,
+                                           parentMergeLevels = c("Student", "Student"),
+                                           parentMergeVars = c("idcntry", "idstud"),
+                                           mergeVars = c("idcntry", "idstud"),
+                                           ignoreVars = names(tchLaf)[names(tchLaf) %in% names(stuLaf)],
+                                           isDimLevel = TRUE)
+      
+      dataList[["Student"]]$isDimLevel <- FALSE
+    }
   }
   
   if(hasCivEDData==TRUE && dataSet=="teacher"){

@@ -68,7 +68,7 @@ calc.waldTest <- function(model = model, coefficients = coefficients, H0 = H0) {
   }
   
   if(!"waldDenomBaseDof" %in% names(model)) {
-    stop("return value ", sQuote("waldDenomBaseDof"), " not on model. Try including the PSU and stratum variables on the data before running the model.")
+    stop("return value ", sQuote("waldDenomBaseDof"), " not on model. Try including the PSU and stratum variables on the data before running the model. Some public uses files have these suppressed to protect confidentiality, for example, by setting these columns to NA. When this happens, it prevents the accurate calculation of a Wald test statistic.")
   }
   # pull the coefficients and cov matrix from model object
   b <- coef(model)

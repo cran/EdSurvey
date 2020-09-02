@@ -41,7 +41,7 @@ Reads the \code{masterTxtFilepath} file to parse the \code{b01DER_Filepath} and 
 }
 \examples{
 \dontrun{
-setwd("C:/B&B2001/ecbw/B01")
+setwd("~/B&B2001/ecbw/B01")
 
 dervFP <- file.path(getwd(), "Data", "B01DER.dat")
 wgtFP <- file.path(getwd(), "Data", "B01WT.dat")

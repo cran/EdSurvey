@@ -54,7 +54,7 @@ summary2 <- function(data, variable,
   callc <- match.call()
   if (is.null(weightVar) || !weightVar %in% colnames(data)) {
     callc$weightVar <- NULL
-    edf <- getData(data, variable, omittedLevels = omittedLevels, includeNaLabel = !omittedLevels)
+    edf <- getData(data, variable, omittedLevels = omittedLevels, includeNaLabel = !omittedLevels, dropUnusedLevels=TRUE)
     N <- nrow(edf)
     if(length(unique(typeOfVariable(variable, data))) > 1) {
       stop("Summarize only discrete or only continious variables together.")

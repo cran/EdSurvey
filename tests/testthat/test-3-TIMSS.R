@@ -60,6 +60,7 @@ test_that("TIMSS edsurveyTable",{
   tab1 <- table(kwt4.15$testVar1)
   expect_equal(tab0, tab1)
 })
+
 context("TIMSS edsurveyTable")
 test_that("TIMSS edsurveyTable",{
   estt <- edsurveyTable(srea ~ as4gsex, usa4.07, varMethod="Taylor")
@@ -98,7 +99,7 @@ test_that("TIMSS edsurveyTable",{
               "   GIRL 6422 445654.5 51.30222 1.136601 354.4961 6.907083",
               "    BOY 6084 423030.1 48.69778 1.136601 346.2686 5.690930")
   expect_equal(co, co.ref)
-  expect_warning(et1 <- edsurveyTable(formula = ssci ~ itlang, data = multiESDFL))
+  et1 <- edsurveyTable(formula = ssci ~ itlang, data = multiESDFL)
   expect_is(et1, "edsurveyTableList")
   expect_error(factor(et1$data$itlang), NA)
 })
@@ -274,4 +275,19 @@ test_that("TIMSS glm", {
   
   withr::with_options(list(digits=7), co <- capture.output(summary(probit1)))
   expect_equal(co, probit1REF)
+})
+
+context("TIMSS student-teacher merge on recode")
+test_that("TIMSS student-teacher merge on recode", {
+  ## Adapted from a bug identified by Anders Astrup Christensen
+  ## The bug is that a recode of a teacher level variable triggered
+  ## reading the teacher data, which duplicates many student records
+  # Recode teacher level variable (variable not included in example analysis)
+  kwt4.15B <- recode.sdf(kwt4.15,
+                         recode = list(atbm07a = list(from = "NO MATHEMATICS HOMEWORK",
+                                                      to   = "NO MATH HOMEWORK"))) 
+  #Run same analysis again, this time with different results and different N
+  es1 <- edsurveyTable(mmat ~ itsex, kwt4.15, weightVar = "totwgt", jrrIMax = 1)
+  es2 <- edsurveyTable(mmat ~ itsex, kwt4.15B, weightVar = "totwgt", jrrIMax = 1)
+  expect_equal(es1, es2)
 })

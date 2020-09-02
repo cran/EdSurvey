@@ -40,12 +40,15 @@ sdfl <- edsurvey.data.frame.list(list(sdfA, sdfB, sdfC, sdfD),
                                           "C locations", "D locations"))
 
 gap("composite", sdfl, dsex=="Male", dsex=="Female", percentile=c(50))
+}
 
+\dontrun{
 # example showing using linking error with gap
 # load Grade 4 math data
-g4math2015 <- readNAEP(".../M46NT1AT.dat")
-g4math2017 <- readNAEP(".../M48NT1AT.dat")
-g4math2019 <- readNAEP(".../M50NT1AT.dat")
+# requires NAEP RUD license with these files in the folder the user is currectly in
+g4math2015 <- readNAEP("M46NT1AT.dat")
+g4math2017 <- readNAEP("M48NT1AT.dat")
+g4math2019 <- readNAEP("M50NT1AT.dat")
 
 # make an edsurvey.data.frame.list from math grade 4 2015, 2017, and 2019 data
 g4math <- edsurvey.data.frame.list(list(g4math2019, g4math2017, g4math2015),
@@ -58,5 +61,4 @@ gap("composite", g4math, dsex == "Male", dsex == "Female", percentiles = c(10, 2
 gap("composite", g4math, dsex == "Male", dsex == "Female", 
     achievementDiscrete = TRUE, achievementLevel=c("Basic", "Proficient", "Advanced"), 
     includeLinkingError=TRUE)
-
 }

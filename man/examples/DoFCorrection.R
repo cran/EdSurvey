@@ -1,3 +1,4 @@
+\dontrun{
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 lm1 <- lm.sdf(composite ~ dsex + b017451, sdf, returnVarEstInputs=TRUE)
 summary(lm1)
@@ -24,3 +25,4 @@ dofFEveryDay <- DoFCorrection(lm1$varEstInputs,
                               method="JR")
 # finally, the p-value
 2*(1-pt(abs(tv), df=dofFEveryDay))
+}

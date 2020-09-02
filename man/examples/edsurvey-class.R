@@ -1,3 +1,4 @@
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
@@ -14,3 +15,4 @@ getAttributes(sdf, "omittedLevels") #[1] "Multiple" NA         "Omitted"
 # update default omitted levels of NAEP primer data
 sdf <- setAttributes(sdf, "omittedLevels", c("Multiple", "Omitted", NA, "(Missing)"))
 getAttributes(sdf, "omittedLevels") #[1] "Multiple"  "Omitted"   NA          "(Missing)"
+}

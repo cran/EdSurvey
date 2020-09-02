@@ -1,6 +1,6 @@
 \dontrun{
 # using default filenames
-bb <- readBB_2012(path = "C:/BB/2012")
+bb <- readBB_2012(path = "~/BB/2012")
 dim(bb)
 
 # parameters specified without default filenames

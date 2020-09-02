@@ -1,51 +1,53 @@
 #' @title Connect to TALIS Data
 #'
 #' @description Opens a connection to a TALIS data file and
-#'              returns an \code{edsurvey.data.frame} with 
+#'              returns an \code{edsurvey.data.frame} with
 #'              information about the file and data.
-#'              
+#'
 #' @param path a character vector to the full directory path(s) to the TALIS SPSS files (.sav)
-#' @param countries a character vector of the country/countries to include using the 
+#' @param countries a character vector of the country/countries to include using the
 #'                  three-digit ISO country code. A list of country codes can be found in
 #'                  the TALIS codebook, or you can use
 #'                  \url{https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes}.
 #'                  You can use \code{*} to indicate all countries available.
-#' @param isced a character value that is one of \code{a}, \code{b}, or \code{c}. \code{a} stands for \emph{Primary Level}, 
+#' @param isced a character value that is one of \code{a}, \code{b}, or \code{c}. \code{a} stands for \emph{Primary Level},
 #'        \code{b} is for \emph{Lower Secondary Level}, and \code{c} is for \emph{Upper Secondary Level}. Default to \code{b}.
-#' @param dataLevel a character value that indicates which data level to be used. It can be \code{teacher} (the default) or \code{school}.
+#' @param dataLevel a character value that indicates which data level to be used. It can be \code{teacher} (the default) or \code{school} (see details).
 #' @param forceReread a logical value to force rereading of all processed data. Defaults to \code{FALSE}.
-#'        Setting \code{forceReread} to be \code{TRUE} will cause PISA data to be reread and increase processing time.
+#'        Setting \code{forceReread} to be \code{TRUE} will cause \code{readTALIS} data to be reread and increase processing time.
 #' @param verbose a logical value that will determine if you want verbose output while the function is running to indicate the progress.
 #'        Defaults to \code{TRUE}.
 #'
 #' @details Reads in the unzipped files downloaded from the TALIS database using the OECD Repository (\url{https://www.oecd.org/education/talis/}).
-#'        If \code{dataLevel} is set to be \code{teacher}, it treats the teacher data file as the main dataset and merges school data into teacher data for
-#'        each country. If \code{dataLevel} is \code{school}, it uses only the school data file. To conduct a school-level analysis with teacher variables,
-#'        it is recommended that users aggregate teacher-level data first before merging it to school files. 
-#' 
+#'        If \code{dataLevel} is set to be \code{teacher}, it treats the teacher data file as the main dataset, and merges school data into teacher data for
+#'        each country automatically. Use this option if wanting to analyze just teacher variables, or both teacher and school level variables together. 
+#'        If \code{dataLevel} is set \code{school}, it uses only the school data file (no teacher data will be available).
+#'
 #' @return
-#'  an \code{edsurvey.data.frame} for a single specified country or 
+#'  an \code{edsurvey.data.frame} for a single specified country or
 #'   an \code{edsurvey.data.frame.list} if multiple countries specified
 #' @seealso \code{\link{getData}} and \code{\link{downloadTALIS}}
-#' @author Paul Bailey and Trang Nguyen
-#' 
+#' @author Paul Bailey, Tom Fink, and Trang Nguyen
+#'
 #' @example man/examples/readTALIS.R
-#' 
-#' @references 
-#'  Organisation for Economic Co-operation and Development. (2014). \emph{TALIS 2013 technical report}. Paris, France: Author. Retrieved from \emph{\url{http://www.oecd.org/education/school/TALIS-technical-report-2013.pdf}}
+#'
+#' @references
+#'  Organisation for Economic Co-operation and Development. (2018). \emph{TALIS 2018 technical report}. Retrieved from \emph{\url{https://www.oecd.org/education/talis/TALIS_2018_Technical_Report.pdf}}
 #' @importFrom haven read_sav
 #' @importFrom LaF laf_open_csv
-#' @export 
-readTALIS <- function(path, 
+#' @export
+readTALIS <- function(path,
                       countries,
                       isced = "b",
                       dataLevel = "teacher",
                       forceReread = FALSE,
                       verbose = TRUE) {
-  
+
   #temporarily adjust any necessary option settings; revert back when done
   userOp <- options(OutDec = ".")
+  userOp2 <- options(scipen = 999)
   on.exit(options(userOp), add = TRUE)
+  on.exit(options(userOp2), add = TRUE)
   
   dataLevel <- tolower(dataLevel)
   path <- normalizePath(path, winslash = "/") # to match IEA read-in function
@@ -88,7 +90,7 @@ readTALIS <- function(path,
         } # end if file is a sav file
       } # end for(i in 1:nrow(lst))
     } # end for(z in zFiles)
-    
+
     # Process data files
     runProcessing <- FALSE
     metaCacheFP <- list.files(filepath,pattern = paste0(toupper(isced),"[0-9].*_ALL.meta"))
@@ -112,8 +114,8 @@ readTALIS <- function(path,
           break
         }
       }
-      
-      
+
+
     }
     if(runProcessing || forceRead) {
       if (verbose) {
@@ -139,35 +141,35 @@ readTALIS <- function(path,
     } else if (length(bad_countries) > 1) {
       stop("Missing TALIS data file(s) at isced level ", dQuote(convertISCEDcode(isced)), " for countries ",pasteItems(dQuote(bad_countries)),".")
     }
-    
+
     countries <- countries[countries %in% tolower(all_countries)]
     # Find cache files and construct an sdf
     for (cntry in countries) {
       processedData <- processCountry(filepath, cntry, isced, cacheFile)
       if(!runProcessing & !forceRead) {
         if (verbose) {
-          cat("Found cached data for country code ",dQuote(cntry),".\n")  
-        }  
+          cat("Found cached data for country code ",dQuote(cntry),".\n")
+        }
       }
       processedData$userConditions <- list()
       processedData$defaultConditions <- NULL
-      
+
       # Set up weights
       uklz <- unique(processedData$dataListFF$teacher[,"pvWT"])
       uklz <- max(as.integer(uklz[uklz != "" & !is.na(uklz)]))
       weights <- list(tchwgt = list(jkbase = "trwgt", jksuffixes = as.character(1:uklz)))
-      
+
       # 2. school-level weights
       uklz <- unique(processedData$dataListFF$school[,"pvWT"])
       uklz <- max(as.integer(uklz[uklz != "" & !is.na(uklz)]))
       weights$schwgt = list(jkbase = "srwgt", jksuffixes = as.character(1:uklz))
-      
+
       if (dataLevel == "teacher") {
         attr(weights, "default") <- "tchwgt"
       } else if (dataLevel == "school") {
         attr(weights, "default") <- "schwgt"
       }
-      
+
       processedData$weights <- weights
       processedData$pvvars <- NULL
       processedData$subject <- NULL
@@ -184,11 +186,11 @@ readTALIS <- function(path,
 
       processedData$survey <- "TALIS"
       processedData$country <- cacheFile$countryDict$country.name[cacheFile$countryDict$cntry == toupper(cntry)]
-      
+
       sdf[[cntry]] <- edsurvey.data.frame(userConditions = processedData$userConditions,
                                           defaultConditions = processedData$defaultConditions,
                                           dataList = buildTALIS_dataList(dataLevel,
-                                                                         processedData$dataList$school, 
+                                                                         processedData$dataList$school,
                                                                          processedData$dataListFF$school,
                                                                          processedData$dataList$teacher,
                                                                          processedData$dataListFF$teacher),
@@ -208,9 +210,9 @@ readTALIS <- function(path,
                                           jkSumMultiplier = 0.04, # see Reference (TALIS 2013 Chapter 9)
                                           reqDecimalConversion = FALSE)
     }
-    
+
   } # end for(filepath in path)
-  
+
   # Return output
   if(length(sdf) > 1) {
     return(edsurvey.data.frame.list(sdf))
@@ -223,12 +225,12 @@ readTALIS <- function(path,
 # process each country in 2013
 processCountry <- function(filepath, countryCode, isced, cacheFile) {
   teacherFP <- file.path(filepath,
-                         list.files(filepath, 
-                                    pattern = paste0(isced,"tg",countryCode,".*\\.txt"), 
+                         list.files(filepath,
+                                    pattern = paste0(isced,"tg",countryCode,".*\\.txt"),
                                     full.names = FALSE, ignore.case = TRUE))
   schoolFP <- file.path(filepath,
-                        list.files(filepath, 
-                                   pattern = paste0(isced,"cg",countryCode,".*\\.txt"), 
+                        list.files(filepath,
+                                   pattern = paste0(isced,"cg",countryCode,".*\\.txt"),
                                    full.names = FALSE, ignore.case = TRUE))
   if(length(teacherFP) > 1 | length(schoolFP) > 1) {
     warning(paste0("There is more than one relevant FWF file for ",countryCode, "."))
@@ -243,7 +245,7 @@ processCountry <- function(filepath, countryCode, isced, cacheFile) {
   dataList <- list(student = NULL, school = schoolLAF, teacher = teacherLAF)
   dataListFF <- cacheFile$dataListFF
   dataListMeta <- cacheFile$dataListMeta
-  
+
   return(list(dataList = dataList,
               dataListFF = dataListFF,
               dataListMeta = dataListMeta))
@@ -253,8 +255,20 @@ processReturnFFormat <- function(filepath, isced) {
   fnames <- list.files(filepath, pattern = paste0("^",isced,".*\\.sav"),
                        full.names = FALSE, ignore.case = TRUE)
   year <- 0
+  
   if (length(fnames) > 0) {
-    year <- ifelse(grepl("t1$",fnames[1], ignore.case = TRUE),2008,2013)
+    testFN <- gsub(".sav$", "", fnames[1], ignore.case = TRUE)
+    
+    #make year assignment based on last two characters of filename
+    if(grepl("t1$",testFN, ignore.case = TRUE)){
+      year <- 2008
+    }
+    if(grepl("t2$",testFN, ignore.case = TRUE)){
+      year <- 2013
+    }
+    if(grepl("t3$",testFN, ignore.case = TRUE)){
+      year <- 2018
+    }
   }
   # SCHOOL LEVEL ============================
   cg <- grep("cg", fnames, value = TRUE, ignore.case = TRUE)
@@ -262,27 +276,31 @@ processReturnFFormat <- function(filepath, isced) {
     stop("Missing TALIS data file(s) for school level at isced level of ", sQuote(isced), " in the path ",sQuote(filepath), ".")
   }
   schoolFP <- gsub("\\.sav","\\.txt", cg) # basename for schoolFP for each country - replace INT with countryCode
-  
+
   # reading in combined files for this isced level
   schoolDF <- read_sav(gsub("//","/",paste0(filepath,"/",cg)))
-  ffsch <- returnFF(schoolDF)
+  schoolDF <- UnclassCols(schoolDF) #remove haven column classes
   
+  ffsch <- returnFF(schoolDF)
+
   # TEACHER LEVEL =============================
   tg <- grep("tg", fnames, value = TRUE, ignore.case = TRUE)
   if (length(tg) == 0) {
     stop("Missing TALIS data file(s) for teacher level at isced level of ", sQuote(isced), " in the path ",sQuote(filepath))
   }
   teacherFP <- gsub("\\.sav","\\.txt", tg) # basename for teacherFP for each country - replace INT with countryCode
-  
+
   # reading in combined files for this isced level
   teacherDF <- read_sav(gsub("//","/",paste0(filepath,"/",tg)))
-  fftch <- returnFF(teacherDF)
+  teacherDF <- UnclassCols(teacherDF) #remove haven column classes
   
+  fftch <- returnFF(teacherDF)
+
   # write countryDict with
   # 1. idcntry: numeric code
   # 2. cntry: iso alpha-code
   # 3. country.name: full country name
-  
+
   if ("CNTRY" %in% fftch$variableName) { # TALIS 2013 has CNTRY variable
     temp <- strsplit(unlist(strsplit(fftch$labelValues[fftch$variableName == "IDCNTRY"],"\\^")),"=")
     options(stringsAsFactors = FALSE)
@@ -304,8 +322,8 @@ processReturnFFormat <- function(filepath, isced) {
       countryDict <- countryDict[countryDict$idcntry %in% unique(teacherDF$IDCNTRY),]
     }
   }
-  
-  # write out CSV/ FWF files 
+
+  # write out CSV/ FWF files
   all_countries <- countryDict$cntry
   for (cnti in 1:nrow(countryDict)) {
     cnt = all_countries[cnti]
@@ -313,14 +331,14 @@ processReturnFFormat <- function(filepath, isced) {
     tempTibble <- schoolDF[schoolDF$IDCNTRY %in% countryDict$idcntry[cnti],]
     writeFWF(tempTibble, schoolFPcntry, ffsch)
   }
-  
+
   for (cnti in 1:nrow(countryDict)) {
     cnt = all_countries[cnti]
     teacherFPcntry <- gsub("//","/",paste0(filepath,"/",gsub("int",toupper(cnt), teacherFP, ignore.case = TRUE)))
     tempTibble <- teacherDF[teacherDF$IDCNTRY == countryDict$idcntry[cnti],]
     writeFWF(tempTibble, teacherFPcntry, fftch)
   }
-  
+
   # toupper all variableNames in ff
   fftch$variableName <- toupper(fftch$variableName)
   ffsch$variableName <- toupper(ffsch$variableName)
@@ -360,8 +378,8 @@ returnFF <- function(spssDF) {
   colInfo$decimal[is.na(colInfo$decimal) && !(tolower(colInfo$class) %in% "date")] <- 0 #dates are omitted based on SPSS class type so they are characters
   colInfo$multiplier <- as.integer(ifelse(is.na(colInfo$decimal), 1, 10^colInfo$decimal))
   colInfo$size <- gsub("[a-zA-Z]","",sapply(strsplit(colInfo$format,"\\."), function(x) { head(x,1) } ))
-  colInfo$size <- as.numeric(colInfo$size) 
-  
+  colInfo$size <- as.numeric(colInfo$size)
+
   # return output
   ff <- data.frame(variableName=colInfo$names, stringsAsFactors=FALSE)
   ff$Start <-  c(1,1 + cumsum(colInfo$size))[1:nrow(colInfo)]
@@ -378,8 +396,8 @@ returnFF <- function(spssDF) {
     paste(attr, names(attr), sep="=", collapse="^")
   })
   ff$labelValues <- toupper(lblv)
-  
-  
+
+
   # for replicate weights it is the jackknife replicate weight number
   # for plausible value variables it is the index within the construct
   ff$pvWT <- sapply(colInfo$names, function(zz){
@@ -395,7 +413,7 @@ returnFF <- function(spssDF) {
                         ifelse(ff$Decimal %in% 0, rep("integer", nrow(colInfo)),
                                rep("character", nrow(colInfo))))
   ff$weights <- grepl("WGT$", colInfo$names, ignore.case = TRUE)
-  
+
   # Add labels for CNTRY
   # Note: TALIS 2013: CSH/156001 is Shanghai, China (not in the labels); GEO, NZL, RUS
   exception <- c("SHANGHAI, CHINA" = 156001,
@@ -406,10 +424,10 @@ returnFF <- function(spssDF) {
     if(exception[ei] %in% spssDF$IDCNTRY) {
       if(!grepl(paste0(exception[ei],"="),ff$labelValues[ff$variableName == "IDCNTRY"])) {
         ff$labelValues[ff$variableName == "IDCNTRY"] <- paste0(ff$labelValues[ff$variableName == "IDCNTRY"],paste0("^",exception[ei],"=",names(exception)[ei]))
-      }  
+      }
     }
   }
-  
+
   if ("CNTRY" %in% ff$variableName) {
     countryLookup <- unique(spssDF[,c("CNTRY","IDCNTRY")])
     replacementText <- as.character(countryLookup$CNTRY)
@@ -447,13 +465,15 @@ returnFF <- function(spssDF) {
 # write out csv files from a tibble with variable names in order with fileFormat
 writeFWF <- function(spssDF, outF, ff) {
   spssDF <- spssDF[,ff$variableName]
-  
+
   charIdx <- which(tolower(ff$dataType)=="character", arr.ind = TRUE)
-  
+
   for(i in charIdx){
     spssDF[[i]] <- gsub(",", ";", spssDF[[i]], fixed = TRUE)
+    #fix for FULL-WIDTH comma which is used in Chinese (U+FF0C) which gets converted to regular comma on write out
+    spssDF[[i]] <- gsub("\uFF0C", ";", spssDF[[i]], fixed = TRUE) 
   }
-  
+
   write.table(spssDF, file=outF,
               sep=",", col.names=FALSE, na="", row.names=FALSE,
               quote=FALSE) # all numeric
@@ -462,7 +482,7 @@ writeFWF <- function(spssDF, outF, ff) {
 # convert a one-letter isced code to a long name
 convertISCEDcode <- function(isced) {
   isced <- tolower(isced)
-  return(ifelse(isced == "a", "Primary (ISCED level 1)", 
+  return(ifelse(isced == "a", "Primary (ISCED level 1)",
                 ifelse(isced == "b", "Lower Secondary (ISCED level 2)",
                        ifelse(isced == "c", "Upper Secondary (ISCED level 3)",
                               ifelse(isced == "p", "TALIS-PISA Link",
@@ -484,7 +504,7 @@ convertCountryCodeTALIS2008 <- function(countryCode) {
 
 # Opens a LaF connection of type CSV
 getCSVLaFConnection <- function(datFP, ff) {
-  LaF::laf_open_csv(datFP, column_types = ff$dataType, 
+  LaF::laf_open_csv(datFP, column_types = ff$dataType,
                     column_names = tolower(ff$variableName))
 }
 
@@ -492,7 +512,7 @@ getCSVLaFConnection <- function(datFP, ff) {
 buildTALIS_dataList <- function(dataLevel, schoolLaf, schoolFF, teacherLaf, teacherFF){
 
   dataList <- list()
-  
+
   #build the list hierarchical based on the order in which the data levels would be merged in getData
   #teacher data is main dataset with schools below it if both datasets available
   if (dataLevel=="teacher"){
@@ -503,7 +523,7 @@ buildTALIS_dataList <- function(dataLevel, schoolLaf, schoolFF, teacherLaf, teac
                                           parentMergeLevels = NULL,
                                           parentMergeVars = NULL,
                                           mergeVars = NULL,
-                                          ignoreVars = NULL, #student file variables will take precedence over teacher variables of same name
+                                          ignoreVars = NULL, 
                                           isDimLevel = TRUE)
 
     dataList[["School"]] <- dataListItem(lafObject = schoolLaf,
@@ -513,7 +533,7 @@ buildTALIS_dataList <- function(dataLevel, schoolLaf, schoolFF, teacherLaf, teac
                                          parentMergeLevels = c("Teacher", "Teacher"),
                                          parentMergeVars = c("idcntry", "idschool"),
                                          mergeVars = c("idcntry", "idschool"),
-                                         ignoreVars = names(schoolLaf)[names(schoolLaf) %in% names(teacherLaf)], #student file variables will take precedence over school variables of same name
+                                         ignoreVars = names(schoolLaf)[names(schoolLaf) %in% names(teacherLaf)], 
                                          isDimLevel = FALSE)
   }else{ #school level specified by user
     dataList[["School"]] <- dataListItem(lafObject = schoolLaf,
@@ -523,9 +543,9 @@ buildTALIS_dataList <- function(dataLevel, schoolLaf, schoolFF, teacherLaf, teac
                                          parentMergeLevels = NULL,
                                          parentMergeVars = NULL,
                                          mergeVars = NULL,
-                                         ignoreVars = NULL, #student file variables will take precedence over school variables of same name
+                                         ignoreVars = NULL,
                                          isDimLevel = TRUE)
   }
-  
+
   return(dataList)
 }

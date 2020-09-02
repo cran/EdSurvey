@@ -19,6 +19,8 @@
 #'                 \itemize{
 #'                   \item{\strong{4} = fourth grade (the default if not specified)}
 #'                   \item{\strong{8} = eighth grade}
+#'                   \item{\strong{4B} = fourth grade bridge study (TIMSS 2019 only)}
+#'                   \item{\strong{8B} = eight grade bridge study (TIMSS 2019 only)}
 #'                 }
 #' @param forceReread a logical value to force rereading of all processed data.
 #'                    The default value of \code{FALSE} will speed up the \code{readTIMSS} function by using existing read-in data already processed.
@@ -69,6 +71,13 @@
 #' Data variables common to both datasets are kept as a single data variable,
 #' with records retaining their original values from the source dataset.
 #' Consult the \emph{TIMSS User Guide} for further information.
+#' 
+#' For the TIMSS 2019 study, a bridge study was conducted to help compute adjustment factors
+#' between the electronic test format and the paper/pencil format.  The bridge study is
+#' considered separate from the normal TIMSS 2019 study. The \code{gradeLvl} parameter now
+#' includes a \code{"4B"} option for the Grade 4 bridge study, and the \code{"8B"} option
+#' for the Grade 8 bridge study files.
+#' 
 #'
 #' @return
 #'  an \code{edsurvey.data.frame} for a single specified country or an \code{edsurvey.data.frame.list} if multiple countries specified
@@ -102,18 +111,21 @@ readTIMSS <- function(path,
   includeNumeracy <- TRUE #include numeracy as default
   countries <- tolower(unique(countries))
 
-  if(length(gradeLvl)>1){
-    stop(paste0("The argument ", sQuote("gradeLvl"), " must be a single value."))
-  }
   if(is.null(gradeLvl)){
+    warning(paste0("The argument ", sQuote("gradeLvl"), " is not specified.  Defaulting to Grade 4."))
     gradeLvl <- 4 #default value
   }
-  if(sum(!gradeLvl %in% c(4,8)) > 0) {
-    stop(paste0("The argument ", sQuote("gradeLvl"), " must be 4 or 8."))
+  if(length(gradeLvl)!=1){
+    stop(paste0("The argument ", sQuote("gradeLvl"), " must be a single value."))
+  }
+  
+  gradeLvl <- tolower(gradeLvl)
+  if(!gradeLvl %in% c("4", "8", "4b", "8b")) {
+    stop(paste0("The argument ", sQuote("gradeLvl"), " must be a value of 4, 8, 4B, or 8B."))
   }
 
-  gradeL <- ifelse(gradeLvl == 4, "a", "b") # a=4th grade; b=8th grade
-
+  gradeL <- ifelse(gradeLvl %in% c("4", "4b"), "a", "b") # a=4th grade; b=8th grade
+  
   if(!is.logical(forceReread)){
     stop(paste0("The argument ", sQuote("forceReread"), " must be a logical value."))
   }
@@ -154,7 +166,7 @@ readTIMSS <- function(path,
 
       TIMSSfiles <- list()#empty list
 
-      if(gradeLvl == 4){
+      if(gradeLvl %in% c("4", "4b")){
         TIMSSfiles <- c("acg", #school background
                         "asa", #student achievement
                         "asg", #student background
@@ -162,7 +174,7 @@ readTIMSS <- function(path,
                         "asr", #within-country scoring reliability
                         "ast", #student-teacher linkage
                         "atg") #teacher background
-      } else {
+      } else { #assumes "8" or "8b"
         TIMSSfiles <- c("bcg", #School Background
                         "bsa", #Student Achievement
                         "bsg", #Student Background
@@ -193,12 +205,12 @@ readTIMSS <- function(path,
         sum(nchar(g))==0
       }, simplify=TRUE)
 
-      if(gradeLvl==4){
+      if(gradeLvl %in% c("4", "4b")){
         hasMissing["ash"] <- FALSE #special files that might be missing from data::no need to raise error
         hasMissing["asr"] <- FALSE
         hasMissingNumeracy["ash"] <- FALSE
         hasMissingNumeracy["asr"] <- FALSE
-      } else {
+      } else { #assumes grade 8 or 8b
         hasMissing["bsr"] <- FALSE
       }
 
@@ -252,7 +264,7 @@ readTIMSS <- function(path,
       iProcCountry <- iProcCountry + 1 #update the processed country index value after we confirm that there is data to process
       processedData <- list()
 
-      if(gradeLvl == 4) {
+      if(gradeLvl %in% c("4", "4b")){
         if(hasData==TRUE){ #process our 4th grade data::run event if we have both sets
           processArgs <- list(dataFolderPath=unique(dirname(unlist(fnames))), #specify only the directory in which the files exist
                               countryCode=cntry,
@@ -336,7 +348,7 @@ readTIMSS <- function(path,
                                       })
           }
         }
-      }else { #8th grade data
+      }else { #8th grade or 8th grade bridge data
         processArgs <- list(dataFolderPath=unique(dirname(unlist(fnames))), #specify folders where data resides
                             countryCode=cntry,
                             fnames=fnames,
@@ -415,7 +427,10 @@ readTIMSS <- function(path,
         processedData$year <- convertTIMSSYearCode(yrCode)
         processedData$assessmentCode <- "International"
         processedData$dataType <- "Student Data"
-        processedData$gradeLevel <- ifelse(gradeLvl=="a", "Grade 4",ifelse(gradeLvl=="b","Grade 8",""))
+        processedData$gradeLevel <- ifelse(gradeLvl=="4", "Grade 4",
+                                           ifelse(gradeLvl=="8","Grade 8",
+                                           ifelse(gradeLvl=="4b", "Grade 4 - Bridge Study",
+                                           ifelse(gradeLvl=="8b", "Grade 8 - Bridge Study", ""))))
 
         #Check if these are consistant between all of the years of data
         processedData$achievementLevels <- c("625", "550", "475", "400")
@@ -432,7 +447,7 @@ readTIMSS <- function(path,
         processedData$fileFormat <- processedData$dataListFF$student
         processedData$fileFormatSchool <- processedData$dataListFF$school
         processedData$fileFormatTeacher <- processedData$dataListFF$teacher
-        processedData$survey <- "TIMSS"
+        processedData$survey <- ifelse(gradeLvl %in% c("4b", "8b"), "TIMSS - Bridge Study", "TIMSS")
         processedData$country <- getTIMSSCountryName(cntry)
 
         procCountryData[[iProcCountry]] <- edsurvey.data.frame(userConditions = processedData$userConditions,
@@ -481,6 +496,8 @@ convertTIMSSYearCode <- function(yrCode){
   yrTest[yrTest %in% "m4"] <- 2007
   yrTest[yrTest %in% "m5"] <- 2011
   yrTest[yrTest %in% c("m6", "n1")] <- 2015
+  yrTest[yrTest %in% "m7"] <- 2019
+  yrTest[yrTest %in% "b7"] <- 2019
 
   return(yrTest)
 }
@@ -490,21 +507,32 @@ getTIMSSYearCodes <- function(gradeLvl){
 
   yrVals <- NULL
 
-  if(gradeLvl==4){
-    yrVals = c("m1","m2","m3", "m4", "m5", "m6", "n1") #n1 is for numeracy data::only applicable to 4th grade
-    names(yrVals) = c(1995, 1999, 2003, 2007, 2011, 2015, 2015)
-  } else if(gradeLvl==8){
-    yrVals = c("m1","m2","m3", "m4", "m5", "m6")
-    names(yrVals) = c(1995, 1999, 2003, 2007, 2011, 2015)
+  if(gradeLvl=="4"){
+    yrVals = c("m1","m2","m3", "m4", "m5", "m6", "n1", "m7") #n1 is for numeracy data::only applicable to 4th grade
+    names(yrVals) = c(1995, 1999, 2003, 2007, 2011, 2015, 2015, 2019)
+  } else if(gradeLvl=="8"){
+    yrVals = c("m1","m2","m3", "m4", "m5", "m6", "m7")
+    names(yrVals) = c(1995, 1999, 2003, 2007, 2011, 2015, 2019)
+  } else if(gradeLvl=="4b"){
+    yrVals = c("b7")
+    names(yrVals) = c(2019)
+  } else if(gradeLvl=="8b"){
+    yrVals = c("b7")
+    names(yrVals) = c(2019)
   }
+  
   return(yrVals)
 }
 
 #builds the list of pvvars from the passed fileformat data.frame
 buildPVVARS_TIMSS <- function(fileFormat, defaultPV = "mmat"){
-
+  
   pvFields <- subset(fileFormat, nchar(fileFormat$Type)>0) #type is identified in writeTibbleToFWFReturnFileFormat function
   constructs <- unique(pvFields$Type)
+  
+  #drop the international benchmark contructs as they are not true plausible values, only discrete numerics
+  constructs <- constructs[!grepl("^(s|m)ibm$", constructs, ignore.case = TRUE)]
+  
   pvvars <- vector("list", length(constructs))
   names(pvvars) <- constructs
 
@@ -1276,7 +1304,7 @@ exportTIMSSToCSV <- function(folderPath, exportPath, cntryCodes, gradeLvl, ...){
 
   sdfList <- readTIMSS(folderPath, cntryCodes, gradeLvl, ...)
 
-  if (class(sdfList) == "edsurvey.data.frame.list"){
+  if (inherits(sdfList, "edsurvey.data.frame.list")) {
     for(i in 1:length(sdfList$datalist)){
 
       sdf  <- sdfList$datalist[[i]]
@@ -1289,7 +1317,7 @@ exportTIMSSToCSV <- function(folderPath, exportPath, cntryCodes, gradeLvl, ...){
       write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
       cat(paste(cntry, "completed.\n"))
     }
-  } else if (class(sdfList) == "edsurvey.data.frame"){
+  } else if (inherits(sdfList, "edsurvey.data.frame")) {
 
     sdf <- sdfList
     cntry <- sdf$country

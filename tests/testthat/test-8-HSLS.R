@@ -49,6 +49,10 @@ test_that("HSLS getData",{
   expect_equal(dim(dat3), c(18948, 3))
   withr::with_options(list(digits=7), co <- capture.output(summary(dat3)))
   expect_equal(co, dat3Summary.Ref)
+  
+  #ensure that values having nearly all omitted levels and '0=Zero' have the '0=Zero' label dropped and return numeric accurately
+  dat4 <- hsls$x3tcredeng
+  expect_equal(class(dat4), "numeric")
 })
 
 context("HSLS rename.sdf")

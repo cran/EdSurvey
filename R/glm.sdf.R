@@ -401,6 +401,10 @@ calc.glm.sdf <- function(formula,
     edf <- edf[posWeights,]
   }
 
+  if(varMethod == "t" && sum(is.na(edf[,c(stratumVar, psuVar)])) != 0) {
+    stop("Taylor series variance estimation requested but stratum or PSU variables contian an NA value.")
+  }
+
   # check that there are not factors with only one level and give error message
   lapply(names(edf)[names(edf) %in% all.names(formula)],
          function(z) {
@@ -918,12 +922,20 @@ calc.glm.sdf <- function(formula,
     res <- c(res, list(B=B, U=Ubar))
   }
   if(returnNumberOfPSU) {
-    res <- c(res, list(nPSU=nrow(unique(edf[,c(stratumVar, psuVar)]))))
+    if(all(c(stratumVar, psuVar) %in% colnames(edf))) {
+      if(sum(is.na(edf[,c(stratumVar, psuVar)])) == 0) {
+        res <- c(res, list(nPSU=nrow(unique(edf[,c(stratumVar, psuVar)]))))
+      } else {
+        warning("Cannot return number of PSUs because the stratum or PSU variables contain NA values.")
+      }
+    }
   }
   # add waldDenomBaseDof if relevant
   if (!is.null(stratumVar) && !is.null(psuVar)){
     if(all(c(stratumVar, psuVar) %in% colnames(edf))) {
-      res <- c(res, list(waldDenomBaseDof=waldDof(edf, stratumVar, psuVar)))
+      if(sum(is.na(edf[,c(stratumVar, psuVar)])) == 0) {
+        res <- c(res, list(waldDenomBaseDof=waldDof(edf, stratumVar, psuVar)))
+      }
     } 
     if("JK1" %in% getStratumVar(data)) {
       res <- c(res, list(waldDenomBaseDof="JK1"))
@@ -1024,6 +1036,7 @@ vcov.edsurveyGlm <- function(object, ...) {
 #' @title Odds Ratios for edsurveyGlm Models
 #' @description Converts coefficients from \code{edsurveyGlm} logit regression model to odds ratios.
 #' @param model an \code{edsurveyGlm} model
+#' @param alpha the alpha level for the confidence level
 #' 
 #' @return 
 #' An \code{oddsRatio.edsurveyGlm} object with the following elements:
@@ -1032,7 +1045,7 @@ vcov.edsurveyGlm <- function(object, ...) {
 #'    \item{97.5\%}{upper bound 95\% confidence interval}
 #'
 #' @export
-oddsRatio <- function(model){
+oddsRatio <- function(model, alpha=0.05){
   if (!inherits(model, "edsurveyGlm")) stop("x must be of class 'edsurveyGlm'.")
   if(model$family$family != "binomial" & model$family$family != "quasibinomial"){
     stop("Model must be binomial.")
@@ -1042,11 +1055,16 @@ oddsRatio <- function(model){
   }
   OR <- exp(coef(model))
   varDiag <- diag(vcov(model))
-  orSE <- sqrt(OR^2 * varDiag)
-  CIlo <- OR - (1.96 * orSE)
-  CIup <- OR + (1.96 * orSE)
+  CIlo <- exp(coef(model) - (qt(1-alpha/2, df=model$coefmat$dof) * sqrt(varDiag)))
+  CIup <- exp(coef(model) + (qt(1-alpha/2, df=model$coefmat$dof) * sqrt(varDiag)))
   r <- cbind(OR, CIlo, CIup)
-  colnames(r) <- c("OR", "2.5%", "97.5%")
+  pctRound <- 1
+  pct <- round(100*c(alpha/2, 1-alpha/2), pctRound)
+  while(pct[1] == 0) {
+    pctRound <- pctRound + 1
+    pct <- round(100*c(alpha/2, 1-alpha/2), pctRound)
+  }
+  colnames(r) <- c("OR", paste0(pct, "%"))
   r <- as.data.frame(r)
   class(r) <- c("oddsRatio.edsurveyGlm", "data.frame")
   r

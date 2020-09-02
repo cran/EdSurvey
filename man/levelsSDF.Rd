@@ -20,6 +20,7 @@ an \code{edsurvey.data.frame.list}}
 Retrieve the levels and labels of a variable from an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 }
 \examples{
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
@@ -37,6 +38,7 @@ df2 <- getData(data=sdf, varnames=c("dsex", "t088301"),
                                         to=c("No"))),
                addAttributes=TRUE)
 levelsSDF(varnames=c("dsex","t088301"), data=df2)
+}
 }
 \author{
 Michael Lee and Paul Bailey

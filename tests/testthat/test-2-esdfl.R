@@ -71,22 +71,24 @@ test_that("ESDFL error handling",{
   expect_warning(edsurveyTable(composite ~ b017451, sdfl, 
                                returnMeans=TRUE, returnSepct=FALSE,
                                pctAggregationLevel=6), 
-                 paste0("Resetting ", sQuote("pctAggregationLevel") , " to 0. the largest potentially meaningful value."))
+                 paste0("Warnings from datasets \"A locations\""))
   sdfE <- "String"
   sdfl_error <- edsurvey.data.frame.list(list(sdfE, sdfB, sdfC, sdfE),
                                          labels=c("first E locations",
                                                   "B locations",
                                                   "C locations",
                                                   "second E locations"))
-  expect_message(edsurveyTable(composite ~ b017451, 
+  expect_warning(edsurveyTable(composite ~ b017451, 
                                sdfl_error, returnMeans=FALSE, 
                                returnSepct=FALSE), 
-                 "Error on dataset 4")
+                 "E locations")
   
-  et2 <- edsurveyTable(composite ~ b017451, sdfl_error, returnMeans=FALSE, returnSepct=FALSE)
-  et2c <- capture.output(et2)
+  suppressWarnings(et2 <- edsurveyTable(composite ~ b017451, sdfl_error, returnMeans=FALSE, returnSepct=FALSE))
+  withr::with_options(list(digits=0),
+                        et2c <- capture.output(et2)
+                     )
 
-  expect_error(g1 <- gap("composite", sdfl_error, groupA= dsex=="Male"))
+  expect_message(expect_error(g1 <- gap("composite", sdfl_error, groupA= dsex=="Male"), "reference"), "E locations")
   sdfl_errorB <- edsurvey.data.frame.list(list(sdfA, sdfB, sdfE, sdfC),
                                           labels=c("A locations",
                                                    "B locations",

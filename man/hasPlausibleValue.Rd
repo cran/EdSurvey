@@ -26,6 +26,7 @@ This function returns \code{TRUE} only when the variable passed to it is the nam
          the actual data (such as \code{"mrpcm1"} or \code{"dsex"}) are not.
 }
 \examples{
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
@@ -34,6 +35,7 @@ hasPlausibleValue(var="composite", data=sdf)
 
 # FALSE
 hasPlausibleValue(var="dsex", data=sdf)
+}
 }
 \author{
 Michael Lee and Paul Bailey

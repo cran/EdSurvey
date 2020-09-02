@@ -50,7 +50,7 @@ and \code{repcode_psu} for the primary sampling unit (PSU) value in the resultin
 }
 \examples{
 \dontrun{
-wrkFld <- "C:/HSB/SOPHOMORE"
+wrkFld <- "~/HSB/SOPHOMORE"
 
 dataPath <- file.path(wrkFld, "REVISED_ASCII", "HSO8092_REV.PRI")
 sasPath <- file.path(wrkFld, "SAS_EXTRACT_LOGIC", "HSBso_READ_HSO8092.SAS")

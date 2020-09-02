@@ -1,10 +1,10 @@
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
 # get the median of the composite
 percentile("composite", 50, sdf)
 
-\dontrun{
 # get several percentiles
 percentile("composite", c(0,1,25,50,75,99,100), sdf)
 # build an edsurvey.data.frame.list

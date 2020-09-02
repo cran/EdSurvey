@@ -6,8 +6,8 @@
 \usage{
 readECLS_K2011(
   path = getwd(),
-  filename = "childK4p.dat",
-  layoutFilename = "ECLSK2011_K4PUF.sps",
+  filename = "childK5p.dat",
+  layoutFilename = "ECLSK2011_K5PUF.sps",
   forceReread = FALSE,
   verbose = TRUE
 )
@@ -40,14 +40,16 @@ Reads in the unzipped files downloaded from the ECLS--K 2010--11 longitudinal da
 \examples{
 \dontrun{
 # read-in student file with defaults
-eclsk_df <- readECLS_K2011(path="C:/ECLS_K/2011") #using defaults
+eclsk_df <- readECLS_K2011(path="~/ECLS_K/2011") #using defaults
 d <- getData(eclsk_df, c("childid", "c1hgt1", "c1wgt1"))
 summary(d)
+}
 
+\dontrun{
 # read-in with parameters specified
-eclsk_df <- readECLS_K2011(path = "C:/ECLS_K2011",
-                           filename = "childK4p.dat",
-                           layoutFilename = "ECLSK2011_K4PUF.sps",
+eclsk_df <- readECLS_K2011(path = "~/ECLS_K/2011",
+                           filename = "childK5p.dat",
+                           layoutFilename = "ECLSK2011_K5PUF.sps",
                            forceReread = FALSE,
                            verbose = TRUE) 
 }

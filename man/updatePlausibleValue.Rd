@@ -22,6 +22,7 @@ an object of the same class as the \code{data} argument, with the name of
 Changes the name used to refer to a set of plausible values from \code{oldVar} to \code{newVar} in an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 }
 \examples{
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
@@ -31,6 +32,7 @@ sdf2 <- updatePlausibleValue("composite", "overall", sdf)
 showPlausibleValues(sdf2)
 lm1 <- lm.sdf(overall ~ b017451, data=sdf2)
 summary(lm1)
+}
 }
 \seealso{
 \code{\link{getPlausibleValue}} and \code{\link{showPlausibleValues}}

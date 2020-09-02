@@ -1,3 +1,4 @@
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 
@@ -52,8 +53,7 @@ df0 <- getData(sdf, c("composite", "dsex", "b017451", "origwt"))
 df0$sex <- ifelse(df0$dsex=="Male", "boy", "girl")
 df0 <- rebindAttributes(df0, sdf)
 
-\dontrun{
 # getting all the data can use up all the memory and is generally a bad idea
 df0 <- getData(sdf, varnames=colnames(sdf),
                omittedLevels=FALSE, defaultConditions=FALSE)
-} 
+}

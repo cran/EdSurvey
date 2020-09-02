@@ -14,7 +14,8 @@
 #'                The default value is \code{TRUE}.
 #' 
 #' @importFrom readxl read_excel
-#' @author Paul Bailey and Trang Nguyen
+#' @importFrom utils browseURL
+#' @author Eric Buehler, Paul Bailey, and Trang Nguyen
 #' @example man/examples/downloadPIAAC.R
 #' @export
 downloadPIAAC <- function(root, cycle=1, cache=FALSE, verbose=TRUE) {
@@ -52,7 +53,7 @@ downloadPIAAC <- function(root, cycle=1, cache=FALSE, verbose=TRUE) {
                     "/piaac/puf-data/CSV/prgrusp1.csv", "/piaac/puf-data/CSV/prgsgpp1.csv",
                     "/piaac/puf-data/CSV/prgsvkp1.csv", "/piaac/puf-data/CSV/prgsvnp1.csv",
                     "/piaac/puf-data/CSV/prgswep1.csv", "/piaac/puf-data/CSV/prgturp1.csv",
-                    "/piaac/puf-data/CSV/prgusap1_2012.csv", "/piaac/puf-data/CSV/Prgusap1_2017.csv")
+                    "/skills/piaac/data/CSV_prgusap1.zip", "/piaac/puf-data/CSV/Prgusap1_2017.csv")
   }
   
   url0 <- "https://webfs.oecd.org"
@@ -60,7 +61,13 @@ downloadPIAAC <- function(root, cycle=1, cache=FALSE, verbose=TRUE) {
   for (f in data_files) {
     fn <- basename(f)
     if(!file.exists(file.path(yroot,fn))) {
-      download.file(paste0(url0, f), file.path(yroot, fn), mode = "w", method = "auto")
+      # us12_14 download is a zip file and needs special processing
+      if(f == "/skills/piaac/data/CSV_prgusap1.zip"){
+        download.file(paste0("https://www.oecd.org/", f), file.path(yroot, fn), mode = "wb", method = "auto")
+        unzip(file.path(yroot, fn), "prgusap1.csv", exdir = file.path(yroot))
+      } else {
+        download.file(paste0(url0, f), file.path(yroot, fn), mode = "w", method = "auto")
+      }
     } else {
       if (verbose) {
         cat(paste0("Found downloaded cycle ",cycle, " PIAAC file ",fn, ".\n"))

@@ -34,7 +34,7 @@ Reads in the unzipped files downloaded from the BPS 2012 to 2014 cohort longitud
 \examples{
 \dontrun{
 # using default filenames
-bps14 <- readBPS_2014(path = "C:/BPS/2012")
+bps14 <- readBPS_2014(path = "~/BPS/2012")
 dim(bps14)
 
 # parameters specified without default filenames

@@ -24,6 +24,8 @@ To select all countries available, use a wildcard value of \strong{\code{*}}.}
 \itemize{
   \item{\strong{4} = fourth grade (the default if not specified)}
   \item{\strong{8} = eighth grade}
+  \item{\strong{4B} = fourth grade bridge study (TIMSS 2019 only)}
+  \item{\strong{8B} = eight grade bridge study (TIMSS 2019 only)}
 }}
 
 \item{forceReread}{a logical value to force rereading of all processed data.
@@ -84,17 +86,23 @@ inserted for the dataset records where that variable did not exist.
 Data variables common to both datasets are kept as a single data variable,
 with records retaining their original values from the source dataset.
 Consult the \emph{TIMSS User Guide} for further information.
+
+For the TIMSS 2019 study, a bridge study was conducted to help compute adjustment factors
+between the electronic test format and the paper/pencil format.  The bridge study is
+considered separate from the normal TIMSS 2019 study. The \code{gradeLvl} parameter now
+includes a \code{"4B"} option for the Grade 4 bridge study, and the \code{"8B"} option
+for the Grade 8 bridge study files.
 }
 \examples{
 \dontrun{
 # single country specified
-fin <- readTIMSS("C:/TIMSS/2015", countries = c("fin"), gradeLvl = 4)
+fin <- readTIMSS("~/TIMSS/2015", countries = c("fin"), gradeLvl = 4)
 gg <- getData(fin, c("asbg01", "totwgt", "srea"))
 head(gg)
 edsurveyTable(srea ~ asbg01, fin)
 
 # multiple countries returned as edsurvey.data.frame.list, specify all countries with '*' argument
-timss2011 <- readTIMSS("C:/TIMSS/2011", countries="*", gradeLvl = 8, verbose = TRUE)
+timss2011 <- readTIMSS("~/TIMSS/2011", countries="*", gradeLvl = 8, verbose = TRUE)
 # print out edsurvey.data.frame.list covariates
 timss2011$covs
 }

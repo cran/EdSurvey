@@ -44,5 +44,4 @@ achievementLevels(achievementVars=c("composite", "dsex", "b017451"),
                               b017451=list(from=c("2 or 3 times a week",
                                                   "Every day"),
                                            to="Frequently")))
-
 }

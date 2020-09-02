@@ -25,17 +25,22 @@ Uses an Internet connection to download ECLS_K data.
              Data come from \href{https://nces.ed.gov/edat/}{nces.ed.gov} zip files. This
              function works for 1998 and 2011 data.
 }
+\details{
+Beginning for the ECLS_K 2011 Study Grade 5 data files, the \code{ChildK5p.zip} source data file is a \code{DEFLATE64} compressed zip file.
+This means that the user must manually extract the contained \code{childK5p.dat} file using an external zip
+program capable of handling \code{DEFLATE64} zip format. As existing R functions are unable to handle this zip format natively.
+}
 \examples{
 \dontrun{
 # root argument will vary by operating system conventions
-downloadECLS_K(years=c(1998, 2011), root = "C:/")
+downloadECLS_K(years=c(1998, 2011), root = "~/")
 
 # cache=TRUE will download then process the datafiles
-downloadECLS_K(years=c(1998, 2011), root = "C:/", cache = TRUE)
+downloadECLS_K(years=c(1998, 2011), root = "~/", cache = TRUE)
 
 # set verbose=FALSE for silent output
 # if year not specified, download all years
-downloadECLS_K(root="C:/", verbose = FALSE)
+downloadECLS_K(root="~/", verbose = FALSE)
 }
 }
 \seealso{

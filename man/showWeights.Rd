@@ -18,11 +18,13 @@ otherwise, prints only the full sample weights}
 Prints a summary of the weights in an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 }
 \examples{
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
 # show the weights
 showWeights(sdf, TRUE)
+}
 }
 \author{
 Michael Lee and Paul Bailey

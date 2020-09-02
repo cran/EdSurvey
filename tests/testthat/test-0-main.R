@@ -31,6 +31,10 @@ test_that("$ assign", {
   sdf$dsex <- ifelse(sdf$dsex %in% "Male", "boy", "girl")
   tab2 <- table(sdf$a, sdf$dsex)
   expect_equal(unname(tab2), unname(assignTableREF))
+
+  expect_warning(sdf$a[1:5] <- "invalid", "factor level")
+  # repeated to be sure this does not throw an error, which it used to
+  expect_warning(sdf$a[1:5] <- "invalid", "factor level")
   sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 })
 
@@ -103,6 +107,7 @@ test_that("getData", {
   gddat <- gddat[c(1:50,(nrow(gddat)-50):nrow(gddat)),]   # this file was larger. slim down a bit.
   attributes(gddat)$dataList$Student$lafObject <- NULL
   attributes(gddat)$dataList$School$lafObject <- NULL
+  attributes(gddat)$fr2Path <- NULL
   expect_known_value(gddat, file="gddat.rds", update=FALSE)
 
   expect_known_value(gd7 <- getData(sdf, c("dsex", "b017451")), file="gd7.rds", update=FALSE)
@@ -634,7 +639,7 @@ test_that("In cor, variables as class", {
   skip_on_cran()
   df <- getData(sdf, c("b017451", "sdracem","origwt"),addAttributes = TRUE)
   df$sdracem <- as.character(df$sdracem)
-  expect_error(cor.sdf("b017451", "sdracem",df,method="Pearson"))
+  expect_error(cor.sdf("b017451", "sdracem",df, method="Pearson"))
 })
 
 context("Reordering a variable manually vs through cor.sdf")
@@ -683,19 +688,23 @@ context("cor.sdf no level condensation")
 test_that("cor.sdf no level condensation", {
   skip_on_cran()
   cor_nocondense <- cor.sdf(x="c046501", y="c044006", data=sdf, condenseLevels = FALSE)
-  cor_nocondenseC <- capture.output(cor_nocondense)
+  withr::with_options(list(digits=4),
+    cor_nocondenseC <- capture.output(cor_nocondense)
+  )
   expect_equal(cor_nocondenseC, cor_nocondenseREF)
 })
 
 context("unweighted cor")
 test_that("unweighted cor", {
   skip_on_cran()
-  b1a <- cor.sdf("m815401", "b017451",method="Pearson", sdf,weightVar = "origwt")
-  b1b <- cor.sdf("m815401", "b017451",method="Pearson", sdf,weightVar = NULL)
+  b1a <- cor.sdf("m815401", "b017451", method="Pearson", sdf, weightVar = "origwt")
+  b1b <- cor.sdf("m815401", "b017451", method="Pearson", sdf, weightVar = NULL)
+  # not actually equal, just approximate
   expect_equal(b1a$correlation,b1b$correlation, tolerance=0.02, scale=1)
 
-  b2a <- cor.sdf("m815401", "b017451",method="Spearman", sdf,weightVar = "origwt")
-  b2b <- cor.sdf("m815401", "b017451",method="Spearman", sdf,weightVar = NULL)
+  b2a <- cor.sdf("m815401", "b017451", method="Spearman", sdf, weightVar = "origwt")
+  b2b <- cor.sdf("m815401", "b017451", method="Spearman", sdf, weightVar = NULL)
+  # not actually equal, just approximate
   expect_equal(b2a$correlation,b2b$correlation, tolerance=0.02, scale=1)
 } )
 

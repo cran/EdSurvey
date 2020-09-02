@@ -19,11 +19,13 @@ Prints a summary of the subject scale or subscale and the associated variables f
              plausible values for an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}.
 }
 \examples{
+\dontrun{
 # read in the example data (generated, not real student data)
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package="NAEPprimer"))
 
 # show the plausible values
 showPlausibleValues(data=sdf, verbose=TRUE)
+}
 }
 \author{
 Michael Lee and Paul Bailey

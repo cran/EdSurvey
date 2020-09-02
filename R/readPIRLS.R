@@ -391,6 +391,10 @@ buildPVVARS_PIRLS <- function(fileFormat, defaultPV = "rrea"){
 
   pvFields <- subset(fileFormat, nchar(fileFormat$Type)>0) #type is identified in writeTibbleToFWFReturnFileFormat function
   constructs <- unique(pvFields$Type)
+  
+  #drop the international benchmark contructs as they are not true plausible values, only discrete numerics
+  constructs <- constructs[!grepl("^(r|l)ibm$", constructs, ignore.case = TRUE)]
+  
   pvvars <- vector("list", length(constructs))
   names(pvvars) <- constructs
 
@@ -972,7 +976,7 @@ exportPIRLSToCSV <- function(folderPath, exportPath, cntryCodes, ...){
 
     sdfList <- readPIRLS(folderPath, cntryCodes, ...)
 
-    if (class(sdfList) == "edsurvey.data.frame.list"){
+    if (inherits(sdfList, "edsurvey.data.frame.list")) {
       for(i in 1:length(sdfList$datalist)){
 
         sdf  <- sdfList$datalist[[i]]
@@ -985,7 +989,7 @@ exportPIRLSToCSV <- function(folderPath, exportPath, cntryCodes, ...){
         write.csv(data, file=file.path(exportPath, paste0(cntry, ".csv")), na="", row.names = FALSE)
         cat(paste(cntry, "completed.\n"))
       }
-    } else if (class(sdfList) == "edsurvey.data.frame"){
+    } else if (inherits(sdfList, "edsurvey.data.frame")) {
 
       sdf <- sdfList
       cntry <- sdf$country

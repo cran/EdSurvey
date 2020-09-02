@@ -91,7 +91,7 @@ wgt.Ref <- c("There are 71 full sample weight(s) in this edsurvey.data.frame",
              "  'c7cpts0' with 90 JK replicate weights." )
 
 lmTaylorREF <- c("",
-                 "Formula: x8mscalk4 ~ x12sesl",
+                 "Formula: x8mscalk5 ~ x12sesl",
                  "",
                  "Weight variable: 'w8c28p_8t280'", 
                  "Variance method: Taylor series",
@@ -100,12 +100,12 @@ lmTaylorREF <- c("",
                  "",
                  "Coefficients:",
                  "                 coef        se       t    dof  Pr(>|t|)    ", 
-                 "(Intercept) 110.44930   0.42864 257.676 25.755 < 2.2e-16 ***", 
-                 "x12sesl       7.37147   0.30441  24.216 34.896 < 2.2e-16 ***",
+                 "(Intercept) 113.97299   0.50535 225.532 26.076 < 2.2e-16 ***", 
+                 "x12sesl       8.65869   0.34313  25.234 35.977 < 2.2e-16 ***",
                  "---",
                  "Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1", 
                  "",
-                 "Multiple R-squared: 0.1462",
+                 "Multiple R-squared: 0.1506",
                  "")
 
 
