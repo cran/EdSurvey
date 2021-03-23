@@ -293,8 +293,8 @@ calc.lm.sdf <- function(formula,
 
   # grab the variables needed for the Taylor series method, if that is the variance estimation method being used
   taylorVars <- c()
-  psuVar <- getPSUVar(data, wgt)
-  stratumVar <- getStratumVar(data, wgt)
+  psuVar <- getPSUVar(data, weightVar = wgt)
+  stratumVar <- getStratumVar(data, weightVar = wgt)
   if (is.null(psuVar)) {
     if(returnNumberOfPSU | varMethod=="t") {
       stop(paste0("Cannot find primary sampling unit variable for weight ", sQuote(wgt), ". Try setting the ", dQuote("varMethod"), " argument to ", dQuote("jackknife"), " and ", dQuote("returnNumberOfPSU"), " to ", dQuote("FALSE"), "."))
@@ -368,7 +368,9 @@ calc.lm.sdf <- function(formula,
   if(varMethod=="t") {
     incomplete <- !complete.cases(edf[,taylorVars])
     if(any(incomplete)) {
-      warning("Removing ", sum(incomplete), " rows with NA PSU of stratum variables from analysis.")
+      if(any(incomplete[!edf[,wgt] %in% c(NA, 0)])) {
+        warning("Removing ", sum(incomplete[!edf[,wgt] %in% c(NA, 0)]), " rows with NA PSU or stratum variables and positive weights from analysis.")
+      }
       edf <- edf[!incomplete,]
     }
     # check for NAs in stratumVar and psuVar

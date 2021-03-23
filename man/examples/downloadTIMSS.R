@@ -1,6 +1,6 @@
 \dontrun{
 # root argument will vary by operating system conventions
-downloadTIMSS(year=c(2015, 2011), root = "~/")
+downloadTIMSS(year=c(2019, 2015, 2011), root = "~/")
 
 # cache=TRUE will download then process the datafiles
 downloadTIMSS(year=2015, root = "~/", cache = TRUE)

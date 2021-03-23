@@ -8,7 +8,7 @@
 #' @param masterTxtFilepath a character value of the file path to the \code{master.txt} file contained within the electronic codebook directory
 #' @param forceReread a logical value to force rereading of all processed data.
 #'                    The default value of \code{FALSE} will speed up the read function by using existing read-in data already processed.
-#' @param verbose a logical value that will determine if you want verbose output while the \code{readHSB_Sophomore} function is running to indicate processing progress.
+#' @param verbose a logical value that will determine if you want verbose output while the \code{readBPS_1994} function is running to indicate processing progress.
 #'                The default value is \code{TRUE}.
 #' @details Reads in the student BPS 1990 to 1994 cohort data file to an \code{edsurvey.data.frame}.
 #' 
@@ -156,12 +156,12 @@ readBPS_1994 <- function(b94DAT_Filepath,
                       gradeLevel = "",
                       achievementLevels = NULL, #no achievement levels
                       omittedLevels = omittedLevels,
-                      survey = "BPS1994",
+                      survey = "BPS",
                       country = "USA",
                       psuVar = NULL,  #psu and stratum are weight specific
                       stratumVar = NULL, 
-                      jkSumMultiplier = 1, #has 35 replicate weights, but sum multiplier is set to 1
-                      validateFactorLabels = FALSE, #the validateFactorLabels will check in `getData` if all values have a defined label, any missing labels will be automatically added.
+                      jkSumMultiplier = 1, #has 35 replicate weights, sum multiplier is set to 1 for JK1 method
+                      validateFactorLabels = FALSE,
                       reqDecimalConversion = FALSE) #decimal conversion is not needed
   
 }
@@ -203,7 +203,7 @@ buildBPSWeightList_94 <- function(fileFormat){
   
   wgtLookupDF[wgtLookupDF$wgt=="bps92cwt", "jkBase"] <- "bps92c"
   wgtLookupDF[wgtLookupDF$wgt=="bps92lwt", "jkBase"] <- "bps92l"
-  wgtLookupDF[wgtLookupDF$wgt=="bps92nwt", "jkBase"] <- "bps92c" ### not certain -- check again
+  wgtLookupDF[wgtLookupDF$wgt=="bps92nwt", "jkBase"] <- "bps92c"
   wgtLookupDF[wgtLookupDF$wgt=="bps94awt", "jkBase"] <- "bps94w"
   
   wgtLookupDF[wgtLookupDF$wgt=="bps92cwt", "psuVar"] <- "psu"
@@ -394,7 +394,7 @@ parseBPSTxtMaster_94 <- function(masterTxtFilepath){
   fileFormat <- validateMultiLine_FileFormat(fileFormat) 
   
   #for whatever reason the 'ID' value is not included in the master.txt file.  Specify it specifically here
-  #it's also on each row of multi-line data but we will remove those in the main readBB function when we flatten the file.
+  #it's also on each row of multi-line data but we will remove those in the main readBPS function when we flatten the file.
   fileFormat[nrow(fileFormat)+1, ] = list("id", 1, 8, 8, "", "Participant ID", "", "", "", "integer", "", 1, 1) #fileNo 1
   
   fileFormat <- fileFormat[order(fileFormat$FileNo, fileFormat$RecordIndex, fileFormat$Start, fileFormat$End), ]

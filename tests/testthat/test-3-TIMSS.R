@@ -19,13 +19,14 @@ if (!dir.exists(edsurveyHome)) {
 }
 
 test_that("TIMSS data reads in correctly", {
-  expect_silent(downloadTIMSS(root=edsurveyHome, year=c(2003, 2007, 2011, 2015), verbose = FALSE))
+  expect_silent(downloadTIMSS(root=edsurveyHome, year=c(2003, 2007, 2011, 2015, 2019), verbose = FALSE))
   expect_silent(sgp8.03 <<- readTIMSS(file.path(edsurveyHome, "TIMSS", "2003"), countries="sgp", gradeLvl = 8, verbose=FALSE))
   expect_silent(usa4.07 <<- readTIMSS(file.path(edsurveyHome, "TIMSS", "2007"), countries="usa", gradeLvl = 4, verbose=FALSE))
   expect_silent(usa8.11 <<- readTIMSS(file.path(edsurveyHome, "TIMSS", "2011"), countries="usa", gradeLvl = 8, verbose=FALSE))
   expect_silent(fin4.11 <<- readTIMSS(file.path(edsurveyHome, "TIMSS", "2011"), countries="fin", gradeLvl = 4, verbose=FALSE))
   expect_silent(kwt4.15 <<- readTIMSS(file.path(edsurveyHome, "TIMSS", "2015"), countries="kwt", gradeLvl = 4, verbose=FALSE)) #includes both numeracy and gr4
   expect_silent(zaf8.15 <<- readTIMSS(file.path(edsurveyHome, "TIMSS", "2015"), countries="zaf", gradeLvl = 8, verbose=FALSE))
+  expect_silent(dnk4.19 <<- readTIMSS(file.path(edsurveyHome, "TIMSS", "2019"), countries="dnk", gradeLvl = 4, verbose=FALSE))
 
   expect_silent(multiESDFL <<- readTIMSS(path=c(file.path(edsurveyHome, "TIMSS", "2007"),
                                                file.path(edsurveyHome, "TIMSS", "2011")), 
@@ -36,12 +37,14 @@ test_that("TIMSS data reads in correctly", {
   expect_is(usa8.11, "edsurvey.data.frame")
   expect_is(kwt4.15, "edsurvey.data.frame")
   expect_is(zaf8.15, "edsurvey.data.frame")
+  expect_is(dnk4.19, "edsurvey.data.frame")
   expect_is(multiESDFL, "edsurvey.data.frame.list")
   expect_equal(dim(sgp8.03), c(12144, 2589))
   expect_equal(dim(usa4.07), c(12883, 1905))
   expect_equal(dim(usa8.11), c(20859, 2393))
   expect_equal(dim(kwt4.15), c(11318, 2261))
   expect_equal(dim(zaf8.15), c(25029, 2431))
+  expect_equal(dim(dnk4.19), c(5131, 3668))
   expect_equal(length(multiESDFL$datalist), 3)
   
   co <- capture.output(multiESDFL$covs)
@@ -237,29 +240,6 @@ test_that("TIMSS percentile",{
   expect_equal(co, pctREF)
 })
 
-context("TIMSS gap")
-test_that("TIMSS gap", {
-	# varEstInputs
-  g3d <- gap("mmat", fin4.11, asbg01=="BOY", returnVarEstInputs=TRUE, achievementLevel=c("Intermediate International Benchmark"), achievementDiscrete=TRUE)
-  # gap percentile
-  g2p <- gap("mmat", fin4.11, asbg01=="BOY", asbg01=="GIRL", percentile=c(50, 90))
-  # gap achievement levels, discrete
-  g1al <- gap("mmat", fin4.11, asbg01=="BOY", asbg01=="GIRL", achievementLevel="Low International Benchmark", achievementDiscrete=TRUE)
-  # gap percentage with recode
-  g1eq <- gap("asbg07d", fin4.11, asbg01=="BOY", asbg01=="GIRL", targetLevel="ONCE OR TWICE A WEEK")
-  
-  withr::with_options(list(digits=7), co <- capture.output(g3d))
-  expect_equal(co, g3dREF)
-  
-  withr::with_options(list(digits=7), co <- capture.output(g2p))
-  expect_equal(co, g2pREF)
-  
-  withr::with_options(list(digits=7), co <- capture.output(g1al))
-  expect_equal(co, g1alREF)
-  
-  withr::with_options(list(digits=7), co <- capture.output(g1eq))
-  expect_equal(co, g1eqREF)
-})
 
 context("TIMSS glm")
 test_that("TIMSS glm", {
@@ -290,4 +270,63 @@ test_that("TIMSS student-teacher merge on recode", {
   es1 <- edsurveyTable(mmat ~ itsex, kwt4.15, weightVar = "totwgt", jrrIMax = 1)
   es2 <- edsurveyTable(mmat ~ itsex, kwt4.15B, weightVar = "totwgt", jrrIMax = 1)
   expect_equal(es1, es2)
+})
+
+context("TIMSS gap")
+test_that("TIMSS gap", {
+  # varEstInputs
+  g3d <- gap("mmat", fin4.11, asbg01=="BOY", returnVarEstInputs=TRUE, achievementLevel=c("Intermediate International Benchmark"), achievementDiscrete=TRUE)
+  # gap percentile
+  g2p <- gap("mmat", fin4.11, asbg01=="BOY", asbg01=="GIRL", percentile=c(50, 90))
+  # gap achievement levels, discrete
+  g1al <- gap("mmat", fin4.11, asbg01=="BOY", asbg01=="GIRL", achievementLevel="Low International Benchmark", achievementDiscrete=TRUE)
+  # gap percentage with recode
+  g1eq <- gap("asbg07d", fin4.11, asbg01=="BOY", asbg01=="GIRL", targetLevel="ONCE OR TWICE A WEEK")
+  
+  withr::with_options(list(digits=7), co <- capture.output(g3d))
+  expect_equal(co, g3dREF)
+  
+  withr::with_options(list(digits=7), co <- capture.output(g2p))
+  expect_equal(co, g2pREF)
+  
+  withr::with_options(list(digits=7), co <- capture.output(g1al))
+  expect_equal(co, g1alREF)
+  
+  withr::with_options(list(digits=7), co <- capture.output(g1eq))
+  expect_equal(co, g1eqREF)
+})
+
+context("TIMSS gap dynamic subsets")
+test_that("TIMSS gap dynamic subsets", {
+  skip_on_cran()
+  levelLabels <- c("GIRL", "BOY")
+
+  gapResult <- gap(variable = 'mmat', data = multiESDFL,
+                   groupA=itsex %in% "GIRL")
+  gapResult2 <- gap(variable = 'mmat', data = multiESDFL,
+                    groupA=itsex %in% levelLabels[1])
+
+  gapResult2$labels <- gapResult$labels
+  gapResult2$call <- gapResult$call
+  expect_equal(gapResult, gapResult2)
+
+  gapResult <- gap(variable = 'mmat', data = usa8.11,
+                    groupA=itsex %in% "GIRL")
+
+  gapResult2 <- gap(variable = 'mmat', data = usa8.11,
+                    groupA=itsex %in% levelLabels[1])
+  gapResult2$labels <- gapResult$labels
+  gapResult2$call <- gapResult$call
+  expect_equal(gapResult, gapResult2)
+
+  gd2 <- getData(usa4.07, c("totwgt", "itsex", "mmat"), defaultConditions=FALSE, addAttributes=TRUE)
+  gapResult <- gap(variable = 'mmat', data = gd2,
+                   groupA=itsex %in% "GIRL")
+
+  gapResult2 <- gap(variable = 'mmat', data = gd2,
+                    groupA=itsex %in% levelLabels[1])
+
+  gapResult2$labels <- gapResult$labels
+  gapResult2$call <- gapResult$call
+  expect_equal(gapResult, gapResult2)
 })

@@ -254,7 +254,9 @@ read_ePIRLS <- function(path,
                                                              country = processedData$country,
                                                              psuVar = "jkrep",
                                                              stratumVar = "jkzone",
-                                                             jkSumMultiplier = 0.5) #defined by the method of JK weight replication used (JK2)
+                                                             jkSumMultiplier = 0.5, #defined by the method of JK weight replication used (JK2)
+                                                             reqDecimalConversion = FALSE,
+                                                             dim0 = processedData$dim0) 
     }#end country loop
   }#end for(fileYr in fileYrs)
   
@@ -345,7 +347,8 @@ process_ePIRLS <- function(dataFolderPath, countryCode, fnames, fileYrs, forceRe
       
       dataList <- list(student = studentLAF, school = schoolLAF, teacher = teacherLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
       dataListFF <- cacheFile$dataListFF
-      dataListMeta <- cacheFile$dataListMeta
+      
+      dim0 = cacheFile$dim0
       
       runProcessing <- FALSE
     }
@@ -355,6 +358,11 @@ process_ePIRLS <- function(dataFolderPath, countryCode, fnames, fileYrs, forceRe
     
     if(verbose==TRUE){
       cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
+    }
+    
+    #delete the .meta file (if exists) before processing in case of error/issue
+    if(length(metaCacheFP)>0 && file.exists(metaCacheFP)){
+      file.remove(metaCacheFP)
     }
     
     #SCHOOL LEVEL===================================================
@@ -501,19 +509,19 @@ process_ePIRLS <- function(dataFolderPath, countryCode, fnames, fileYrs, forceRe
     #build data list and link metadata object=======================
     dataList <- list(student = studentLAF, school = schoolLAF, teacher = teacherLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
     dataListFF <- list(student = ffstu, school = ffsch, teacher = ffTeach)
-    
-    dataListMeta <- list(student = "", school = "", teacher = "")
-    dataListMeta$student <- list(school = "idcntry;idschool", teacher = "idcntry;idstud")
-    dataListMeta$school <- list()
-    dataListMeta$teacher <- list()
     #===============================================================
+    
+    #calculate the dim0 to store in the .meta file for fast retreival
+    nrow0 <- nrow(mm)
+    ncol0 <- length(unique(c(ffsch$variableName, ffstu$variableName, ffTeach$variableName)))
+    dim0 <- c(nrow0, ncol0)
     
     #save the cachefile to be read-in for the next call
     cacheFile <- list(ver=packageVersion("EdSurvey"),
-                      cacheFileVer=3,
+                      cacheFileVer=4,
                       ts=Sys.time(),
                       dataListFF=dataListFF,
-                      dataListMeta=dataListMeta)
+                      dim0=dim0)
     
     saveRDS(cacheFile, file.path(dataFolderPath,paste0("a", countryCode, yearCode,".meta")))
     
@@ -525,7 +533,7 @@ process_ePIRLS <- function(dataFolderPath, countryCode, fnames, fileYrs, forceRe
   
   return(list(dataList = dataList,
               dataListFF = dataListFF,
-              dataListMeta = dataListMeta)) 
+              dim0=dim0)) 
 }
 
 export_ePIRLSToCSV <- function(folderPath, exportPath, cntryCodes, ...){

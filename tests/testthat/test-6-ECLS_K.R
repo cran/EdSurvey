@@ -54,7 +54,6 @@ test_that("ECLS_K rename.sdf", {
 
 context("ECLS_K Taylor Series")
 test_that("ECLS_K Taylor Series", {
-  skip_on_cran()
   lmTaylor <- lm.sdf(x8mscalk5 ~  x12sesl, weightVar = "w8c28p_8t280", varMethod = "Taylor",
                      data = eclsk11)
   withr::with_options(list(digits=7), lmTaylorOutput <- capture.output(summary(lmTaylor)))
@@ -75,7 +74,6 @@ test_that("ECLS_K Wald test", {
 
 context("ECLS_K summary2")
 test_that("ECLS_K summary2", {
-  skip_on_cran()
   withr::with_options(list(digits=7), ecls_sum <- capture.output(summary2(eclsk98,"c7r4mscl")))
   expect_equal(ecls_sum,ecls_sumREF)
   suppressWarnings(withr::with_options(list(digits=7), ecls_sum_w <- capture.output(summary2(eclsk98,"c7r4mscl", weightVar = 'c7cpts0'))))

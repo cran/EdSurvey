@@ -9,7 +9,7 @@ readPIAAC(
   countries,
   forceReread = FALSE,
   verbose = TRUE,
-  usaOption = "12_14"
+  usaOption = c("12_14", "17")
 )
 }
 \arguments{

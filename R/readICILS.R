@@ -62,7 +62,8 @@ readICILS <- function(path,
   }
 
   dataSet <- tolower(dataSet)
-
+  dataSet <- match.arg(dataSet)
+  
   if (length(dataSet) > 1){
     dataSet <- dataSet[1]
   }
@@ -333,7 +334,9 @@ readICILS <- function(path,
                                                       country = processedData$country,
                                                       psuVar = processedData$psuVar,
                                                       stratumVar = processedData$stratumVar,
-                                                      jkSumMultiplier = 1.0) #defined by the method of JK weight replication used (JK1)
+                                                      jkSumMultiplier = 1.0,
+                                                      reqDecimalConversion = FALSE,
+                                                      dim0 = processedData$dim0) #defined by the method of JK weight replication used (JK1)
     }#end country loop
   }#end for(fileYr in fileYrs)
 
@@ -420,6 +423,8 @@ processICILS.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, f
       dataList <- list(student = studentLAF, school = schoolLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
       dataListFF <- cacheFile$dataListFF
 
+      dim0 <- cacheFile$dim0
+      
       runProcessing <- FALSE
     }
   } #end if(length(metaCacheFP)==0 || length(txtCacheFWF)<2 || forceReread==TRUE)
@@ -430,6 +435,11 @@ processICILS.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, f
       cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
     }
 
+    #delete the .meta file (if exists) before processing in case of error/issue
+    if(length(metaCacheFP)>0 && file.exists(metaCacheFP)){
+      file.remove(metaCacheFP)
+    }
+    
     #SCHOOL LEVEL===================================================
     bcg <- unlist(fnames["bcg"])[1]
     schoolFP <- gsub(".sav$", "\\.txt", unlist(fnames["bcg"])[1], ignore.case = TRUE)
@@ -456,11 +466,17 @@ processICILS.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, f
     dataListFF <- list(student = ffstu, school = ffsch)
     #===============================================================
 
+    #calculate the dim0 to store in the .meta file for fast retreival
+    nrow0 <- nrow(stuDF1)
+    ncol0 <- length(unique(c(ffsch$variableName, ffstu$variableName)))
+    dim0 <- c(nrow0, ncol0)
+    
     #save the cachefile to be read-in for the next call
     cacheFile <- list(ver=packageVersion("EdSurvey"),
-                      cacheFileVer=2,
+                      cacheFileVer=3,
                       ts=Sys.time(),
-                      dataListFF=dataListFF)
+                      dataListFF=dataListFF,
+                      dim0=dim0)
 
     saveRDS(cacheFile, file.path(dataFolderPath,paste0("bs", countryCode, yearCode,".meta")))
 
@@ -471,7 +487,8 @@ processICILS.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, f
   } #end if(runProcessing==TRUE)
 
   return(list(dataList = dataList,
-              dataListFF = dataListFF))
+              dataListFF = dataListFF,
+              dim0=dim0))
 }
 
 #process the ICILS student level data..be sure the cache files are seperate from the teacher cache files
@@ -500,10 +517,11 @@ processICILS.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, f
       studentLAF <- getFWFLaFConnection(txtCacheFWF[tolower(substr(basename(txtCacheFWF),1,3))=="btg"], cacheFile$dataListFF$student) #we will treat the teachers as students as the root level of data
       schoolLAF <- getFWFLaFConnection(txtCacheFWF[tolower(substr(basename(txtCacheFWF),1,3))=="bcg"], cacheFile$dataListFF$school)
 
-
       dataList <- list(student = studentLAF, school = schoolLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
       dataListFF <- cacheFile$dataListFF
 
+      dim0 <- cacheFile$dim0
+      
       runProcessing <- FALSE
     }
   } #end if(length(metaCacheFP)==0 || length(txtCacheFWF)<2 || forceReread==TRUE)
@@ -514,6 +532,11 @@ processICILS.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, f
       cat(paste0("Processing data for country: ", dQuote(countryCode),".\n"))
     }
 
+    #delete the .meta file (if exists) before processing in case of error/issue
+    if(length(metaCacheFP)>0 && file.exists(metaCacheFP)){
+      file.remove(metaCacheFP)
+    }
+    
     #SCHOOL LEVEL===================================================
     bcg <- unlist(fnames["bcg"])[1]
     schoolFP <- gsub(".sav$", "\\.txt", unlist(fnames["bcg"])[1], ignore.case = TRUE)
@@ -523,6 +546,9 @@ processICILS.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, f
     ffsch <- writeTibbleToFWFReturnFileFormat(schoolDF1, schoolFP )
     #===============================================================
 
+    nrow0 <- nrow(schoolDF1)
+    ncol0 <- length(unique(c(ffsch$variableName)))
+    
     #teachers will be using the 'student' level vars in this situation as the root data level
     #TEACHER LEVEL==================================================
     btg <- unlist(fnames["btg"])[1]
@@ -534,6 +560,9 @@ processICILS.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, f
       colnames(tchDF1) <- toupper(colnames(tchDF1))
       tchFP <- gsub(".sav$", "\\.txt", unlist(fnames["btg"])[1], ignore.case = TRUE)
       ffTch <- writeTibbleToFWFReturnFileFormat(tchDF1, tchFP)
+      
+      nrow0 <- nrow(tchDF1)
+      ncol0 <- length(unique(c(ffsch$variableName, ffTch$variableName)))
     }
     #===============================================================
 
@@ -546,11 +575,15 @@ processICILS.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, f
     dataListFF <- list(student = ffTch, school = ffsch)
     #===============================================================
 
+    #calculate the dim0 to store in the .meta file for fast retreival
+    dim0 <- c(nrow0, ncol0)
+    
     #save the cachefile to be read-in for the next call
     cacheFile <- list(ver=packageVersion("EdSurvey"),
-                      cacheFileVer=2,
+                      cacheFileVer=3,
                       ts=Sys.time(),
-                      dataListFF=dataListFF)
+                      dataListFF=dataListFF,
+                      dim0=dim0)
 
     saveRDS(cacheFile, file.path(dataFolderPath,paste0("bt", countryCode, yearCode,".meta")))
 
@@ -561,7 +594,8 @@ processICILS.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, f
   } #end if(runProcessing==TRUE)
 
   return(list(dataList = dataList,
-              dataListFF = dataListFF))
+              dataListFF = dataListFF,
+              dim0=dim0))
 }
 
 exportICILSToCSV <- function(folderPath, exportPath, cntryCodes, dataSet, ...){

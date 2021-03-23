@@ -23,7 +23,7 @@ if (!dir.exists(edsurveyHome)) {
  
 # 1. Check data read-in
 test_that("PISA data reads in correctly", {
-  expect_silent(downloadPISA(root=edsurveyHome, year=c(2003, 2006, 2009, 2012, 2015, 2018), cache=FALSE, verbose = FALSE))
+  expect_silent(downloadPISA(root=edsurveyHome, year=c(2000, 2003, 2006, 2009, 2012, 2015, 2018), cache=FALSE, verbose = FALSE))
   expect_silent(downloadPISA(root=edsurveyHome, year=2012, database="CBA", cache=FALSE, verbose = FALSE))
   expect_silent(usaINT2018 <<- readPISA(paste0(edsurveyHome, "PISA/2018"), countries = "usa", verbose = FALSE))
   expect_silent(usaINT2015 <<- readPISA(paste0(edsurveyHome, "PISA/2015"), countries = "usa", verbose = FALSE))
@@ -32,6 +32,8 @@ test_that("PISA data reads in correctly", {
   expect_silent(jpn2009 <<- readPISA(paste0(edsurveyHome, "PISA/2009"), countries = "jpn", verbose = FALSE))
   expect_silent(aus2006 <<- readPISA(paste0(edsurveyHome, "PISA/2006"), countries = "aus", verbose = FALSE))
   expect_silent(aus2003 <<- readPISA(paste0(edsurveyHome, "PISA/2003"), countries = "aus", verbose = FALSE))
+  expect_warning(usa2000 <<- readPISA(paste0(edsurveyHome, "PISA/2000"), countries = "usa", verbose = FALSE),
+                  "Cannot find both PSU and Stratum variables on data.")
   # 2000 complains about the PSU variable not being present
 
   expect_is(usaINT2015, "edsurvey.data.frame")
@@ -39,11 +41,13 @@ test_that("PISA data reads in correctly", {
   expect_is(qcnCBA2012, "edsurvey.data.frame")
   expect_is(jpn2009, "edsurvey.data.frame")
   expect_is(aus2006, "edsurvey.data.frame")
-  expect_equal(dim(usaINT2015), c(5712,3715))
+  expect_is(usa2000, "edsurvey.data.frame")
+  expect_equal(dim(usaINT2015), c(5712,3714))
   expect_equal(dim(usaINT2012), c(4978,1262))
   expect_equal(dim(qcnCBA2012), c(5177,1345))
   expect_equal(dim(jpn2009), c(6088,981))
   expect_equal(dim(aus2006), c(14170,1021))
+  expect_equal(dim(usa2000), c(3846, 995))
 })
 
 # Check multiple-path read-in
@@ -143,4 +147,23 @@ test_that("PISA glm", {
           "st87q01Disagree"     = 0.38157294795411,
           "st87q01Strongly disagree" = 0.400877207648506)
   expect_equal(logit1$se, se)
+})
+
+context("PISA cor")
+test_that("PISA cor", {
+  cor1 <- cor.sdf("read", "st21q02", usa2000, method = "Pearson", weightVar = "w_fstuwt_read", jrrIMax = Inf, omittedLevels = c("Mis"))
+  withr::with_options(list(digits=7), cor1c <- capture.output(cor1))
+  cor1REF <- c("Method: Pearson",
+               "full data n: 3846",
+               "n used: 3634",
+               "", 
+               "Correlation: -0.1345117",
+               "Standard Error: 0.01830193",
+               "Confidence Interval: [-0.170717, -0.09794362]", 
+               "",
+               "Correlation Levels:",
+               "  Levels for Variable 'st21q02' (Lowest level first):", 
+               "    1. Yes",
+               "    2. No")
+  expect_equal(cor1c,cor1REF)
 })

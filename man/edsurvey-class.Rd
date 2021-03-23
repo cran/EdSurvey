@@ -35,7 +35,8 @@ edsurvey.data.frame(
   validateFactorLabels = FALSE,
   forceLower = TRUE,
   reqDecimalConversion = TRUE,
-  fr2Path = NULL
+  fr2Path = NULL,
+  dim0 = NULL
 )
 
 \method{$}{edsurvey.data.frame}(x, i)
@@ -50,9 +51,15 @@ getAttributes(data, attribute = NULL)
 
 setAttributes(data, attribute, value)
 
-getPSUVar(data, weightVar = NULL)
+getPSUVar(
+  data,
+  weightVar = attributes(getAttributes(data, "weights"))[["default"]]
+)
 
-getStratumVar(data, weightVar = NULL)
+getStratumVar(
+  data,
+  weightVar = attributes(getAttributes(data, "weights"))[["default"]]
+)
 }
 \arguments{
 \item{userConditions}{a list of user conditions that includes subsetting or recoding conditions}
@@ -101,6 +108,8 @@ Examples include \code{Student}, \code{teacher}, \code{school},
 \item{reqDecimalConversion}{a Boolean; when set to \code{TRUE}, a \code{getData} call will multiply the raw file value by a decimal multiplier}
 
 \item{fr2Path}{a character file location for NAEP assessments to identify the locaiton of the codebook file in \code{fr2} format}
+
+\item{dim0}{numeric vector of length two. To speed construction, the dimensions of the data can be provided}
 
 \item{x}{an \code{edsurvey.data.frame}}
 

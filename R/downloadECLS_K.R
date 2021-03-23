@@ -25,6 +25,7 @@
 #' @importFrom utils download.file
 #' @export
 downloadECLS_K <- function(root, years=c(1998, 2011), cache=FALSE, verbose=TRUE) {
+  fixTimeout()
   if(is.null(root)){
     stop(paste0("The argument ", sQuote("root"), " must be specified."))
   }
@@ -122,8 +123,12 @@ downloadECLS_K <- function(root, years=c(1998, 2011), cache=FALSE, verbose=TRUE)
       cat("Caching ", year ," ECLS_K files.\n")
     }
     
+    #filename and layoutFilename will use default function parameters
+    if(year==1998){
+      notUsed <- readECLS_K1998(path = yroot, verbose = verbose)
+    }
     if(year==2011) {
-      notUsed <- readECLS_K2011(path = yroot, filename = "childK4p.dat", layoutFilename = "ECLSK2011_K4PUF.sps", verbose = verbose)
+      warning("Caching is unavailable for ECLS-K 2011 dataset.  See ?downloadECLS_K documentation for further details.")
     }
   }
   

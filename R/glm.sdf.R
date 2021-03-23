@@ -335,8 +335,8 @@ calc.glm.sdf <- function(formula,
   
   # grab the variables needed for the Taylor series method, if that is the variance estimation method being used
   taylorVars <- c()
-  psuVar <- getPSUVar(data,weightVar)
-  stratumVar <- getStratumVar(data,weightVar)
+  psuVar <- getPSUVar(data, weightVar = wgt)
+  stratumVar <- getStratumVar(data, weightVar = wgt)
   if ("JK1" %in% stratumVar & varMethod == "t") {
     varMethod <- "j"
     warning("Cannot use Taylor series estimation on a one-stage simple random sample.")
@@ -390,7 +390,9 @@ calc.glm.sdf <- function(formula,
   if(varMethod=="t") {
     incomplete <- !complete.cases(edf[,taylorVars])
     if(any(incomplete)) {
-      warning("Removing ", sum(incomplete), " rows with NA PSU of stratum variables from analysis.")
+      if(any(incomplete[!edf[,wgt] %in% c(NA, 0)])) {
+        warning("Removing ", sum(incomplete), " rows with NA PSU or stratum variables from analysis.")
+      }
       edf <- edf[!incomplete,]
     }
   }

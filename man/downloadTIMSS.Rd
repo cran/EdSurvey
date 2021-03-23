@@ -6,7 +6,7 @@
 \usage{
 downloadTIMSS(
   root,
-  years = c(2003, 2007, 2011, 2015),
+  years = c(2003, 2007, 2011, 2015, 2019),
   cache = FALSE,
   verbose = TRUE
 )
@@ -17,7 +17,7 @@ data should be stored. Files are placed in a
 subdirectory named TIMSS/[year].}
 
 \item{years}{an integer vector of the assessment years to download. Valid years are 2003, 2007, 2011,
-and 2015.}
+2015, and 2019.}
 
 \item{cache}{a logical value set to process and cache the text (.txt) version of files.
 This takes a very long time but saves time for future uses of 
@@ -29,12 +29,12 @@ The default value is \code{TRUE}.}
 \description{
 Uses an Internet connection to download TIMSS data.
              Data come from \href{https://timssandpirls.bc.edu/}{timssandpirls.bc.edu} zip files. This
-             function works for 2003, 2007, 2011, and 2015 data.
+             function works for 2003, 2007, 2011, 2015, and 2019 data.
 }
 \examples{
 \dontrun{
 # root argument will vary by operating system conventions
-downloadTIMSS(year=c(2015, 2011), root = "~/")
+downloadTIMSS(year=c(2019, 2015, 2011), root = "~/")
 
 # cache=TRUE will download then process the datafiles
 downloadTIMSS(year=2015, root = "~/", cache = TRUE)

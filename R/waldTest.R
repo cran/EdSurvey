@@ -62,13 +62,14 @@ waldTest <- function(model, coefficients, H0 = NULL) {
   }
 }
     
-calc.waldTest <- function(model = model, coefficients = coefficients, H0 = H0) {
-  if (!(inherits(model, "edsurveyGlm") | inherits(model, "edsurveyLm"))) {
-    stop(paste0(sQuote("model"), " must be of class ", dQuote("edsurveyGlm") , " or ", dQuote("edsurveyLm"), "."))
+calc.waldTest <- function(model, coefficients, H0 = NULL) {
+  possibleClasses <- c("edsurveyGlm", "edsurveyLm", "edsurveyRq", "mixedSdfResults")
+  if (!(any(unlist(lapply(possibleClasses, function(x) { inherits(model, x)}))))) {
+    stop(paste0(sQuote("model"), " must be of class ", pasteItems(dQuote(possibleClasses), "or"), "."))
   }
   
-  if(!"waldDenomBaseDof" %in% names(model)) {
-    stop("return value ", sQuote("waldDenomBaseDof"), " not on model. Try including the PSU and stratum variables on the data before running the model. Some public uses files have these suppressed to protect confidentiality, for example, by setting these columns to NA. When this happens, it prevents the accurate calculation of a Wald test statistic.")
+  if(!"waldDenomBaseDof" %in% names(model) & (inherits(model, "edsurveyGlm") | inherits(model, "edsurveyLm"))) {
+    warning("return value ", sQuote("waldDenomBaseDof"), " not on model. Try including the PSU and stratum variables on the data before running the model. Some public uses files have these suppressed to protect confidentiality, for example, by setting these columns to NA. When this happens, it prevents the accurate calculation of a Wald test statistic.")
   }
   # pull the coefficients and cov matrix from model object
   b <- coef(model)
@@ -83,7 +84,7 @@ calc.waldTest <- function(model = model, coefficients = coefficients, H0 = H0) {
       } else {
         coefficients <- grep(coefficients, n)
       }
-    } else if (any(!(coefficients %in% n))){
+    } else if (any(!(coefficients %in% n))) {
       stop(paste0("Variable(s) ", pasteItems(dQuote(coefficients[!(coefficients %in% n)])), " not found."))
     } else {
       coefficients <- unlist(lapply(coefficients, FUN = grep, n))
@@ -100,7 +101,8 @@ calc.waldTest <- function(model = model, coefficients = coefficients, H0 = H0) {
   # check length of H0 against coefficients. repeat if 1 value provided, otherwise return error if not the same length
   if(length(H0) == 1){
     H0 <- rep(H0, length(coefficients))
-  } else if(length(H0) != length(coefficients)){
+  } 
+  if(length(H0) != length(coefficients)){
     stop("H0 must be same length as coefficients.")
   }
   
@@ -123,21 +125,23 @@ calc.waldTest <- function(model = model, coefficients = coefficients, H0 = H0) {
   # calculate chi-square p-value
   p <- 1 - pchisq(stat, df = w)
 
-  if(model$waldDenomBaseDof %in% "JK1") {
-    # JK1, or the sample is an SRS, do the non-survey Wald test
-    df1 <- nrow(L)
-    df2 <- model$residual.df[1]
-    fstat <- stat / df1
-  } else {
-    # survey Wald test
-    df1 <- nrow(L)
-    df2 <- model$waldDenomBaseDof - df1
-    fstat <- df2 *  stat / (df1 * (model$waldDenomBaseDof-1)) # denom doesn't get + 1
+  res <- list(chi2 = c(chi2 = stat, df = w, P = p))
+  if(!is.null(model$waldDenomBaseDof)) {
+    if(model$waldDenomBaseDof %in% "JK1") {
+      # JK1, or the sample is an SRS, do the non-survey Wald test
+      df1 <- nrow(L)
+      df2 <- model$residual.df[1]
+      fstat <- stat / df1
+    } else {
+      # survey Wald test
+      df1 <- nrow(L)
+      df2 <- model$waldDenomBaseDof - df1
+      fstat <- df2 *  stat / (df1 * (model$waldDenomBaseDof-1)) # denom doesn't get + 1
+    }
+    res <- c(res, list(Ftest = c(Fstat = fstat, df1 = df1, df2 = df2, P = 1 - pf(fstat, df1, df2))))
   }
   
   # set output object with chi-square and F test results
-  res <- list(chi2 = c(chi2 = stat, df = w, P = p),
-              Ftest = c(Fstat = fstat, df1 = df1, df2 = df2, P = 1 - pf(fstat, df1, df2)))
   
   # create output
   structure(list(Sigma = V, b = b, coefficients = coefficients, H0 = H0, result = res, hypoMatrix = L),
@@ -193,10 +197,12 @@ print.edsurveyWaldTest <- function(x, digits = 2, ...) {
   cat("X2 = ", format(v["chi2"], digits = digits, nsmall = 1), ", df = ", v["df"],
       ", P(> X2) = ", format(v["P"], digits = digits, nsmall = 1), "\n", sep = "")
   
-  v <- x$result$Ftest
-  cat("\nF test:\n")
-  cat("W = ", format(v["Fstat"], digits = digits, nsmall = 1), 
-      ", df1 = ", v["df1"],
-      ", df2 = ", v["df2"],
-      ", P(> W) = ", format(v["P"], digits = digits), "\n", sep = "")
+  if(!is.null(x$result$Ftest)) {
+    v <- x$result$Ftest
+    cat("\nF test:\n")
+    cat("W = ", format(v["Fstat"], digits = digits, nsmall = 1), 
+        ", df1 = ", v["df1"],
+        ", df2 = ", v["df2"],
+        ", P(> W) = ", format(v["P"], digits = digits), "\n", sep = "")
+  }
 }

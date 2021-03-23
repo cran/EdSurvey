@@ -26,6 +26,25 @@ test_that("read ESDFL",{
   expect_is(sdfl, "edsurvey.data.frame.list")
 })
 
+
+# for subset test
+i <- "invalid level: outside"
+context("ESDFL subset and scope")
+test_that("ESDFL subset and scope", {
+  yes <- "Yes"
+  g1 <- subset(sdfl, ell3 == "Yes")
+  g2 <- subset(sdfl, ell3 == yes)
+  expect_equal(dim(g1), dim(g2))
+  i <- "invalid level: inside"
+  ssfun <- function(data) {
+    i <- "Yes"
+    subset(data, ell3 == i)
+  }
+  g3 <- ssfun(sdfl)
+  expect_equal(dim(g1), dim(g3))
+})
+
+
 context("ESDFL achievementLevels")
 test_that("ESDFL achievementLevels", {
   expect_known_value(test8 <- achievementLevels(data=sdfl), file="aLevels_test8.rds", update=FALSE)
@@ -105,6 +124,9 @@ context("ESDFL gap")
 test_that("ESDFL gap",{
   skip_on_cran()
 	g1 <- gap("composite", sdfl, dsex=="Male", dsex=="Female", returnSimpleDoF=TRUE)
+  mle <- "Male"
+  g1p <- gap("composite", sdfl, dsex==mle, dsex=="Female", returnSimpleDoF=TRUE)
+  expect_equal(g1$results, g1p$results)
 	# check that the columns output for just one agree between esdfl and sdf
 	g2 <- gap("composite", sdfC, dsex=="Male", dsex=="Female", returnSimpleDoF=TRUE)
   mnames <- names(g2$results)

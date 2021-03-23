@@ -21,7 +21,8 @@ be stored. Files are placed in a folder named PISA/[year].}
 
 \item{database}{a character vector to indicate which database to download from. For 2012,
 three databases are available (\code{INT} = International, \code{CBA} = Computer-Based Assessment, and
-\code{FIN} = Financial Literacy). For other years, only \code{INT} is available (for example, if PISA 
+\code{FIN} = Financial Literacy). For 2018, both \code{INT} and \code{FIN} are available. 
+For other years, only \code{INT} is available (for example, if PISA 
 2015 financial literacy is to be downloaded, the database argument should be set to \code{INT}).
 Defaults to \code{INT}.}
 

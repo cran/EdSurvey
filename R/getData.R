@@ -190,7 +190,10 @@ getData <- function(data,
     vars_exclude_omitted <- c(vars_exclude_omitted, pvs[-1])
     vars <- c(vars, pvs)
   }
-  vars_exclude_omitted <- c(vars_exclude_omitted, getPSUVar(sdf), getStratumVar(sdf))
+  
+  #getAllPSUVar and getallStratumVar are defined in getData.R to return a vector of all the PSU & Stratum variables associated with the edsurvey.data.frame/light.edsurvey.data.frame
+  vars_exclude_omitted <- c(vars_exclude_omitted, getAllPSUVar(sdf), getAllStratumVar(sdf))
+  
   if(sum(iw)>0 & returnJKreplicates == TRUE) {
     invisible(sapply(varnames[iw], function(x) {
       v <- getWeightJkReplicates(x, sdf)
@@ -825,4 +828,32 @@ closeLaFConnections <- function(sdf) {
   }
 
   return(sdf)
+}
+
+#returns a vector of all associated PSU variables for an edsurvey.data.frame
+getAllPSUVar <- function(sdf){
+  
+  psuVar <- getAttributes(sdf, "psuVar")
+  wgts <- getAttributes(sdf, "weights")
+  
+  wgtPSUVars <- sapply(wgts, function(x){
+    x$psuVar
+  })
+  
+  retVals <- c(psuVar, wgtPSUVars)
+  return(retVals[!is.null(retVals) & !is.na(retVals)])
+}
+
+#returns a vector of all associated stratum variables for an edsurvey.data.frame
+getAllStratumVar <- function(sdf){
+  
+  stratumVar <- getAttributes(sdf, "stratumVar")
+  wgts <- getAttributes(sdf, "weights")
+  
+  wgtStratumVars <- sapply(wgts, function(x){
+    x$stratumVar
+  })
+  
+  retVals <- c(stratumVar, wgtStratumVars)
+  return(retVals[!is.null(retVals) & !is.na(retVals)])
 }

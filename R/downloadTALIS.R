@@ -20,6 +20,7 @@
 #' @example  man/examples/downloadTALIS.R
 #' @export
 downloadTALIS <- function(root, years=c(2008, 2013, 2018), cache=FALSE, verbose=TRUE) {
+  fixTimeout()
   #validation checks
   if(is.null(root)){
     stop(paste0("The argument ", sQuote("root"), " must be specified."))

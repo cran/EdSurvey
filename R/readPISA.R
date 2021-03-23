@@ -9,7 +9,7 @@
 #' @param database a character to indicate a selected database. Must be one of
 #'                 \code{INT} (general database that most people use),
 #'                 \code{CBA} (computer-based database in PISA 2012 only),
-#'                 or \code{FIN} (financial literacy database in PISA 2012 only).
+#'                 or \code{FIN} (financial literacy database in PISA 2012 and 2018).
 #'                 Defaults to \code{INT}.
 #' @param countries a character vector of the country/countries to include using the
 #'                  three-digit ISO country code. A list of country codes can be found
@@ -45,6 +45,17 @@
 #' to be \code{FALSE}, the next time this function is called will take only
 #' 5--10 seconds.
 #'
+#' For the PISA 2000 study, please note that the study weights are subject
+#' specific. Each weight has different adjustment factors for reading, mathematics, and science
+#' based on it's original subject source file.  For example, the \code{w_fstuwt_read} weight is associated with the reading
+#' subject data file.  Special care must be used to select the correct weight based on your specific analysis.  See the OECD
+#' documentation for further details.  Use the \code{showWeights} function to see all three student level subject weights:
+#' \itemize{
+#'   \item \strong{w_fstuwt_read} = Reading (default)
+#'   \item \strong{w_fstuwt_scie} = Science
+#'   \item \strong{w_fstuwt_math} = Mathematics
+#' }
+#'
 #' @return
 #'  an \code{edsurvey.data.frame} for a single specified country or
 #'  an \code{edsurvey.data.frame.list} if multiple countries are specified
@@ -58,9 +69,9 @@
 #'
 #' @export
 readPISA <- function(path,
-                     database = "INT",
+                     database = c("INT", "CBA", "FIN"),
                      countries,
-                     cognitive = "score",
+                     cognitive = c("score", "response", "none"),
                      forceReread = FALSE,
                      verbose = TRUE) {
 
@@ -70,7 +81,12 @@ readPISA <- function(path,
 
   # Check that the arguments path, database, cognitive, forceReread, and verbose are valid  ======
   # database must be length one and upper, so force that
-  database <- toupper(database[[1]])
+  database <- toupper(database)
+  database <- match.arg(database)
+  
+  cognitive <- tolower(cognitive)
+  cognitive <- match.arg(cognitive)
+  
   if(!database %in% c("INT", "CBA", "FIN")) {
     stop("The argument ", sQuote("database"), " must be one of ", sQuote("INT"), ", ", sQuote("CBA"), ", or ", sQuote("FIN"), ".")
   }
@@ -101,17 +117,14 @@ readPISA <- function(path,
     if (length(list.files(filepath, pattern="cy07.*\\.sav", ignore.case=TRUE, full.names=FALSE)) > 0) {
       year <- 2018
       if( "CBA" %in% database ) {
-        warning("Seperate CBA data is only available in 2012.")
+        warning("Seperate CBA data is only available in 2012, switching to INT database.")
+        database <- "INT"
       }
-      if( "FIN" %in% database ) {
-        warning("FIN data is not available in 2018.")
-      }
-      database <- "INT"
 
       # check for meta file
       runProcessing <- FALSE
-      metaCacheFile <- list.files(filepath, pattern="\\.meta$", ignore.case = TRUE)
-      if (length(metaCacheFile) < 0 || forceReread) {
+      metaCacheFile <- list.files(filepath, pattern=paste0("^", database, ".*\\.meta$"), ignore.case = TRUE)
+      if (length(metaCacheFile) < 1 || forceReread) {
         runProcessing <- TRUE
       } else {
         cacheFile <- tryCatch(readRDS(file.path(filepath,metaCacheFile[1])),
@@ -135,16 +148,31 @@ readPISA <- function(path,
       if (runProcessing) {
         #for testing you can just pass 'countries' as the argument, otherwise ensure (*) all countries
         #are reprocessed at the same time for release as only one copy of the fileFormat is cached.
-        cacheFile <- processPISA2015(filepath, verbose, "*", year)
-      }
+        if(database=="INT"){
+          cacheFile <- processPISA2015(filepath, verbose, "*", year)
+        }else if(database=="FIN"){
+          #process FIN data for 2018. All countries must be processed together as only one fileFormat object is cached to ensure consistancy across countries
+          cacheFile <- processPISA2018_FIN(filepath, verbose, "*", year)
+        }else{
+          stop("Only INT and FIN databases are supported for year 2018.")
+        }
+      }#end if (runProcessing)
+
       ff <- list(fileFormat = cacheFile$dict)
       all_countries <- cacheFile$countryDict$cnt[cacheFile$countryDict$available]
       if (any(countries == "*")) {
         countries <- all_countries
       }
       countries <- tolower(countries)
-      processedValue <- list(datbasename = "M_DAT_CY7_MS_CMB_STU",
-                             countries = countries)
+      
+      if(database=="INT"){
+        processedValue <- list(datbasename = "M_DAT_CY7_MS_CMB_STU",
+                               countries = countries)
+      }else if(database=="FIN"){
+        processedValue <- list(datbasename = "M_DAT_CY7_FIN",
+                               countries = countries)
+      }
+      
       #====END 2018 Block====
     }else if (length(list.files(filepath, pattern="cy6.*\\.sav", ignore.case=TRUE, full.names=FALSE)) > 0) {
       year <- 2015
@@ -247,8 +275,10 @@ readPISA <- function(path,
       if (all(!grepl("student",labelFiles))) {
         stop("Missing student SPSS syntax file. Since student is the main level, it is required that there must be at least one student file in the directory.")
       }
+      
       # rearrange to make sure student files are the main ones
-      labelFiles <- unique(c(grep("student",labelFiles,value=TRUE),labelFiles))
+      #must ensure it matches the exact ordering defined in the 'filebasenames' to ensure proper merge ordering!!!
+      labelFiles <- labelFiles[order(match(labelFiles, filebasenames))]
 
       # filter out some unnecessary files
       if (cognitive == "none") {
@@ -265,6 +295,8 @@ readPISA <- function(path,
           cognitive <- "cognitive"
         }
       }
+      
+      #controlFilenames are re-ordered per the labelFile ordering, the order must be correct for merging!
       controlFilenames <- controlFilenames[labelFiles]
       controlFilenames <- file.path(filepath, controlFilenames)
       # Process control files for each database ======================================
@@ -367,14 +399,14 @@ readPISA <- function(path,
     jksuffix <- gsub("[^0-9]", "",ff$fileFormat$variableName[grepl("w_.*[0-9]$", ff$fileFormat$variableName,
                                                                    ignore.case = TRUE)])
     jksuffix <- unique(jksuffix)
-    weight_var <- grep("w_fstuwt",tolower(ff$fileFormat$variableName), ignore.case = TRUE, value = TRUE)
+    weight_var <- grep("w_fstuwt", tolower(ff$fileFormat$variableName), ignore.case = TRUE, value = TRUE)
     weight_var <- weight_var[!grepl("sum$", weight_var, ignore.case = TRUE)]
     weights <- list()
     for (w in weight_var) {
       if (year %in% c(2015,2018)) {
         weights[[w]] <- list(jkbase = "w_fsturwt", jksuffixes = jksuffix)
       } else {
-        weights[[w]] <- list(jkbase = paste0("w_fstr",gsub("w_fstuwt","",w)), jksuffixes = jksuffix)
+        weights[[w]] <- list(jkbase = paste0("w_fstr", gsub("w_fstuwt", "", w)), jksuffixes = jksuffix)
       }
     }
     attr(weights, "default") <- names(weights)[1]
@@ -424,6 +456,7 @@ readPISA <- function(path,
           cat(paste0("Found cached data for country code ", dQuote(cntry), "\n"))
         } else {
           cat(paste0("Data for country code ",dQuote(cntry)," is not available for PISA ", year,"\n"))
+          next
         }
       }
       datLaf <- catchCountryTxt(filepath, datname = paste0(processedValue$datbasename, "_",cntry,".txt"),ff)
@@ -467,8 +500,10 @@ readPISA <- function(path,
   # Return output
   if (length(sdf) == 1) {
     return(sdf[[1]])
-  } else {
+  } else if(length(sdf) > 1) {
     return(edsurvey.data.frame.list(sdf))
+  } else{
+    return(invisible(NULL))
   }
 }
 
@@ -1019,6 +1054,11 @@ fixDict_FWF_Spacing <- function(dict) {
     newrow$dataType <- newrow$dt <- "character" # make sure it can be read in
     newrow$Labels <- "Column Filler for Read-in"
     newrow$labelValues <- ""
+    newrow$labelled <- FALSE
+    newrow$missing <- ""
+    newrow$Type <- ""
+    newrow$pvWt <- ""
+    newrow$weights <- FALSE
 
     dict[issue:nrow(dict) + 1,] <- dict[issue:nrow(dict),]
     dict[issue,] <- newrow
@@ -1503,4 +1543,222 @@ validateFileFormat_PISA <- function(dataFilePath, fileFormat){
   }#end for(coli in 1:nrow(fileFormat))
 
   return(fileFormat)
+}
+
+processPISA2018_FIN <- function(filepath, verbose, countries, year) {
+  
+  userOp <- options(OutDec=".")
+  on.exit(options(userOp), add=TRUE)
+  userOp2 <- options(scipen = 999) #ensure no scientific notation
+  on.exit(options(userOp2), add=TRUE)
+  if(memory.limit() < 16000) {
+    memory.limit(16000) #COG takes a lot of memory to read in, increase memory limit to allow it to be read in.
+  }
+  
+  #grab all applicable files
+  #QQQ --> Student Questionaire - plausible values for reading/math and financial literacy
+  #COG --> Cognitive Items - Has the item level cognitive response items
+  #TTM --> Has the item level timing/process data
+  #TIM --> Has the overall timing/process data
+  fileList <- list.files(filepath, pattern = "CY07_MSU_FLT_(QQQ|COG|TTM|TIM)\\.sav$", ignore.case=TRUE)
+  
+  # Read in data
+  mainFile <- grep("qqq", fileList, ignore.case=TRUE)
+  if (length(mainFile) == 0) {
+    stop("Missing Student Questionaire SPSS (.sav) data file. Since this is the main student file, it's required that this data file must be downloaded.")
+  }
+  full_fnames <- c("flt_qqq","flt_cog","flt_ttm","flt_tim")
+  savFileList <- sapply(full_fnames, function(f) {
+    t <- grep(f,fileList,ignore.case=TRUE, value = TRUE)
+    if (length(t) > 1) {
+      return(t[1])
+    }
+    if (length(t) == 0) {
+      return(NULL)
+    }
+    return(t)
+  })
+  savFileList <- unlist(savFileList)
+  if (verbose) {
+    cat("Importing SAV data into R\n")
+  }
+  all_countries <- ""
+  # parse dictionary files
+  studentFFlist <- lapply(savFileList, function(f) {
+    if (verbose) {
+      cat(paste0("Processing ",sQuote(f),"\n"))
+    }
+    
+    t <- read_sav(file.path(filepath, f), user_na = TRUE, n_max=1) #only read 1 line; validate datatypes later
+    dct <- readDict2015(t, year)
+    rm(t)
+    return(dct)
+  })
+  
+  # resave files
+  lapply(savFileList, function(f) {
+    if (verbose) {
+      cat(paste0("Importing ",sQuote(f),"\n"))
+    }
+    t <- read_sav(file.path(filepath, f), user_na = TRUE, col_select="CNT")
+    country <- factor(t$CNT)
+    rm(t)
+    if(f == savFileList[[1]]) {
+      all_countries <<- unique(country)
+    }
+    cntrys <- countries
+    # wild card means everying
+    if( any(cntrys == "*")) {
+      cntrys <- all_countries
+    }
+    for(ci in cntrys) {
+      f2 <- paste0(gsub("\\.sav$","",f, ignore.case = TRUE),"_",ci,".rds")
+      if(verbose){
+        cat(paste0("  saving tmp ",sQuote(f2),"\n"))
+      }
+      wci <- which(country == ci)
+      if(length(wci) > 0) {
+        # just read in rows that are in the range of this country's record
+        tempi <-  read_sav(file.path(filepath, f), user_na = TRUE, skip=min(wci)-1, n_max=max(wci)-min(wci)+1)
+        # filter to just this country
+        tempi <- tempi[tempi$CNT == ci, ]
+        
+        saveRDS(tempi, file=file.path(filepath, f2))
+        rm(tempi)
+      }
+    }
+    return(NULL)
+  })
+  
+  idlinkage <- list(flt_qqq = "", flt_cog = tolower("CNTSTUID"),
+                    flt_ttm = tolower("CNTSTUID"), flt_tim = tolower("CNTSTUID"))
+  
+  idlinkage <- idlinkage[names(idlinkage) %in% names(savFileList)]
+  # Merge file formats
+  mainLabelsFile <- studentFFlist[[1]]
+  if (length(studentFFlist) < 2) {
+    warning("There is only one dataset. No need to merge")
+    ff <- mainLabelsFile
+  } else {
+    oldnames <- toupper(mainLabelsFile$variableName)
+    by <- toupper(idlinkage[2:length(idlinkage)])
+    if (length(by) != length(studentFFlist) - 1) {
+      stop(paste0("length of by list is compatible with length of merge files."))
+    }
+    # If by is a list of variables
+    for (i in 2:length(studentFFlist)) {
+      newLabelsFile <- studentFFlist[[i]]
+      newnames <- toupper(newLabelsFile$variableName)
+      index_of_by <- which(newnames %in% by[i-1])
+      junkvars <- setdiff(intersect(oldnames, newnames), by[i-1])
+      # some duplicate vars are actually not junk
+      vars_to_exclude_from_junk <- grep('ver_dat|senwt', junkvars, ignore.case=TRUE, value=TRUE)
+      junkvars <- junkvars[!junkvars %in% vars_to_exclude_from_junk]
+      index_of_junk <- which(newnames %in% junkvars)
+      # Rewrite labelsfile
+      index_of_removed <- c(index_of_by, index_of_junk)
+      newLabelsFile <- newLabelsFile[-index_of_removed,]
+      if (length(vars_to_exclude_from_junk) > 0) {
+        newLabelsFile$variableName <- ifelse(newLabelsFile$variableName %in% vars_to_exclude_from_junk,
+                                             paste0(newLabelsFile$variableName,".",names(studentFFlist)[i]),
+                                             newLabelsFile$variableName)
+      }
+      newLabelsFile$Start[1] <- mainLabelsFile$End[nrow(mainLabelsFile)] + 1
+      for (r in 2:nrow(newLabelsFile)) {
+        newLabelsFile$Start[r] <- newLabelsFile$Start[r-1] + newLabelsFile$Width[r-1]
+      }
+      newLabelsFile$End <- newLabelsFile$Start + newLabelsFile$Width - 1
+      mainLabelsFile <- rbind(mainLabelsFile, newLabelsFile)
+      oldnames <- toupper(mainLabelsFile$variableName)
+    }
+    ff <- mainLabelsFile
+  }
+  ### Merging
+  # process all countries.
+  if(any(countries == "*")) {
+    countries <- all_countries
+  }
+  countries <- intersect(toupper(countries), toupper(all_countries))
+  
+  for (cntry in countries) {
+    if (verbose) {
+      cat(paste0("Processing data for country code ", dQuote(cntry),"\n"))
+    }
+    f2 <- paste0(gsub("\\.sav$","",savFileList[[1]], ignore.case = TRUE),"_",cntry,".rds")
+    if(!file.exists(file.path(filepath,f2))) {
+      stop("Cache file ", sQuote(file.path(filepath,f2)), " missing.")
+    }
+    mm <- readRDS(file.path(filepath,f2))
+    mm <- UnclassCols(mm)
+    # "repeat." is the fixed name of "repeat", change both to this clearer name
+    colnames(mm) <- toupper(colnames(mm))
+    colnames(mm) <- gsub("^REPEAT\\.$","REPEATGRADE", colnames(mm), ignore.case = TRUE)
+    colnames(mm) <- gsub("^REPEAT$","REPEATGRADE", colnames(mm), ignore.case = TRUE)
+    colnames(mm) <- gsub("\\.$","",colnames(mm))
+    for (li in 2:length(savFileList)) {
+      f2 <- paste0(gsub("\\.sav$","",savFileList[li], ignore.case = TRUE),"_",cntry,".rds")
+      if(!file.exists(file.path(filepath, f2))) {
+        if(verbose) {
+          cat(paste(cntry, "does not have", names(savFileList)[li],"data.\n"))
+        }
+        next
+      }
+      m2 <- readRDS(file.path(filepath, f2))
+      m2 <- UnclassCols(m2)
+      # "repeat." is the fixed name of "repeat", change both to this clearer name
+      colnames(m2) <- gsub("^REPEAT\\.$","REPEATGRADE", colnames(m2), ignore.case = TRUE)
+      colnames(m2) <- gsub("^REPEAT$","REPEATGRADE", colnames(m2), ignore.case = TRUE)
+      colnames(m2) <- gsub("\\.$","",colnames(m2))
+      ## Merging data
+      mm <- merge(mm, m2, by=toupper(idlinkage[[li]]), suffixes = c("",".junk"), all.x=TRUE, all.y=FALSE)
+      rm(m2)
+      var_duplicated_valid <- grep("(senwt|ver_dat)\\.junk",colnames(mm), value=TRUE, ignore.case=TRUE)
+      colnames(mm)[which(colnames(mm) %in% var_duplicated_valid)] <- gsub("\\.junk", paste0(".",names(savFileList)[li]),colnames(mm)[which(colnames(mm) %in% var_duplicated_valid)])
+      mm <- mm[ , grep("\\.junk",colnames(mm), invert=TRUE, value=TRUE, ignore.case=TRUE) ]
+    } # end li
+    mm <- cbind("cnt" = cntry, mm)
+    colnames(mm) <- tolower(colnames(mm))
+    missingcolumns <- setdiff(tolower(ff$variableName), colnames(mm))
+    if (length(missingcolumns)  > 0) {
+      naMa <- matrix(NA,nrow=nrow(mm),ncol=length(missingcolumns))
+      colnames(naMa) <- missingcolumns
+      mm <- cbind(mm,naMa)
+    }
+    mm <- mm[,tolower(ff$variableName)]
+    ## Exporting dat and ff txt file
+    for (i in 1:ncol(mm)) {
+      if (is.numeric(mm[[i]])) {
+        mm[[i]] <- as.character(mm[[i]])
+        mm[[i]] <- ifelse(is.na(mm[[i]]), "", format(mm[[i]], scientific = FALSE))
+      }
+    }
+    
+    if(year==2018){
+      outf <- file.path(filepath,paste0("M_DAT_CY7_FIN_",cntry,".txt"))
+    }
+    
+    if(file.exists(outf)) {
+      unlink(outf)
+    }
+    
+    #validate the file format against the full dataset (for each country) before it's cached in the .meta file
+    ff <- validateFileFormat_PISA_2015(mm, ff)
+    write.table(mm, file = outf, col.names = FALSE, row.names=FALSE, sep = ",", na="")
+    
+  }
+  ff$variableName <- gsub("^REPEAT\\.$","REPEATGRADE", ff$variableName, ignore.case = TRUE)
+  ff$variableName <- gsub("^REPEAT$","REPEATGRADE", ff$variableName, ignore.case = TRUE)
+  
+  # Produce country dictionary
+  countryLabels <- unlist(strsplit(ff$labelValues[toupper(ff$variableName) == toupper("cnt")], "\\^"))
+  countryDict <- do.call("rbind", strsplit(countryLabels, "="))
+  countryDict <- data.frame(countryDict, stringsAsFactors = FALSE)
+  colnames(countryDict) <- c("cnt", "country.name")
+  countryDict$available <- (tolower(countryDict$cnt) %in% tolower(all_countries))
+  cacheFile <- list(countryDict=countryDict, dict=ff,
+                    list_files=names(savFileList),
+                    ver=packageVersion("EdSurvey"),
+                    cacheFileVer=6, ts=Sys.time())
+  saveRDS(cacheFile, file.path(filepath, "FIN_all-countries.meta"))
+  return(cacheFile)
 }

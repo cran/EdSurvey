@@ -400,7 +400,7 @@ calcEdsurveyTable <- function(formula,
   includeNaLabel <- !omittedLevels
   # add Taylor variables, when needed
   if(varMethod=="t") {
-    reqvar <- c(reqvar, getPSUVar(data, weightVar), getStratumVar(data, weightVar))
+    reqvar <- c(reqvar, getPSUVar(data, weightVar = wgt), getStratumVar(data, weightVar = wgt))
   }
   # only call with defaultConditions if it was in the call to edsurveyTable
   if(defaultConditionsMissing) {
@@ -640,8 +640,8 @@ calcEdsurveyTable <- function(formula,
             meanna <- function(x) { mean(x, na.rm=TRUE)}
             uhijw <- data.frame(uhijw,
                                 unit=datai$unit,
-                                stratV=datai[,getStratumVar(data, weightVar)],
-                                psuV=datai[,getPSUVar(data, weightVar)])
+                                stratV=datai[,getStratumVar(data, weightVar = wgt)],
+                                psuV=datai[,getPSUVar(data, weightVar = wgt)])
             for(vi in 1:n) {
               # build uhijw, see AM documentation
               uhijw$v <- uhijw[,paste0("v",vi)]

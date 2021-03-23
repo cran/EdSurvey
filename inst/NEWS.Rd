@@ -1,6 +1,49 @@
 \name{NEWS}
 \title{NEWS for EdSurvey}
 
+\section{Changes in version 2.6.2}{
+  \subsection{DATA UPDATES}{
+    \itemize{
+      \item \code{downloadTIMSS} and \code{readTIMSS} were updated to include 2019.
+      \item \code{downloadPIAAC} was updated so data/codebook downloads perform more robustly on different OS.
+      \item \code{readPIAAC} was updated so the number of replicate weights in the resulting \code{edsurvey.data.frame} is accurate to the OECD source data. Before this number was hard coded, resulting in duplicate replicate weights.
+      \item \code{readPISA} added 2018 financial literacy.
+      \item \code{downloadICILS} now references instructions for downloading the 2018 ICILS data set, as the \code{readICILS} function supported ICILS 2018 as of EdSurvey v2.4.0
+      \item when calling \code{$} on an edsurvey.data.frame with a weight variable, only the vector of full sample weights are returned now. This used to also return a matrix (when relevant) that also included the replicate weights.
+      \item \code{downloadPISA} and \code{readPISA} now support the PISA 2018 Financial Literacy (FIN) database.
+    }
+  }
+  \subsection{STATISTICS}{
+    \itemize{
+      \item \code{lm.sdf}, \code{glm.sdf}, and \code{edsurveyTable} and  now supports surveys where the PSU and stratum variables varried by weight variable (usually longitudinal surveys) for Taylor series variance estimation.
+      \item \code{mixed.sdf} now has a \code{coef} and \code{vcov} methods.
+      \item \code{rq.sdf} now returns the rho statistic
+      \item \code{waldTest} now accommodates JK1 denominator degrees of freedom explicitly and allows for cases where the F-test is not valid to return, but only returns the chi-squared test.
+      \item \code{waldTest} now covers \code{rq.sdf} and \code{mixed.sdf} models.
+    }
+  }
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item the vignette was expanded to include more links.
+      \item The \code{==} (equal) and \code{!=} (not equal) comparison operators now work on \code{edsurvey.data.frame} and/or \code{edsurvey.data.frame.list} objects to compare objects by their attributes (e.g., survey, year, country).
+    }
+  }
+  \subsection{TECHNICAL}{
+    \itemize{
+      \item \code{readNAEP} now allows fr2 paths that are seperate from the usual location and is more robust to variation in capitalization, but requires that a file name be unique, regardless of capitalization.
+      \item \code{getPSUvar} and \code{getStratumVar} are now more robust and return more informative warnings.
+      \item Added \code{match.arg} parameter matching for the following functions/arguments for usability: \code{downloadPISA (database)}, \code{readCivEDICCS (dataSet, gradeLvl)}, \code{readICILS (dataSet)}, \code{readPISA (database, cognitive)}, \code{readTALIS (isced, dataLevel)}, \code{readTIMSS (gradeLvl)}, \code{readTIMSSAdv (subject)}.
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item \code{readPIAAC} was fixed so it can now find cached files for \code{usa17} and \code{usa12_14}. Additionally, \code{match.arg} checks were added to better check user inputted data to the \code{countries} and \code{usaOption} arguments.
+      \item The \code{readNAEP} function has updates for the \code{frPath} argument to correctly handle relative paths, path expansion (~), and additional file validation checks.
+      \item The \code{gap} function now correctly parses expressions that use a variable in the global environment.
+      \item The \code{summary2} function now gives a clearer error when something that is not the name of a weight column is passed to the \code{weightVar} argument.
+    }
+  }
+}
 \section{Changes in version 2.6.0}{
   \subsection{DATA UPDATES}{
     \itemize{
@@ -28,7 +71,7 @@
     \itemize{
       \item The \code{+} function now works on \code{edsurvey.data.frame} and/or \code{edsurvey.data.frame.list} objects to build an \code{edsurvey.data.frame.list}. See \code{?edsurvey.data.frame.list} for examples.
       \item The \code{\%in\%} function now works on \code{edsurvey.data.frame.list} objects, identifying if a survey is in an \code{edsurvey.data.frame.list}. See \code{?edsurvey.data.frame.list} for examples.
-      \item \code{percentile}, \code{achievementLevels}, and \code{edsurveyTable} now warns when an \code{edsurvey.data.frame.list} is passed to it with an \code{edsurvey.data.frame} on it that cannot return valid results for the requested statistics. The output is \code{NA} for these surveys. 
+      \item \code{percentile}, \code{achievementLevels}, and \code{edsurveyTable} now warns when an \code{edsurvey.data.frame.list} is passed to it with an \code{edsurvey.data.frame} on it that cannot return valid results for the requested statistics. The output is \code{NA} for these surveys.
       \item \code{gap} now supports linking error in PISA for math, reading, and science when a user sets \code{includeLinkingError} to \code{TRUE}.
       \item \code{contourPlot} deprecated the argument \code{colors} which only set density colors. Instead, the function now uses \code{densityColors} and \code{pointColors}, which set the density and point colors separately. This will cause calls to \code{contourPlot} that use \code{colors} to not function with 2.6.0.
       \item When a \code{summary2} call is made with a \code{light.edsurvey.data.frame}, unfilled levels will not be returned in the table anymore.
@@ -39,7 +82,7 @@
     \itemize{
       \item \code{getData} now closes LaF connections regardless of how it exits (e.g., with an error). This should improve the stability of the package.
       \item An \code{edsurvey.data.frame} now can specify a \code{fr2path}. This is used only for NAEP surveys and no functionality depends on it, but it may be used in the future. The value of \code{fr2path} may always be set to \code{NA}.
-      \item \code{achievementLevels} now warns when an \code{edsurvey.data.frame.list} is passed to it with an \code{edsurvey.data.frame} on it that cannot return valid results for the requested statistics. The output is \code{NA} for these surveys. 
+      \item \code{achievementLevels} now warns when an \code{edsurvey.data.frame.list} is passed to it with an \code{edsurvey.data.frame} on it that cannot return valid results for the requested statistics. The output is \code{NA} for these surveys.
     }
   }
   \subsection{BUG FIXES}{
@@ -173,7 +216,7 @@
       \item The \code{percentile} function used to produce output even if asked to produce a percentile outside of the valid range (0 to 100). Now it prints out message if users input at least percentile outside of the valid range, and stops if all percentiles are invalid.
       \item The \code{getData} function now removes rows with omitted levels after being recoded.
       \item All SPSS (.sav) file reads using the \code{haven} package set the \code{user_na = TRUE} flag to ensure no defined missing/omitted values are automatically converted to \code{NA} values prematurely.
-      \item For consistency with other download functions, \code{downloadPISA} now uses a \code{years} argument instead of a \code{year} argument. 
+      \item For consistency with other download functions, \code{downloadPISA} now uses a \code{years} argument instead of a \code{year} argument.
     }
   }
   \subsection{BUG FIXES}{
@@ -187,14 +230,14 @@
 \section{Changes in version 2.0.0}{
   \subsection{NEW DATA}{
     \itemize{
-      \item Works with the Trends in International Mathematics and Science Study (TIMSS), TIMSS Advanced, the Progress in International Reading Literacy Study (PIRLS), 
-      and the International Computer and Information Literacy Study (ICILS), International Civic and Citizenship Education Study (ICCS), the Civic Education Study (CivEd), 
+      \item Works with the Trends in International Mathematics and Science Study (TIMSS), TIMSS Advanced, the Progress in International Reading Literacy Study (PIRLS),
+      and the International Computer and Information Literacy Study (ICILS), International Civic and Citizenship Education Study (ICCS), the Civic Education Study (CivEd),
       the Program for International Student Assessment (PISA), the Program for the International Assessment of Adult Competencies (PIAAC), and the Teaching and Learning International Survey (TALIS).
-      \item International datasets can be downloaded with \code{downloadTIMSS}, \code{downloadTIMSSAdv}, 
-            \code{downloadPIRLS}, \code{downloadICILS}, \code{downloadICCS}, 
+      \item International datasets can be downloaded with \code{downloadTIMSS}, \code{downloadTIMSSAdv},
+            \code{downloadPIRLS}, \code{downloadICILS}, \code{downloadICCS},
 	    \code{downloadCivEDICCS}, \code{downloadPISA}, \code{downloadPIAAC}, \code{downloadTALIS}.
-      \item International datasets can be loaded with \code{readTIMSS}, \code{readTIMSSAdv}, 
-            \code{readPIRLS}, \code{readICILS}, \code{readICCS}, 
+      \item International datasets can be loaded with \code{readTIMSS}, \code{readTIMSSAdv},
+            \code{readPIRLS}, \code{readICILS}, \code{readICCS},
 	    \code{readCivEDICCS}, \code{readPISA}, \code{readPIAAC}, \code{readTALIS}.
     }
   }

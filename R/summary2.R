@@ -52,6 +52,16 @@ summary2 <- function(data, variable,
   }
   checkDataClass(data, c("light.edsurvey.data.frame", "edsurvey.data.frame"))
   callc <- match.call()
+  # check if weightVar is valid
+  if(inherits(weightVar, "character") | is.null(weightVar)) {
+    # use only first weightVar
+    while(length(weightVar) > 1) {
+      weightVar <- weightVar[[1]]
+    }
+  } else {
+    stop(paste0("The argument ", dQuote("weightVar"), " must be a quoted variable name."))
+  }
+  weightVar <- weightVar[[1]]
   if (is.null(weightVar) || !weightVar %in% colnames(data)) {
     callc$weightVar <- NULL
     edf <- getData(data, variable, omittedLevels = omittedLevels, includeNaLabel = !omittedLevels, dropUnusedLevels=TRUE)
@@ -134,7 +144,7 @@ print.summary2 <- function(x, ...) {
   if (!"weightVar" %in% names(call)) {
     cat("Estimates are not weighted.\n")
   } else {
-    cat(paste0("Estimates are weighted using weight variable ", sQuote(call$weightVar),"\n"))
+    cat(paste0("Estimates are weighted using the weight variable ", sQuote(call$weightVar),"\n"))
   } # end if (!"weightVar" %in% names(call))
   print(x$summary, ...)
 }

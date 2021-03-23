@@ -20,6 +20,7 @@
 #' @importFrom utils download.file
 #' @export
 download_ePIRLS <- function(root, years=c(2016), cache=FALSE, verbose=TRUE) {
+  fixTimeout()
   if(is.null(root)){
     stop(paste0("The argument ", sQuote("root"), " must be specified."))
   }

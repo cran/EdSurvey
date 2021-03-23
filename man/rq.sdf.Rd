@@ -86,6 +86,7 @@ An \code{edsurvey.rq} with the following elements:
    \item{npv}{the number of plausible values}
    \item{njk}{the number of the jackknife replicates used; set to \code{NA} when Taylor series variance
    estimates are used}
+   \item{rho}{the mean value of the objective function across the plausible values}
 }
 \description{
 Fits a quantile regression model that uses weights and variance estimates appropriate for the data.

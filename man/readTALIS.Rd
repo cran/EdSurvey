@@ -7,8 +7,8 @@
 readTALIS(
   path,
   countries,
-  isced = "b",
-  dataLevel = "teacher",
+  isced = c("b", "a", "c"),
+  dataLevel = c("teacher", "school"),
   forceReread = FALSE,
   verbose = TRUE
 )

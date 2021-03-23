@@ -345,7 +345,8 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
 
   if(inherits(data, "edsurvey.data.frame") | inherits(data, "light.edsurvey.data.frame")) {
     survey <- getAttributes(data, "survey")
-  } else{
+  } else {
+    # edsurvey.data.frame.list
     robustSurvey <- function(dat) {
       res <- tryCatch(getAttributes(dat, "survey"),
                       error=function(e) {
@@ -468,7 +469,7 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
       stop(paste0("The argument ", sQuote("referenceDataIndex"), " must be an integer between 1 and ", ll, "."))
     }
     res <- list(results=list(),
-                labels=list(A=substitute(groupA),B=substitute(groupB)))
+                labels=list(A=substitute(groupA), B=substitute(groupB)))
     
     pctdf0 <- data$covs
     if(!nocovs) {
@@ -542,227 +543,226 @@ gap <- function(variable, data, groupA = "default", groupB = "default",
     } # end for(i in llvec)
     
     # Extract results and compute AA or BB statistics
-    lstats <- max(lpct,lal)
+    lstats <- max(lpct, lal)
     for(j in 1:lstats) {
-      #for(jal in 1:lal) {
-        resdf <- data$covs
-        if(!nocovs) {
-          # only generate these columns if there are multiple datasets
-          resdf$covAA <- 0
-          resdf$dofAA <- Inf
-          resdf$covBB <- 0
-          resdf$dofBB <- Inf
-          resdf$covABAB <- 0
-          resdf$dofABAB <- Inf
-        }
-        # to check whether the two samples are from the same survey or not
-        # we need to use DOFCorrection and compute covariance if the two samples are from the same survey
-        resdf$sameSurvey <- ifelse(1:nrow(resdf) == refi,
-                                   rep(NA, nrow(resdf)),
-                                   rep(FALSE, nrow(resdf)))
-        if(lpct > 1) {
-          resdf$percentiles <- percentiles[[j]]
-        }
-        for (i in llvec) {
-          if(!inherits(resilist[[i]], "gap")) {
-            # there was an error
-            if(i %in% referenceDataIndex) {
-              stop("An error prevented processing of the reference dataset. This must be fixed before comparisons to the reference dataset can be made.")
+      resdf <- data$covs
+      if(!nocovs) {
+        # only generate these columns if there are multiple datasets
+        resdf$covAA <- 0
+        resdf$dofAA <- Inf
+        resdf$covBB <- 0
+        resdf$dofBB <- Inf
+        resdf$covABAB <- 0
+        resdf$dofABAB <- Inf
+      }
+      # to check whether the two samples are from the same survey or not
+      # we need to use DOFCorrection and compute covariance if the two samples are from the same survey
+      resdf$sameSurvey <- ifelse(1:nrow(resdf) == refi,
+                                 rep(NA, nrow(resdf)),
+                                 rep(FALSE, nrow(resdf)))
+      if(lpct > 1) {
+        resdf$percentiles <- percentiles[[j]]
+      }
+      for (i in llvec) {
+        if(!inherits(resilist[[i]], "gap")) {
+          # there was an error
+          if(i %in% referenceDataIndex) {
+            stop("An error prevented processing of the reference dataset. This must be fixed before comparisons to the reference dataset can be made.")
+          }
+          # this is to make sure that all achievementLevels or percentiles are created as to the reference edsurvey.data.frame
+          # Missing values will be NA for statistics
+          if (!is.null(achievementLevel)) {
+            resdf$achievementLevel[i] <- resilist[[refi]]$results$statisticsLevel[j]
+          } else if (!is.null(percentiles)) {
+            resdf$percentiles[i] <- resilist[[refi]]$results$statisticsLevel[j]
+          }
+        } else { # there was not an error
+          # dataframes do not like vectorwise assignment by column name,
+          # so assign one at a time
+          resi <- resilist[[i]]
+  
+          resi$results <- resi$results[j,]
+          resi$varEstInputs$JK=resi$varEstInputs$JK[tolower(resi$varEstInputs$JK$Level) %in% tolower(c(resi$results$statisticsLevel,"data")),]
+          if (!is.null(resi$varEstInputs$PV)) {
+            resi$varEstInputs$PV <- resi$varEstInputs$PV[tolower(resi$varEstInputs$PV$Level) %in% tolower(c(resi$results$statisticsLevel,"data")),]
+          }
+                                              
+          if (!is.null(achievementLevel)) {
+            colnames(resi$results) <- gsub("statisticsLevel","achievementLevel",colnames(resi$results))
+          } else if (!is.null(percentiles)) {
+            colnames(resi$results) <- gsub("statisticsLevel","percentiles",colnames(resi$results))
+          } else {
+            resi$results$statisticsLevel <- NULL
+          }
+          for(ii in 1:length(resi$results)) {
+            resdf[i,names(resi$results)[ii]] <- resi$results[[ii]]
+          }
+          skipB <- is.null(resi$labels$B) # a boolean to indicate whether groupB estimates are available in the results of gapHelper
+          if(i == refi) {
+            refVarEstInputs <- resi$varEstInputs
+            refPctVarEstInputs <- resi$pctVarEstInputs
+          }
+          # refi is the index of reference dataset
+          # AA and BB statistics of reference dataset will be set to NA
+          if(i != refi) {
+            resdf$dofAA[i] <- dofCompute((resi$results)$estimateAse, resdf[refi,"estimateAse"] ,(resi$results)[["dofA"]], resdf[refi,"dofA"])
+            if (!skipB) {
+              resdf$dofBB[i] <- dofCompute((resi$results)$estimateBse, resdf[refi,"estimateBse"] ,(resi$results)[["dofB"]], resdf[refi,"dofB"])
+              resdf$dofABAB[i] <- dofCompute((resi$results)$diffABse, resdf[refi,"diffABse"] ,(resi$results)[["dofAB"]], resdf[refi,"dofAB"])
             }
-            # this is to make sure that all achievementLevels or percentiles are created as to the reference edsurvey.data.frame
-            # Missing values will be NA for statistics
-            if (!is.null(achievementLevel)) {
-              resdf$achievementLevel[i] <- resilist[[refi]]$results$statisticsLevel[j]
-            } else if (!is.null(percentiles)) {
-              resdf$percentiles[i] <- resilist[[refi]]$results$statisticsLevel[j]
-            }
-          } else { # there was not an error
-            # dataframes do not like vectorwise assignment by column name,
-            # so assign one at a time
-            resi <- resilist[[i]]
-    
-            resi$results <- resi$results[j,]
-            resi$varEstInputs$JK=resi$varEstInputs$JK[tolower(resi$varEstInputs$JK$Level) %in% tolower(c(resi$results$statisticsLevel,"data")),]
-            if (!is.null(resi$varEstInputs$PV)) {
-              resi$varEstInputs$PV <- resi$varEstInputs$PV[tolower(resi$varEstInputs$PV$Level) %in% tolower(c(resi$results$statisticsLevel,"data")),]
-            }
-                                                
-            if (!is.null(achievementLevel)) {
-              colnames(resi$results) <- gsub("statisticsLevel","achievementLevel",colnames(resi$results))
-            } else if (!is.null(percentiles)) {
-              colnames(resi$results) <- gsub("statisticsLevel","percentiles",colnames(resi$results))
+            # if the datasets and from the same sample, add covariances and do DoFCorrection
+            if(sameSurvey(data$datalist[[i]], data$datalist[[refi]])) {
+              if (nrow(resi$varEstInputs$JK) != 0) { # some Level (percentile or achievementLevel) do not have varEstInput data so the subset
+              									   # in line 476 will return an empty data.frame
+                resdf$dofAA[i] <- DoFCorrection(resi$varEstInputs, refVarEstInputs, "A", method="JR")
+              }
+              resdf$covAA[i] <- varEstToCov(resi$varEstInputs, refVarEstInputs, "A", jkSumMultiplier=getAttributes(data$datalist[[i]], "jkSumMultiplier"))
+              if (!skipB & nrow(resi$varEstInputs$JK) != 0) {
+                resdf$dofBB[i] <- DoFCorrection(resi$varEstInputs, refVarEstInputs, "B", method="JR")
+                resdf$dofABAB[i] <- DoFCorrection(resi$varEstInputs, refVarEstInputs, "A-B", method="JR")
+                resdf$covBB[i] <- varEstToCov(resi$varEstInputs, refVarEstInputs, "B", jkSumMultiplier=getAttributes(data$datalist[[i]], "jkSumMultiplier"))
+                resdf$covABAB[i] <- varEstToCov(resi$varEstInputs, refVarEstInputs, "A-B", jkSumMultiplier=getAttributes(data$datalist[[i]], "jkSumMultiplier"))
+              }
+              resdf$sameSurvey[i] <- TRUE
             } else {
-              resi$results$statisticsLevel <- NULL
-            }
-            for(ii in 1:length(resi$results)) {
-              resdf[i,names(resi$results)[ii]] <- resi$results[[ii]]
-            }
-            skipB <- is.null(resi$labels$B) # a boolean to indicate whether groupB estimates are available in the results of gapHelper
-            if(i == refi) {
-              refVarEstInputs <- resi$varEstInputs
-              refPctVarEstInputs <- resi$pctVarEstInputs
-            }
-            # refi is the index of reference dataset
-            # AA and BB statistics of reference dataset will be set to NA
-            if(i != refi) {
-              resdf$dofAA[i] <- dofCompute((resi$results)$estimateAse, resdf[refi,"estimateAse"] ,(resi$results)[["dofA"]], resdf[refi,"dofA"])
-              if (!skipB) {
-                resdf$dofBB[i] <- dofCompute((resi$results)$estimateBse, resdf[refi,"estimateBse"] ,(resi$results)[["dofB"]], resdf[refi,"dofB"])
-                resdf$dofABAB[i] <- dofCompute((resi$results)$diffABse, resdf[refi,"diffABse"] ,(resi$results)[["dofAB"]], resdf[refi,"dofAB"])
-              }
-              # if the datasets and from the same sample, add covariances and do DoFCorrection
-              if(sameSurvey(data$datalist[[i]], data$datalist[[refi]])) {
-                if (nrow(resi$varEstInputs$JK) != 0) { # some Level (percentile or achievementLevel) do not have varEstInput data so the subset
-                									   # in line 476 will return an empty data.frame
-                  resdf$dofAA[i] <- DoFCorrection(resi$varEstInputs, refVarEstInputs, "A", method="JR")
-                }
-                resdf$covAA[i] <- varEstToCov(resi$varEstInputs, refVarEstInputs, "A", jkSumMultiplier=getAttributes(data$datalist[[i]], "jkSumMultiplier"))
-                if (!skipB & nrow(resi$varEstInputs$JK) != 0) {
-                  resdf$dofBB[i] <- DoFCorrection(resi$varEstInputs, refVarEstInputs, "B", method="JR")
-                  resdf$dofABAB[i] <- DoFCorrection(resi$varEstInputs, refVarEstInputs, "A-B", method="JR")
-                  resdf$covBB[i] <- varEstToCov(resi$varEstInputs, refVarEstInputs, "B", jkSumMultiplier=getAttributes(data$datalist[[i]], "jkSumMultiplier"))
-                  resdf$covABAB[i] <- varEstToCov(resi$varEstInputs, refVarEstInputs, "A-B", jkSumMultiplier=getAttributes(data$datalist[[i]], "jkSumMultiplier"))
-                }
-                resdf$sameSurvey[i] <- TRUE
-              } else {
-                if("PISA" %in% survey) {
-                  linke <- 0
-                  if(includeLinkingError & gapStat %in% c("Mean", "percentile", "SD")) {
-                    if(variable %in% c("read", "math", "scie")) {
-                      yearref <- getAttributes(data$datalist[[refi]], "year")
-                      yeari <- getAttributes(data$datalist[[i]], "year")
-                      if(yeari != yearref) {
-                        linke <- calLinkingErrorPISA(subject=variable, years=c(yearref, yeari))
-                      }
-                    } else {
-                      warning("No published linking error for variable ", dQuote(variable),"\n")
+              if("PISA" %in% survey) {
+                linke <- 0
+                if(includeLinkingError & gapStat %in% c("Mean", "percentile", "SD")) {
+                  if(variable %in% c("read", "math", "scie")) {
+                    yearref <- getAttributes(data$datalist[[refi]], "year")
+                    yeari <- getAttributes(data$datalist[[i]], "year")
+                    if(yeari != yearref) {
+                      linke <- calLinkingErrorPISA(subject=variable, years=c(yearref, yeari))
                     }
+                  } else {
+                    warning("No published linking error for variable ", dQuote(variable),"\n")
                   }
-                  covvars <- c("covAA", "covBB", "covABAB")
-                  for(cvi in 1:length(covvars)) {
-                    if(covvars[cvi] %in% colnames(resdf)) {
-                      resdf[i,covvars[cvi]] <- -1/2 * linke^2
-                    }
+                }
+                covvars <- c("covAA", "covBB", "covABAB")
+                for(cvi in 1:length(covvars)) {
+                  if(covvars[cvi] %in% colnames(resdf)) {
+                    resdf[i,covvars[cvi]] <- -1/2 * linke^2
                   }
                 }
               }
-            } else { # end if(i != refi)
-              # if this is refi, set these to NULL
-              resdf$covAA[i] <- resdf$covBB[i] <- resdf$covABAB[i] <- NA
-              resdf$dofAA[i] <- resdf$dofBB[i] <- resdf$dofABAB[i] <- NA
             }
-            # for the first j value only, grab the percent
-            if(j == 1) {
-              for(ii in 1:ncol(resi$percentage)) {
-                pctdf0[i,colnames(resi$percentage)[ii]] <- resi$percentage[,ii] 
-                if(i != refi) {
-                  pctdf0$dofAA[i] <- dofCompute((resi$percentage)$pctAse, pctdf0[refi,"pctAse"] ,(resi$percentage)[["dofA"]], pctdf0[refi,"dofA"])
+          } else { # end if(i != refi)
+            # if this is refi, set these to NULL
+            resdf$covAA[i] <- resdf$covBB[i] <- resdf$covABAB[i] <- NA
+            resdf$dofAA[i] <- resdf$dofBB[i] <- resdf$dofABAB[i] <- NA
+          }
+          # for the first j value only, grab the percent
+          if(j == 1) {
+            for(ii in 1:ncol(resi$percentage)) {
+              pctdf0[i,colnames(resi$percentage)[ii]] <- resi$percentage[,ii] 
+              if(i != refi) {
+                pctdf0$dofAA[i] <- dofCompute((resi$percentage)$pctAse, pctdf0[refi,"pctAse"] ,(resi$percentage)[["dofA"]], pctdf0[refi,"dofA"])
+                if (!skipB) {
+                  pctdf0$dofBB[i] <- dofCompute((resi$percentage)$pctBse, pctdf0[refi,"pctBse"] ,(resi$percentage)[["dofB"]], pctdf0[refi,"dofB"])
+                  pctdf0$dofABAB[i] <- dofCompute((resi$percentage)$diffABse, pctdf0[refi,"diffABse"] ,(resi$percentage)[["dofAB"]], pctdf0[refi,"dofAB"])
+                }
+                
+                if(sameSurvey(data$datalist[[i]], data$datalist[[refi]])) {
+                  pctdf0$dofAA[i] <- DoFCorrection(resi$pctVarEstInputs, refPctVarEstInputs, "A", method="JR")
+                  pctdf0$covAA[i] <- varEstToCov(resi$pctVarEstInputs, refPctVarEstInputs, "A", jkSumMultiplier=getAttributes(data$datalist[[i]], "jkSumMultiplier"))
                   if (!skipB) {
-                    pctdf0$dofBB[i] <- dofCompute((resi$percentage)$pctBse, pctdf0[refi,"pctBse"] ,(resi$percentage)[["dofB"]], pctdf0[refi,"dofB"])
-                    pctdf0$dofABAB[i] <- dofCompute((resi$percentage)$diffABse, pctdf0[refi,"diffABse"] ,(resi$percentage)[["dofAB"]], pctdf0[refi,"dofAB"])
+                    pctdf0$dofBB[i] <- DoFCorrection(resi$pctVarEstInputs, refPctVarEstInputs, "B", method="JR")
+                    pctdf0$dofABAB[i] <- DoFCorrection(resi$pctVarEstInputs, refPctVarEstInputs, "A-B", method="JR")
+                    pctdf0$covBB[i] <- varEstToCov(resi$pctVarEstInputs, refPctVarEstInputs, "B", jkSumMultiplier=getAttributes(data$datalist[[i]], "jkSumMultiplier"))
+                    pctdf0$covABAB[i] <- varEstToCov(resi$pctVarEstInputs, refPctVarEstInputs, "A-B", jkSumMultiplier=getAttributes(data$datalist[[i]], "jkSumMultiplier"))
                   }
-                  
-                  if(sameSurvey(data$datalist[[i]], data$datalist[[refi]])) {
-                    pctdf0$dofAA[i] <- DoFCorrection(resi$pctVarEstInputs, refPctVarEstInputs, "A", method="JR")
-                    pctdf0$covAA[i] <- varEstToCov(resi$pctVarEstInputs, refPctVarEstInputs, "A", jkSumMultiplier=getAttributes(data$datalist[[i]], "jkSumMultiplier"))
-                    if (!skipB) {
-                      pctdf0$dofBB[i] <- DoFCorrection(resi$pctVarEstInputs, refPctVarEstInputs, "B", method="JR")
-                      pctdf0$dofABAB[i] <- DoFCorrection(resi$pctVarEstInputs, refPctVarEstInputs, "A-B", method="JR")
-                      pctdf0$covBB[i] <- varEstToCov(resi$pctVarEstInputs, refPctVarEstInputs, "B", jkSumMultiplier=getAttributes(data$datalist[[i]], "jkSumMultiplier"))
-                      pctdf0$covABAB[i] <- varEstToCov(resi$pctVarEstInputs, refPctVarEstInputs, "A-B", jkSumMultiplier=getAttributes(data$datalist[[i]], "jkSumMultiplier"))
-                    }
-                  }
-                } else { # end if(i != refi)
-                  # if this is refi, set these to NULL
-                  pctdf0$covAA[i] <- pctdf0$covBB[i] <- pctdf0$covABAB[i] <- NA
-                  pctdf0$dofAA[i] <- pctdf0$dofBB[i] <- pctdf0$dofABAB[i] <- NA
-                } # end else for (i != refi)
-              } # end for(ii in 1:ncol(resi$percentage))
-              if(returnSimpleN) {
-                # return the n counts
-                pctdf0$nA[i] <- resi$labels$nUsedA
-                pctdf0$nB[i] <- resi$labels$nUsedB
-              }
-              if(returnNumberOfPSU) {
-                pctdf0$nPSUA[i] <- ifelse(is.null(resi$labels$nPSUA),NA,resi$labels$nPSUA)
-                pctdf0$nPSUB[i] <- ifelse(is.null(resi$labels$nPSUB),NA,resi$labels$nPSUB)
-              }
-            } # end if(j == 1) 
-          } # end if(class(temp) == "gap")
-        } # End of for(i in 1:i) loop
-        # Compute diff statistics (across different edsurvey.data.frame)
-        resdf$diffAA <- ifelse(1:nrow(resdf) == refi, NA, resdf$estimateA[refi] - resdf$estimateA)
+                }
+              } else { # end if(i != refi)
+                # if this is refi, set these to NULL
+                pctdf0$covAA[i] <- pctdf0$covBB[i] <- pctdf0$covABAB[i] <- NA
+                pctdf0$dofAA[i] <- pctdf0$dofBB[i] <- pctdf0$dofABAB[i] <- NA
+              } # end else for (i != refi)
+            } # end for(ii in 1:ncol(resi$percentage))
+            if(returnSimpleN) {
+              # return the n counts
+              pctdf0$nA[i] <- resi$labels$nUsedA
+              pctdf0$nB[i] <- resi$labels$nUsedB
+            }
+            if(returnNumberOfPSU) {
+              pctdf0$nPSUA[i] <- ifelse(is.null(resi$labels$nPSUA),NA,resi$labels$nPSUA)
+              pctdf0$nPSUB[i] <- ifelse(is.null(resi$labels$nPSUB),NA,resi$labels$nPSUB)
+            }
+          } # end if(j == 1) 
+        } # end if(class(temp) == "gap")
+      } # End of for(i in 1:i) loop
+      # Compute diff statistics (across different edsurvey.data.frame)
+      resdf$diffAA <- ifelse(1:nrow(resdf) == refi, NA, resdf$estimateA[refi] - resdf$estimateA)
+      if (!is.null(dbaLabels)) {
+        # get linking error
+        leAA <- calLinkingError(X=resdf$estimateA[refi],
+                                subjectI=uniqueSubject, 
+                                gradeI=uniqueGrade, 
+                                dependentVarI=variable, 
+                                statElementI=gapStat,
+                                gapI=FALSE)[j]
+        resdf$diffAAse <- ifelse(1:nrow(resdf) == refi, NA, 
+                                 ifelse(resdf$labels %in% dbaLabels, 
+                                        sqrt(resdf$estimateAse[refi]^2 + resdf$estimateAse^2 - 2 * resdf$covAA),
+                                        sqrt(resdf$estimateAse[refi]^2 + resdf$estimateAse^2 - 2 * resdf$covAA + leAA)))
+      } else {
+        resdf$diffAAse <- ifelse(1:nrow(resdf) == refi, NA, sqrt(resdf$estimateAse[refi]^2 + resdf$estimateAse^2 - 2 * resdf$covAA))
+      }
+      
+      resdf$diffAApValue <- ifelse(1:nrow(resdf) == refi, NA, 2*(1-pt2(abs(resdf$diffAA/resdf$diffAAse), df=resdf$dofAA)))
+      if (!skipB) {
+        resdf$diffBB <- ifelse(1:nrow(resdf) == refi, NA, resdf$estimateB[refi] - resdf$estimateB)
         if (!is.null(dbaLabels)) {
-          # get linking error
-          leAA <- calLinkingError(X=resdf$estimateA[refi],
+          leBB <- calLinkingError(X=resdf$estimateB[refi],
                                   subjectI=uniqueSubject, 
                                   gradeI=uniqueGrade, 
                                   dependentVarI=variable, 
                                   statElementI=gapStat,
                                   gapI=FALSE)[j]
-          resdf$diffAAse <- ifelse(1:nrow(resdf) == refi, NA, 
+          resdf$diffBBse <- ifelse(1:nrow(resdf) == refi, NA, 
                                    ifelse(resdf$labels %in% dbaLabels, 
-                                          sqrt(resdf$estimateAse[refi]^2 + resdf$estimateAse^2 - 2 * resdf$covAA),
-                                          sqrt(resdf$estimateAse[refi]^2 + resdf$estimateAse^2 - 2 * resdf$covAA + leAA)))
+                                          sqrt(resdf$estimateBse[refi]^2 + resdf$estimateBse^2 - 2 * resdf$covBB),
+                                          sqrt(resdf$estimateBse[refi]^2 + resdf$estimateBse^2 - 2 * resdf$covBB + leBB)))
         } else {
-          resdf$diffAAse <- ifelse(1:nrow(resdf) == refi, NA, sqrt(resdf$estimateAse[refi]^2 + resdf$estimateAse^2 - 2 * resdf$covAA))
+          resdf$diffBBse <- ifelse(1:nrow(resdf) == refi, NA, sqrt(resdf$estimateBse[refi]^2 + resdf$estimateBse^2 - 2 * resdf$covBB))
         }
-        
-        resdf$diffAApValue <- ifelse(1:nrow(resdf) == refi, NA, 2*(1-pt2(abs(resdf$diffAA/resdf$diffAAse), df=resdf$dofAA)))
-        if (!skipB) {
-          resdf$diffBB <- ifelse(1:nrow(resdf) == refi, NA, resdf$estimateB[refi] - resdf$estimateB)
-          if (!is.null(dbaLabels)) {
-            leBB <- calLinkingError(X=resdf$estimateB[refi],
+        resdf$diffBBpValue <- ifelse(1:nrow(resdf) == refi, NA, 2*(1-pt2(abs(resdf$diffBB/resdf$diffBBse), df=resdf$dofBB)))
+        resdf$diffABAB <- ifelse(1:nrow(resdf) == refi, NA, resdf$diffAB[refi] - resdf$diffAB)
+        if (!is.null(dbaLabels)) {
+          leABAB <- calLinkingError(X=resdf$diffAB[refi],
                                     subjectI=uniqueSubject, 
                                     gradeI=uniqueGrade, 
                                     dependentVarI=variable, 
                                     statElementI=gapStat,
-                                    gapI=FALSE)[j]
-            resdf$diffBBse <- ifelse(1:nrow(resdf) == refi, NA, 
-                                     ifelse(resdf$labels %in% dbaLabels, 
-                                            sqrt(resdf$estimateBse[refi]^2 + resdf$estimateBse^2 - 2 * resdf$covBB),
-                                            sqrt(resdf$estimateBse[refi]^2 + resdf$estimateBse^2 - 2 * resdf$covBB + leBB)))
-          } else {
-            resdf$diffBBse <- ifelse(1:nrow(resdf) == refi, NA, sqrt(resdf$estimateBse[refi]^2 + resdf$estimateBse^2 - 2 * resdf$covBB))
-          }
-          resdf$diffBBpValue <- ifelse(1:nrow(resdf) == refi, NA, 2*(1-pt2(abs(resdf$diffBB/resdf$diffBBse), df=resdf$dofBB)))
-          resdf$diffABAB <- ifelse(1:nrow(resdf) == refi, NA, resdf$diffAB[refi] - resdf$diffAB)
-          if (!is.null(dbaLabels)) {
-            leABAB <- calLinkingError(X=resdf$diffAB[refi],
-                                      subjectI=uniqueSubject, 
-                                      gradeI=uniqueGrade, 
-                                      dependentVarI=variable, 
-                                      statElementI=gapStat,
-                                      gapI=TRUE)[j]
-            resdf$diffABABse <- ifelse(1:nrow(resdf) == refi, NA, 
-                                     ifelse(resdf$labels %in% dbaLabels, 
-                                            sqrt(resdf$diffABse[refi]^2 + resdf$diffABse^2 - 2 * resdf$covABAB),
-                                            sqrt(resdf$diffABse[refi]^2 + resdf$diffABse^2 - 2 * resdf$covABAB + leABAB)))
-          } else {
-            resdf$diffABABse <- ifelse(1:nrow(resdf) == refi, NA, sqrt(resdf$diffABse[refi]^2 + resdf$diffABse^2 - 2 * resdf$covABAB))
-          }
-          resdf$diffABABpValue <- ifelse(1:nrow(resdf) == refi, NA, 2*(1-pt2(abs(resdf$diffABAB/resdf$diffABABse), df=resdf$dofABAB)))
-        }
-        
-        # only generate these 
-        if(!nocovs) {
-          pctdf0$diffAA <- ifelse(1:nrow(pctdf0) == refi, NA, pctdf0$pctA[refi] - pctdf0$pctA)
-          pctdf0$diffAAse <- ifelse(1:nrow(pctdf0) == refi, NA, sqrt(pctdf0$pctAse[refi]^2 + pctdf0$pctAse^2 - 2 * pctdf0$covAA))
-          pctdf0$diffAApValue <- ifelse(1:nrow(pctdf0) == refi, NA, 2*(1-pt2(abs(pctdf0$diffAA/pctdf0$diffAAse), df=pctdf0$dofAA)))
-          if (!skipB) {
-            pctdf0$diffBB <- ifelse(1:nrow(pctdf0) == refi, NA, pctdf0$pctB[refi] - pctdf0$pctB)
-            pctdf0$diffBBse <- ifelse(1:nrow(pctdf0) == refi, NA, sqrt(pctdf0$pctBse[refi]^2 + pctdf0$pctBse^2 - 2 * pctdf0$covBB))
-            pctdf0$diffBBpValue <- ifelse(1:nrow(pctdf0) == refi, NA, 2*(1-pt2(abs(pctdf0$diffBB/pctdf0$diffBBse), df=pctdf0$dofBB)))
-            pctdf0$diffABAB <- ifelse(1:nrow(pctdf0) == refi, NA, pctdf0$diffAB[refi] - pctdf0$diffAB)
-            pctdf0$diffABABse <- ifelse(1:nrow(pctdf0) == refi, NA, sqrt(pctdf0$diffABse[refi]^2 + pctdf0$diffABse^2 - 2 * pctdf0$covABAB))
-            pctdf0$diffABABpValue <- ifelse(1:nrow(pctdf0) == refi, NA, 2*(1-pt2(abs(pctdf0$diffABAB/pctdf0$diffABABse), df=pctdf0$dofABAB)))
-          }
-        }
-        if(j==1) {
-          resdf0 <- resdf
+                                    gapI=TRUE)[j]
+          resdf$diffABABse <- ifelse(1:nrow(resdf) == refi, NA, 
+                                   ifelse(resdf$labels %in% dbaLabels, 
+                                          sqrt(resdf$diffABse[refi]^2 + resdf$diffABse^2 - 2 * resdf$covABAB),
+                                          sqrt(resdf$diffABse[refi]^2 + resdf$diffABse^2 - 2 * resdf$covABAB + leABAB)))
         } else {
-          resdf0 <- rbind(resdf0, resdf)
+          resdf$diffABABse <- ifelse(1:nrow(resdf) == refi, NA, sqrt(resdf$diffABse[refi]^2 + resdf$diffABse^2 - 2 * resdf$covABAB))
         }
+        resdf$diffABABpValue <- ifelse(1:nrow(resdf) == refi, NA, 2*(1-pt2(abs(resdf$diffABAB/resdf$diffABABse), df=resdf$dofABAB)))
+      }
+      
+      # only generate these 
+      if(!nocovs) {
+        pctdf0$diffAA <- ifelse(1:nrow(pctdf0) == refi, NA, pctdf0$pctA[refi] - pctdf0$pctA)
+        pctdf0$diffAAse <- ifelse(1:nrow(pctdf0) == refi, NA, sqrt(pctdf0$pctAse[refi]^2 + pctdf0$pctAse^2 - 2 * pctdf0$covAA))
+        pctdf0$diffAApValue <- ifelse(1:nrow(pctdf0) == refi, NA, 2*(1-pt2(abs(pctdf0$diffAA/pctdf0$diffAAse), df=pctdf0$dofAA)))
+        if (!skipB) {
+          pctdf0$diffBB <- ifelse(1:nrow(pctdf0) == refi, NA, pctdf0$pctB[refi] - pctdf0$pctB)
+          pctdf0$diffBBse <- ifelse(1:nrow(pctdf0) == refi, NA, sqrt(pctdf0$pctBse[refi]^2 + pctdf0$pctBse^2 - 2 * pctdf0$covBB))
+          pctdf0$diffBBpValue <- ifelse(1:nrow(pctdf0) == refi, NA, 2*(1-pt2(abs(pctdf0$diffBB/pctdf0$diffBBse), df=pctdf0$dofBB)))
+          pctdf0$diffABAB <- ifelse(1:nrow(pctdf0) == refi, NA, pctdf0$diffAB[refi] - pctdf0$diffAB)
+          pctdf0$diffABABse <- ifelse(1:nrow(pctdf0) == refi, NA, sqrt(pctdf0$diffABse[refi]^2 + pctdf0$diffABse^2 - 2 * pctdf0$covABAB))
+          pctdf0$diffABABpValue <- ifelse(1:nrow(pctdf0) == refi, NA, 2*(1-pt2(abs(pctdf0$diffABAB/pctdf0$diffABABse), df=pctdf0$dofABAB)))
+        }
+      }
+      if(j==1) {
+        resdf0 <- resdf
+      } else {
+        resdf0 <- rbind(resdf0, resdf)
+      }
     } # end for(j in 1:lstats) loop
     if(nocovs) {
       # remove the labels columns which are just populated

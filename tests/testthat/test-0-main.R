@@ -173,6 +173,24 @@ test_that("getData", {
   }
 })
 
+
+# for subset test
+i <- "invalid level: outside"
+context("subset and scope")
+test_that("subset and scope", {
+  yes <- "Yes"
+  g1 <- subset(sdf, ell3 == "Yes")
+  g2 <- subset(sdf, ell3 == yes)
+  expect_equal(dim(g1), dim(g2))
+  i <- "invalid level: inside"
+  ssfun <- function(data) {
+    i <- "Yes"
+    subset(data, ell3 == i)
+  }
+  g3 <- ssfun(sdf)
+  expect_equal(dim(g1), dim(g3))
+})
+
 context("getData order of userConditions")
 test_that("getData order of userConditions", {
   # subset first, then recode
@@ -504,7 +522,6 @@ test_that("percentile",{
   expect_equal(pct0$estimate, range(sdf$mrpcm1))
 })
 
-######################## GAP TESTS FAIL ################
 context("return VarEstInputs")
 test_that("return VarEstInputs",{
   lm1 <- lm.sdf( ~ dsex + b017451, sdf, returnVarEstInputs=TRUE)
@@ -513,6 +530,12 @@ test_that("return VarEstInputs",{
   es1 <- edsurveyTable(composite ~ dsex + b017451, sdf, jrrIMax=1, returnVarEstInputs=TRUE)
   expect_known_value(list(es1$meanVarEstInputs, es1$pctVarEstInputs), file="est_varest.rds", update=FALSE)
   g1 <- gap("composite", sdf, dsex=="Male", returnVarEstInputs=TRUE)
+  # test gap with variable that resolves in this environment
+  mle <- "Male"
+  dsex <- "do not use this" # dsex should not be grabbed from this context
+  g1p <- gap("composite", sdf, dsex==mle, returnVarEstInputs=TRUE)
+  expect_equal(g1$results, g1p$results)
+ 
   expect_known_value(list(g1$varEstInputs, g1$pctVarEstInputs), file="gap1_varest.rds", update=FALSE)
   g2 <- gap("b017451", sdf, dsex=="Male", targetLevel="Once every few weeks", returnVarEstInputs=TRUE)
   expect_known_value(list(g2$varEstInputs, g2$pctVarEstInputs), file="gap2_varest.rds", update=FALSE)
@@ -817,8 +840,8 @@ test_that("Wald test", {
   gddat <- getData(data=sdf,
                    varnames=c("composite", "dsex", "b017451","b003501", "origwt"),
                    addAttributes = TRUE)
-  myLogit2 <- logit.sdf(dsex ~ b017451 + b003501, data = gddat, returnVarEstInputs = T)
-  expect_error(waldTest(myLogit2, coefficients = 2:5))
+  myLogit2 <- logit.sdf(dsex ~ b017451 + b003501, data = gddat, returnVarEstInputs = TRUE)
+  expect_warning(waldTest(myLogit2, coefficients = 2:5), "wald")
 
   # lesdf this example should work, including the PSU and stratum vars
   gddat <- getData(data=sdf,
@@ -937,8 +960,10 @@ test_that('summary2', {
 context("rq.sdf")
 test_that("rq.sdf", {
   skip_on_cran()
-  options(width = 500)
   rq1 <- rq.sdf(composite ~ dsex + b017451, data=sdf, tau = 0.8)
-  rq1c <- capture.output(rq1)
+  withr::with_options(list(digits=2),
+                      rq1c <- capture.output(summary(rq1))
+                      )
   expect_equal(rq1c, rq1REF)
+  expect_equal(waldTest(rq1, 2)$result$chi2, c(chi2 = 12.8539816741921, df = 1, P = 0.00033676191818377), tolerance=200*sqrt(.Machine$double.eps))
 })

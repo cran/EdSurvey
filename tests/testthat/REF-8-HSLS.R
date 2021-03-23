@@ -1,6 +1,6 @@
 
 dat1Summary.Ref <- c("     stu_id         x1sex                                        x1race     ", " Min.   :10001   MALE  :11455   WHITE, NON-HISPANIC                 :12082  ",
-                     " 1st Qu.:16317   FEMALE:11041   HISPANIC, RACE SPECIFIED            : 3375  ", " Median :22599                  BLACK/AFRICAN-AMERICAN, NON-HISPANIC: 2449  ",
+                     " 1st Qu.:16317   FEMALE:11041   HISPANIC, RACE SPECIFIED            : 3375  ", " Median :22598                  BLACK/AFRICAN-AMERICAN, NON-HISPANIC: 2449  ",
                      " Mean   :22604                  ASIAN, NON-HISPANIC                 : 1952  ", " 3rd Qu.:28890                  MORE THAN ONE RACE, NON-HISPANIC    : 1941  ",
                      " Max.   :35206                  HISPANIC, NO RACE SPECIFIED         :  422  ", "                                (Other)                             :  275  ")
 
@@ -14,7 +14,7 @@ dat2Summary.Ref <- c("     sch_id          x1region     x1locale  ",
                      " Max.   :1944                               ")
 
 dat3Summary.Ref <- c("     stu_id          x1ses              x2ses         ", " Min.   :10001   Min.   :-1.93020   Min.   :-1.75010  ", " 1st Qu.:16321   1st Qu.:-0.48278   1st Qu.:-0.46542  ",
-                     " Median :22587   Median : 0.01525   Median : 0.04565  ", " Mean   :22586   Mean   : 0.07923   Mean   : 0.09896  ", " 3rd Qu.:28863   3rd Qu.: 0.59380   3rd Qu.: 0.64345  ",
+                     " Median :22586   Median : 0.01525   Median : 0.04565  ", " Mean   :22586   Mean   : 0.07923   Mean   : 0.09896  ", " 3rd Qu.:28863   3rd Qu.: 0.59380   3rd Qu.: 0.64345  ",
                      " Max.   :35206   Max.   : 2.88070   Max.   : 2.28240  ")
 
 

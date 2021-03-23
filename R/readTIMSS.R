@@ -93,7 +93,7 @@
 #' @export
 readTIMSS <- function(path,
                       countries,
-                      gradeLvl,
+                      gradeLvl = c("4", "8", "4b", "8b"),
                       forceReread = FALSE,
                       verbose = TRUE) {
   
@@ -111,10 +111,14 @@ readTIMSS <- function(path,
   includeNumeracy <- TRUE #include numeracy as default
   countries <- tolower(unique(countries))
 
-  if(is.null(gradeLvl)){
+  if(missing(gradeLvl)){
     warning(paste0("The argument ", sQuote("gradeLvl"), " is not specified.  Defaulting to Grade 4."))
     gradeLvl <- 4 #default value
   }
+  
+  gradeLvl <- tolower(gradeLvl)
+  gradeLvl <- match.arg(gradeLvl)
+  
   if(length(gradeLvl)!=1){
     stop(paste0("The argument ", sQuote("gradeLvl"), " must be a single value."))
   }
@@ -444,9 +448,6 @@ readTIMSS <- function(path,
                                          'MISSING', '(Missing)')
 
 
-        processedData$fileFormat <- processedData$dataListFF$student
-        processedData$fileFormatSchool <- processedData$dataListFF$school
-        processedData$fileFormatTeacher <- processedData$dataListFF$teacher
         processedData$survey <- ifelse(gradeLvl %in% c("4b", "8b"), "TIMSS - Bridge Study", "TIMSS")
         processedData$country <- getTIMSSCountryName(cntry)
 
@@ -471,7 +472,9 @@ readTIMSS <- function(path,
                                                                country = processedData$country,
                                                                psuVar = "jkrep",
                                                                stratumVar = "jkzone",
-                                                               jkSumMultiplier = 0.5) #defined by the method of JK weight replication used (JK2)
+                                                               jkSumMultiplier = 0.5, #defined by the method of JK weight replication used (JK2)
+                                                               reqDecimalConversion = FALSE,
+                                                               dim0=processedData$dim0) 
 
         processedData <- NULL
     }#end for(cntry in countries)
@@ -589,6 +592,8 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
         dataListFF <- cacheFile$dataListFF
         dataListMeta <- cacheFile$dataListMeta
 
+        dim0 <- cacheFile$dim0
+        
         runProcessing <- FALSE
       }
   }#end if(length(metaCacheFP)==0 || length(txtCacheFWF)<3 || forceReread==TRUE)
@@ -598,6 +603,11 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
     if(verbose==TRUE){
       cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
     }
+    
+    #delete the .meta file (if exists) before processing in case of error/issue
+    if(length(metaCacheFP)>0 && file.exists(metaCacheFP)){
+      file.remove(metaCacheFP)
+    }
 
     #SCHOOL LEVEL===================================================
     acg <- unlist(fnames["acg"])[1]
@@ -606,6 +616,9 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
     schoolDF1 <- UnclassCols(schoolDF1)
     colnames(schoolDF1) <- toupper(colnames(schoolDF1))
     ffsch <- writeTibbleToFWFReturnFileFormat(schoolDF1, schoolFP)
+    
+    #free up memory
+    schoolDF1 <- NULL
     #===============================================================
 
     #STUDENT LEVEL==================================================
@@ -644,7 +657,8 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
       stop(paste0("Failed consistency check for filetype ", sQuote("asg"), " country code ", sQuote(tolower(countryCode)), ". ",
                   "Please email EdSurvey.help@air.org for assistance."))
     }
-
+    
+    
     #test to ensure the ash filepath is not NA (0==FALSE (Have file) | 1==TRUE (No File))
     if(min(is.na(ash)) == 0) {
       stuDF3 <- read_sav(ash, user_na = TRUE)
@@ -674,6 +688,12 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
     } else {
       idsmm3 <- ids12
     }
+    
+    #free up memory
+    stuDF1 <- NULL
+    stuDF2 <- NULL
+    stuDF3 <- NULL
+    
     if(min(is.na(asr)) == 0){
       stuDF4 <- read_sav(asr, user_na = TRUE)
       stuDF4 <- UnclassCols(stuDF4)
@@ -695,6 +715,9 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
                     "Please email EdSurvey.help@air.org for assistance."))
       }
       mm <- mm[,names(mm)[!grepl("\\.junk$",names(mm))]]
+      
+      #free up memory
+      stuDF4 <- NULL
     }
 
     stuFP <- gsub(".sav$", "\\.txt", unlist(fnames["asg"])[1], ignore.case = TRUE)
@@ -733,6 +756,9 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
 
     teachFP <- gsub(".sav$", "\\.txt", unlist(fnames["atg"])[1], ignore.case = TRUE)
     ffTeach <- writeTibbleToFWFReturnFileFormat(mm, teachFP)
+    
+    #free up memory
+    stuTeachDF <- NULL
     #===============================================================
 
     schoolLAF <- getFWFLaFConnection(schoolFP, ffsch)
@@ -742,19 +768,20 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
     #build data list and link metadata object=======================
     dataList <- list(student = studentLAF, school = schoolLAF, teacher = teacherLAF)
     dataListFF <- list(student = ffstu, school = ffsch, teacher = ffTeach)
-
-    dataListMeta <- list(student = "", school = "", teacher = "")
-    dataListMeta$student <- list(school = "idcntry;idschool", teacher = "idcntry;idstud")
-    dataListMeta$school <- list()
-    dataListMeta$teacher <- list()
     #===============================================================
-
+    
     #save the cachefile to be read-in for the next call
+    #save the nrow0 to speed up getting dim0 when constructing edsurvey.data.frame
+    
+    nrow0 <- nrow(mm)
+    ncol0 <- length(unique(c(ffsch$variableName, ffstu$variableName, ffTeach$variableName)))
+    dim0 <- c(nrow0, ncol0)
+    
     cacheFile <- list(ver=packageVersion("EdSurvey"),
-                      cacheFileVer=3,
+                      cacheFileVer=4,
                       ts=Sys.time(),
                       dataListFF=dataListFF,
-                      dataListMeta=dataListMeta)
+                      dim0=dim0)
 
     saveRDS(cacheFile, file.path(dataFolderPath,paste0("a", countryCode, yearCode,".meta")))
 
@@ -767,7 +794,7 @@ processTIMSSGr4 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
 
   return(list(dataList = dataList,
               dataListFF = dataListFF,
-              dataListMeta = dataListMeta))
+              dim0=dim0))
 
 }
 
@@ -805,7 +832,8 @@ processTIMSSGr8 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
 
       dataList <- list(student = studentLAF, school = schoolLAF, teacher = teacherLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
       dataListFF <- cacheFile$dataListFF
-      dataListMeta <- cacheFile$dataListMeta
+      
+      dim0 <- cacheFile$dim0
 
       runProcessing <- FALSE
     }
@@ -815,6 +843,11 @@ processTIMSSGr8 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
 
     if(verbose==TRUE){
       cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
+    }
+    
+    #delete the .meta file (if exists) before processing in case of error/issue
+    if(length(metaCacheFP)>0 && file.exists(metaCacheFP)){
+      file.remove(metaCacheFP)
     }
 
     #SCHOOL LEVEL===================================================
@@ -983,7 +1016,6 @@ processTIMSSGr8 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
 
     #cleanup
     teachSciDF <- NULL
-    mm <- NULL
     #===============================================================
 
     #gather the LaF connections to return
@@ -991,21 +1023,22 @@ processTIMSSGr8 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
     studentLAF <- getFWFLaFConnection(stuFP, ffstu)
     teachLAF <- getFWFLaFConnection(stuTeachFP, ffTeach)
 
-    #build data list and link metadata object=======================
-    dataList <- list(student = studentLAF, school = schoolLAF, teacher = teachLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
+    #build data list and file format list===========================
+    dataList <- list(student = studentLAF, school = schoolLAF, teacher = teachLAF)
     dataListFF <- list(student = ffstu, school = ffsch, teacher = ffTeach)
-
-    dataListMeta <- list(student = list(school = "idcntry;idschool", teacher = "idcntry;idstud"),  #idschool #do we need to merge on idclass var as well?
-                         school = list(),
-                         teacher = list())
     #===============================================================
 
+    #calc the dim0 to store in the .meta file for fast retrieval
+    nrow0 <- nrow(mm)
+    ncol0 <- length(unique(c(ffsch$variableName, ffstu$variableName, ffTeach$variableName)))
+    dim0 <- c(nrow0, ncol0)
+    
     #save the cachefile to be read-in for the next call
     cacheFile <- list(ver=packageVersion("EdSurvey"),
-                      cacheFileVer=3,
+                      cacheFileVer=4,
                       ts=Sys.time(),
                       dataListFF=dataListFF,
-                      dataListMeta=dataListMeta)
+                      dim0=dim0)
 
     saveRDS(cacheFile, file.path(unlist(dataFolderPath)[1],paste0("b", countryCode, yearCode,".meta")))
     #===============================================================
@@ -1017,7 +1050,7 @@ processTIMSSGr8 <- function(dataFolderPath, countryCode, fnames, fileYrs, forceR
 
   return(list(dataList = dataList,
               dataListFF = dataListFF,
-              dataListMeta = dataListMeta))
+              dim0 = dim0))
 
 }
 
@@ -1059,81 +1092,16 @@ mergeTibble <- function(a, b, by,  ..., suffixes=c("", ".junk")) {
 #writes a tibble object to a fixed-width-format (fwf) datafile, compiles the FileFormat detail of the fwf into a data.frame of needed info
 # contributor: Jeppe Bundsgaard: updates for ICILS 2018
 writeTibbleToFWFReturnFileFormat <- function(spssDF, outF, jkType=c("JK2", "JK1")) {
-
+  
   if(!inherits(spssDF, "tbl_df")) stop("spssDF must be a tibble")
 
+  fileFormat <- getSPSSFileFormat(spssDF) #from readUTILS.R file
+  spssDF <- data.frame(spssDF) #convert to data.frame to mitigate any tibble issues
+  
+  #ensure lower case for matching
+  fileFormat$variableName <- tolower(fileFormat$variableName)
+  colnames(spssDF) <- tolower(colnames(spssDF))
   jkType = jkType[1] #JK2 will be default unless otherwise specified
-
-  colInfo <- data.frame(names=colnames(spssDF), stringsAsFactors=FALSE)
-  colInfo$format <- sapply(colInfo$names, function(z) {
-    attributes(spssDF[[z]])$format.spss
-  })
-  colInfo$class <- sapply(colInfo$names, function(zz){ #class seems to only be populated if it's a 'labelled' field or 'date' field, we want to treat dates as characters
-    attributes(spssDF[[zz]])$class
-  })
-
-  colInfo$decimal <- as.numeric(ifelse(substr(colInfo$format,1,1) == "F", sapply(strsplit(colInfo$format,"\\."), function(x) { tail(x,1) } ), rep(NA, nrow(colInfo)) ))
-  colInfo$decimal[is.na(colInfo$decimal) && !(tolower(colInfo$class) %in% "date")] <- 0 #dates are omitted based on SPSS class type so they are characters
-  colInfo$multiplier <- as.numeric(ifelse(is.na(colInfo$decimal), 1, 10^colInfo$decimal))
-  colInfo$size <- gsub("[a-zA-Z]","",sapply(strsplit(colInfo$format,"\\."), function(x) { head(x,1) } ))
-
-  #TEST THAT ALL OF THE DATA IS IN RANGE OF THE SPECIFIED COLUMN SIZE BY THE FILE FORMAT::THE SPSS format is generally correct, but seems to not always be the case, so don't rely on it.
-  for(coli in 1:nrow(colInfo)){
-    #ensure we have no out of bounds values per the file format specification::this also converts any scientific notation numbers to their full character count
-    #since we are using the 'format' function NaN and NA values are returned as nchar of 3 or 2
-
-
-    #set maximum number of digits for the fwf file
-    if(is.numeric(spssDF[[coli]])){
-      spssDF[[coli]] <- round(spssDF[[coli]], digits = 8) #set the maximum number of digits allowed in output file
-    }
-
-    charTest <- nchar(format(spssDF[[coli]], scientific = FALSE),keepNA = TRUE)
-    charTest[is.na(spssDF[[coli]])] <- 0 #this sets the NaN and NA values to nchar of 0
-
-    if (max(charTest)>as.integer(colInfo$size[coli])){
-        #warning(paste0("Source data element exceedes expected size: ", sQuote(colInfo$names[coli]), ", expected size: ", sQuote(colInfo$size[coli]), ", new size: ", sQuote(max(charTest))))
-        colInfo$size[coli] <- max(charTest)
-        colInfo$format[coli] <- paste0("F", max(charTest), ".", tail(unlist(strsplit(colInfo$format[coli],".", fixed = TRUE)), n=1))
-      #}
-    }
-
-    #test the type and precision is what it should be
-    if(is.numeric(spssDF[[coli]]) && any(grepl(".", spssDF[[coli]], fixed = TRUE), na.rm = TRUE)){
-      decTestVal <- spssDF[[coli]] %% 1 #test with only decimal point
-      decTestVal[is.na(decTestVal)] <- 0 #convert NAs to 0 for testing
-
-      decTestLen <- sapply(as.character(decTestVal[decTestVal!=0]), function(x){
-          x <- sub("0.","",x, fixed = TRUE) #strip first zero char and decimal place
-          return(nchar(x))
-      }, simplify = TRUE)
-
-      if(length(decTestLen)==0){
-        decTestLen <- 0
-      }
-      if(max(decTestLen)!=colInfo$decimal[coli]){
-        #warning(paste0("Source data element inconsistant decimal precision for: ", sQuote(colInfo$names[coli]), ", expected size: ", sQuote(colInfo$decimal[coli]), ", new size: ", sQuote(max(decTestLen))))
-      }
-
-      #update all the format and decimal values for these numerics regardless of what the SPSS formatting says
-      colInfo$size[coli] <- max(charTest) + max(decTestLen)
-      colInfo$format[coli] <- paste0("F", max(charTest), ".", max(decTestLen)) #update the format of the columns for the adjustment to the decimal precision
-      colInfo$decimal[coli] <- max(decTestLen)
-      colInfo$multiplier[coli] <- 10^max(decTestLen)
-    }
-  }
-
-  #format the output matrix for Fixed Width Format datafile after the data variable size validation above
-  omat <- sapply(1:nrow(colInfo), function(coli) {
-    if(grepl("^F",colInfo$format[coli])) {
-      #spssDF[coli] <- ifelse(is.na(spssDF[coli]), rep(" ", nrow(spssDF)), spssDF[[coli]])
-      fmtTxt <- as.numeric(colInfo$multiplier[coli] * spssDF[[coli]]) #formats the value as one big value with no decimal
-      fmtTxt <- ifelse(is.na(fmtTxt), format(" ", width=colInfo$size[coli], justify="right"), format(fmtTxt, scientific = FALSE, width = colInfo$size[coli], justify = "right"))
-      return(sprintf(paste0("%",colInfo$size[coli],"s"), fmtTxt))
-    } else {
-      return(sprintf(paste0("%",colInfo$size[coli],"s"), format(spssDF[[coli]], scientific = FALSE, width=colInfo$size[coli], justify = "right")))
-    }
-  })
 
   #define any weight vars here
   testWgt <- c("^TOTWGT[S]{0,1}$", "^TCHWGT$", "^MATWGT$", "^SCIWGT$", "^TOTWGTT$", "^TOTWGTCH$", "^PHYWGT$")
@@ -1145,30 +1113,34 @@ writeTibbleToFWFReturnFileFormat <- function(spssDF, outF, jkType=c("JK2", "JK1"
 
   #loop through enough times to search for totwgt, tchwgt, matwgt, or sciwgt and build their JK weights
   for(iWgt in 1:length(testWgt)){
-    wgtc <- grep(testWgt[iWgt], colInfo$names, ignore.case = TRUE, value=TRUE)
-    jkrepc <- grep(testJKRep[iWgt], colInfo$names, ignore.case = TRUE, value=TRUE)
-    jkzonec <- grep(testJKZone[iWgt], colInfo$names, ignore.case = TRUE, value=TRUE)
+    wgtc <- grep(testWgt[iWgt], fileFormat$variableName, ignore.case = TRUE, value=TRUE)
+    jkrepc <- grep(testJKRep[iWgt], fileFormat$variableName, ignore.case = TRUE, value=TRUE)
+    jkzonec <- grep(testJKZone[iWgt], fileFormat$variableName, ignore.case = TRUE, value=TRUE)
 
     if(length(wgtc)==1 && length(jkrepc)==1 && length(jkzonec)==1) {
-      weight <- colInfo$multiplier[colInfo$names == wgtc] * data.frame(spssDF[wgtc])
-      jkrep <- data.frame(spssDF[jkrepc])
-      jkzone <- data.frame(spssDF[jkzonec])
+      weight <- data.frame(spssDF[ , wgtc, drop=FALSE])
+      jkrep <- data.frame(spssDF[ , jkrepc, drop=FALSE])
+      jkzone <- data.frame(spssDF[ , jkzonec, drop=FALSE])
       ujkz <- sort(unique(jkzone[,1]))
-      size <- colInfo$size[colInfo$names==wgtc]
 
       #JK2 is the default, this applies to TIMSS, TIMSSAdv, and PIRLS
       #JK2 and JK1 differ by how the replicate weights are constructed
       if (jkType=="JK2"){
         for(i in ujkz) {
+          #first group - calc
           coli <- paste0(testJKprefix[iWgt],-1+i*2)
           jkvars <- c(jkvars, coli)
           jkw <- weight
           jkw[jkzone == i & jkrep == 0] <- 0
           jkw[jkzone == i & jkrep == 1] <- 2 * jkw[jkzone == i & jkrep == 1]
           jkw[is.na(jkw[,1]),1] <- 0 #turn any NAs to a zero value
-          omat <- cbind(omat, sprintf(paste0("%0",size,".0f"), jkw[,1]))
-          colInfo[coli,] <- colInfo[colInfo$names==wgtc,]
-          colInfo[coli,"names"] <- coli
+          
+          #add it to the fileFormat and the data
+          spssDF <- cbind(spssDF, jkw[,1])
+          ffAppend <- subset(fileFormat, fileFormat$variableName==wgtc)
+          ffAppend$variableName <- coli
+          ffAppend$Labels <- paste0(ffAppend$Labels, " - ", coli)
+          fileFormat <- rbind(fileFormat, ffAppend)
 
           # and the second group
           coli <- paste0(testJKprefix[iWgt],i*2)
@@ -1177,12 +1149,16 @@ writeTibbleToFWFReturnFileFormat <- function(spssDF, outF, jkType=c("JK2", "JK1"
           jkw[jkzone == i & jkrep == 0] <- 2 * jkw[jkzone == i & jkrep == 0]
           jkw[jkzone == i & jkrep == 1] <- 0
           jkw[is.na(jkw[,1]),1] <- 0 #turn any NAs to a zero value
-          omat <- cbind(omat, sprintf(paste0("%0",size,".0f"), jkw[,1]))
-          colInfo[coli,] <- colInfo[colInfo$names==wgtc,]
-          colInfo[coli,"names"] <- coli
+          
+          #add it to the fileFormat and data
+          spssDF <- cbind(spssDF, jkw[,1])
+          ffAppend <- subset(fileFormat, fileFormat$variableName==wgtc)
+          ffAppend$variableName <- coli
+          ffAppend$Labels <- paste0(ffAppend$Labels, " - ", coli)
+          fileFormat <- rbind(fileFormat, ffAppend)
         }
       }else if(jkType=="JK1"){
-
+        
         ujkz <- 1:75 #IEA JK1 datasets (ICCS/CivED and ICILS) always have 75 jk replicate weights regardless of actual zones
 
         for(i in ujkz) {
@@ -1192,46 +1168,26 @@ writeTibbleToFWFReturnFileFormat <- function(spssDF, outF, jkType=c("JK2", "JK1"
           jkw[jkzone == i & jkrep == 0] <- 0
           jkw[jkzone == i & jkrep == 1] <- 2 * jkw[jkzone == i & jkrep == 1]
           jkw[is.na(jkw[,1]),1] <- 0 #turn any NAs to a zero value
-          omat <- cbind(omat, sprintf(paste0("%0",size,".0f"), jkw[,1]))
-          colInfo[coli,] <- colInfo[colInfo$names==wgtc,]
-          colInfo[coli,"names"] <- coli
+          
+          #add it to the fileFormat and data
+          spssDF <- cbind(spssDF, jkw[,1])
+          ffAppend <- subset(fileFormat, fileFormat$variableName==wgtc)
+          ffAppend$variableName <- coli
+          ffAppend$Labels <- paste0(ffAppend$Labels, " - ", coli)
+          fileFormat <- rbind(fileFormat, ffAppend)
         }
       }
     }
   }
 
-  #write the file out to disk
-  sink(outF)
-  a <- sapply(1:nrow(spssDF), function(rowi){
-    cat(paste(omat[rowi,], collapse=""))
-    cat("\n")
-  })
-  sink()
-
-  colInfo$size <- as.numeric(colInfo$size)
-  ff <- data.frame(variableName=colInfo$names, stringsAsFactors=FALSE)
-  ff$Start <-  c(1,1 + cumsum(colInfo$size))[1:nrow(colInfo)]
-  ff$End <- cumsum(colInfo$size)
-  ff$Width <- colInfo$size
-  ff$Decimal <- colInfo$decimal
-  # get labels
-  lbls <- sapply(colnames(spssDF), function(z) {attributes(spssDF[[z]])$label})
-  lbls <- c(lbls, jkvars)
-  ff$Labels <- lbls
-  #get level labels
-  lblv <- sapply(colnames(spssDF), function(z) {
-    attr <- attributes(spssDF[[z]])$labels
-    paste(attr, names(attr), sep="=", collapse="^")
-  })
-  ff$labelValues <- toupper(c(lblv, rep("", length(jkvars))))
-  #test for any specialty *dash* (em-dash, en-dash) characters in the labels that may be confusing for users and replace them with a regular dash character
-  ff$labelValues <- gsub("\u2013", "-", ff$labelValues) #replace en-dash (\u2013) with regular dash (\u002d)
-  ff$labelValues <- gsub("\u2014", "-", ff$labelValues) #replace em-dash (\u2014) with regular dash (\u002d)
-  ff$labelValues <- gsub("\\", "/", ff$labelValues, fixed=TRUE) #switch \\ to /
+  #test for any specialty *dash* (em-dash, en-dash) characters in the value labels that may be confusing for users and replace them with a regular dash character
+  fileFormat$labelValues <- gsub("\u2013", "-", fileFormat$labelValues) #replace en-dash (\u2013) with regular dash (\u002d)
+  fileFormat$labelValues <- gsub("\u2014", "-", fileFormat$labelValues) #replace em-dash (\u2014) with regular dash (\u002d)
+  fileFormat$labelValues <- gsub("\\", "/", fileFormat$labelValues, fixed=TRUE) #switch \\ to /
 
   ## for replicate weights it is the jackknife replicate weight number
   ## for plausible value variables it is the index within the construct
-  ff$pvWT <- sapply(colInfo$names, function(zz){
+  fileFormat$pvWT <- sapply(fileFormat$variableName, function(zz){
     if(grepl("[ABMPabmp][Ss][MSPRmspr]...[0][1-5]", zz, ignore.case = TRUE)){
       return(substring(zz,8,8)) #has two-digits, remove the leading 0::PVs are 1-5 for the measures
     }
@@ -1266,8 +1222,7 @@ writeTibbleToFWFReturnFileFormat <- function(spssDF, outF, jkType=c("JK2", "JK1"
   #third char is 'm' or 's' for math or science
   #char 4-6 is the construct (see above)
   #char 7-8 is the numeric 01-05 designation of the pausible value
-  ff$Type <- rep("", nrow(colInfo))
-  ff$Type <- sapply(colInfo$names, function(zzz){
+  fileFormat$Type <- sapply(fileFormat$variableName, function(zzz){
     if(grepl("[ABMPabmp][Ss][MSPREmspre]...[0][1-5]", zzz, ignore.case = TRUE)==TRUE){
       return(substring(tolower(zzz),3,6))
     }
@@ -1280,18 +1235,20 @@ writeTibbleToFWFReturnFileFormat <- function(spssDF, outF, jkType=c("JK2", "JK1"
   })
   #
 
-  ##characters will have an N/A for their decimal value
-  ff$dataType <- ifelse(ff$Decimal %in% 1:32 | (ff$Width > 9 & ff$Decimal %in% 0), rep("numeric", nrow(colInfo)),
-                        ifelse(ff$Decimal %in% 0, rep("integer", nrow(colInfo)),
-                               rep("character", nrow(colInfo))))
-
-  ff$weights <- FALSE #set all weights to false initially
+  #be sure to mark all of the weight vars as TRUE in the fileFormat
   for(i in 1:length(testWgt)){
-    wgtVar <- grepl(testWgt[i], colInfo$names, ignore.case = TRUE)
-    ff$weights[wgtVar==TRUE] <- TRUE
+    wgtVar <- grepl(testWgt[i], fileFormat$variableName, ignore.case = TRUE)
+    fileFormat$weights[wgtVar==TRUE] <- TRUE
   }
-
-  return(ff)
+  
+  #recalc start/stop positions with our newly added JK replicates
+  fileFormat$Start <- c(1,1 + cumsum(fileFormat$Width))[1:nrow(fileFormat)]
+  fileFormat$End <- cumsum(fileFormat$Width)
+  
+  #lastly write out the file and return the updated fileFormat, these functions are in the readUTILS.R file
+  fileFormat <- validateFWF_FileFormat(fileFormat)
+  fileFormat <- writeDF_FWF(spssDF, fileFormat, outF, verbose = FALSE)
+  return(fileFormat)
 }
 
 #returns an LaF to the fwf file using the fileformat specs
@@ -1366,7 +1323,8 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
 
       dataList <- list(student = studentLAF, school = schoolLAF, teacher = teacherLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
       dataListFF <- cacheFile$dataListFF
-      dataListMeta <- cacheFile$dataListMeta
+
+      dim0 <- cacheFile$dim0
 
       runProcessing <- FALSE
     }
@@ -1376,6 +1334,11 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
 
     if(verbose==TRUE){
       cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
+    }
+    
+    #delete the .meta file (if exists) before processing in case of error/issue
+    if(length(metaCacheFP)>0 && file.exists(metaCacheFP)){
+      file.remove(metaCacheFP)
     }
 
     #SCHOOL LEVEL===================================================
@@ -1639,19 +1602,19 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
     #build data list and link metadata object=======================
     dataList <- list(student = studentLAF, school = schoolLAF, teacher = teacherLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
     dataListFF <- list(student = ffstu, school = ffsch, teacher = ffTeach)
-
-    dataListMeta <- list(student = "", school = "", teacher = "")
-    dataListMeta$student <- list(school = "idcntry;idschool", teacher = "idcntry;idstud") #idschool #do we need to merge on idclass var as well?
-    dataListMeta$school <- list()
-    dataListMeta$teacher <- list()
     #===============================================================
 
+    #calculate the dim0 to store in the .meta file for fast retreival
+    nrow0 <- nrow(mm)
+    ncol0 <- length(unique(c(ffsch$variableName, ffstu$variableName, ffTeach$variableName)))
+    dim0 <- c(nrow0, ncol0)
+    
     #save the cachefile to be read-in for the next call
     cacheFile <- list(ver=packageVersion("EdSurvey"),
-                      cacheFileVer=3,
+                      cacheFileVer=4,
                       ts=Sys.time(),
                       dataListFF=dataListFF,
-                      dataListMeta=dataListMeta)
+                      dim0=dim0)
 
     saveRDS(cacheFile, file.path(dataFolderPath,paste0("a", countryCode, yearCode,".meta")))
 
@@ -1664,7 +1627,7 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
 
   return(list(dataList = dataList,
               dataListFF = dataListFF,
-              dataListMeta = dataListMeta))
+              dim0=dim0))
 }
 
 #get the full country name to aide the user, so they won't have to track them down.
@@ -1673,11 +1636,11 @@ processTIMSS4AndNumeracy <- function(dataFolderPath, countryCode, fnames, fnames
 getTIMSSCountryName <- function(countryCode){
 
   cntryCodeDF <- data.frame(
-      cntryCode = c("aad", "aba", "adu", "are", "arm", "aus", "aut", "aze",
+      cntryCode = c("aad", "aba", "adu", "alb", "are", "arm", "aus", "aut", "aze",
                     "bfl", "bfr", "bgr", "bhr", "bih", "bsq", "bwa",
                     "cab", "can", "cbc", "che", "chl", "col", "cot", "cqu", "cyp", "cze",
                     "deu", "dnk", "dza",
-                    "egy", "eng", "esp", "est",
+                    "egy", "ema", "eng", "esp", "est",
                     "fin", "fra",
                     "geo", "gha", "grc",
                     "hkg", "hnd", "hrv", "hun",
@@ -1685,22 +1648,23 @@ getTIMSSCountryName <- function(countryCode){
                     "jor", "jpn",
                     "kaz", "kor", "kwt",
                     "lbn", "ltu", "lva",
-                    "mar", "mda", "mkd", "mlt", "mng", "mys",
+                    "mar", "mda", "mkd", "mlt", "mne", "mng", "mys",
                     "nir", "nld", "no4", "no8", "nor", "nzl",
                     "omn",
-                    "phl", "pol", "prt", "pse",
+                    "pak", "phl", "pol", "prt", "pse",
                     "qat",
-                    "rom", "rus",
+                    "rmo", "rom", "rus",
                     "sau", "scg", "sco", "sgp", "slv", "srb", "svk", "svn", "swe", "syr",
                     "tha", "tun", "tur", "twn",
                     "uin", "ukr", "uma", "umn", "usa",
+                    "xkx",
                     "ye6", "yem",
-                    "zaf"),
-      cntryName = c("Abu Dhabi, UAE", "Buenos Aires, Argentina", "Dubai, UAE", "United Arab Emirates", "Armenia", "Australia", "Austria", "Azerbaijan",
+                    "zaf", "zgt", "zwc"),
+      cntryName = c("Abu Dhabi, UAE", "Buenos Aires, Argentina", "Dubai, UAE", "Albania", "United Arab Emirates", "Armenia", "Australia", "Austria", "Azerbaijan",
                     "Belgium (Flemish)", "Belgium (French)", "Bulgaria", "Bahrain", "Bosnia and Herzegovina", "Basque Country, Spain", "Botswana",
                     "Alberta, Canada", "Canada", "British Columbia, Canada", "Switzerland", "Chile", "Colombia", "Ontario, Canada", "Quebec, Canada", "Cyprus", "Czech Republic",
                     "Germany", "Denmark", "Algeria",
-                    "Egypt", "England", "Spain", "Estonia",
+                    "Egypt", "Madrid, Spain", "England", "Spain", "Estonia",
                     "Finland", "France",
                     "Georgia", "Ghana", "Greece",
                     "Hong Kong SAR", "Honduras", "Croatia", "Hungary",
@@ -1708,17 +1672,18 @@ getTIMSSCountryName <- function(countryCode){
                     "Jordan", "Japan",
                     "Kazakhstan", "Korea, Rep. of", "Kuwait",
                     "Lebanon", "Lithuania", "Latvia",
-                    "Morocco", "Moldova, Republic of", "Macedonia, Rep. of", "Malta", "Mongolia", "Malaysia",
+                    "Morocco", "Moldova, Republic of", "Macedonia, Rep. of", "Malta", "Montenegro", "Mongolia", "Malaysia",
                     "Northern Ireland", "Netherlands", "Norway (4th grade)", "Norway (8th grade)", "Norway", "New Zealand",
                     "Oman",
-                    "Philippines", "Poland", "Portugal", "Palestinian Nat'l Auth.",
+                    "Pakistan", "Philippines", "Poland", "Portugal", "Palestinian Nat'l Auth.",
                     "Qatar",
-                    "Romania", "Russian Federation",
+                    "Moscow, Russian Federation", "Romania", "Russian Federation",
                     "Saudi Arabia", "Serbia", "Scotland", "Singapore", "El Salvador", "Serbia", "Slovak Republic", "Slovenia", "Sweden", "Syrian Arab Republic",
                     "Thailand", "Tunisia", "Turkey", "Chinese Taipei",
                     "Indiana, US", "Ukraine", "Massachusetts, US", "Minnesota, US", "United States",
+                    "Kosovo",
                     "Yemen (6th)", "Yemen",
-                    "South Africa"),
+                    "South Africa", "South Africa (Gauteng)", "South Africa (Western Cape Province)"),
                     stringsAsFactors = FALSE) #be sure to not create any factors::factors not needed at all
 
   lookupNames <- vector(mode = "character", length = length(countryCode))

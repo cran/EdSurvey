@@ -20,6 +20,7 @@
 #' @importFrom utils download.file
 #' @export
 downloadELS <- function(root, years=c(2002), cache=FALSE, verbose=TRUE) {
+  fixTimeout()
   if(is.null(root)){
     stop(paste0("The argument ", sQuote("root"), " must be specified."))
   }

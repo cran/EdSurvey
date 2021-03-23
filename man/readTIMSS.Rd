@@ -4,7 +4,13 @@
 \alias{readTIMSS}
 \title{Connect to TIMSS Data}
 \usage{
-readTIMSS(path, countries, gradeLvl, forceReread = FALSE, verbose = TRUE)
+readTIMSS(
+  path,
+  countries,
+  gradeLvl = c("4", "8", "4b", "8b"),
+  forceReread = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{path}{a character vector to the full directory path(s) to the TIMSS

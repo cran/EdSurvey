@@ -67,7 +67,8 @@ readTIMSSAdv <- function(path,
   
   path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
   subject <- tolower(subject)
-
+  subject <- match.arg(subject)
+  
   if(!all(dir.exists(path))){
     stop(paste0("The argument ", sQuote("path"), " cannot be located ", pasteItems(dQuote(path[!dir.exists(path)])),"."))
   }
@@ -273,7 +274,9 @@ readTIMSSAdv <- function(path,
                                                              country = processedData$country,
                                                              psuVar = "jkrep",
                                                              stratumVar = "jkzone",
-                                                             jkSumMultiplier = 0.5) #defined by the method of JK weight replication used (JK2)
+                                                             jkSumMultiplier = 0.5, #defined by the method of JK weight replication used (JK2)
+                                                             reqDecimalConversion = FALSE,
+                                                             dim0=processedData$dim0) 
     }#end country loop
   }#end for(fileYr in fileYrs)
 
@@ -373,7 +376,8 @@ processTIMSSAdv <- function(dataFolderPath, countryCode, fnames, fileYrs, subjec
       }
 
       dataListFF <- cacheFile$dataListFF
-
+      dim0 <- cacheFile$dim0
+      
       runProcessing <- FALSE
     }
   } #end if(length(metaCacheFP)==0 || (length(txtCacheFWF)<3 && fileYrs!="m1" || (length(txtCacheFWF)<2 && fileYrs=="m1")) || forceReread==TRUE)
@@ -383,6 +387,11 @@ processTIMSSAdv <- function(dataFolderPath, countryCode, fnames, fileYrs, subjec
 
     if(verbose==TRUE){
       cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
+    }
+    
+    #delete the .meta file (if exists) before processing in case of error/issue
+    if(length(metaCacheFP)>0 && file.exists(metaCacheFP)){
+      file.remove(metaCacheFP)
     }
 
     #SCHOOL LEVEL===================================================
@@ -512,18 +521,23 @@ processTIMSSAdv <- function(dataFolderPath, countryCode, fnames, fileYrs, subjec
       schoolLAF <- getFWFLaFConnection(schoolFP, ffsch)
       studentLAF <- getFWFLaFConnection(stuFP, ffstu)
 
-      #build data list and link metadata object=======================
-      dataList <- list(student = studentLAF, school = schoolLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
+      #build data list and file format list=========================
+      dataList <- list(student = studentLAF, school = schoolLAF) #ensure dataList and dataListFF are associated in same index positions
       dataListFF <- list(student = ffstu, school = ffsch)
     }
     #===============================================================
 
+    #calculate the dim0 to store in the .meta file for fast retreival
+    nrow0 <- nrow(mm)
+    ncol0 <- length(unique(c(ffsch$variableName, ffstu$variableName, ffTeach$variableName)))
+    dim0 <- c(nrow0, ncol0)
 
     #save the cachefile to be read-in for the next call
     cacheFile <- list(ver=packageVersion("EdSurvey"),
-                      cacheFileVer=2,
+                      cacheFileVer=3,
                       ts=Sys.time(),
-                      dataListFF=dataListFF)
+                      dataListFF=dataListFF,
+                      dim0=dim0)
 
     saveRDS(cacheFile, file.path(dataFolderPath,paste0(subjChr, countryCode, yearCode,".meta")))
 
@@ -534,7 +548,8 @@ processTIMSSAdv <- function(dataFolderPath, countryCode, fnames, fileYrs, subjec
   } #end if(runProcessing==TRUE)
 
   return(list(dataList = dataList,
-              dataListFF = dataListFF))
+              dataListFF = dataListFF,
+              dim0=dim0))
 }
 
 

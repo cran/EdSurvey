@@ -87,7 +87,9 @@ test_that("getData ignores defaultConditions when applied twice", {
 
 context("LESDF subset")
 test_that("LESDF subset",{
-  s1 <- EdSurvey:::subset(lsdf, dsex == "Male", verbose=FALSE)
+  i <- "Male"
+  dsex <- "should not be used"
+  s1 <- EdSurvey:::subset(lsdf, dsex == i, verbose=FALSE)
   expect_equal(s2 <- base::subset(lsdf, dsex == "Male"),s1)
 
   sdfb12 <- getData(subset(sdf, b017451 %in% c(1,2), verbose=FALSE), c("b017451", "dsex"), dropUnusedLevels=FALSE)
@@ -170,6 +172,9 @@ context("LESDF gap")
 test_that("LESDF gap",{
   skip_on_cran()
   g1 <- gap("composite", sdf, dsex=="Male", dsex=="Female")
+  mle <- "Male"
+  g1p <- gap("composite", sdf, dsex==mle, dsex=="Female")
+  expect_equal(g1$results, g1p$results)
   # omittedLevels must be set to FALSE or rows will be deleted because of other columns
   # using omitted levels 
   g1l <- gap("composite", lsdf0, dsex=="Male", dsex=="Female")

@@ -532,7 +532,7 @@ gapPSUREF <- c("Call: gap(variable = \"composite\", data = sdf, groupA = dsex %i
                "  276.7235   0.8207151  275.0458   0.9402535 1.677756 0.5676583 0.6498719   0.01259479 53.70969"
 )
 
-sPV_wREF <- c("Estimates are weighted using weight variable 'origwt'",
+sPV_wREF <- c("Estimates are weighted using the weight variable 'origwt'",
               "   Variable     N Weighted N    Min.  1st Qu.   Median     Mean  3rd Qu.    Max.       SD NA's Zero-weights", 
               "1 composite 16915   16932.46 126.110 251.9623 277.4784 275.8892 301.1835 404.184 36.57130    0            0", 
               "2   algebra 16915   16932.46 109.842 254.7972 279.8320 278.9366 304.0195 412.152 36.65571    0            0")
@@ -544,7 +544,7 @@ sPVREF <- c("Estimates are not weighted.", "  Variable     N   Min.  1st Qu. Med
             "4   mrpcm4 16915 137.19 252.4717 277.44 275.7451 300.5767 407.41 35.91078    0", 
             "5   mrpcm5 16915 123.58 252.4900 277.16 275.6965 300.5000 395.96 36.10905    0")
 
-sDiscrete_wREF <- c("Estimates are weighted using weight variable 'origwt'",
+sDiscrete_wREF <- c("Estimates are weighted using the weight variable 'origwt'",
                     "                b017451   dsex    N Weighted N Weighted Percent Weighted Percent SE", 
                     "1  Never or hardly ever   Male 2350    2434.84             61.6                1.07", 
                     "2  Never or hardly ever Female 1487    1517.61             38.4                1.07", 
@@ -602,8 +602,27 @@ stdCoefREF <- c("                               coef     se       t   dof  Pr(>|
                 "b017451Every day              7.530 1.3085   5.755 48.47 5.755e-07  0.08172 0.014526")
 
 
-rq1REF <- c("                (Intercept)                  dsexFemale b017451Once every few weeks    b017451About once a week  b0174512 or 3 times a week            b017451Every day ", 
-            "                    299.768                      -4.628                       6.588                      12.480                      16.542                      12.742 ")
+rq1REF <- c("",
+            "Formula: composite ~ dsex + b017451",
+            "",
+            "tau: 0.8",
+            "jrrIMax: 1",
+            "Weight variable: 'origwt'",
+            "Variance method: jackknife",
+            "JK replicates: 62",
+            "full data n: 17606",
+            "n used: 16331",
+            "",
+            "Coefficients:",
+            "                              coef     se      t  dof Pr(>|t|)    ",
+            "(Intercept)                 299.77   1.81 165.59 29.4  < 2e-16 ***",
+            "dsexFemale                   -4.63   1.29  -3.59 58.6  0.00069 ***",
+            "b017451Once every few weeks   6.59   1.91   3.45 46.0  0.00120 ** ",
+            "b017451About once a week     12.48   2.30   5.44 67.8  8.0e-07 ***",
+            "b0174512 or 3 times a week   16.54   2.46   6.72 29.9  1.9e-07 ***",
+            "b017451Every day             12.74   1.69   7.53 50.3  8.7e-10 ***",
+            "---",
+            "Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
 
 logit2tREF <- c("", "Formula: iep ~ dsex + b013801", "Family: binomial (logit)", 
                "",
@@ -624,7 +643,7 @@ assignTableREF <- structure(c(8486L, 0L, 0L, 8429L),
                                                        c("Male", "Female")),
                             .Names = c("", "")), class = "table")
 
-sum2ResBREF <- c("Estimates are weighted using weight variable 'origwt'",
+sum2ResBREF <- c("Estimates are weighted using the weight variable 'origwt'",
                  "     dsex               pared    N Weighted N Weighted Percent Weighted Percent SE", 
                  "1    Male Did not finish H.S.  539      593.2            6.968               0.392", 
                  "2    Male      Graduated H.S. 1461     1490.4           17.510               0.673", 

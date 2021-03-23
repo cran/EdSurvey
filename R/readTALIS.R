@@ -38,8 +38,8 @@
 #' @export
 readTALIS <- function(path,
                       countries,
-                      isced = "b",
-                      dataLevel = "teacher",
+                      isced = c("b", "a", "c"),
+                      dataLevel = c("teacher", "school"),
                       forceReread = FALSE,
                       verbose = TRUE) {
 
@@ -50,6 +50,8 @@ readTALIS <- function(path,
   on.exit(options(userOp2), add = TRUE)
   
   dataLevel <- tolower(dataLevel)
+  dataLevel <- match.arg(dataLevel)
+  
   path <- normalizePath(path, winslash = "/") # to match IEA read-in function
   forceRead <- forceReread # to match IEA read-in function
   sdf <- list() # list to store edsurvey.data.frame elements
@@ -62,6 +64,8 @@ readTALIS <- function(path,
     isced <- "b" #get's defaulted to 'b' in the function call. missing==TRUE if parameter not specifed
   }
   isced <- tolower(isced)
+  isced <- match.arg(isced)
+  
   if (!isced %in% c("a","b","c")) {
     stop(paste0("Argument ", sQuote('isced'), " only accepts three values: ",
                 sQuote('a'),", ",sQuote('b'),", or ",sQuote('c'),"."))

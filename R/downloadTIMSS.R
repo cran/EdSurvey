@@ -2,13 +2,13 @@
 #'
 #' @description Uses an Internet connection to download TIMSS data.
 #'              Data come from \href{https://timssandpirls.bc.edu/}{timssandpirls.bc.edu} zip files. This
-#'              function works for 2003, 2007, 2011, and 2015 data.
+#'              function works for 2003, 2007, 2011, 2015, and 2019 data.
 #'
 #' @param root a character string indicating the directory where the TIMSS
 #'             data should be stored. Files are placed in a
 #'             subdirectory named TIMSS/[year].
 #' @param years an integer vector of the assessment years to download. Valid years are 2003, 2007, 2011,
-#'              and 2015.
+#'              2015, and 2019.
 #' @param cache a logical value set to process and cache the text (.txt) version of files.
 #'              This takes a very long time but saves time for future uses of 
 #'              the data. Default value is \code{FALSE}.
@@ -19,7 +19,8 @@
 #' @example man/examples/downloadTIMSS.R
 #' @importFrom utils download.file
 #' @export
-downloadTIMSS <- function(root, years=c(2003, 2007, 2011, 2015), cache=FALSE, verbose=TRUE) {
+downloadTIMSS <- function(root, years=c(2003, 2007, 2011, 2015, 2019), cache=FALSE, verbose=TRUE) {
+  fixTimeout()
   if(is.null(root)){
     stop(paste0("The argument ", sQuote("root"), " must be specified."))
   }
@@ -27,13 +28,13 @@ downloadTIMSS <- function(root, years=c(2003, 2007, 2011, 2015), cache=FALSE, ve
     stop(paste0("The argument ", sQuote("root"), " must be of length 1."))
   }
   
-  #normalize path before testing:: file.path will remove trailing seperator if present
+  #normalize path before testing:: file.path will remove trailing separator if present
   root <- suppressWarnings(file.path(normalizePath(root, winslash = "/")))
   if(!dir.exists(root)){
     stop(paste0("The argument ", sQuote("root"), " must be a valid path."))
   }
   
-  validYears <- c(2003, 2007, 2011, 2015)
+  validYears <- c(2003, 2007, 2011, 2015, 2019)
   if(length(years) > 1) {
     for(yi in years) {
       downloadTIMSS(years=yi, root=root, cache=cache, verbose = verbose)
@@ -68,6 +69,9 @@ downloadTIMSS <- function(root, years=c(2003, 2007, 2011, 2015), cache=FALSE, ve
              "https://timssandpirls.bc.edu/timss2015/international-database/downloads/T15_G8_SPSSData_pt3.zip",
              "https://timssandpirls.bc.edu/timss2015/international-database/downloads/T15_G8_SPSSData_pt4.zip",
              "https://timssandpirls.bc.edu/timss2015/international-database/downloads/TN15_SPSSData.zip")
+  
+  d2019 <- c("https://timss2019.org/international-database/downloads/T19_G4_SPSS%20Data.zip",
+             "https://timss2019.org/international-database/downloads/T19_G8_SPSS%20Data.zip")
 
   if(!year %in% validYears) {
     stop(paste0("Only known years are ", pasteItems(validYears), "."))
@@ -77,7 +81,7 @@ downloadTIMSS <- function(root, years=c(2003, 2007, 2011, 2015), cache=FALSE, ve
   if(!dir.exists(file.path(root, "TIMSS"))){
     dir.create(file.path(root, "TIMSS"))
   }
-  yroot <- file.path(root, "TIMSS", paste0(year)) #build yroot with file.path to avoid issues with seperators
+  yroot <- file.path(root, "TIMSS", paste0(year)) #build yroot with file.path to avoid issues with separators
   if(!dir.exists(yroot)) {
     dir.create(yroot)
   }

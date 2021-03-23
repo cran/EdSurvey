@@ -14,7 +14,7 @@ m1SummaryREF <- c(
 "2  Residual         8912     1", 
 "", "Variance terms:",
 "                    variance Std. Error Std.Dev.", 
-"idclass.(Intercept)     3525      511.6    59.37",
+"idclass.(Intercept)     3525      511.7    59.37",
 "Residual                2657      124.1    51.54", 
 "",
 "Fixed Effects:",

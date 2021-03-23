@@ -19,6 +19,7 @@
 #' @importFrom utils download.file
 #' @export
 downloadTIMSSAdv <- function(root, years=c(1995, 2008, 2015), cache=FALSE, verbose=TRUE) {
+  fixTimeout()
   if(is.null(root)){
     stop(paste0("The argument ", sQuote("root"), " must be specified."))
   }

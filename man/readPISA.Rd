@@ -6,9 +6,9 @@
 \usage{
 readPISA(
   path,
-  database = "INT",
+  database = c("INT", "CBA", "FIN"),
   countries,
-  cognitive = "score",
+  cognitive = c("score", "response", "none"),
   forceReread = FALSE,
   verbose = TRUE
 )
@@ -20,7 +20,7 @@ PISA-extracted fixed-width files and SPSS control files (.txt).}
 \item{database}{a character to indicate a selected database. Must be one of
 \code{INT} (general database that most people use),
 \code{CBA} (computer-based database in PISA 2012 only),
-or \code{FIN} (financial literacy database in PISA 2012 only).
+or \code{FIN} (financial literacy database in PISA 2012 and 2018).
 Defaults to \code{INT}.}
 
 \item{countries}{a character vector of the country/countries to include using the
@@ -69,6 +69,17 @@ The average first-time processing time for 1 year and one database for all
 countries is 10--15 minutes. If \code{forceReread} is set
 to be \code{FALSE}, the next time this function is called will take only
 5--10 seconds.
+
+For the PISA 2000 study, please note that the study weights are subject
+specific. Each weight has different adjustment factors for reading, mathematics, and science
+based on it's original subject source file.  For example, the \code{w_fstuwt_read} weight is associated with the reading
+subject data file.  Special care must be used to select the correct weight based on your specific analysis.  See the OECD
+documentation for further details.  Use the \code{showWeights} function to see all three student level subject weights:
+\itemize{
+  \item \strong{w_fstuwt_read} = Reading (default)
+  \item \strong{w_fstuwt_scie} = Science
+  \item \strong{w_fstuwt_math} = Mathematics
+}
 }
 \examples{
 \dontrun{

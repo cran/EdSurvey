@@ -147,9 +147,9 @@ mixed.sdf <- function(formula,
   survey <- getAttributes(data, "survey")
   if (is.null(weightVars)) {
     if (survey == "PISA") {
-      weightVars <- c("w_fstuwt","w_fschwt")
+      weightVars <- c("w_fstuwt", "w_fschwt")
     } else if (survey %in% c("TIMSS", "TIMSS Advanced")) {
-      weightVars <- c("totwgt","schwgt")
+      weightVars <- c("totwgt", "schwgt")
     } else {
       stop("mixed.sdf currently only supports automated weights for PISA, TIMSS, and TIMSS Advanced. If you use another survey, please specify your own weights. ")
     }
@@ -198,8 +198,8 @@ mixed.sdf <- function(formula,
   # drop zero-weight case
   for(wgt in weightVars) {
     if(any(!(!is.na(edf[,wgt]) & edf[,wgt] > 0))) {
-      warning("Removing ",sum(!(!is.na(edf[,wgt]) & edf[,wgt] > 0))," rows with 0 or NA weight on ",dQuote(wgt)," from analysis.")
-      edf <- edf[!is.na(edf[,wgt]) & edf[,wgt] > 0,]
+      warning("Removing ", sum(!(!is.na(edf[ , wgt]) & edf[ , wgt] > 0))," rows with 0 or NA weight on ", dQuote(wgt), " from analysis.")
+      edf <- edf[!is.na(edf[ , wgt]) & edf[ , wgt] > 0, ]
     }
   }
   
@@ -274,28 +274,28 @@ mixed.sdf <- function(formula,
   if (!weightTransformation) {
     # no weight transformations
     for(wi in 1:length(weightVars)) {
-      edf[[paste0("pwt",wi)]] <- edf[,weightVars[wi]]
+      edf[[paste0("pwt",wi)]] <- edf[ , weightVars[wi]]
     }
   } else {
     # weight transformations by survey
     if (survey == "PISA") {
-      edf$sqw <- edf[,weightVars[1]]^2
+      edf$sqw <- edf[ , weightVars[1]]^2
       sumsqw <- aggregate(as.formula(paste0("sqw ~ ", groupNames)), data = edf, sum)
-      sumw <- aggregate(as.formula(paste0(weightVars[1],"~", groupNames)), data = edf, sum)
-      edf$sumsqw <- sapply(edf[,groupNames], function(s) sumsqw$sqw[sumsqw[,groupNames] == s])
-      edf$sumw <- sapply(edf[,groupNames], function(s) sumw[sumw[,groupNames] == s, weightVars[1]])
-      edf$pwt1 <- edf[,weightVars[1]] * (edf$sumw / edf$sumsqw)
-      edf$pwt2 <- edf[,weightVars[2]]
+      sumw <- aggregate(as.formula(paste0(weightVars[1], "~", groupNames)), data = edf, sum)
+      edf$sumsqw <- sapply(edf[,groupNames], function(s) sumsqw$sqw[sumsqw[ , groupNames] == s])
+      edf$sumw <- sapply(edf[,groupNames], function(s) sumw[sumw[ , groupNames] == s, weightVars[1]])
+      edf$pwt1 <- edf[ , weightVars[1]] * (edf$sumw / edf$sumsqw)
+      edf$pwt2 <- edf[ , weightVars[2]]
       edf$sqw <- NULL
       edf$sumsqw <- NULL
       edf$sumw <- NULL
     } else if (survey %in% c("TIMSS", "TIMSS Advanced")) {
-      edf$pwt1 <- edf[,weightVars[1]] / edf[,weightVars[2]]
-      edf$pwt2 <- edf[,weightVars[2]]
+      edf$pwt1 <- edf[ , weightVars[1]] / edf[ , weightVars[2]]
+      edf$pwt2 <- edf[ , weightVars[2]]
     } else { # For other survey data in edsurvey, users need to specify their own weights
       warning(paste0("EdSurvey currently does not specify weight transformation rules for ",survey,". Raw weights were used for the analysis."))
-      edf$pwt1 <- edf[,weightVars[1]]
-      edf$pwt2 <- edf[,weightVars[2]]
+      edf$pwt1 <- edf[ , weightVars[1]]
+      edf$pwt2 <- edf[ , weightVars[2]]
     }
   } # end if (!weightTransformation)
   
@@ -304,11 +304,11 @@ mixed.sdf <- function(formula,
   keep <- rep(0, nrow(edf))
   for (i in 1:ncol(edf)) {
     vari <- names(edf)[i]
-    keep <- keep + (tolower(edf[,vari]) %in%  tolower(lev))
+    keep <- keep + (tolower(edf[ , vari]) %in%  tolower(lev))
   }
   if(sum(keep>0) > 0) {
     # only omit if something gets omitted
-    edf <- edf[keep==0,,drop=FALSE]
+    edf <- edf[keep==0, , drop=FALSE]
   }
   
   #make copy of formula to be modified during interations through plausible values. 
@@ -338,6 +338,8 @@ mixed.sdf <- function(formula,
     res$hessian <- NULL
     res$call <- call0
     res$formula <- call0$formula
+    res$Ubar <- res$cov_mat
+    res$B <- 0 * res$Ubar
   } else { #run the plausible values version 
     #iterate through the plausible values 
     results <- list()
@@ -376,7 +378,24 @@ mixed.sdf <- function(formula,
       }
     }
     res <- results[[1]]
-    
+    M <- length(yvars)
+    co0 <- (1/M) * Reduce("+",
+                          lapply(results, function(r){
+                            coef(r)
+                          }))
+    res$B <- (1/(M-1))* Reduce("+", # add up the matrix results of the sapply
+                               lapply(results, function(r) {
+                                 # within each PV set, calculate the outer product
+                                 # (2.19 of Van Buuren)
+                                 co <- coef(r) - co0
+                                 outer(co,co)
+                               }))
+
+    res$Ubar <- (1/M) * Reduce("+",
+                               lapply(results, function(r) {
+                                 r$cov_mat
+                               }))
+    res$VC <- res$Ubar + ((M+1)/M) * res$B
     #NULL out things that dont exist for PVs
     res$lnl <- NULL
     res$lnlf <- NULL
@@ -389,12 +408,11 @@ mixed.sdf <- function(formula,
     #get enrivonment of WeMix likelihood function to later extract covariance from
     env <- environment(results[[1]]$lnlf)
     #Coefficients are just average value
-    avg_coef <- rowSums(matrix(sapply(results,function(x){x$coef}),nrow=length(results[[1]]$coef)))/length(yvars)
+    avg_coef <- rowSums(matrix(sapply(results, function(x){x$coef}), nrow=length(results[[1]]$coef)))/length(yvars)
     names(avg_coef) <- names(results[[1]]$coef)
       
     #calcuate imputation variance for SEs and Residuals 
-    M <- length(yvars)
-    imputation_var <- ((M+1)/((M-1)*M)) * rowSums(matrix(sapply(results, function(x){x$coef - avg_coef})^2,nrow=length(avg_coef))) 
+    imputation_var <- ((M+1)/((M-1)*M)) * rowSums(matrix(sapply(results, function(x){x$coef - avg_coef})^2, nrow=length(avg_coef))) 
     
     res$coef <- avg_coef
     #Variation in coefficients comes from imputation and also sampling 
@@ -436,7 +454,6 @@ mixed.sdf <- function(formula,
   res$npv <- length(yvars)
   res$n0 <- rawN
   res$nUsed <- nrow(edf)
-  
   #get group numbers, which is burried in the covariance matrix constructor (cConstructor)
   covCon <- get("cConstructor", env)
   lmeVarDf <- get("covMat", environment(covCon))
@@ -456,18 +473,18 @@ mixed.sdf <- function(formula,
 
 
 # helper function
-run_mix <- function(nQuad,call,formula,edf,verbose,tolerance,family,center_group,center_grand, fast, ...){
+run_mix <- function(nQuad, call, formula, edf, verbose, tolerance, family, center_group, center_grand, fast, ...){
   verboseAll <- ifelse(verbose==2,TRUE,FALSE) #set verbosity for WeMix to true if overall verbosity is 2
   # linear models do not use nquad nor fast, drop those
   if(is.null(family)) {
-    res <- mix(formula, data=edf, weights=c("pwt1","pwt2"), verbose = verboseAll, center_group=center_group, center_grand=center_grand, ...)
+    res <- mix(formula, data=edf, weights=c("pwt1", "pwt2"), verbose = verboseAll, center_group=center_group, center_grand=center_grand, ...)
     return(res)
   }
   if (!is.null(nQuad)) {
     if(verbose > 0) {
       message(sQuote("nQuad"), " argument is specified so ", sQuote("tolerance"), " argument will not be used. It's recommended that users try incrementing ", sQuote("nQuad"), " to check whether the estimates are stable. ")
     }
-    res <- mix(formula, data=edf, weights=c("pwt1","pwt2"), verbose = verboseAll, nQuad = nQuad,family=family,center_group=center_group,center_grand=center_grand, fast=fast, ...)
+    res <- mix(formula, data=edf, weights=c("pwt1", "pwt2"), verbose = verboseAll, nQuad = nQuad, family=family, center_group=center_group, center_grand=center_grand, fast=fast, ...)
     call$tolerance <- NULL
     res$call <- call
     return(res)
@@ -478,15 +495,15 @@ run_mix <- function(nQuad,call,formula,edf,verbose,tolerance,family,center_group
     if (verbose>0) {
       eout("Trying nQuad = ",nQuad,".") 
     }
-    res0 <- mix(formula, data=edf, weights=c("pwt1","pwt2"), verbose = verboseAll, nQuad = nQuad,family=family,
-                center_group=center_group,center_grand=center_grand, fast=fast, ...)
+    res0 <- mix(formula, data=edf, weights=c("pwt1","pwt2"), verbose = verboseAll, nQuad = nQuad, family=family,
+                center_group=center_group, center_grand=center_grand, fast=fast, ...)
 
     while(diff > tolerance) {
       nQuad <- nQuad + 2
       if (verbose>0) {
         eout("Trying nQuad = ",nQuad,".") 
       }
-      res <- mix(formula, data=edf, weights=c("pwt1","pwt2"), verbose = verboseAll, nQuad = nQuad,family=family,center_group=center_group,center_grand=center_grand, fast=fast, ...)
+      res <- mix(formula, data=edf, weights=c("pwt1","pwt2"), verbose = verboseAll, nQuad = nQuad, family=family, center_group=center_group, center_grand=center_grand, fast=fast, ...)
        # diff is the percentage difference of new lnl and old lnl
       diff <- abs(res$lnl - res0$lnl)/abs(res0$lnl)
       res0 <- res
@@ -523,7 +540,7 @@ print.summary.mixedSdfResults <- function(x, ...) {
 
   if(x$npv>1){
     cat("\n")
-    eout(paste0("Plausible Values: ",x$npv))
+    eout(paste0("Plausible Values: ", x$npv))
   }
   eout("Number of Groups:")
   print(x$ngroups)
@@ -546,3 +563,15 @@ print.summary.mixedSdfResults <- function(x, ...) {
   }
 }
 
+
+#' @method vcov mixedSdfResults
+#' @export
+vcov.mixedSdfResults <- function(object, ...) {
+  return(object$VC)
+}
+
+#' @method coef  mixedSdfResults
+#' @export
+coef.mixedSdfResults <- function(object, ...) {
+  return(object$coef)
+}

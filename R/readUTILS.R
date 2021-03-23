@@ -19,7 +19,7 @@ getSPSSFileFormat <- function(spssDF) {
   colInfo$size <- as.numeric(colInfo$size)
   
   colInfo$type <- substr(colInfo$format, 1, 1)
-  colInfo$dataType[colInfo$type=="A"] <- "character"
+  colInfo$dataType <- "character" #set 'character' type to all fields first
   colInfo$dataType[colInfo$type=="F" & colInfo$size < 9 & colInfo$decimal==0] <- "integer"
   colInfo$dataType[colInfo$type=="F" & colInfo$size >= 9 & colInfo$decimal==0] <- "numeric"
   colInfo$dataType[colInfo$type=="F" & colInfo$decimal>0] <- "numeric"
@@ -729,8 +729,16 @@ writeDF_FWF <- function(df, fileFormat, savePath, verbose){
     stop(paste0(sQuote("df"), " must contain at least 1 row."))
   }
   
+  #this ensures we get the full entire decimal value, otherwise it might round or do something odd
+  userOp <- options(digits=15)
+  on.exit(options(userOp), add = TRUE)
+  
   suppressWarnings(memory.limit(max(memory.limit(), 128000))) #try to limit any issues caused by not having enough memory allocation here
   omat <- matrix(nrow = nrow(df), ncol = nrow(fileFormat))
+  
+  #ensure all fields have a dataType at this point for inspection
+  fileFormat$dataType[is.na(fileFormat$dataType)] <- "character"
+  
   #======
   for(coli in 1:nrow(fileFormat)){
     
@@ -758,6 +766,7 @@ writeDF_FWF <- function(df, fileFormat, savePath, verbose){
       #update all the format and decimal values for these numerics regardless of what the SPSS formatting says
       fileFormat$Width[coli] <- max(charTest)
       fileFormat$Decimal[coli] <- max(decTestLen)
+      fileFormat$dataType[coli] <- "numeric"
       
     }else{ #test there is enough width for character strings too
       
@@ -766,7 +775,7 @@ writeDF_FWF <- function(df, fileFormat, savePath, verbose){
       
       fileFormat$Width[coli] <- max(charTest)
       
-      if(fileFormat$dataType[coli]=="numeric" && fileFormat$Width[coli]<9){
+      if(fileFormat$dataType[coli]=="numeric" && fileFormat$Width[coli] < 9){
         fileFormat$dataType[coli] <- "integer"
         fileFormat$Decimal[coli] <- 0 #it's not a decimal regardless of what
       }
@@ -823,10 +832,16 @@ writeDF_FWF <- function(df, fileFormat, savePath, verbose){
 
 #calculates the number of decimal places behind the decimal point for a numeric
 num.decimals <- function(x) {
-  stopifnot(class(x)=="numeric")
+  if(!inherits(x, "numeric")){
+    eout("Invalid Datatype for num.decimals function.")
+  }
+  
+  #as.character here doesn't grab the full decimal values, need to incorporate format as well
+  x <- trimws(format(x, digits=15, scientific = FALSE))
+  
   x <- sub("0+$","",x)
   x <- sub("^.+[.]","",x)
-  nchar(x)
+  return(nchar(x))
 }
 
 #parses the .SAS syntax file into a fileFormat object for use with the HS&B Study and NLS-72 study ONLY as currently tested and validated.

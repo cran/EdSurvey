@@ -51,82 +51,126 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
   userOp <- options(OutDec = ".")
   on.exit(options(userOp), add = TRUE)
   
-  filepath <- normalizePath(unique(path), winslash = "/")
-  if(length(filepath) != 1) {
-    stop(paste0("The argument ", sQuote("filepath"), " must specify exactly one file."))
+  path <- suppressWarnings(normalizePath(unique(path), winslash = "/")) #give better error later if file not found
+  
+  hasFRpath <- FALSE
+  if(missing(frPath) || !is.character(frPath)){
+    # the frPath is not a character, so warn the user we are not using it
+    if(!missing(frPath)) {
+      warning(paste0("Ignoring non-character ", dQuote("frPath"), " argument. Using default instead."))
+    }
+    frPath <- NULL
   }
-  # the directory for the file
-  filedir <- dirname(filepath)
-  # the file name (less a trailing .dat, if included)
-  filename <- gsub('.dat$','', basename(filepath))
-  if(tolower(substr(filename, nchar(filename) - 3, nchar(filename) - 3)) %in% "c") {
-    filename_school <- filename
-    substr(filename, nchar(filename) - 3, nchar(filename) - 3) <- "T"
-    filepath <- sub(filename_school, filename, filepath)
-    warning("Input file was a school level file. Reading in student level file instead. EdSurvey will automatically link the school file.")
+  if(!is.null(frPath)){
+    frPath <- suppressWarnings(normalizePath(unique(frPath), winslash = "/")) #give better error later if file not found
+    hasFRpath <- TRUE
   }
-  # find the school path, if this is a student file
-  schPath <- NULL 
-  if(tolower(substr(filename, nchar(filename) - 3, nchar(filename) - 3)) %in% "t") {
-    schFilename <- filename
-    substr(schFilename, nchar(filename) - 3, nchar(filename) - 3) <- "C"
-    schPath <-  paste0(filedir, "/", schFilename,".dat" )
-    # fix case on paths
-    success <- tryCatch({schPath <- ignoreCaseFileName(schPath)
-                          TRUE
-                        }, error = function(e){
-                          FALSE
-                        }, warning = function(w){
-                          FALSE 
-                        })
+  
+  if(length(path) != 1) {
+    stop(paste0("The argument ", dQuote("path"), " must be of length 1."))
+  }
+  if(!file.exists(path)){
+    stop(paste0("The specified ", dQuote("path"), ", cannot be found: ", dQuote(path), "."))
+  }
+  
+  if(hasFRpath && length(frPath) != 1) {
+    stop(paste0("The argument ", dQuote("frPath"), " must be of length 1."))
+  }
+  if(hasFRpath && !file.exists(frPath)){
+    stop(paste0("The specified ", dQuote("frPath"), " file cannot be found: ", dQuote(frPath), ". Be sure to specify a full .fr2 file path and not a directory. The path may be case-sensitive."))
+  }
+  
+  filedir <- dirname(path) # the directory for the file
+  filename <- gsub("\\.dat$","", basename(path), ignore.case = TRUE) # the file name (less a trailing .dat, if included)
+  
+  if(hasFRpath){
+    testFileName <- gsub("\\.fr2$","", basename(frPath), ignore.case = TRUE)
     
-    if(!file.exists(schPath) || !success) {
-      schPath <- NULL
+    if(testFileName != filename){
+      stop(paste0("The base file names (ignoring the file extension) must match between the ", dQuote("path"), " (", dQuote(filename),")", " and ", dQuote("frPath"), " (", dQuote(testFileName), ") arguments."))
     }
+    frPath <- dirname(frPath) #strip off the file name after we know it's a match
   }
   
-  # grab the subfolder select/parms in an case insensitive way 
-  if (is.null(frPath)) {
-    # Remove special characters in the filedir
-    filedirEscapeRegex <- dirname(filedir)
-    for (c in strsplit(".*+?^${}()|[]", "")[[1]]) {
-      filedirEscapeRegex <- gsub(pattern = c, replacement = paste0("\\", c), filedirEscapeRegex, fixed = TRUE)
-    }
-    frName <- grep(paste0(filedirEscapeRegex,"/select/parms$"), list.dirs(dirname(filedir)), value=TRUE, ignore.case=TRUE)
-    if(length(frName) == 0) {
-      stop(paste0("Could not find folder ", dQuote(paste0(dirname(filedir),"/select/parms/")), "." ))
-    }
-    if(length(frName) > 1) {
-      stop(paste0("Folder ",
-                  dQuote(paste0(dirname(filedir),"/select/parms/")),
-                  " is not unique when searched in a case insensitive way. Please limit the subfolders of ",
-                  dQuote(dirname(filedir)), " so that only one is ",
-                  dQuote("/select/parms/"), "." ))
-    }
-    frName <- paste0(frName, "/", filename, ".fr2")
-    # fix case on path, only if not user specified
-    frName <- ignoreCaseFileName(frName)
-  } else {
-    frName <- frPath
+  #all files are to be expected to be a string of length 8 with the 4th from last character being either C (school) or T (student) (not including the file extension)
+  #ex: M36NC2PM.dat is a school level file and M36NT2PM.dat is a student level file
+  isSchoolFile <- tolower(substr(filename, nchar(filename) - 3, nchar(filename) - 3)) %in% "c" #logical flag | example: M36NC2PM (from NAEPprimer)
+  
+  schoolFileRegex <- paste0("^", substr(filename,1,4), "(C|c)", substr(filename, 6, nchar(filename)), "\\.dat$")
+  schoolFR2Regex <- paste0("^", substr(filename,1,4), "(C|c)", substr(filename, 6, nchar(filename)), "\\.fr2$")
+  schoolFile <- list.files(filedir, schoolFileRegex, ignore.case = TRUE, full.names = TRUE)
+  
+  studentFileRegex <- paste0("^", substr(filename,1,4), "(T|t)", substr(filename, 6, nchar(filename)), "\\.dat$")
+  studentFR2Regex <- paste0("^", substr(filename,1,4), "(T|t)", substr(filename, 6, nchar(filename)), "\\.fr2$")
+  studentFile <- list.files(filedir, studentFileRegex, ignore.case = TRUE, full.names = TRUE)
+  
+  #check if a school level file was passed as 'path' argument.  if so, find the associates school level file
+  if(isSchoolFile) {
+    warning("Input file was a school level file. Attempting to read in student level file instead. EdSurvey will automatically link the school file.")
   }
   
-  if(!is.null(schPath)) {
-    frSchName <- frName
-    substr(frSchName, nchar(frSchName) -7, nchar(frSchName) - 7) <- "C"
-    # fix case on path
-    frSchName <- ignoreCaseFileName(frSchName)
+  if(length(studentFile) < 1){
+    stop(paste0("Could not find student level data file matching filename: ", studentFileRegex, "\n",
+                "In specified directory: ", filedir, "." ))
+  }
+  if(length(studentFile) > 1){
+    stop(paste0("Multiple student level data files matching filename: ", studentFileRegex, "\n",
+                "In specified directory: ", filedir, "\n",
+                "Please ensure only one file exists in the directory with this name and retry (regardless of filename case)." ))
+  }
+  
+  hasSchoolFile <- TRUE #flag to know if a school level file is available
+  if(length(schoolFile) < 1){
+    warning(paste0("Could not find school level data file matching filename: ", schoolFileRegex, "\n",
+                "No school level data will be available for analysis." ))
+    hasSchoolFile <- FALSE
+  }
+  if(length(schoolFile) > 1){
+    stop(paste0("Multiple school level data files matching filename: ", schoolFileRegex, "\n",
+                "In specified directory: ", filedir, "\n",
+                "Please ensure only one file exists in the directory with this name and retry (regardless of filename case)." ))
+  }
+  
+  #if no frPath specified, then we will search the ../select/parms folder for matching ones
+  if(!hasFRpath){
+    fr2SearchDir <- file.path(filedir, "..", "select", "parms") #up on level 
+  }else{
+    fr2SearchDir <- frPath
+  }
+  
+  studentFR2 <- list.files(fr2SearchDir, studentFR2Regex, full.names = TRUE, ignore.case = TRUE)
+  if(length(studentFR2) == 0) {
+    stop(paste0("Unable to find matching .fr2 control file: ", dQuote(studentFR2Regex), "\n",
+                "In specified directory: ", dQuote(fr2SearchDir), "." ))
+  }
+  if(length(studentFR2) > 1) {
+    studentFR2 <- studentFR2[1] #limit to just one if multiple found, assuming it will be correct file
+  }
+    
+  #if school file, lets search for it
+  if(hasSchoolFile){
+    schoolFR2 <- list.files(fr2SearchDir, schoolFR2Regex, full.names = TRUE, ignore.case = TRUE)                
+    
+    if(length(schoolFR2) == 0) {
+      stop(paste0("Unable to find matching .fr2 control file: ", dQuote(schoolFR2Regex), "\n",
+                  "In specified directory: ", dQuote(fr2SearchDir), "." ))
+    }
+    if(length(schoolFR2) > 1) {
+      schoolFR2 <- schoolFR2[1] #limit to just one if multiple found, assuming it will be correct file
+    }
   }
 
-  labelsFile <- readMRC(frName)
+  #parse the fr2 control files and create the LaF objects for the edsurvey.data.frame
+  labelsFile <- readMRC(studentFR2)
   dataSchLaf <- NULL
   schLabelsFile <- NULL
-  if(!is.null(schPath)) {
-    schLabelsFile <- readMRC(frSchName)
+  if(hasSchoolFile) {
+    schLabelsFile <- readMRC(schoolFR2)
     schLabelsFile <- schLabelsFile[order(schLabelsFile$Start),]
     widths <- schLabelsFile$Width
     dataTypes <- as.character(schLabelsFile$dataType)
     varNames = as.character(tolower(schLabelsFile$variableName))
-    dataSchLaf <- laf_open_fwf(filename=schPath, column_types=dataTypes,
+    dataSchLaf <- laf_open_fwf(filename=schoolFile, column_types=dataTypes,
                                column_names=varNames, column_widths=widths)
   }
   labelsFile <- labelsFile[order(labelsFile$Start),]
@@ -134,7 +178,7 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
   dataTypes <- as.character(labelsFile$dataType)
   varNames = as.character(tolower(labelsFile$variableName))
   
-  dataLaf <- laf_open_fwf(filename=filepath, column_types=dataTypes,
+  dataLaf <- laf_open_fwf(filename=studentFile, column_types=dataTypes,
                           column_names=varNames, column_widths=widths)
  
   #Defining PVs and JKs
@@ -176,7 +220,7 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
   }
   
   if(is.null(defaultPvs) || all(is.na(defaultPvs))){
-    warning(paste0("Argument ", sQuote("defaultPvs"), " not specified. There will not be a default PV value."))
+    warning(paste0("Argument ", dQuote("defaultPvs"), " not specified. There will not be a default PV value."))
   }else{
     if(!defaultPvs[1] %in% names(pvs)){
       if(length(pvs)>0){
@@ -232,7 +276,7 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
                       psuVar = "jkunit",
                       stratumVar = "repgrp1",
                       jkSumMultiplier = 1,
-                      fr2Path=frName)
+                      fr2Path=fr2SearchDir)
 }
 
 # @author Paul Bailey & Ahmad Emad
@@ -247,6 +291,9 @@ readMRC <- function(filename) {
 
   # read in the variables from the file,t his is based on the information ETS
   # shared with us
+  if( any(nchar(mrcFile) < 90) ) {
+    stop(paste0("Malformed fr2 file: some lines have fewer than the required 90 characters. Lines ", pasteItems(which(nchar(mrcFile)<90)), "."))
+  }
   variableName <- trimws(substring(mrcFile, 1, 8)) # name of the variable
   Start <- as.numeric(trimws(substring(mrcFile, 9, 12))) # start column in file
   Width <- as.numeric(trimws(substring(mrcFile, 13, 14))) # number of characters in variable

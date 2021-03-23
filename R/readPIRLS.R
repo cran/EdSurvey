@@ -351,7 +351,9 @@ readPIRLS <- function(path,
                                                              country = processedData$country,
                                                              psuVar = "jkrep",
                                                              stratumVar = "jkzone",
-                                                             jkSumMultiplier = 0.5) #defined by the method of JK weight replication used (JK2)
+                                                             jkSumMultiplier = 0.5, #defined by the method of JK weight replication used (JK2)
+                                                             reqDecimalConversion = FALSE,
+                                                             dim0 = processedData$dim0) 
     }#end country loop
   }#end for(fileYr in fileYrs)
 
@@ -445,7 +447,9 @@ processPIRLS <- function(dataFolderPath, countryCode, fnames, fileYrs, forceRere
 
       dataList <- list(student = studentLAF, school = schoolLAF, teacher = teacherLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
       dataListFF <- cacheFile$dataListFF
-
+      
+      dim0 = cacheFile$dim0
+      
       runProcessing <- FALSE
     }
   } #end if(length(metaCacheFP)==0 || length(txtCacheFWF)<3 || forceReread==TRUE)
@@ -454,6 +458,11 @@ processPIRLS <- function(dataFolderPath, countryCode, fnames, fileYrs, forceRere
 
     if(verbose==TRUE){
       cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
+    }
+    
+    #delete the .meta file (if exists) before processing in case of error/issue
+    if(length(metaCacheFP)>0 && file.exists(metaCacheFP)){
+      file.remove(metaCacheFP)
     }
 
     #SCHOOL LEVEL===================================================
@@ -602,11 +611,17 @@ processPIRLS <- function(dataFolderPath, countryCode, fnames, fileYrs, forceRere
     dataListFF <- list(student = ffstu, school = ffsch, teacher = ffTeach)
     #===============================================================
 
+    #calculate the dim0 to store in the .meta file for fast retreival
+    nrow0 <- nrow(mm)
+    ncol0 <- length(unique(c(ffsch$variableName, ffstu$variableName, ffTeach$variableName)))
+    dim0 <- c(nrow0, ncol0)
+    
     #save the cachefile to be read-in for the next call
     cacheFile <- list(ver=packageVersion("EdSurvey"),
-                      cacheFileVer=3,
+                      cacheFileVer=4,
                       ts=Sys.time(),
-                      dataListFF=dataListFF)
+                      dataListFF=dataListFF,
+                      dim0=dim0)
 
     saveRDS(cacheFile, file.path(dataFolderPath,paste0("a", countryCode, yearCode,".meta")))
 
@@ -617,7 +632,8 @@ processPIRLS <- function(dataFolderPath, countryCode, fnames, fileYrs, forceRere
   } #end if(runProcessing==TRUE)
 
   return(list(dataList = dataList,
-              dataListFF = dataListFF))
+              dataListFF = dataListFF,
+              dim0=dim0))
 }
 
 
@@ -653,6 +669,8 @@ processPIRLSAndLiteracy <- function(dataFolderPath, countryCode, fnames, fnamesL
       dataList <- list(student = studentLAF, school = schoolLAF, teacher = teacherLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
       dataListFF <- cacheFile$dataListFF
 
+      dim0 = cacheFile$dim0
+      
       runProcessing <- FALSE
     }
   } #end if(length(metaCacheFP)==0 || length(txtCacheFWF)<3 || forceReread==TRUE)
@@ -661,6 +679,11 @@ processPIRLSAndLiteracy <- function(dataFolderPath, countryCode, fnames, fnamesL
 
     if(verbose==TRUE){
       cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
+    }
+    
+    #delete the .meta file (if exists) before processing in case of error/issue
+    if(length(metaCacheFP)>0 && file.exists(metaCacheFP)){
+      file.remove(metaCacheFP)
     }
 
     #SCHOOL LEVEL===================================================
@@ -953,11 +976,17 @@ processPIRLSAndLiteracy <- function(dataFolderPath, countryCode, fnames, fnamesL
     dataListFF <- list(student = ffstu, school = ffsch, teacher = ffTeach)
     #===============================================================
 
+    #calculate the dim0 to store in the .meta file for fast retreival
+    nrow0 <- nrow(mm)
+    ncol0 <- length(unique(c(ffsch$variableName, ffstu$variableName, ffTeach$variableName)))
+    dim0 <- c(nrow0, ncol0)
+    
     #save the cachefile to be read-in for the next call
     cacheFile <- list(ver=packageVersion("EdSurvey"),
-                      cacheFileVer=3,
+                      cacheFileVer=4,
                       ts=Sys.time(),
-                      dataListFF=dataListFF)
+                      dataListFF=dataListFF,
+                      dim0=dim0)
 
     saveRDS(cacheFile, file.path(dataFolderPath,paste0("a", countryCode, yearCode,".meta")))
 
@@ -968,7 +997,8 @@ processPIRLSAndLiteracy <- function(dataFolderPath, countryCode, fnames, fnamesL
   } #end if(runProcessing==TRUE)
 
   return(list(dataList = dataList,
-              dataListFF = dataListFF))
+              dataListFF = dataListFF,
+              dim0=dim0))
 }
 
 

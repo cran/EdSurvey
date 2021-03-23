@@ -53,6 +53,7 @@
 #' @param value outside of the assignment context, new value of the given \code{attribute}
 #' @param weightVar a character indicating the full sample weights
 #' @param name a character vector of the column to edit
+#' @param dim0 numeric vector of length two. To speed construction, the dimensions of the data can be provided
 #'
 #' @details
 #'
@@ -171,7 +172,9 @@ edsurvey.data.frame <- function(userConditions,
                                 validateFactorLabels=FALSE,
                                 forceLower=TRUE,
                                 reqDecimalConversion=TRUE,
-                                fr2Path=NULL) {
+                                fr2Path=NULL,
+                                dim0=NULL) {
+  
   if (is.list(achievementLevels)) {
     achievementLevels <- lapply(achievementLevels, function(l) {
       sort(l)})
@@ -190,11 +193,14 @@ edsurvey.data.frame <- function(userConditions,
         pvvars[[names(pvvars)[pvi]]] <- temp
       }
     }
-
+    
   } #closes else statment following if (is.list(achievementLevels))
-
-  dim0 <- c(0,0) #temporary holder until we create the edsurvey.data.frame, then we will update it
-
+  
+  hasDim0 <- all(is.numeric(dim0)) #logical to indicate if dim0 was user provided in constructor
+  if(!hasDim0){
+    dim0 <- c(0,0) #temporary holder until we create the edsurvey.data.frame, then we will update it
+  }
+  
   if(forceLower) {
     i <- 1
     for(dl in dataList){
@@ -202,12 +208,12 @@ edsurvey.data.frame <- function(userConditions,
       dl$fileFormat$variableName <- tolower(dl$fileFormat$variableName)
       dl$mergeVars <- tolower(dl$mergeVars)
       dl$parentMergeVars <- tolower(dl$parentMergeVars)
-
+      
       dataList[[i]] <- dl
       i <- i + 1
     }
   }
-
+  
   res <- list(userConditions=userConditions,
               defaultConditions=defaultConditions,
               dataList=dataList,
@@ -226,7 +232,7 @@ edsurvey.data.frame <- function(userConditions,
               stratumVar=stratumVar,
               jkSumMultiplier=jkSumMultiplier,
               recodes=recodes,
-              dim0=c(0,0), #update after it's reclassed to an edsurvey.data.frame
+              dim0=dim0, #update after it's reclassed to an edsurvey.data.frame (if not user supplied)
               validateFactorLabels=validateFactorLabels,
               reqDecimalConversion=reqDecimalConversion,
               fr2Path=fr2Path)
@@ -235,21 +241,36 @@ edsurvey.data.frame <- function(userConditions,
   # make cache
   res$cache <- data.frame(ROWID=ROWID)
   class(res) <- c("edsurvey.data.frame", "edsurvey.data")
-  # use getData on this, as of yet incomplete edsurvey.data.frame
-  # to get row IDs
-  # supressWarnings because it is just about nrow
-  suppressWarnings(gd0 <- getData(res, varnames=colnames(res)[1], dropUnusedLevels=FALSE, omittedLevels=FALSE, defaultConditions=FALSE))
-  suppressWarnings(gd <- getData(res, varnames=colnames(res)[1], dropUnusedLevels=FALSE, omittedLevels=FALSE))
-  class(res) <- "list"
-  # update dim0
-  nrow <- nrow(gd)
-  cache <- data.frame(ROWID=1:nrow(gd0),
-                      DEFAULT=1:nrow(gd0) %in% rownames(gd))
+  
+  
+  if(is.null(defaultConditions) || is.na(defaultConditions)){
+    
+    cache <- data.frame(ROWID=1:(dataList[[1]]$nrow),
+                        DEFAULT=TRUE)
+  }else{ #default conditions are supplied, calculate them here
+    
+    # use getData on this, as of yet incomplete edsurvey.data.frame
+    # to get row IDs
+    # supressWarnings because it is just about nrow
+    suppressWarnings(gd0 <- getData(res, varnames=colnames(res)[1], dropUnusedLevels=FALSE, omittedLevels=FALSE, defaultConditions=FALSE))
+    suppressWarnings(gd <- getData(res, varnames=colnames(res)[1], dropUnusedLevels=FALSE, omittedLevels=FALSE))
+    class(res) <- "list"
+   
+    cache <- data.frame(ROWID=1:nrow(gd0),
+                        DEFAULT=1:nrow(gd0) %in% rownames(gd))
+  }
+
   # change back to a list to allow assignment of the cache
   res$cache <- cache
   # return to edsurvey.data.frame
   class(res) <- c("edsurvey.data.frame", "edsurvey.data")
-  res$dim0 <- c(nrow(res), length(colnames(res)))
+  
+  if(hasDim0){
+    res$dim0 <- dim0
+  }else{  
+    res$dim0 <- c(nrow(res), length(colnames(res)))
+  }
+  
   # we discovered that not closing a LaF connections leads to memory leaks.
   # so, close all of the connections when it is complete (constructed).
   for(item in dataList){
@@ -328,7 +349,8 @@ dataListItem <- function(lafObject,
               parentMergeVars = parentMergeVars,
               mergeVars = mergeVars,
               ignoreVars = ignoreVars,
-              isDimLevel = isDimLevel)
+              isDimLevel = isDimLevel,
+              nrow = nrow(lafObject))
 
   return(res)
 }
@@ -368,11 +390,70 @@ dataListItem <- function(lafObject,
 #' @method subset edsurvey.data.frame
 #' @export
 subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
-  env <- parent.frame(n=2)
+  subsetEnv <- parent.frame(n=2)
   
   if(!inherits(x, c("edsurvey.data.frame"))) {
     stop(paste0("The argument ", sQuote("x"), " must be an edsurvey.data.frame."))
   }
+
+  # if there is a variable that is not in the data.frame, substitute any
+  # value found in the parent.frame() right now.
+  # This way, if the user adjusts a variable used in the subset, it will
+  # have the value they would have expected from
+  # when they called subset and the condition will not change as that
+  # variable is updated.
+  # add it to the user conditions
+
+  # parse the condition
+  iparse <- function(iparseCall, subsetEnv, iparseDepth=1) {
+    # for each element
+    for(iparseind in 1:length(iparseCall)) {
+      # if it is a name
+      if(inherits(iparseCall[[iparseind]], "name")) {
+        iparseCall_c <- as.character(iparseCall[[iparseind]])
+        # if it is not in the data and is in the parent.frame, then substitue it now.
+        if(! iparseCall_c %in% colnames(x)) {
+          if(length(find(iparseCall_c)) > 0) {
+            if (iparseCall[[iparseind]] == "%in%" || is.function(iparseCall[[iparseind]]) || is.function(get(iparseCall_c, find(iparseCall_c)))) {
+              iparseEval <- eval(substitute(iparseCall[[iparseind]]), parent.frame())
+            } else {
+              # get the variable
+              iparseEval <- eval(iparseCall[[iparseind]], parent.frame())
+            }
+            iparseCall[[iparseind]] <- iparseEval
+          } #end if length(find(ccall_c)) > 0)
+          # but, if dynGet returns, use that instead
+          iparsedg <- dynGet(iparseCall_c, ifnotfound="", minframe=1L)
+          # if dynGet found something
+          if(any(iparsedg != "")) {
+            iparseCall[[iparseind]] <- iparsedg
+          }
+        } # end if(!call_c)
+      } # end if(inherits(iparseCall[[iparseind]], "name"))
+      if(inherits(iparseCall[[iparseind]], "call")) {
+        # if this is a call, recursively parse that
+        iparseCall[[iparseind]] <- iparse(iparseCall[[iparseind]], subsetEnv, iparseDepth=iparseDepth+1)
+        # if no vars are in colnames(x), evaluate the call right now
+        if( any(!all.vars(iparseCall[[iparseind]]) %in% colnames(x)) ) {
+          # unclear if this tryCatch does anything, but it seems wise to keep it
+          tryCatch(iparseTryResult <- eval(iparseCall[[iparseind]]),
+                   error=function(e) {
+                     co <- capture.output(print(iparseCall[[iparseind]]))
+                     stop(paste0("The condition ", dQuote(co), " cannot be evaluated."))
+                   })
+          # the condition resolves to NULL if, for example, it references
+          # a list element that is not on the list. But the list itself is
+          # on the parent.frame.
+          if(is.null(iparseTryResult)) {
+            co <- capture.output(print(iparseCall[[iparseind]]))
+            stop(paste0("Condition ", dQuote(co), " cannot be evaluated."))
+          }
+          iparseCall[[iparseind]] <- iparseTryResult
+        }
+      } #end of if statment: if inherits(iparseCall[[i]], "call")
+    } # end of for loop: i in 1:length(iparseCall)
+    iparseCall
+  } # End of fucntion: iparse
 
   if(inside) {
     if(inherits(subset, "character")) {
@@ -380,61 +461,15 @@ subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
     }
     condition_call <- subset
   } else {
-    # if there is a variable that is not in the data.frame, substitute any
-    # value found in the parent.frame() right now.
-    # This way, if the user adjusts a variable used in the subset, it will
-    # have the value they would have expected from
-    # when they called subset and the condition will not change as that
-    # variable is updated.
-    # add it to the user conditions
-
-    # parse the condition
-    # substitute in variables that are available in the current environment
+    # substitute in variables that are available in the current subsetEnvironment
     condition_call <- substitute(subset)
-    iparse <- function(ccall, env) {
-      # for each element
-      for(i in 1:length(ccall)) {
-        # if it is a name
-        if(inherits(ccall[[i]], "name")) {
-          ccall_c <- as.character(ccall[[i]])
-          # if it is not in the data and is in the parent.frame, then substitue it now.
-          if((! ccall_c %in% colnames(x)) & (ccall_c %in% ls(envir=env)) ) {
-            if (ccall[[i]] == "%in%" || is.function(ccall[[i]])) {
-              ev <- eval(substitute(ccall[[i]]), parent.frame())  
-            } else {
-              ev <- eval(ccall[[i]], parent.frame())
-            } #end of if/esle statment: if ccall[[i]] == "%in%" || is.function(ccall[[i]])
-            ccall[[i]] <- ev
-          } # End of if statment: if (! ccall_c %in% colnames(x$data)) & (ccall_c %in% ls(envir=env)) 
-        } # end if(inherits(ccall[[i]], "name"))
-        if(inherits(ccall[[i]], "call")) {
-          # if this is a call, recursively parse that
-          ccall[[i]] <- iparse(ccall[[i]], env)
-          # if no vars are in colnames(x), evaluate the call right now
-          if( any(!all.vars(ccall[[i]]) %in% colnames(x)) ) {
-            # unclear if this tryCatch does anything, but it seems wise to keep it
-            tryCatch(res <- eval(ccall[[i]]),
-                     error=function(e) {
-                       co <- capture.output(print(ccall[[i]]))
-                       stop(paste0("The condition ", dQuote(co), " cannot be evaluated."))
-                     })
-            # the condition resolves to NULL if, for example, it references
-            # a list element that is not on the list. But the list itself is
-            # on the parent.frame.
-            if(is.null(res)) {
-              co <- capture.output(print(ccall[[i]]))
-              stop(paste0("Condition ", dQuote(co), " cannot be evaluated."))
-            }
-            ccall[[i]] <- res
-          }
-        } #end of if statment: if inherits(ccall[[i]], "call")
-      } # end of for loop: i in 1:length(ccall)
-      ccall
-    } # End of fucntion: iparse
-    condition_call <- iparse(condition_call, env)
+    condition_call <- iparse(condition_call, subsetEnv)
     #condition_call <- iparse(condition_call, parent.frame())
   } # Enf of if esle statmet: if imside is true 
   # apply filter
+  if(!all(all.vars(substitute(condition_call)) %in% colnames(x))) {
+    condition_call <- iparse(condition_call, subsetEnv)
+  }
   x[["userConditions"]] <- c(x[["userConditions"]], list(condition_call))
   # test filter
   tryCatch(getData(x, colnames(x)[1], returnJKreplicates=FALSE),

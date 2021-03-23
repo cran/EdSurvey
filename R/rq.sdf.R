@@ -91,6 +91,7 @@
 #'    \item{npv}{the number of plausible values}
 #'    \item{njk}{the number of the jackknife replicates used; set to \code{NA} when Taylor series variance
 #'    estimates are used}
+#'    \item{rho}{the mean value of the objective function across the plausible values}
 #'
 #' @seealso \ifelse{latex}{\code{rq}}{\code{\link[quantreg]{rq}}}
 #' @author Trang Nguyen, Paul Bailey, and Yuqi Liao
@@ -201,9 +202,9 @@ calc.rq.sdf <- function(formula,
   getDataVarNames <- c(all.vars(formula), wgt, taylorVars)
   if (returnNumberOfPSU){
     # Get stratum and PSU variable
-    stratumVar <- getAttributes(data,"stratumVar")
-    psuVar <- getAttributes(data,"psuVar")
-    if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% names(data$data))) {
+    stratumVar <- getStratumVar(data,wgt)
+    psuVar <- getPSUVar(data,wgt)
+    if (all(c(stratumVar, psuVar) %in% colnames(data)) | all(c(stratumVar, psuVar) %in% colnames(data))) {
       getDataVarNames <- unique(c(getDataVarNames,stratumVar,psuVar))
     } else {
       warning("Warning: Stratum and PSU variable are required for this call and are not on the incoming data. Ignoring returnNumberOfPSU=TRUE.")
@@ -337,12 +338,14 @@ calc.rq.sdf <- function(formula,
   varEstInputs <- list()
   # note we have not made the B matrix
   madeB <- FALSE
+  rho <- lm0$rho
   # there is now a very long set of conditionals
   # 6) run the regressions, form the inputs for variance estimation
   if(any(pvy)) { # the y variable is a plausible value
     # this if condition takes care of the Taylor series method as well as the jackknife method
     # for equations, see the statistics vignette
     jrrIMax <- min(jrrIMax, length(yvars))
+    rho <- rep(0, length(yvars))
     
     # varm is the variance matrix by coefficient and PV (for V_jrr)
     
@@ -350,8 +353,6 @@ calc.rq.sdf <- function(formula,
     varM <- list()
     # coefficients by PV
     coefm <- matrix(NA, nrow=length(yvars), ncol=length(coef(lm0)))
-    # R-squared by PV
-    r2s <- vector(length=length(yvars))
     if(varMethod == "j") {
       # y is a variable with plausible values and we are using the jackknife apporach
       for(pvi in 1:jrrIMax) { # for each PV (up to jrrIMax)
@@ -363,7 +364,7 @@ calc.rq.sdf <- function(formula,
         # run the model with this PV
         lmi <- rq(frm, data=edf, weights=w, tau=tau, ...)
         co0 <- coef(lmi)
-        r2s[pvi] <- 0
+        rho[pvi] <- lmi$rho
         coefm[pvi,] <- co0
         # save time by using rq.fit
         X_lmi <- model.matrix(frm, edf)
@@ -419,7 +420,7 @@ calc.rq.sdf <- function(formula,
         edf$yvar0 <- edf[,yvars[pvi]]
         edf$w <- edf[,wgt]
         co0 <- coef(lmi <- rq(frm, data=edf, weights=w, tau = tau,...))
-        r2s[pvi] <- 0
+        rho[pvi] <- lmi$rho
         coefm[pvi,] <- co0
       } # End while loop: pvi < length(yvars)
     } else {
@@ -445,7 +446,7 @@ calc.rq.sdf <- function(formula,
     Ubar <- (1/length(varM)) * Reduce("+", varM)
     Vimp <- (M+1)/M * apply(coefm, 2, var)
     
-    r2 <- mean(r2s)
+    rho <- mean(rho)
     coef <- apply(coefm, 2, mean)
     # variance due to sampling
     Vjrr <- apply(varm[1:jrrIMax,,drop=FALSE], 2, mean)
@@ -550,9 +551,9 @@ calc.rq.sdf <- function(formula,
       DoFCorrection(varEstA=varEstInputs, varA=cn, method="JR")
     })
   } else {
-      #error message
-      stop("Quantile Regression requires Jackknife as the variance estimation method.")
-    }
+    #error message
+    stop("Quantile Regression requires Jackknife as the variance estimation method.")
+  }
 
   pti <- pt(coefmat$t, df=coefmat$dof)
   coefmat[,"Pr(>|t|)"] <- 2*pmin(pti, 1-pti)
@@ -561,14 +562,14 @@ calc.rq.sdf <- function(formula,
   varmeth <- ifelse(varMethod=="t", "Taylor series", "jackknife")
   res <- list(call=call, formula=formula, coef=coef, se=se, Vimp=Vimp,
               Vjrr=Vjrr, M=M, varm=varm, coefm=coefm,
-              coefmat=coefmat, r.squared=r2, weight=wgt,
-              npv=length(yvars), jrrIMax=min(jrrIMax,length(yvars)),
+              coefmat=coefmat, rho=rho, weight=wgt,
+              npv=length(yvars), jrrIMax=min(jrrIMax, length(yvars)),
               njk=njk, varMethod=varmeth,
-              residuals=resid1, fitted.values=fitted1, residual.df = resdf)
+              residuals=resid1, fitted.values=fitted1, residual.df=resdf)
   if(!is.null(coefm)) {
     res <- c(res, list(PV.residuals=resid2, PV.fitted.values=fitted2))
   }
-  
+
   if(madeB) {
     # equation 2.29 in var Buuren, pp 42
     tryCatch(
@@ -589,6 +590,14 @@ calc.rq.sdf <- function(formula,
   } 
   if(returnNumberOfPSU) {
     res <- c(res, list(nPSU=nrow(unique(edf[,c(stratumVar, psuVar)]))))
+  }
+  if(returnVarEstInputs) {
+    res <- c(res, list(returnVarEstInputs=returnVarEstInputs))
+    psuVar <- getPSUVar(data, wgt)
+    stratumVar <- getStratumVar(data, wgt)
+    if(all(c(stratumVar, psuVar) %in% colnames(edf))) {
+      res <- c(res, list(waldDenomBaseDof=waldDof(edf, stratumVar, psuVar)))
+    }
   }
   res <- c(res, list(n0=nrow2.edsurvey.data.frame(data), nUsed=nrow(edf)))
   if(inherits(data, "edsurvey.data.frame")) {
@@ -680,3 +689,22 @@ coef.edsurveyRqList <- function(object, ...) {
   })
 }
 
+#' @method vcov edsurveyRq
+#' @export
+vcov.edsurveyRq <- function(object, ...) {
+  if(all(c("U", "B") %in% names(object))) {
+    if(object$M > 1) {
+      # there are PVs, V_samp + V_imp
+      return(object$U + (object$M + 1)/object$M * object$B)
+    } else {
+      # no PVs, V_samp only
+      return(object$U)
+    }
+  }
+  if(is.null(object$varEstInputs)){
+    stop("This model must be fit with returnVarEstInputs=TRUE or with Taylor series to find the covariance matrix.")
+  }
+  varnames <- expand.grid(names(coef(object)),names(coef(object)))
+  vc <- mapply(varEstToCov, varA = varnames$Var1, varB = varnames$Var2, MoreArgs = list(varEstA = object$varEstInputs, jkSumMultiplier = object$data$jkSumMultiplier))
+  matrix(vc, nrow = length(coef(object)), ncol = length(coef(object)))
+}

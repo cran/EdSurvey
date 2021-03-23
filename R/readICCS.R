@@ -73,7 +73,10 @@ readCivEDICCS <- function(path,
   }
   
   dataSet <- tolower(dataSet)
+  dataSet <- match.arg(dataSet)
+  
   gradeLvl <- tolower(gradeLvl)
+  gradeLvl <- match.arg(gradeLvl)
   
   if (length(dataSet) > 1){
     dataSet <- dataSet[1]
@@ -506,8 +509,6 @@ readCivEDICCS <- function(path,
       processedData$userConditions <- list()
       processedData$defaultConditions <- NULL
       
-      processedData$dataListMeta <- processedData$dataListMeta
-      
       processedData$subject <- c("Civic and Citizenship")
       processedData$year <- convertICCSYearCode(yrCode)
       processedData$assessmentCode <- "International"
@@ -544,7 +545,9 @@ readCivEDICCS <- function(path,
                                                              country = processedData$country,
                                                              psuVar = processedData$psuVar,
                                                              stratumVar = processedData$stratumVar,
-                                                             jkSumMultiplier = processedData$jkSumMultiplier)
+                                                             jkSumMultiplier = processedData$jkSumMultiplier,
+                                                             reqDecimalConversion = FALSE,
+                                                             dim0 = processedData$dim0)
     }#end country loop
   }#end for(fileYr in fileYrs)
   
@@ -613,7 +616,8 @@ processICCS.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, fo
         
         dataList <- list(student = studentLAF, school = schoolLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
         dataListFF <- cacheFile$dataListFF
-        dataListMeta <- cacheFile$dataListMeta
+        
+        dim0 <- cacheFile$dim0
         
         runProcessing <- FALSE
       }else{
@@ -621,7 +625,8 @@ processICCS.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, fo
         
         dataList <- list(student = studentLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
         dataListFF <- cacheFile$dataListFF
-        dataListMeta <- cacheFile$dataListMeta
+        
+        dim0 = cacheFile$dim0
         
         runProcessing <- FALSE
       }
@@ -635,6 +640,10 @@ processICCS.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, fo
       cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
     }
     
+    #delete the .meta file (if exists) before processing in case of error/issue
+    if(length(metaCacheFP)>0 && file.exists(metaCacheFP)){
+      file.remove(metaCacheFP)
+    }
     #SCHOOL LEVEL===================================================
     cg <- unlist(fnames[paste0(gradeLvlCode, "cg")])[1]
     
@@ -799,9 +808,11 @@ processICCS.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, fo
       dataList <- list(student = studentLAF, school = schoolLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
       dataListFF <- list(student = ffstu, school = ffsch)
       
-      dataListMeta <- list(student = "", school = "")
-      dataListMeta$student <- list(school = "idcntry;idschool") #idschool #do we need to merge on idclass var as well?
-      dataListMeta$school <- list()
+      #calculate the dim0 to store in the .meta file for fast retreival
+      nrow0 <- nrow(mm)
+      ncol0 <- length(unique(c(ffsch$variableName, ffstu$variableName)))
+      dim0 <- c(nrow0, ncol0)
+      
     }else{ #for 9th grade data since they don't have any school metrics
       
       studentLAF <- getFWFLaFConnection(stuFP, ffstu)
@@ -809,17 +820,18 @@ processICCS.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, fo
       dataList <- list(student = studentLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
       dataListFF <- list(student = ffstu)
       
-      dataListMeta <- list(student = "")
-      dataListMeta$student <- list()
+      #calculate the dim0 to store in the .meta file for fast retreival
+      nrow0 <- nrow(mm)
+      ncol0 <- length(unique(c(ffstu$variableName)))
+      dim0 <- c(nrow0, ncol0)
     }
-    
     
     #save the cachefile to be read-in for the next call
     cacheFile <- list(ver=packageVersion("EdSurvey"),
-                      cacheFileVer=3,
+                      cacheFileVer=6,
                       ts=Sys.time(),
                       dataListFF=dataListFF,
-                      dataListMeta=dataListMeta)
+                      dim0=dim0)
     
     saveRDS(cacheFile, file.path(dataFolderPath,paste0(gradeLvlCode, "s", countryCode, yearCode,".meta")))
     
@@ -831,7 +843,7 @@ processICCS.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, fo
   
   return(list(dataList = dataList,
               dataListFF = dataListFF,
-              dataListMeta = dataListMeta)) 
+              dim0=dim0))
 }
 
 
@@ -866,7 +878,8 @@ processICCS.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, fo
       
       dataList <- list(student = studentLAF, school = schoolLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
       dataListFF <- cacheFile$dataListFF
-      dataListMeta <- cacheFile$dataListMeta
+      
+      dim0 <- cacheFile$dim0
       
       runProcessing <- FALSE
     }
@@ -876,6 +889,11 @@ processICCS.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, fo
     
     if(verbose==TRUE){
       cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
+    }
+    
+    #delete the .meta file (if exists) before processing in case of error/issue
+    if(length(metaCacheFP)>0 && file.exists(metaCacheFP)){
+      file.remove(metaCacheFP)
     }
     
     #SCHOOL LEVEL===================================================
@@ -902,18 +920,19 @@ processICCS.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, fo
     #build data list and link metadata object=======================
     dataList <- list(student = teacherLAF, school = schoolLAF) #teachers will be considered 'students' in this context since it's the primary data level
     dataListFF <- list(student = fftch, school = ffsch)
-    
-    dataListMeta <- list(student = "", school = "")
-    dataListMeta$student <- list(school = "idcntry;idschool") #idschool #do we need to merge on idclass var as well?
-    dataListMeta$school <- list()
     #===============================================================
+    
+    #calculate the dim0 to store in the .meta file for fast retreival
+    nrow0 <- nrow(teacherDF1)
+    ncol0 <- length(unique(c(ffsch$variableName, fftch$variableName)))
+    dim0 <- c(nrow0, ncol0)
     
     #save the cachefile to be read-in for the next call
     cacheFile <- list(ver=packageVersion("EdSurvey"),
-                      cacheFileVer=3,
+                      cacheFileVer=6,
                       ts=Sys.time(),
                       dataListFF=dataListFF,
-                      dataListMeta=dataListMeta)
+                      dim0=dim0)
     
     saveRDS(cacheFile, file.path(dataFolderPath,paste0(gradeLvlCode, "t", countryCode, yearCode,".meta")))
     
@@ -925,7 +944,7 @@ processICCS.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, fo
   
   return(list(dataList = dataList,
               dataListFF = dataListFF,
-              dataListMeta = dataListMeta)) 
+              dim0=dim0)) 
 }
 
 #process the CivED student level data..be sure the cache files are seperate from the teacher cache files
@@ -967,7 +986,8 @@ processCivED.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, f
         }
         
         dataListFF <- cacheFile$dataListFF
-        dataListMeta <- cacheFile$dataListMeta
+        
+        dim0 <- cacheFile$dim0
         
         runProcessing <- FALSE
       }else{
@@ -975,7 +995,8 @@ processCivED.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, f
         
         dataList <- list(student = studentLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
         dataListFF <- cacheFile$dataListFF
-        dataListMeta <- cacheFile$dataListMeta
+        
+        dim0 <- cacheFile$dim0
         
         runProcessing <- FALSE
       }
@@ -987,6 +1008,11 @@ processCivED.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, f
     
     if(verbose==TRUE){
       cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
+    }
+    
+    #delete the .meta file (if exists) before processing in case of error/issue
+    if(length(metaCacheFP)>0 && file.exists(metaCacheFP)){
+      file.remove(metaCacheFP)
     }
     
     #SCHOOL LEVEL===================================================
@@ -1083,21 +1109,21 @@ processCivED.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, f
         dataList <- list(student = studentLAF, school = schoolLAF, teacher = teacherLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
         dataListFF <- list(student = ffstu, school = ffsch, teacher = fftch)
         
-        dataListMeta <- list(student = "", school = "", teacher = "")
-        dataListMeta$student <- list(school = "idcntry;idschool", teacher = "idcntry;idstud") #idschool #do we need to merge on idclass var as well?
-        dataListMeta$school <- list()
-        dataListMeta$teacher <- list()
+        #calculate the dim0 to store in the .meta file for fast retreival
+        nrow0 <- nrow(mm)
+        ncol0 <- length(unique(c(ffsch$variableName, ffstu$variableName, fftch$variableName)))
+        dim0 <- c(nrow0, ncol0)
+        
       }else{ #no teacher level data
         
         dataList <- list(student = studentLAF, school = schoolLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
         dataListFF <- list(student = ffstu, school = ffsch)
         
-        dataListMeta <- list(student = "", school = "")
-        dataListMeta$student <- list(school = "idcntry;idschool") #idschool #do we need to merge on idclass var as well?
-        dataListMeta$school <- list()
+        #calculate the dim0 to store in the .meta file for fast retreival
+        nrow0 <- nrow(stuDF1)
+        ncol0 <- length(unique(c(ffsch$variableName, ffstu$variableName)))
+        dim0 <- c(nrow0, ncol0)
       }
-      
-      
       
     }else{ #for 9th grade data since they don't have any school or teacher level data
       
@@ -1106,17 +1132,20 @@ processCivED.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, f
       dataList <- list(student = studentLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
       dataListFF <- list(student = ffstu)
       
-      dataListMeta <- list(student = "")
-      dataListMeta$student <- list()
+      #calculate the dim0 to store in the .meta file for fast retreival
+      nrow0 <- nrow(stuFP)
+      ncol0 <- length(unique(c(ffstu$variableName)))
+      dim0 <- c(nrow0, ncol0)
+      
     }
     
     
     #save the cachefile to be read-in for the next call
     cacheFile <- list(ver=packageVersion("EdSurvey"),
-                      cacheFileVer=5,
+                      cacheFileVer=6,
                       ts=Sys.time(),
                       dataListFF=dataListFF,
-                      dataListMeta=dataListMeta)
+                      dim0=dim0)
     
     saveRDS(cacheFile, file.path(dataFolderPath,paste0(gradeLvlCode, "s", countryCode, yearCode,".meta")))
     
@@ -1128,7 +1157,7 @@ processCivED.Student <- function(dataFolderPath, countryCode, fnames, fileYrs, f
   
   return(list(dataList = dataList,
               dataListFF = dataListFF,
-              dataListMeta = dataListMeta)) 
+              dim0=dim0)) 
 }
 
 #process the CivED teacher level data
@@ -1165,7 +1194,8 @@ processCivED.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, f
         
         dataList <- list(student = studentLAF, school = schoolLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
         dataListFF <- cacheFile$dataListFF
-        dataListMeta <- cacheFile$dataListMeta
+        
+        dim0 <- cacheFile$dim0
         
         runProcessing <- FALSE
       }else{
@@ -1173,7 +1203,8 @@ processCivED.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, f
         
         dataList <- list(student = studentLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
         dataListFF <- cacheFile$dataListFF
-        dataListMeta <- cacheFile$dataListMeta
+        
+        dim0 = cacheFile$dim0
         
         runProcessing <- FALSE
       }
@@ -1185,6 +1216,11 @@ processCivED.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, f
     
     if(verbose==TRUE){
       cat(paste0("Processing data for country ", dQuote(countryCode),".\n"))
+    }
+    
+    #delete the .meta file (if exists) before processing in case of error/issue
+    if(length(metaCacheFP)>0 && file.exists(metaCacheFP)){
+      file.remove(metaCacheFP)
     }
     
     #SCHOOL LEVEL===================================================
@@ -1228,9 +1264,11 @@ processCivED.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, f
       dataList <- list(student = studentLAF, school = schoolLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
       dataListFF <- list(student = ffstu, school = ffsch)
       
-      dataListMeta <- list(student = "", school = "")
-      dataListMeta$student <- list(school = "idcntry;idschool") #idschool #do we need to merge on idclass var as well?
-      dataListMeta$school <- list()
+      #calculate the dim0 to store in the .meta file for fast retreival
+      nrow0 <- nrow(stuDF1)
+      ncol0 <- length(unique(c(ffsch$variableName, ffstu$variableName)))
+      dim0 <- c(nrow0, ncol0)
+      
     }else{ #for 9th grade data since they don't have any school metrics
       
       studentLAF <- getFWFLaFConnection(stuFP, ffstu)
@@ -1238,17 +1276,20 @@ processCivED.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, f
       dataList <- list(student = studentLAF) #ORDER THE dataList in a heirarchy, ie. student list should be first
       dataListFF <- list(student = ffstu)
       
-      dataListMeta <- list(student = "")
-      dataListMeta$student <- list()
+      #calculate the dim0 to store in the .meta file for fast retreival
+      nrow0 <- nrow(stuDF1)
+      ncol0 <- length(unique(c(ffstu$variableName)))
+      dim0 <- c(nrow0, ncol0)
+      
     }
     
     
     #save the cachefile to be read-in for the next call
     cacheFile <- list(ver=packageVersion("EdSurvey"),
-                      cacheFileVer=5,
+                      cacheFileVer=6,
                       ts=Sys.time(),
                       dataListFF=dataListFF,
-                      dataListMeta=dataListMeta)
+                      dim0=dim0)
     
     saveRDS(cacheFile, file.path(dataFolderPath,paste0(gradeLvlCode, "t", countryCode, yearCode,".meta")))
     
@@ -1260,7 +1301,7 @@ processCivED.Teacher <- function(dataFolderPath, countryCode, fnames, fileYrs, f
   
   return(list(dataList = dataList,
               dataListFF = dataListFF,
-              dataListMeta = dataListMeta)) 
+              dim0 = dim0)) 
 }
 
 #builds the list of pvvars from the passed fileformat data.frame
