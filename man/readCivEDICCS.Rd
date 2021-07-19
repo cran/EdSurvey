@@ -46,7 +46,7 @@ The default value is \code{TRUE}.}
 an \code{edsurvey.data.frame} for a single specified country or an \code{edsurvey.data.frame.list} if multiple countries specified
 }
 \description{
-Opens a connection to an ICCS or CivEd (1999) data file and
+Opens a connection to an ICCS (2009, 2016) or CivEd (1999) data file and
              returns an \code{edsurvey.data.frame} with 
              information about the file and data.
 }

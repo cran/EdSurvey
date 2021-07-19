@@ -97,11 +97,11 @@ Reading\t2009-present\tGrade 8\t243\t281\t323
 Reading\t1992-2007\tGrade 12\t265\t302\t346
 Reading\t2009-present\tGrade 12\t265\t302\t346
 Science\t1990-2005\tGrade 4\t138\t170\t205
-Science\t2009-2011\tGrade 4\t131\t167\t224
+Science\t2009-present\tGrade 4\t131\t167\t224
 Science\t1990-2005\tGrade 8\t143\t170\t208
-Science\t2009-2011\tGrade 8\t141\t170\t215
+Science\t2009-present\tGrade 8\t141\t170\t215
 Science\t1990-2005\tGrade 12\t146\t178\t210
-Science\t2009-2011\tGrade 12\t142\t179\t222
+Science\t2009-present\tGrade 12\t142\t179\t222
 Writing\t1998-2007\tGrade 4\t115\t176\t225
 Writing\t2011\tGrade 4\t115\t176\t225
 Writing\t1998-2007\tGrade 8\t114\t173\t224

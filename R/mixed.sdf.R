@@ -138,6 +138,7 @@ mixed.sdf <- function(formula,
   if(!missing(family)) {
     stop(paste0("The ", dQuote("family") ," argument is depreciated; plase use the ", dQuote("WeMix"), " package's ", dQuote("mix"), " function direclty for binomial models."))
   }
+
   formula0 <- formula
   # if users specify an edsurvey.data.frame or light.edsurvey.data.frame,
   # weightVars will be defined for each supported survey if not provided.
@@ -171,6 +172,10 @@ mixed.sdf <- function(formula,
   #check if LHS is pv and if so get all values and set flag "pv" to TRUE
   pv <- hasPlausibleValue(yvar,data)
   yvars <- yvar
+  linkingError <- "NAEP" %in% getAttributes(data, "survey") & any(grepl("_linking", yvars, fixed=TRUE))
+  if(linkingError) {
+    stop("mixed.sdf does not support estimation with linking error.")
+  }
   if(pv){
     yvars <- getPlausibleValue(yvar,data)
   }
@@ -338,8 +343,28 @@ mixed.sdf <- function(formula,
     res$hessian <- NULL
     res$call <- call0
     res$formula <- call0$formula
-    res$Ubar <- res$cov_mat
-    res$B <- 0 * res$Ubar
+
+
+    varsmat0 <- model_sum$varsmat
+    groupSum <- varsmat0[!duplicated(varsmat0$Level), c("Level", "Group")]
+    groupSum$Group[groupSum$Level == 1] <- "Obs"
+    groupSum$"n size" <- rev(res$ngroups)
+    for (i in 1:length(res$wgtStats)) {
+      groupSum$"mean wgt"[groupSum$Level == i] <- res$wgtStats[[i]]$mean
+      groupSum$"sum wgt"[groupSum$Level == i] <- res$wgtStats[[i]]$sum
+    }
+    res$groupSum <- groupSum
+
+    varsmat0 <- res$varDF
+    # put the corred vcov in it
+    m <- length(yvars)
+
+    varsmat <- varsmat0[is.na(varsmat0$var2), c("level", "grp", "var1", "vcov", "SEvcov")]
+    varsmat$st <- sqrt(varsmat$vcov)
+    # add variance estimates
+    colnames(varsmat) <- c("Level", "Group", "Name", "Variance", "Std. Error", "Std.Dev.")
+    res$varsmatSum <- varsmat
+    res$VC <- model_sum$cov_mat
   } else { #run the plausible values version 
     #iterate through the plausible values 
     results <- list()
@@ -347,13 +372,13 @@ mixed.sdf <- function(formula,
     pvi <- 0
     for (value in yvars){
       if (verbose>0) {
-        eout("Estimation for ",value, " started.")
+        eout(paste0("Estimating mixed model with ", value, " as the outcome."))
       }
       pvi <- pvi+1
       
       #for each iteration update formula to have the plausible value we are dealing with as the dependent
-      formula_pv <- update(formula_pv,as.formula(paste(value,"~.")))
-      
+      formula_pv <- update(formula_pv, as.formula(paste(value,"~.")))
+      # when a warning or message gets passed, just keep going, unless it is the first pv, then share them as a message
       model <- withCallingHandlers(run_mix(nQuad=nQuad, call=call, formula=formula_pv,
                                            edf=edf, verbose=verbose, family=family, center_group=centerGroup, center_grand=centerGrand,
                                            tolerance=tolerance, ...),
@@ -369,15 +394,27 @@ mixed.sdf <- function(formula,
                                        invokeRestart("muffleMessage")
                                      }
                                    })
+      # save results
       results[[value]] <- model 
       #use summary to extract variances
       model_sum <- summary.WeMixResults(model)
-      variances[[value]] <- c(model_sum$coef[,"Std. Error"]^2 , model_sum$vars[,"Std. Error"]^2)
-      if(verbose > 0) {
+      variances[[value]] <- c(model_sum$coef[,"Std. Error"]^2 , model_sum$varDF$SEvcov^2)
+      if(verbose > 1) {
         print(model_sum)
       }
     }
     res <- results[[1]]
+
+    varsmat0 <- model_sum$varsmat
+    groupSum <- varsmat0[!duplicated(varsmat0$Level), c("Level", "Group")]
+    groupSum$Group[groupSum$Level == 1] <- "Obs"
+    groupSum$"n size" <- rev(res$ngroups)
+    for (i in 1:length(res$wgtStats)) {
+      groupSum$"mean wgt"[groupSum$Level == i] <- res$wgtStats[[i]]$mean
+      groupSum$"sum wgt"[groupSum$Level == i] <- res$wgtStats[[i]]$sum
+    }
+    res$groupSum <- groupSum
+
     M <- length(yvars)
     co0 <- (1/M) * Reduce("+",
                           lapply(results, function(r){
@@ -390,12 +427,12 @@ mixed.sdf <- function(formula,
                                  co <- coef(r) - co0
                                  outer(co,co)
                                }))
-
     res$Ubar <- (1/M) * Reduce("+",
                                lapply(results, function(r) {
                                  r$cov_mat
                                }))
     res$VC <- res$Ubar + ((M+1)/M) * res$B
+
     #NULL out things that dont exist for PVs
     res$lnl <- NULL
     res$lnlf <- NULL
@@ -408,15 +445,16 @@ mixed.sdf <- function(formula,
     #get enrivonment of WeMix likelihood function to later extract covariance from
     env <- environment(results[[1]]$lnlf)
     #Coefficients are just average value
-    avg_coef <- rowSums(matrix(sapply(results, function(x){x$coef}), nrow=length(results[[1]]$coef)))/length(yvars)
+    avg_coef <- rowSums(matrix(sapply(results,function(x){x$coef}),nrow=length(results[[1]]$coef)))/length(yvars)
     names(avg_coef) <- names(results[[1]]$coef)
       
     #calcuate imputation variance for SEs and Residuals 
-    imputation_var <- ((M+1)/((M-1)*M)) * rowSums(matrix(sapply(results, function(x){x$coef - avg_coef})^2, nrow=length(avg_coef))) 
+    M <- length(yvars)
+    imputation_var <- ((M+1)/((M-1)*M)) * rowSums(matrix(sapply(results, function(x){x$coef - avg_coef})^2,nrow=length(avg_coef))) 
     
     res$coef <- avg_coef
     #Variation in coefficients comes from imputation and also sampling 
-    sampling_var <- colSums(Reduce(rbind,variances))/length(yvars)
+    sampling_var <- colSums(Reduce(rbind, variances))/length(yvars)
     names(sampling_var) <- c(names(avg_coef), names(results[[1]]$vars))
     
     #total se is sqrt of sampling + imputation variance
@@ -428,11 +466,41 @@ mixed.sdf <- function(formula,
                          })
     
     #average residual variance
-    res$vars <- rowSums(matrix(sapply(results,function(x){x$varDF$vcov}),
-                               nrow = nrow(results[[1]]$varDF)))/length(yvars)
-    names(res$vars) <- names(results[[1]]$vars)
+    # grab a varDF
+    varsmat0 <- results[[1]]$varDF
+    # put the corred vcov in it
+    m <- length(yvars)
+    varsmat0$vcov <- rowSums(matrix(sapply(results,function(x){x$varDF$vcov}),
+                                    nrow = nrow(results[[1]]$varDF)))/m
+    varsmat <- varsmat0[is.na(varsmat0$var2), c("level", "grp", "var1", "vcov", "SEvcov")]
+    varsmat$st <- sqrt(varsmat$vcov)
+    # add variance estimates
+    colnames(varsmat) <- c("Level", "Group", "Name", "Variance", "Std. Error", "Std.Dev.")
+    for(li in 2:max(varsmat0$level)) {
+      varVC <- lapply(results, function(x) {
+        vc <- as.matrix(x$varVC[[li]])
+        cr <- atanh(cov2cor(vc))
+        diag(cr) <- diag(vc)
+        return(cr)
+      })
+      varVC <- Reduce("+", varVC) / length(varVC)
+      cr <- tanh(varVC)
+      #cr <- cov2cor(varVC)
+      if(ncol(cr)>1) {
+        for(i in 2:ncol(cr)) {
+          for(j in 1:(i-1)){
+            varsmat[varsmat$Level==li & varsmat$Name==rownames(cr)[i],paste0("Corr",j)] <- cr[i,j]
+          }
+        }
+      }
+    }
+
+    res$varsmatSum <- varsmat
+    res$vars  <- varsmat[,4:6]
+    rownames(res$vars)  <- names(results[[1]]$vars)
+    colnames(res$vars) <- colnames(results[[1]]$varDF)[4:6]
     # same thing for vcov
-    res$varDF$vcov <- res$vars
+    res$varDF$vcov <- varsmat0$vcov
     # get the var of var.
     # 1, imputation is var of vars
     imputation_var_for_vars <- ((M+1)/((M-1)*M)) *
@@ -441,10 +509,11 @@ mixed.sdf <- function(formula,
     sampling_var_for_vars <- apply(sapply(results, function(x) {x$varDF$SEvcov^2}), 1, mean)
     res$varDF$SEvcov <- sqrt(sampling_var_for_vars + imputation_var_for_vars)
     #Add on SE of residuals from sandwich estimator
-    res$se <-  c(res$se,sqrt(sampling_var_for_vars + imputation_var_for_vars))
-    
+    res$se <-  c(res$se, sqrt(sampling_var_for_vars + imputation_var_for_vars))
     res$Vimp <- c(imputation_var, imputation_var_for_vars)
-    res$Vjrr <- c(sampling_var)
+    res$Vjrr <- sampling_var
+    varn <- unlist(lapply(1:nrow(results[[1]]$varDF), function(ii) { paste(na.omit(unlist(results[[1]]$varDF[ii,1:3])), collapse=".") } ))
+    names(res$Vjrr) <- c(names(res$Vjrr)[1:(length(res$Vjrr)-length(varn))], varn)
     names(res$Vimp) <- names(res$Vjrr)
     names(res$se) <- names(res$Vjrr)
     # move formula to top
@@ -454,19 +523,19 @@ mixed.sdf <- function(formula,
   res$npv <- length(yvars)
   res$n0 <- rawN
   res$nUsed <- nrow(edf)
+  
   #get group numbers, which is burried in the covariance matrix constructor (cConstructor)
-  covCon <- get("cConstructor", env)
-  lmeVarDf <- get("covMat", environment(covCon))
-  lmeVarDf <- lmeVarDf[,c("grp","ngrp","level")]
-  names(lmeVarDf) <- c("Group Var","Observations","Level")
-  res$ngroups <- lmeVarDf
+  ngrp <- res$varDF
+  ngrp <- ngrp[, c("grp", "ngrp", "level")]
+  ngrp <- ngrp[!duplicated(ngrp$level), ]
+  names(ngrp) <- c("Group Var","Observations","Level")
+  res$ngroups <- ngrp
   # zero out things not needed
   nullOut <- c("ranefs", "theta", "invHessian", "is_adaptive", "sigma", "cov_mat",
                "varDF", "varVC", "var_theta", "PVresults", "SE")
   for(ni in 1:length(nullOut)) {
     res[[nullOut[ni]]] <- NULL
   }
-
   class(res) <- "mixedSdfResults"
   return(res)
 }
@@ -524,7 +593,7 @@ run_mix <- function(nQuad, call, formula, edf, verbose, tolerance, family, cente
 summary.mixedSdfResults <- function(object, ...) {
   #in the plausible values case there is no lnl and variance is already calcuated 
   object$coef <- cbind(Estimate=object$coef, "Std. Error"=object$se[1:length(object$coef)], "t value"=object$coef/object$se[1:length(object$coef)])
-  object$vars <- cbind(variance=object$vars, "Std. Error"=object$se[-(1:nrow(object$coef))],"Std.Dev."=sqrt(object$vars))
+  object$vars <- object$varmatSum 
   class(object) <- "summary.mixedSdfResults"
   return(object)
 }
@@ -532,37 +601,44 @@ summary.mixedSdfResults <- function(object, ...) {
 
 #' @method print summary.mixedSdfResults
 #' @export
-print.summary.mixedSdfResults <- function(x, ...) {
+print.summary.mixedSdfResults <- function(x, digits = max(3, getOption("digits") - 3), nsmall=2, ...) {
   eout("Call:")
   print(x$call)
   cat("\n")
   eout(paste0("Formula: ", paste(deparse(x$call$formula), collapse=""),"\n"))
-
+  
   if(x$npv>1){
     cat("\n")
     eout(paste0("Plausible Values: ", x$npv))
   }
   eout("Number of Groups:")
-  print(x$ngroups)
+  print(x$groupSum, digits=digits, nsmall=nsmall, row.names=FALSE, ...)
   
   cat("\n")
   eout("Variance terms:")
-  print(x$vars)
+  vars <- x$vars
+  cori <- 1
+  corvi <- paste0("Corr",cori)
+  while(corvi %in% colnames(vars)) {
+    vars[[corvi]] <- as.character(round(vars[[corvi]], 2))
+    cori <- cori + 1
+    corvi <- paste0("Corr",cori)
+  }
+  print(vars, na.print="", row.names=FALSE,  digits=digits, nsmall=nsmall, ...)
   cat("\n")
   eout("Fixed Effects:")
-  printCoefmat(x$coef)
+  printCoefmat(x$coef, digits=digits, nsmall=nsmall, ...)
   if(x$npv==1){ #only print lnl if non plausible values case
     cat("\n")
-    eout(paste0("lnl=",format(x$lnl,nsmall=2)))
+    eout(paste0("lnl=", format(x$lnl, nsmall=2)))
   }
   if (!is.na(x$ICC)) {
     if(x$npv!=1) {
       cat("\n")
     } 
-    eout(paste0("Intraclass Correlation= ",format(x$ICC, nsmall=3, digits=3)))
+    eout(paste0("Intraclass Correlation= ", format(x$ICC, nsmall=3, digits=3)))
   }
 }
-
 
 #' @method vcov mixedSdfResults
 #' @export

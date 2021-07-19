@@ -22,7 +22,12 @@
 #' @details
 #' The function uses the \code{frPath} file layout (.fr2) data to read in the
 #' fixed-width data file (.dat) and builds the \code{edsurvey.data.frame}.
-#'           
+#'
+#' NAEP includes both scaled scores and theta scores, with the latter having names ending in \code{\_theta}.
+#'
+#' When a NAEP administration includes a linking error variable those variables are included and end in \code{_linking}.
+#' When present, simply use the \code{_linking} version of a variable to get a standard error estimate that includes linking error.
+#' 
 #' @return An \code{edsurvey.data.frame} containing the following elements:
 #'    \item{userConditions}{a list containing all user conditions set using the \code{subset.edsurvey.data.frame} method}
 #'    \item{defaultConditions}{the default conditions to be applied to the \code{edsurvey.data.frame}}
@@ -52,7 +57,7 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
   on.exit(options(userOp), add = TRUE)
   
   path <- suppressWarnings(normalizePath(unique(path), winslash = "/")) #give better error later if file not found
-  
+
   hasFRpath <- FALSE
   if(missing(frPath) || !is.character(frPath)){
     # the frPath is not a character, so warn the user we are not using it
@@ -187,7 +192,7 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
   ##############################################################
   ## Accomodation not permitted weights and PVs
   pvs = list()
-  pv_subset <- subset(labelsFile, select = c('Type','variableName'), labelsFile$Labels %in% c("PV", "PV2"))
+  pv_subset <- subset(labelsFile, select = c('Type','variableName'), labelsFile$Labels %in% c("PV", "PV2", "PVT"))
   uniquePvTypes = unique(pv_subset$Type)
   for (i in uniquePvTypes) {
     vars <- tolower(pv_subset$variableName[pv_subset$Type == i])
@@ -212,7 +217,7 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
     weights <- list(origwt=list(jkbase=base, jksuffixes=jksuffix), aorigwt=list(jkbase=baseAP, jksuffixes=jksuffixAP))
     names(weights) <- (varNames[labelsFile$weights])[1:2] # first two weights
   }
-  # set default
+  # set default weight
   if(missing(defaultWeight)) {
     attributes(weights)$default <- (varNames[labelsFile$weights])[1]
   } else {
@@ -221,12 +226,18 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
   
   if(is.null(defaultPvs) || all(is.na(defaultPvs))){
     warning(paste0("Argument ", dQuote("defaultPvs"), " not specified. There will not be a default PV value."))
-  }else{
+  } else {
     if(!defaultPvs[1] %in% names(pvs)){
+      defPV <- names(pvs[1])
+      defi <- 1
+      while( grepl("theta", defPV, fixed=TRUE) && length(pvs) > defi){
+        defi <- defi + 1
+        defPV <- names(pvs[defi])
+      }
       if(length(pvs)>0){
-        warning(paste0("Updating name of default plausible value since ",sQuote(defaultPvs[1]), " not found. Setting to ", sQuote(names(pvs[1])), "."))
-        defaultPvs <- names(pvs)[1]
-      }else{
+        warning(paste0("Updating name of default plausible value since ",sQuote(defaultPvs[1]), " not found. Setting to ", sQuote(defPV), "."))
+        defaultPvs <- defPV
+      } else {
         warning(paste0("No plausible values found. If plausible value(s) expected, check the ", sQuote("defaultPvs"), " argument."))
       }
     }#end if(!defaultPvs %in% names(pvs))
@@ -256,7 +267,7 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
   
   
   # build the result list and return
-  edsurvey.data.frame(userConditions = list(),
+  res <- edsurvey.data.frame(userConditions = list(),
                       defaultConditions = list(defaultConditions),
                       dataList = buildNAEP_dataList(dataLaf,
                                                     labelsFile,
@@ -276,7 +287,284 @@ readNAEP <- function(path, defaultWeight = "origwt", defaultPvs = "composite", o
                       psuVar = "jkunit",
                       stratumVar = "repgrp1",
                       jkSumMultiplier = 1,
-                      fr2Path=fr2SearchDir)
+                      fr2Path=studentFR2)
+  if("dbapba" %in% colnames(res)) {
+    foundScale <- FALSE
+    if(res$subject == "Science") { 
+      foundScale <- TRUE
+      subscaleWeights <- c(1,0,0,0)
+      subscales <- c("univariate_scale", "physical", "earth", "life")
+      composite <- c("univariate_scale")
+    }
+    if(res$subject == "Civics") {
+      foundScale <- TRUE
+      subscaleWeights <- 1
+      subscales <- c("civics")
+      composite <- c("civics")
+    } 
+    if(res$subject == "Geography") {
+      if(f[["Grade_Level"]] %in% c("Grade 4", "Grade 8", "Grade 12")) {
+        foundScale <- TRUE
+        subscaleWeights <- c(0.40, 0.30, 0.30)
+        subscales <- c("spaceplace", "envsociety", "spatial_dyn")
+        composite <- c("composite")
+      }
+    }
+    if(res$subject == "History") {
+      if(f[["Grade_Level"]] == "Grade 4") {
+        foundScale <- TRUE
+        subscaleWeights <- c(0.25, 0.35, 0.25, 0.15)
+        subscales <- c("democracy", "cultures", "technology", "world_role")
+        composite <- c("composite")
+      }
+      if(f[["Grade_Level"]] == "Grade 8") {
+        foundScale <- TRUE
+        subscaleWeights <- c(0.3, 0.30, 0.20, 0.20)
+        subscales <- c("democracy", "cultures", "technology", "world_role")
+        composite <- c("composite")
+      }
+      if(f[["Grade_Level"]] == "Grade 12") {
+        foundScale <- TRUE
+        subscaleWeights <- c(0.25, 0.25, 0.25, 0.25)
+        subscales <- c("democracy", "cultures", "technology", "world_role")
+        composite <- c("composite")
+      }
+    } 
+    if(res$subject == "Mathematics") {
+      if(f[["Grade_Level"]] == "Grade 4") {
+        foundScale <- TRUE
+        subscaleWeights <- c(0.40, 0.10, 0.15, 0.2, 0.15)
+        subscales <- c("num_oper", "da_stat_prob", "algebra", "measurement", "geom")
+        composite <- c("composite")
+      }
+      if(f[["Grade_Level"]] == "Grade 8") {
+        foundScale <- TRUE
+        subscaleWeights <- c(0.2, 0.15, 0.30, 0.15, 0.20)
+        subscales <- c("num_oper", "da_stat_prob", "algebra", "measurement", "geom")
+        composite <- c("composite")
+      }
+      if(f[["Grade_Level"]] == "Grade 12") {
+        foundScale <- TRUE
+        subscaleWeights <- c(0.1, 0.25, 0.35, 0.3)
+        subscales <- c("num_oper", "da_stat_prob", "algebra", "measurementgeom")
+        composite <- c("composite")
+      } 
+    }
+    if(res$subject == "Reading") {
+      if(f[["Grade_Level"]] == "Grade 4") {
+        foundScale <- TRUE
+        subscaleWeights <- c(0.50, 0.50)
+        subscales <- c("literary", "information")
+        composite <- c("composite")
+      }
+      if(f[["Grade_Level"]] == "Grade 8") {
+        foundScale <- TRUE
+        subscaleWeights <- c(0.45, 0.55)
+        subscales <- c("literary", "information")
+        composite <- c("composite")
+      }
+      if(f[["Grade_Level"]] == "Grade 12") {
+        foundScale <- TRUE
+        subscaleWeights <- c(0.30, 0.70)
+        subscales <- c("literary", "information")
+        composite <- c("composite")
+      }
+    }
+    if(res$subject == "Geography") {
+      if(f[["Grade_Level"]] %in% c("Grade 4", "Grade 8", "Grade 12")) {
+        foundScale <- TRUE
+        subscaleWeights <- c(0.40, 0.30, 0.30)
+        subscales <- c("spaceplace", "envsociety", "spatial_dyn")
+        composite <- c("composite")
+      }
+    }
+    if(!foundScale) {
+      warning("Could not find construct weights for this NAEP. Linking error cannot be calculated.")
+    } else {
+      res <- linkVarAugment(res, subscaleWeights=subscaleWeights, subscales=subscales, composite=composite)
+    }
+  }
+  return(res)
+}
+
+linkVarAugment <- function(data, subscaleWeights, subscales, composite) {
+  PVVars <- getAttributes(data = data, attribute = "pvvars")
+  PVVarsDefault <- attributes(PVVars)$default
+  # actual variables 
+  scaledPVs <- list()
+  thetaPVs <- list()
+  for(i in 1:length(subscales)) {
+    scaledPVs <- c(scaledPVs, list(getPlausibleValue(subscales[i], data = data)))
+    thetaPVs <- c(thetaPVs, list(getPlausibleValue(paste0(subscales[i], "_theta"), data = data)))
+  }
+  PVs <- getPlausibleValue(composite, data = data)
+  # use default weights
+  W <- attr(getAttributes(data = data, attribute = "weights"), "default")
+  repWs <- getWeightJkReplicates(W, data)
+  
+  stratumVar <- getStratumVar(data = data)
+  PSUvar <- getPSUVar(data)
+  # the DBA subset
+  if(!"dbapba" %in% colnames(data)) {
+    stop(paste0("Cannot find variable ", dQuote("dbapba"), " on data."))
+  }
+  if(!stratumVar %in% colnames(data)) {
+    stop(paste0("Cannot find variable ", dQuote("stratumVar"), " on data."))
+  }
+  if(!PSUvar %in% colnames(data)) {
+    stop(paste0("Cannot find variable ", dQuote("PSUvar"), " on data."))
+  }
+  DBASS <- data$dbapba %in% "DBA"
+  nDBA <- sum(DBASS)  # number in DBA subset
+  # the PBA subset
+  PBASS <- data$dbapba %in% "PBA"
+  nPBA <- sum(PBASS) # number in the PBA subset
+  if(nDBA + nPBA < length(data$dbapba)) {
+    warning("Some rows are neither PBA nor DBA.")
+  }
+
+  #  a map from the DBA PV to the PBA PB
+  RAM <- getRAM()
+  # number of subscales
+  K <- length(subscaleWeights)
+  if(K != length(scaledPVs)) {
+    stop(paste0("The argument ", dQuote("scaledPVs"), " is a list with one element per subscale, so it should have the same length as ", dQuote("subscaleWeights"), " and ",dQuote("thetaPVs"),". Each element of ", dQuote("scaledPVs"), " is a vector of plausible values."))
+  }
+  if(K != length(thetaPVs)) {
+    stop(paste0("The argument ", dQuote("thetaPVs"), " is a list with one element per subscale, so it should have the same length as ", dQuote("subscaleWeights"), " and ",dQuote("scaledPVs"),". Each element of ", dQuote("thetaPVs"), " is a vector of plausible values."))
+  }
+  if(length(unique(sapply(c(thetaPVs, scaledPVs, list(PVs)), length) )) != 1) {
+    stop(paste0("The arguments ", dQuote("thetaPVs"), " and ", dQuote("scaledPVs"), " are lists with one element per subscale, each a vector of the same length. Each vector should also be the same length as the vector ", dQuote("PVs"), "."))
+  }
+  # subscale weights called "beta" in documentation
+  beta <- subscaleWeights
+  # DBA weights
+  wd <- data[DBASS, W]
+  # PBA weights
+  wp <- data[PBASS, W]
+
+  ### measurement variance agumentation
+  # uses full sample weights and varries PVs according to the RAM (Table 1, page 3)
+  
+  # create PV data frame to minimize calls to getData
+  pvData <- data[,PVs]
+
+  # for each PV (column in the RAM)
+  RAMi <- 1
+  thetaPVscores <- data[DBASS, unlist(thetaPVs)]
+  scaledPVscores <- data[PBASS, unlist(scaledPVs)]
+  repWsDBA <- data[DBASS, repWs]
+  repWsPBA <- data[PBASS, repWs]
+  for(n in 1:ncol(RAM)) {
+    # for each RAM column (5)
+    for(j in 1:nrow(RAM)) {
+      ynj <- rep(0, nDBA)
+      znj <- rep(0, nPBA)
+      # RAM says which PBA PV to use
+      PBApv <- RAM[j, n]
+      for(k in 1:K) {
+        # DBA PV is the jth one
+        # scaledPVs[[k]] is for the kth subscale, in that [j] is for the jth plausible value
+        theta_k <- thetaPVscores[ , thetaPVs[[k]][j]]
+        # PBApv from RAM
+        # PBAPVs[[k]], similar to DBA, inside of that we select the plausilbe value from the RAM for row j
+        x_k <- scaledPVscores[ , scaledPVs[[k]][PBApv] ]
+        # mean, std estimates for DBA (theta scale)
+        mu_t <- getMu(theta_k, wd)
+        s_t <- getS(theta_k, wd, mu=mu_t)
+        # mean, std estimates for PBA (reporting scale)
+        mu_x <- getMu(x_k, wp)
+        s_x <- getS(x_k, wp, mu=mu_x)
+        # variable transformations
+        a <- s_x/s_t
+        b <- mu_x - a * mu_t
+        data[DBASS, paste0(subscales[k], "_linking_imp_", nrow(RAM)*(n-1)+j)] <- (a*theta_k + b)
+        data[PBASS, paste0(subscales[k], "_linking_imp_", nrow(RAM)*(n-1)+j)] <- x_k
+        # y is the sum over the k subscales
+        ynj <- ynj + beta[k] * (a*theta_k + b)
+        znj <- znj + beta[k] * x_k
+      }
+      # write composite variable for DBA
+      data[DBASS, paste0(composite, "_linking_imp_", nrow(RAM)*(n-1)+j)] <- ynj
+      RAMi <- RAMi + 1
+      # write composite variable for PBA
+      compositePBA <- pvData[PBASS ,PVs[PBApv]]
+      data[PBASS, paste0(composite, "_linking_imp_", nrow(RAM)*(n-1)+j)] <- compositePBA
+      if(max(abs(znj - compositePBA)) > 0.02) {
+        warning("Inacurate data or subscale weights, linking error is inacurately estimated due to low precision inputs. Disagreement on composite of ", max(abs(znj - data[PBASS, paste0("comp", nrow(RAM)*(n-1)+j)])), "\n")
+      }
+    }
+  }
+
+  for(i in 1:length(repWs)) {
+    # y1 is for DBA
+    y1 <- rep(0, nDBA)
+    # z1 is for PBA
+    z1 <- rep(0, nPBA)
+    # DBA ith replicate weight
+    wd <- repWsDBA[ , repWs[i]]
+    # PBA ith replicate weight
+    wp <- repWsPBA[ , repWs[i]]
+    for(k in 1:K) {
+      # DBA is theta scale
+      theta_k <- thetaPVscores[ , thetaPVs[[k]][1]]
+      # get mean, stdev, DBA, use ith replicate weight
+      mu_t <- getMu(theta_k, wd)
+      s_t <- getS(theta_k, wd, mu=mu_t)
+      # get mean, stdev, PBA, use ith replicate weight
+      x_k <- scaledPVscores[ , scaledPVs[[k]][1] ]
+      mu_x <- getMu(x_k, wp)
+      s_x <- getS(x_k, wp, mu=mu_x)
+      # variablle transformations
+      a <- s_x/s_t
+      b <- mu_x - a * mu_t
+      data[ DBASS, paste0(subscales[k], "_linking_samp_", i)] <- (a*theta_k + b)
+      data[!DBASS, paste0(subscales[k], "_linking_samp_", i)] <- x_k
+      # sum y1 
+      y1 <- y1 + beta[k] * (a*theta_k + b)
+      z1 <- z1 + beta[k] * x_k
+    }
+    data[DBASS, paste0(composite, "_linking_samp_", i)] <- y1
+    
+    compositePBA <- pvData[PBASS ,PVs[1]]
+    data[PBASS, paste0(composite, "_linking_samp_", i)] <- compositePBA#z1
+    if(max(abs(z1 - compositePBA)) > 0.02) {
+      warning("Inacurate data or subscale weights, linking error is inacurately estimated due to low precision inputs. Disagreement on composite of ", max(abs(z1 - data[PBASS, paste0(composite, "_linking_samp_", i)])), "\n")
+    }
+  }
+  # final RAM index
+  RAMiFinal <- RAMi -1
+  # construct composite PV var
+  newPV <- list(list(estVarnames=PVs,
+                     impVarnames=paste0(composite,"_linking_imp_",1:RAMiFinal),
+                     sampVarnames=paste0(composite,"_linking_samp_",1:length(repWs)),
+                     achievementLevel=data[["pvvars"]][[composite]][["achievementLevel"]]))
+  names(newPV) <- paste0(composite, "_linking")
+  for(k in 1:K) {
+    # sometimes
+    if(subscales[k] != composite) {
+      newPVi <- list(estVarnames=scaledPVs[[k]],
+                     impVarnames=paste0(subscales[k],"_linking_imp_",1:RAMiFinal),
+                     sampVarnames=paste0(subscales[k],"_linking_samp_",1:length(repWs)))
+      newPV[[paste0(subscales[k], "_linking")]] <- newPVi
+	}
+  }
+  pvv <- c(data[["pvvars"]], newPV)
+  attributes(pvv)$default <- PVVarsDefault
+  data[["pvvars"]] <- pvv
+  return(data)
+}
+
+# get RAM table for how the two sets of plausible values are permuted to approximate
+# integration over the entire possible set of 20! cases.
+getRAM <- function() {
+  RAM <- matrix(NA,nrow=20,ncol=5)
+  RAM[,1] <- 1:20
+  RAM[,2] <- c(14, 11, 18, 15, 20, 17,  3, 16, 12,  6, 19, 2,  1, 13,  5,  7,  4,  9,  8, 10)
+  RAM[,3] <- c( 6,  4,  3,  9, 11, 10,  2, 17, 19, 13,  7, 8, 15, 18, 20, 12,  5, 16, 14,  1)
+  RAM[,4] <- c( 2, 14,  7,  9, 20, 13, 16,  8,  4, 11, 19, 1, 18, 10,  6, 12, 15,  3,  5, 17)
+  RAM[,5] <- c(19, 10, 13,  8, 17, 12,  1, 11,  5,  6, 18, 9, 15,  2,  3,  7, 14, 20, 16,  4)
+  return(RAM)  
 }
 
 # @author Paul Bailey & Ahmad Emad
@@ -334,14 +622,17 @@ readMRC <- function(filename) {
   # normally there is just one set of PVs (with multiple subjects or subscales).
   # When there are multiple sets then one starts with an "A" and is the
   # accommodations permitted values
+  # main PVs:
   Labels[grepl("plausible", tolower(Labels)) & grepl("value", tolower(Labels)) & "A" != substring(variableName, 1, 1)] <- "PV"
+  # theta PVs, these do not say "value"
+  Labels[grepl("plausible", tolower(Labels)) & grepl("theta", tolower(Labels))                                       ] <- "PVT"
+  # accommodations perimted PVs:
   Labels[grepl("plausible", tolower(Labels)) & grepl("value", tolower(Labels)) & "A" == substring(variableName, 1, 1)] <- "PV2"
 
   # normally there is just one set of weights. When there are multiple sets
   # then one starts with an "A" and is the accommodations permitted values
   Labels[grepl("weight", tolower(Labels)) & grepl("replicate", tolower(Labels)) & "A" != substring(variableName, 1, 1)] <- "JK"
   Labels[grepl("weight", tolower(Labels)) & grepl("replicate", tolower(Labels)) & "A" == substring(variableName, 1, 1)] <- "JK2"
-  
   
   pvWt <- character(length(mrcFile)) # the number of the PV (e.g. for a subject or subscale with five PVs this would show values from 1 to 5 for five variables)
   Type <- character(length(mrcFile)) # this is the subject or subscale
@@ -351,22 +642,29 @@ readMRC <- function(filename) {
   Labels <- tempValue[["Labels"]]
   pvWt <- tempValue[["pvWt"]]
   Type <- tempValue[["Type"]]
-  
+
+  # note theta PVs
+  tempValue <- applyPV("PVT", Labels, pvWt, oLabels, Type)
+  Labels <- tempValue[["Labels"]]
+  pvWt <- tempValue[["pvWt"]]
+  Type <- tempValue[["Type"]]
+
+  # note AP PVs
   tempValue <- applyPV("PV2", Labels, pvWt, oLabels, Type)
   Labels <- tempValue[["Labels"]]
   pvWt <- tempValue[["pvWt"]]
   Type <- tempValue[["Type"]]
   # Check if there is at least one JK replicate.
   
-  if(sum(Labels=="JK")>0) {
+  if(sum(Labels == "JK")>0) {
     # get the number of the JK replicate
-    pvWt[Labels=="JK"] <- as.numeric(gsub("[^\\d]+", "", oLabels[Labels=="JK"], perl=TRUE))
-    pvWt[Labels=="JK2"] <- as.numeric(gsub("[^\\d]+", "", oLabels[Labels=="JK2"], perl=TRUE))
+    pvWt[Labels == "JK"] <- as.numeric(gsub("[^\\d]+", "", oLabels[Labels=="JK"], perl=TRUE))
+    pvWt[Labels == "JK2"] <- as.numeric(gsub("[^\\d]+", "", oLabels[Labels=="JK2"], perl=TRUE))
   }
   
   # identify weights
   labels <- tolower(Labels)
-  weights <- ifelse(4*grepl("origwt", variableName,ignore.case=TRUE) + grepl("wgt",variableName) + grepl("student", labels) + grepl("weight", labels) + grepl("unadjusted", labels) + grepl("overall", labels) + grepl("unpoststratified", labels) - 5 * grepl("replicate", labels) >= 4, TRUE, FALSE)
+  weights <- ifelse(4*grepl("origwt", variableName, ignore.case=TRUE) + grepl("wgt", variableName) + grepl("student", labels) + grepl("weight", labels) + grepl("unadjusted", labels) + grepl("overall", labels) + grepl("unpoststratified", labels) - 5 * grepl("replicate", labels) >= 4, TRUE, FALSE)
   # For now, assume all variables are characters.
   dataType <- rep("character", length(mrcFile))
   # Create appropriate data type for variables.
@@ -389,7 +687,6 @@ applyPV <- function(pv, Labels, pvWt, oLabels, Type) {
     pvWt[Labels==pv] <- sapply(strsplit(oLabels[Labels==pv],"#", fixed=TRUE), function(x) gsub("[^0-9]", "", x[[2]]))
     # make oLabels lower case
     oLabels[Labels == pv] <- tolower(oLabels[Labels==pv])
-    
     # edit oLabels to Keep only letters
     # 1) remove punctuation
     oLabels[Labels == pv] <- gsub("[[:punct:]]", "", oLabels[Labels==pv])
@@ -410,9 +707,14 @@ applyPV <- function(pv, Labels, pvWt, oLabels, Type) {
     # check if there is more than one plausible value (and so all words are "common")
     if(length(removeWords) != length(words)) {
       # Remove common words
-      temp <- lapply(temp, function(x) x[!x %in% removeWords])
+      temp <- lapply(temp, function(x) { x[!x %in% removeWords]} )
       # concatenate remaining words with "_"
       temp <- sapply(temp, function(x) paste0(x, collapse="_"))
+    # in the case of thetas, theta will be removed by removeWords, which is fine
+    # we want to be sure it is at the end anyways
+    if(pv == "PVT") {
+      temp <- paste0(temp,"_theta")
+    }
       Type[Labels == pv] <- temp  
     }
     else {
@@ -420,8 +722,11 @@ applyPV <- function(pv, Labels, pvWt, oLabels, Type) {
       Type[Labels == pv] <- gsub("plausible|naep|value", "", oLabels[Labels == pv])
       Type[Labels == pv] <- trimws(Type[Labels == pv])
       Type[Labels == pv] <- gsub(" ", "_", Type[Labels == pv])
+    # all plausible values for a particular subscale/composite now all share a name
+    # and that name has no spaces but underscores in it.
     }
   }
+  # these are accommodations permitted PVs
   Type[Labels == "PV2"] <- paste0(Type[Labels == "PV2"], "_ap")
   return(list(Labels=Labels, Type=Type, pvWt=pvWt))
 }
@@ -479,3 +784,13 @@ buildNAEP_dataList <- function(stuLaf, stuFF, schLaf, schFF){
   return(dataList)
 }
 
+getMu <- function(x, w) {
+  sum(x*w) / sum(w)
+}
+
+getS <- function(x, w, mu=NULL) {
+  if(is.null(mu)) {
+    mu <- getMu(x, w)
+  }
+  sqrt(sum( w* ((x-mu)^2)) / sum(w))
+}

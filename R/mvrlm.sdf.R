@@ -191,6 +191,10 @@ calc.mvrlm.sdf <- function(formula,
     wgt <- weightVar
   } # End of if/else: is.null(weightVar)
   
+  # checking for linking error and stop
+  if(any(grepl("_linking", all.vars(formula), fixed=TRUE))) {
+    stop("mvrlm.sdf does not support linking error.")
+  }
   # 2) Get the data
   getDataArgs <- list(data=sdf,
                       varnames=c(all.vars(formula), wgt),#, taylorVars),
@@ -201,7 +205,7 @@ calc.mvrlm.sdf <- function(formula,
                       includeNaLabel=TRUE,
                       dropUnusedLevels=TRUE
   )
-  
+
   # # Default conditions should be included only if the user set it. This adds the argument only if needed
   if(!missingDefaultConditions) {
     getDataArgs <- c(getDataArgs, list(defaultConditions=defaultConditions))
@@ -832,18 +836,21 @@ calc.mvrlm.sdf <- function(formula,
       index <- which(yvar == var)
       resid <- lapply(resid, as.matrix)
       a1 <- rapply(resid, classes = 'matrix', how = 'list', f = function(x) x[, index, drop = FALSE])
-      residPV[[index]] <- do.call(cbind, a1)
+      a1 <- do.call(cbind, a1)
+      rownames(a1) <- NULL # drop scrambled row names
+      residPV[[index]] <- a1
     }  # calculate residual covariance from pv residual matrices
     covarComp <- lapply(residPV, rowMeans)
     ee <- do.call(cbind, covarComp)
     residCov <- t(ee) %*% ee
     dimnames(residCov) <- list(yvar, yvar)
+    # remove meaningless row names
   } else {
     residPV <- NULL
     ee <- as.matrix(residuals)
     residCov <- t(ee) %*% ee
   }
-  
+
   res <- list(call=call, formula=formula, coef=as.matrix(coef), se = se, Vimp=Vimp,
               Vjrr=Vjrr, M=M, varm=varm, coefm=coefm, coefmat=coefmat, 
               r.squared=R2, weight=wgt, npv=length(yvars[[1]]),

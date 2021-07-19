@@ -1,7 +1,41 @@
 \name{NEWS}
 \title{NEWS for EdSurvey}
+\section{Changes in version 2.7.0}{
+  \subsection{DATA UPDATES}{
+    \itemize{
+      \item Added support for the PISA Young Adult Follow-up Study (YAFS). See \code{readPISA_YAFS} for more information.
+      \item \code{readICCS} now woks for 2016 ICCS data.
+    }
+  }
+  \subsection{STATISTICS}{
+    \itemize{
+      \item supports linking error in NAEP assessments that have combined PBA and DBA formats, including NAEP 2018 Social Studies (grades 8); 2019 Science (grades 4, 8, and 12); 2019 Mathematics and Reading (grades 4, 8, and 12). See the vignette for details on the implementation at \url{https://www.air.org/sites/default/files/2021-07/EdSurvey-linkingerror.pdf}.
+      \item \code{mml.sdf} a new function that estimates student scale scores using the marginal maximum likelihood regression estimation method (as the program AM does). This is an alternative method to the plausible values approach.
+      \item \code{mixed.sdf} now gives clearer information about groups and weights, similar to the updated \code{WeMix::mix} function.
+      \item \code{achievementLevels} now accepts multiple sets of plausible values at once, allowing joint achievement levels to be calculated. Because of this the \code{discrete} and \code{cumulative} results column names now include the name of the variable. So for a composite score it will now be labeled \code{composite_Level} where it used to say \code{Level}. Also the \code{cutpoints} object now specifies the scores the cutpoints regard.
+      \item \code{percentile} now has a new method \dQuote{symmetric} that is similar to \dQuote{simple} but returns the negative result if all of the values are multiplied by negative one. This method is faster than \dQuote{unbiased} which has a small bias correction.
+      \item \code{percentile} used to report the number of people who were more extreme than any percentile in the \code{nsmall} column. This was not used and so was removed.
+      \item \code{percentile} now accepts a \code{dofMethod} argument to allow either of the methods described in \code{DoFCorrection}: \code{WS} for the Welch-Satterthwaite formula or \code{JR} for the Johnson-Rust formula. This defaults to \code{JR} but was previously \code{WS}.
+      \item \code{edsurveyTable} now warns and removes rows with non-positive full sample weights or no outcome. The also warnings now include the number of rows removed by the filter. Non-positive and NA weights are removed only if the \code{returnMeans} or \code{returnSepct} are \code{TRUE}. Missing outcome scores are removed only if \code{returnMeans} is \code{TRUE}.
+      \item we simplified all the code in the statistical methods, including \code{rq.sdf}, \code{lm.sdf}, and \code{percentile}.
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item after subsetting an edsurvey.data.frame, the cache (user defined variables) used to throw errors. This now works.
+      \item \code{mixed.sdf} used to not correctly identify covariances when outputting the variance tables. Thanks to Endraswara Wiryawan for identifying this bug.
+      \item \code{readTIMSS} previously attempted to merge on 2019 teachers using the student's grade level. This lead to many teacher variables not being merged on in AAD (Abu Dhabi, UAE), ARE (United Arab Emirates), and NZL (New Zealand). Thanks to Damian Campbell for identifying this bug.
+      \item fixed \code{readTIMSSAdv} bug for 1995 data relating to storing column dimension information in cache.
+    }
+  }
+  \subsection{OTHER}{
+    \itemize{
+      \item when \code{EdSurvey} is attached, it nolonger sets the options value of \code{timeout}. Instead it only sets it to the larger of the current value and an hour when downloading files.
+    }
+  }
+}
 
-\section{Changes in version 2.6.2}{
+\section{Changes in version 2.6.9}{
   \subsection{DATA UPDATES}{
     \itemize{
       \item \code{downloadTIMSS} and \code{readTIMSS} were updated to include 2019.
@@ -235,10 +269,10 @@
       the Program for International Student Assessment (PISA), the Program for the International Assessment of Adult Competencies (PIAAC), and the Teaching and Learning International Survey (TALIS).
       \item International datasets can be downloaded with \code{downloadTIMSS}, \code{downloadTIMSSAdv},
             \code{downloadPIRLS}, \code{downloadICILS}, \code{downloadICCS},
-	    \code{downloadCivEDICCS}, \code{downloadPISA}, \code{downloadPIAAC}, \code{downloadTALIS}.
+      \code{downloadCivEDICCS}, \code{downloadPISA}, \code{downloadPIAAC}, \code{downloadTALIS}.
       \item International datasets can be loaded with \code{readTIMSS}, \code{readTIMSSAdv},
             \code{readPIRLS}, \code{readICILS}, \code{readICCS},
-	    \code{readCivEDICCS}, \code{readPISA}, \code{readPIAAC}, \code{readTALIS}.
+      \code{readCivEDICCS}, \code{readPISA}, \code{readPIAAC}, \code{readTALIS}.
     }
   }
   \subsection{NEW STATISTICS}{
@@ -278,7 +312,7 @@
       \item Added new vignette on ``Producing LaTeX Tables From edsurveyTable Results With edsurveyTable2pdf'' to the AIR website detailing the creation of pdf summary tables from summary results using the edsurveyTable2pdf function.
       \item Added new methodology documentation on ``Methods Used for Gap Analysis in EdSurvey'' to the AIR website convering the methods comparing the gap analysis results of the EdSurvey package to the NAEP Data Explorer.
       \item Added new methodology documentation on ``Methods Used for Estimating Percentiles in EdSurvey'' to the AIR website describing the methods used to estimate percentiles.
-      \item Added new methodology documentation on ``Weighted and Unweighted Correlation Methods for Large-Scale Educational Assessment: wCorr Formulas'' to the AIR website detailing the methodology used by the wCorr R package for computing the Pearson, Spearman, polyserial, and polychoric correlations, with and without weights applied. See \url{https://www.air.org/resource/weighted-and-unweighted-correlation-methods-large-scale-educational-assessment-wcorr}.
+      \item Added new methodology documentation on ``Weighted and Unweighted Correlation Methods for Large-Scale Educational Assessment: wCorr Formulas'' to the AIR website detailing the methodology used by the wCorr R package for computing the Pearson, Spearman, polyserial, and polychoric correlations, with and without weights applied. See \url{https://www.air.org/resource/report/weighted-and-unweighted-correlation-methods-large-scale-educational-assessment}.
     }
   }
   \subsection{BUG FIXES}{

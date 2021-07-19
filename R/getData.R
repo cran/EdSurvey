@@ -190,10 +190,8 @@ getData <- function(data,
     vars_exclude_omitted <- c(vars_exclude_omitted, pvs[-1])
     vars <- c(vars, pvs)
   }
-  
   #getAllPSUVar and getallStratumVar are defined in getData.R to return a vector of all the PSU & Stratum variables associated with the edsurvey.data.frame/light.edsurvey.data.frame
   vars_exclude_omitted <- c(vars_exclude_omitted, getAllPSUVar(sdf), getAllStratumVar(sdf))
-  
   if(sum(iw)>0 & returnJKreplicates == TRUE) {
     invisible(sapply(varnames[iw], function(x) {
       v <- getWeightJkReplicates(x, sdf)

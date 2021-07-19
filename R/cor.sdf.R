@@ -8,7 +8,7 @@
 #' @param y          a character variable name from the \code{data} to be correlated with \code{x}
 #' @param data       an \code{edsurvey.data.frame}, a \code{light.edsurvey.data.frame}, or an \code{edsurvey.data.frame.list}
 #' @param method     a character string indicating which correlation coefficient (or covariance) is to be computed.
-#'                   One of \code{Pearson} (default), \code{Spearman}, \code{Polychoric}, or \code{Polyserial}.
+#'                   One of \code{Pearson} (default), \code{Spearman}, \code{Polychoric}, or \code{Polyserial}. For Polyserial, the continuous argument must be \code{x}. 
 #' @param weightVar  character indicating the weight variable to use. See Details section in \code{\link{lm.sdf}}.
 #' @param reorder    a list of variables to reorder. Defaults to \code{NULL} (no variables are reordered). Can be set as 
 #'                   \code{reorder} \code{=} \code{list(var1} \code{=} \code{c("a","b","c"),} \code{var2} \code{=} \code{c("4", "3", "2", "1"))}. See Examples.
@@ -37,10 +37,14 @@
 #'                   can be estimated with any number of plausible values, and values larger than the number of 
 #'                   plausible values on the survey (including \code{Inf}) will result in all plausible values being used. 
 #'                   Higher values of \code{jrrIMax} lead to longer computing times and more accurate variance estimates.
+#' @param verbose a logical value. Set to \code{FALSE} to avoid messages about variable conversion.
 #' 
 #' @details 
 #' The \code{\link{getData}} arguments and \code{\link{recode.sdf}} may be useful. (See Examples.)
 #' The correlation methods are calculated as described in the documentation for the \code{wCorr} package---see \code{browseVignettes(package="wCorr")}.
+#'
+#' When \code{method} is set to \code{polyserial}, all \code{x} arguments are assumed to be continuous and all \code{y} assumed discrete. Therefore,
+#' be mindful of variable selection as this may result in calculations taking a very long time to complete.
 #'
 #' The Fisher Z-transformation is both a variance stabilizing  and normalizing transformation
 #' for the Pearson correlation coefficient (Fisher, 1915).
@@ -92,22 +96,30 @@ cor.sdf <- function(x,
                     recode = NULL,
                     condenseLevels = TRUE,
                     fisherZ = if(match.arg(method) %in% "Pearson") {TRUE} else {FALSE},
-                    jrrIMax=Inf) {
+                    jrrIMax=Inf, 
+                    verbose=TRUE) {
+  call <- match.call()
+  method <- match.arg(method)
   if (inherits(data, c("edsurvey.data.frame.list"))) {
     # use itterateESDFL to do this call to every element of the edsurvey.data.frame.list
-    return(itterateESDFL(match.call(),data))
+    return(itterateESDFL(match.call(), data))
   }
-  call <- match.call()
-  vars <- c(x,y)
+  # allow unquoted variables
+  x <- as.character(substitute(x))
+  y <- as.character(substitute(y))
+  vars <- c(x, y)
   # test input
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
   
-  if(inherits(data[[x]],"character")) {
+  if(inherits(data[[x]], "character")) {
     stop(paste0("The argument ", sQuote("x"), " must be of a class numeric, factor, or lfactor."))
   }
-  if(inherits(data[[y]],"character")) {
+  if(inherits(data[[y]], "character")) {
     stop(paste0("The argument ", sQuote("y"), " must be of a class numeric, factor, or lfactor."))
   } 
+
+  # get method
+  pm <- match.arg(method)
 
   # fix transformation
   if(!inherits(fisherZ, "logical")) {
@@ -159,47 +171,77 @@ cor.sdf <- function(x,
   } # End of if statment: if weightVar is null
   
   # setup Jack Knife replicate weight variables
-  if(weightVar=="one") {
+  if(weightVar == "one") {
     wgtl <- list(jkbase="one",jksuffixes="")
   } else { # if weightVar is not "one"
     wgtl <- getAttributes(data, "weights")[[wgt]]
   } # End of if statment: if weightVar is "one" 
   wgts <- c(paste0(wgtl$jkbase, wgtl$jksuffixes))
-  
-  if(weightVar=="one") { 
+  if(weightVar == "one") { 
     getV <- c(vars)
   } else { # if weightVar is not "one"
     getV <- c(vars, wgt)
   } # end of if statment: if weightVar is "one"
 
   # setup the getData call
-  getDataArgs <- list(data=data,
-                      varnames=getV,
-                      includeNaLabel=TRUE,
-                      addAttributes=TRUE,
-                      returnJKreplicates=TRUE,
-                      drop=FALSE,
-                      omittedLevels=omittedLevels,
+  getDataArgs <- list(data = data,
+                      varnames = getV,
+                      includeNaLabel = TRUE,
+                      addAttributes = TRUE,
+                      returnJKreplicates = TRUE,
+                      drop = FALSE,
+                      omittedLevels = omittedLevels,
                       recode = recode,
-                      dropUnusedLevels=condenseLevels)
-
+                      dropUnusedLevels = condenseLevels)
   # Default conditions should be included only if the user set it. This adds the argument only if needed
   if(!missing(defaultConditions)) {
-    getDataArgs <- c(getDataArgs, list(defaultConditions=defaultConditions))
+    getDataArgs <- c(getDataArgs, list(defaultConditions = defaultConditions))
   } 
   # edf is the actual data
   lsdf <- do.call(getData, getDataArgs)
 
+  # check for impending conversions:
+  if(hpvx) {
+    pvx <- getPlausibleValue(x, lsdf)
+  }
+  if(hpvy) {
+    pvy <- getPlausibleValue(y, lsdf)
+  }
+  if(verbose) {
+    if( length(levels(lsdf[[x]])) > 0 & method %in% c("Pearson", "Polyserial")) {
+      message(paste0("Converting ", dQuote(x), " to a continuous variable."))
+    }
+    if( length(levels(lsdf[[x]])) == 0 & method %in% c("Polychoric")) {
+      message(paste0("Converting ", dQuote(x), " to a discrete variable."))
+      xi <- ifelse(hpvx, pvx[[1]], x)
+      if(length(unique(lsdf[[xi]])) >= 10) {
+        message("  - Treating a variable with ", length(unique(lsdf[[xi]])), " levels as discrete will slow computation.")
+      }
+    }
+    if( length(levels(lsdf[[y]])) > 0 & method %in% c("Pearson")) {
+      message(paste0("Converting ", dQuote(y), " to a continuous variable."))
+    }
+    if( length(levels(lsdf[[y]])) == 0 & method %in% c("Polyserial", "Polychoric")) {
+      message(paste0("Converting ", dQuote(y), " to a discrete variable."))
+      yi <- ifelse(hpvy, pvy[[1]], y)
+      if(length(unique(lsdf[[yi]])) >= 10) {
+        message("  - Treating a variable with ", length(unique(lsdf[[yi]])), " levels as discrete will slow computation.")
+      }
+    }
+    if(length(levels(lsdf[[x]])) > 0 & length(levels(lsdf[[y]])) == 0 & method %in% "Polyserial") {
+      message(paste0("Consider swaping ", dQuote("x"), " and ", dQuote("y"), " variables."))
+    }
+  }
   # if the weight variable is "one" then that will need to be a valid column
-  if(weightVar=="one") {
-    if("one" %in% colnames(lsdf)) {
+  if(weightVar == "one") {
+    if("one" %in% colnames(lsdf) && any(lsdf$one != 1)) {
       stop(paste0("A column named one cannot be included in the input when weights of one are implicitly used. You can rename the ", dQuote("one"), " column."))
     }
     lsdf$one <- 1
   } else{
     # weighted, check for negative weights
-    if(any(lsdf[,wgt] <= 0)) {
-      lsdf <- lsdf[lsdf[,wgt] > 0,]
+    if(any(lsdf[ , wgt] <= 0)) {
+      lsdf <- lsdf[lsdf[ , wgt] > 0, ]
       if(nrow(lsdf) == 0) {
         stop("No rows with positive weights.")
       }
@@ -209,28 +251,34 @@ cor.sdf <- function(x,
   
   # do reordering of variables when the user requets a reorder
   if(!is.null(reorder[[x]])) {
-    llx <- unique(lsdf[,x])
-    if(is.factor(lsdf[,x])) {
+    if(hpvx) {
+      stop("Reordering ", dQuote("x"), " variables with plausible values not implimented.")
+    }
+    llx <- unique(lsdf[ , x])
+    if(is.factor(lsdf[ , x])) {
       llx <- levels(llx)
     } # End if statment: if lsdf is a factor
     if( sum(!reorder[[x]] %in% llx) > 0 ) {
       bad <- reorder[[x]][!reorder[[x]] %in% llx]
       stop(paste0("Could not find reorder level(s) ", pasteItems(sQuote(bad), final="or"), " when reordering ", sQuote("x"), "."))
     } # End if Statment: if sum(!reorder[[x]] %in% llx) > 0
-    lsdf[,x] <- factor(lsdf[,x], levels = c(reorder[[x]]))
+    lsdf[ , x] <- factor(lsdf[ , x], levels = c(reorder[[x]]))
   } # End if statment: if reorder x is not null 
 
   # now reorder for y variables
   if(!is.null(reorder[[y]])) {
-    lly <- unique(lsdf[,y])
-    if(is.factor(lsdf[,y])) {
+    if(hpvy) {
+      stop("Reordering ", dQuote("y"), " variables with plausible values not implimented.")
+    }
+    lly <- unique(lsdf[ , y])
+    if(is.factor(lsdf[ , y])) {
       lly <- levels(lly)
     } # End if statment: if lsdf[,y] is a factor 
     if( sum(!reorder[[y]] %in% lly) > 0 ) {
       bad <- reorder[[y]][!reorder[[y]] %in% lly]
       stop(paste0("Could not find reorder level(s) ", pasteItems(sQuote(bad), final="or"), " when reordering ", sQuote("y"), "."))
     } # End if statment sum(!reorder[[y]] %in% lly) > 0 
-    lsdf[,y] <- factor(lsdf[,y], levels = c(reorder[[y]]))
+    lsdf[ , y] <- factor(lsdf[ , y], levels = c(reorder[[y]]))
   } # End if statment: if reorder[[y]] is null
 
   # Generate levels output for variables
@@ -238,15 +286,16 @@ cor.sdf <- function(x,
   # when it is not obvious.
   varOrder <- list()
   variables <- c()
+  # this line tests if either is longer than zero
   if(length(levels(lsdf[[x]])) || length(levels(lsdf[[y]])) > 0) {
     nums <- !sapply(lsdf, is.numeric)
     variables <- subset(names(nums), nums %in% TRUE)
     for(i in unique(variables)) {
       varn <- c()
-      newv <- rep(NA,nrow(lsdf))
+      newv <- rep(NA, nrow(lsdf))
       for(z in 1:length(levels(lsdf[[i]]))) {
         # Use llevels if it's a lfactor
-        if (inherits(lsdf[[i]],"lfactor") && !condenseLevels) {
+        if (inherits(lsdf[[i]], "lfactor") && !condenseLevels) {
           zi <- llevels(lsdf[[i]])[z]
         } else {
           zi <- z
@@ -263,56 +312,59 @@ cor.sdf <- function(x,
       varlist <- list(c(varn))
       varOrder[i] <-varlist
     }
-    names(varOrder)<-c(variables)
+    names(varOrder) <- c(variables)
   } else { # end if(length(levels(lsdf[[x]])) || length(levels(lsdf[[y]])) > 0) {
     variables <- NULL
     varOrder <- NULL
   } 
   # end reorder variables
-
   # extract plausible values
+  linkingError <- FALSE
   if(hpvx) {
-    xvarlsdf <- lsdf[,pvx <- getPlausibleValue(x, lsdf), drop=FALSE] #lsdf
+    xvarlsdf <- lsdf[ , unlist(pvx), drop=FALSE] #lsdf
+    linkingError <- "NAEP" %in% getAttributes(data, "survey") & any(grepl("_linking", pvx, fixed=TRUE))
   } else {
-    xvarlsdf <- lsdf[,pvx <- x, drop=FALSE] #lsdf
+    xvarlsdf <- lsdf[ , pvx <- x, drop=FALSE] #lsdf
   }
   if(hpvy) {
-    yvarlsdf <- lsdf[,pvy <- getPlausibleValue(y, lsdf), drop=FALSE] #lsdf
-  } else{
-    yvarlsdf <- lsdf[,pvy <- y, drop=FALSE] #lsdf
+    yvarlsdf <- lsdf[ , unlist(pvy), drop=FALSE] #lsdf
+    # check for parity in _linking variables
+    if(xor(hpvx & "NAEP" %in% getAttributes(data, "survey") & any(grepl("_linking", pvy, fixed=TRUE)),
+            linkingError)) {
+      stop("When correlating two assessment scores, cannot mix _linking variables with variables not including linking error")
+    }
+    # this could be the only PV, so check for linking
+    if("NAEP" %in% getAttributes(data, "survey") & any(grepl("_linking", pvy, fixed=TRUE))) {
+      linkingError <- TRUE
+    }
+  } else {
+    yvarlsdf <- lsdf[ , pvy <- y, drop=FALSE] #lsdf
   }
   
   # drop NAs
-  lsdf <- lsdf[!is.na(xvarlsdf[,1]),]
-  lsdf <- lsdf[!is.na(yvarlsdf[,1]),]
+  filter <- complete.cases(xvarlsdf) & complete.cases(yvarlsdf)
+  lsdf <- lsdf[filter, ]
+  xvarlsdf <- xvarlsdf[filter, , drop=FALSE]
+  yvarlsdf <- yvarlsdf[filter, , drop=FALSE]
   
   if(nrow(lsdf) == 0) {
-    stop("Nothing to correlate.")
+    stop("No rows with all variables to correlate.")
   }
 
-  # get method
-  method <- method[[1]]
-  # correlation method (pm)
-  pm <- pmatch(tolower(method), tolower(c("Pearson", "Spearman", "Polychoric", "Polyserial")))
   # number of plausible values 
   npv <- max(npvx <- length(xvarlsdf), npvy <- length(yvarlsdf))
-  # the results, across the PVs
-  diagVar <- vector(length=npv)
-  for(i in 1:npv) {
-    if(pm %in% c(1,2)) {
-      # Pearson or Spearman
-      diagVar[i] <- weightedCorr(xvarlsdf[ , min(i, npvx)], yvarlsdf[ , min(i, npvy)], method=method, weights=lsdf[,wgt], fast=TRUE, ML=FALSE)
-    } 
-    if(pm %in% c(3)) {
-      # polychoric
-      diagVar[i] <- weightedCorr(xvarlsdf[ , min(i, npvx)], yvarlsdf[ , min(i, npvy)], method="polychoric", weights=lsdf[ , wgt], fast=TRUE, ML=FALSE)
-    }
-    if(pm %in% c(4)) {
-      # polyserial
-      diagVar[i] <- weightedCorr(xvarlsdf[ , min(i, npvx)], yvarlsdf[ , min(i, npvy)], method="polyserial", weights=lsdf[ , wgt], fast=TRUE, ML=FALSE)
-    }
+  # if both have PVs, use the smaller set
+  if(npvx > 1 & npvy > 1) {
+    npv <- min(npvx, npvy)
   }
-
+  # the results, across the PVs (vector of length PV)
+  diagVar <- sapply(1:npv, function(i) weightedCorr(xvarlsdf[ , min(i, npvx)], 
+                                                    yvarlsdf[ , min(i, npvy)], 
+                                                    method=pm, 
+                                                    weights=lsdf[ , wgt], 
+                                                    fast=TRUE, 
+                                                    ML=FALSE))
+  
   # for Pearson we will do a forward transform and inverse transform
   # to keep the code simple we simply set the transofmr an intervse transform
   # to the identity function for everything that is not Pearson
@@ -320,43 +372,32 @@ cor.sdf <- function(x,
   itrans <- transformation$itrans
   setrans <- transformation$setrans
 
-  # potentially transform estimates
+  # potentially (Fisher) transform estimates (ft=Fisher transform)
   ft <- trans(diagVar)
-
   # estimated correlation coefficient
   mcc <- itrans(premcc <- mean(ft))
 
   # the rest of the code estimates the variance
 
   # for each jackknife replicate
-  jkwgtdf <- lsdf[,paste0(wgtl$jkbase, wgtl$jksuffixes), drop=FALSE] #dataframe of jk replicate weights
+  jkwgtdf <- lsdf[ , paste0(wgtl$jkbase, wgtl$jksuffixes), drop=FALSE] #dataframe of jk replicate weights
+  posFilter <- jkwgtdf > 0 #dataframe of T/F
   jrrIMax <- min(npv, max(1,jrrIMax))
   diagVarWgt <- matrix(NA, ncol=jrrIMax, nrow=length(wgts))
   
-  # make jrrIMax
   # rerun with JK replicate weights
   for(i in 1:jrrIMax) {
-    for(jki in rev(1:length(wgts))) {
-      posFilter <- jkwgtdf[ , jki] > 0
-      if(pm %in% c(1,2)) {
-        diagVarWgt[jki, i] <- (trans(weightedCorr(xvarlsdf[posFilter, min(i, npvx)], yvarlsdf[posFilter, min(i, npvy)],
-                                                 method=method, weights=jkwgtdf[posFilter, jki], fast=TRUE, ML=FALSE)) - ft[i])
-      }
-      if(pm %in% c(3)) {
-        diagVarWgt[jki, i] <- (trans(weightedCorr(xvarlsdf[posFilter, min(i, npvx)], yvarlsdf[posFilter , min(i, npvy)],
-                                                 method="polychoric", weights=jkwgtdf[posFilter, jki], fast=TRUE, ML=FALSE)) - ft[i])
-      }
-      if(pm %in% c(4)) {
-        diagVarWgt[jki, i] <- (trans(weightedCorr(xvarlsdf[posFilter, min(i, npvx)], yvarlsdf[posFilter, min(i, npvy)],
-                                                 method="polyserial", weights=jkwgtdf[posFilter, jki], fast=TRUE, ML=FALSE)) - ft[i])
-      }
-    } # End of for statment jki in 1:length(wgts)
-  } # End of for statment i in 1:npv
+    diagVarWgt[ , i] <- sapply(length(wgts):1, function(jki) trans(weightedCorr(xvarlsdf[posFilter[ , jki], min(i, npvx)], 
+                                                                                yvarlsdf[posFilter[ , jki], min(i, npvy)], 
+                                                                                method=pm, 
+                                                                                weights=jkwgtdf[posFilter[ , jki], jki], 
+                                                                                fast=TRUE, 
+                                                                                ML=FALSE)) - ft[i])
+  }
+    
   # see documentation for defintion of Vjrr, Vimp, M
   # one Vjrr per plausible value (PB)
-
   preVjrr = getAttributes(data, "jkSumMultiplier") * apply(diagVarWgt^2, 2, sum)
-
   Vjrr = mean(preVjrr, na.rm=TRUE)
 
   # then Vimp = ((M+1)/M) * [variance of main estimate (mcc) across the PVs.]
@@ -367,29 +408,24 @@ cor.sdf <- function(x,
   V <- Vimp + Vjrr
   # se is root variance
   Zse <- sqrt(V)
-
+  
+  # varEstInputs - JK
+  veJK <- data.frame(stringsAsFactors=FALSE,
+                     PV=rep(1:jrrIMax, each=length(wgts)),
+                     JKreplicate=rep(1:length(wgts), jrrIMax),
+                     variable="cor",
+                     value=as.vector(diagVarWgt)) # as.vector stacks the columns of diagVarWgt
+  varEstInputs <- list(JK=veJK)
+  
+  # varEstInputs - PV (only if multiple PVs)
   if(length(diagVar) > 1) {
-    # multiple PVs
-    veJK <- data.frame(stringsAsFactors=FALSE,
-                       PV=rep(1:ncol(diagVarWgt), each=nrow(diagVarWgt)),
-                       JKreplicate=rep(1:nrow(diagVarWgt), ncol(diagVarWgt)),
-                       variable="cor",
-                       value=as.vector(diagVarWgt)) # as.vector stacks the columns of diagVarWgt
     vePV <- data.frame(stringsAsFactors=FALSE,
                        PV=1:npv,
                        variable=rep("cor", npv),
                        value=diagVar - mean(diagVar))
-    varEstInputs <- list(JK=veJK, PV=vePV)
-  } else {
-    # non-PV variables
-    J <- length(diagVarWgt)
-    veJK <- data.frame(stringsAsFactors=FALSE,
-                       PV=rep(1, J),
-                       JKreplicate=1:J,
-                       variable=rep("cor", J),
-                       value=diagVarWgt)
-    varEstInputs <- list(JK=veJK)
-  }
+    varEstInputs[["PV"]] <- vePV
+  } 
+  
 
   if(weightVar=="one") {
     cor <- list(correlation=mcc, Zse=NA, correlates=vars, variables=variables, order=varOrder, method=method,
@@ -400,7 +436,7 @@ cor.sdf <- function(x,
     Zci <- premcc + c(-1,1) * tstat * Zse
     ci <- itrans(Zci)
     se <- setrans(premcc, Zse)
-    cor <- list(correlation=mcc, Zse=Zse, correlates=vars, variables=variables, order=varOrder, method=method,
+    cor <- list(correlation=mcc, Zse=Zse, correlates=vars, variables=variables, order=varOrder, method=pm,
                 Vjrr=Vjrr, Vimp=Vimp, weight=weightVar, npv=M, njk=length(wgtl$jksuffixes),
                 se=se, ZconfidenceInterval=Zci, confidenceInterval=ci)
   } # End of if statment: if weightVar is "one"

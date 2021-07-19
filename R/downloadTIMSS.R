@@ -59,7 +59,9 @@ downloadTIMSS <- function(root, years=c(2003, 2007, 2011, 2015, 2019), cache=FAL
              "https://timssandpirls.bc.edu/timss2011/downloads/T11_G8_SPSSData_pt1.zip",
              "https://timssandpirls.bc.edu/timss2011/downloads/T11_G8_SPSSData_pt2.zip",
              "https://timssandpirls.bc.edu/timss2011/downloads/T11_G8_SPSSData_pt3.zip",
-             "https://timssandpirls.bc.edu/timss2011/downloads/T11_G8_SPSSData_pt4.zip")
+             "https://timssandpirls.bc.edu/timss2011/downloads/T11_G8_SPSSData_pt4.zip",
+             "https://timssandpirls.bc.edu/timss2011/downloads/T11_ItemParameters.zip",
+             "https://timssandpirls.bc.edu/timss2011/downloads/T11_ItemInformation.zip")
 
   d2015 <- c("https://timssandpirls.bc.edu/timss2015/international-database/downloads/T15_G4_SPSSData_pt1.zip",
              "https://timssandpirls.bc.edu/timss2015/international-database/downloads/T15_G4_SPSSData_pt2.zip",
@@ -68,7 +70,11 @@ downloadTIMSS <- function(root, years=c(2003, 2007, 2011, 2015, 2019), cache=FAL
              "https://timssandpirls.bc.edu/timss2015/international-database/downloads/T15_G8_SPSSData_pt2.zip",
              "https://timssandpirls.bc.edu/timss2015/international-database/downloads/T15_G8_SPSSData_pt3.zip",
              "https://timssandpirls.bc.edu/timss2015/international-database/downloads/T15_G8_SPSSData_pt4.zip",
-             "https://timssandpirls.bc.edu/timss2015/international-database/downloads/TN15_SPSSData.zip")
+             "https://timssandpirls.bc.edu/timss2015/international-database/downloads/TN15_SPSSData.zip",
+             "https://timssandpirls.bc.edu/timss2015/international-database/downloads/T15_G4_IRTItemParameters.zip",
+             "https://timssandpirls.bc.edu/timss2015/international-database/downloads/T15_G4_ItemInformation.zip",
+             "https://timssandpirls.bc.edu/timss2015/international-database/downloads/T15_G8_IRTItemParameters.zip",
+             "https://timssandpirls.bc.edu/timss2015/international-database/downloads/T15_G8_ItemInformation.zip")
   
   d2019 <- c("https://timss2019.org/international-database/downloads/T19_G4_SPSS%20Data.zip",
              "https://timss2019.org/international-database/downloads/T19_G8_SPSS%20Data.zip")

@@ -26,6 +26,7 @@
 #'                        a \code{light.edsurvey.data.frame},
 #'                        the recommended value can be recovered with
 #'                        \code{EdSurvey::getAttributes(}\code{myData,} \code{"jkSumMultiplier")}.
+#' @param returnComponents set to \code{TRUE} to return the imputation variance seperate from the sampling variance
 #'
 #' @details
 #' These functions are not vectorized, so \code{varA} and 
@@ -40,12 +41,13 @@
 #' in the section \dQuote{Estimation of Degrees of Freedom.}
 #'
 #' @return
-#' a numeric value; the jackknife covariance estimate
+#' a numeric value; the jackknife covariance estimate. If \code{returnComponents} is \code{TRUE}, returns a vector of
+#' length three, \code{V} is the variance estimate, \code{Vsamp} is the sampling component of the variance, and \code{Vimp} is the imputation component of the variance
 #'
 #' @example man/examples/varEstToCov.R
 #' @author Paul Bailey
 #' @export
-varEstToCov <- function(varEstA, varEstB=varEstA, varA, varB=varA, jkSumMultiplier) {
+varEstToCov <- function(varEstA, varEstB=varEstA, varA, varB=varA, jkSumMultiplier, returnComponents=FALSE) {
   if(! varA %in% unique(varEstA$JK$variable)) {
     stop(paste0("Could not find ", sQuote("varA"), " value of ", dQuote(varA) ," in varEstA$JK$variable. Existing values include ", pasteItems(unique(varEstA$JK$variable)), "."))
   }
@@ -102,6 +104,10 @@ varEstToCov <- function(varEstA, varEstB=varEstA, varA, varB=varA, jkSumMultipli
     CovImp <- (M+1)/(M*(M-1)) * sum(PV$cov)
   } else { #ends  if(!is.null(varEstA$PV) & !is.null(varEstB$PV))
     CovImp <- 0
+  }
+  if(returnComponents) {
+    V <- CovJK + CovImp
+    return(list(V=V, Vsamp=CovJK, Vimp=CovImp))
   }
   return(CovJK + CovImp)
 }

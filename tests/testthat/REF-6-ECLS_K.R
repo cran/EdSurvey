@@ -115,4 +115,4 @@ ecls_sumREF <- c("Estimates are not weighted.",
 
 ecls_sum_wREF <- c("Estimates are weighted using the weight variable 'c7cpts0'", 
                    "  Variable     N Weighted N  Min.  1st Qu. Median     Mean  3rd Qu.  Max.       SD  NA's Zero-weights", 
-                   "1 c7r4mscl 21409    3941257 66.26 125.8504  144.3 139.9674 158.9718 172.2 23.62027 12124         5561")
+                   "1 c7r4mscl 21409    3941257 66.26 125.8508  144.3 139.9674 158.9715 172.2 23.62027 12124         5561")

@@ -1,3 +1,8 @@
+sdfaREF <- c("invalid", "invalid", "invalid", "invalid", "invalid", "Male", 
+             "Female", "Female", "Male", "Female", "other invalid", "other invalid", 
+             "other invalid", "other invalid", "other invalid", "Male", "Male", 
+             "Male", "Male", "Male")
+
 es1REF <- c("",
             "Formula: composite ~ dsex + b017451 ",
             "",
@@ -534,8 +539,8 @@ gapPSUREF <- c("Call: gap(variable = \"composite\", data = sdf, groupA = dsex %i
 
 sPV_wREF <- c("Estimates are weighted using the weight variable 'origwt'",
               "   Variable     N Weighted N    Min.  1st Qu.   Median     Mean  3rd Qu.    Max.       SD NA's Zero-weights", 
-              "1 composite 16915   16932.46 126.110 251.9623 277.4784 275.8892 301.1835 404.184 36.57130    0            0", 
-              "2   algebra 16915   16932.46 109.842 254.7972 279.8320 278.9366 304.0195 412.152 36.65571    0            0")
+              "1 composite 16915   16932.46 126.110 251.9626 277.4784 275.8892 301.1827 404.184 36.57130    0            0",
+              "2   algebra 16915   16932.46 109.842 254.7982 279.8320 278.9366 304.0186 412.152 36.65571    0            0")
 
 sPVREF <- c("Estimates are not weighted.", "  Variable     N   Min.  1st Qu. Median     Mean  3rd Qu.   Max.       SD NA's", 
             "1   mrpcm1 16915 130.53 252.0600 277.33 275.8606 300.7200 410.80 35.89864    0", 
@@ -624,6 +629,52 @@ rq1REF <- c("",
             "---",
             "Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
 
+rq1SREF <- c("",
+             "Formula: composite ~ dsex + b017451",
+             "",
+             "tau: 0.8", 
+             "jrrIMax: 1",
+             "Weight variable: ‘origwt’",
+             "Variance method: jackknife", 
+             "JK replicates: 62",
+             "full data n: 17606",
+             "n used: 16331",
+             "",
+             "Coefficients:",
+             "                                coef       se        t    dof  Pr(>|t|)    ", 
+             "(Intercept)                 299.7680   1.8103 165.5883 29.389 < 2.2e-16 ***", 
+             "dsexFemale                   -4.6280   1.2908  -3.5852 58.617 0.0006868 ***", 
+             "b017451Once every few weeks   6.5880   1.9086   3.4518 46.045 0.0012041 ** ", 
+             "b017451About once a week     12.4800   2.2959   5.4359 67.782 8.032e-07 ***", 
+             "b0174512 or 3 times a week   16.5420   2.4616   6.7201 29.867 1.943e-07 ***", 
+             "b017451Every day             12.7420   1.6932   7.5253 50.343 8.717e-10 ***", 
+             "---",
+             "Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1")
+
+rq2REF <- c("                (Intercept)                  dsexFemale b017451Once every few weeks    b017451About once a week  b0174512 or 3 times a week            b017451Every day ", 
+            "                     299.43                       -4.63                        7.29                       13.15                       17.02                       13.12 ")
+
+rq2SREF <- c("",
+             "Formula: mrpcm1 ~ dsex + b017451",
+             "",
+             "tau: 0.8",
+             "Weight variable: 'origwt'", 
+             "Variance method: jackknife",
+             "JK replicates: 62",
+             "full data n: 17606", 
+             "n used: 16331",
+             "",
+             "Coefficients:",
+             "                                coef       se        t    dof  Pr(>|t|)    ", 
+             "(Intercept)                 299.4300   1.6469 181.8103 29.389 < 2.2e-16 ***", 
+             "dsexFemale                   -4.6300   1.1182  -4.1405 58.617 0.0001125 ***", 
+             "b017451Once every few weeks   7.2900   1.8336   3.9758 46.045 0.0002456 ***", 
+             "b017451About once a week     13.1500   2.2236   5.9137 67.782 1.213e-07 ***", 
+             "b0174512 or 3 times a week   17.0200   2.3063   7.3798 29.867 3.286e-08 ***", 
+             "b017451Every day             13.1200   1.4556   9.0134 50.343 4.420e-12 ***", 
+             "---",
+             "Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
+
 logit2tREF <- c("", "Formula: iep ~ dsex + b013801", "Family: binomial (logit)", 
                "",
                "Weight variable: 'origwt'", "Variance method: Taylor series", 
@@ -659,3 +710,49 @@ sum2ResBREF <- c("Estimates are weighted using the weight variable 'origwt'",
                  "12 Female        I Don't Know  791      854.0           10.142               0.515", 
                  "13 Female             Omitted  251       65.4            0.777               0.131", 
                  "14 Female            Multiple    4        6.4            0.076               0.042")
+
+
+mmlIntREF <- c("  (Intercept) Population SD ", 
+               "       278.94         35.26 ")  
+mmlSumREF <- c("Call:", 
+               "mml.sdf(formula = algebra ~ 1, data = sdf, weightVar = \"origwt\", ", 
+               "    verbose = TRUE)", 
+               "Summary Call:", 
+               "summary.edSurveyMML(object = mmlNAEP)", 
+               "", 
+               "Summary:",
+               "            Estimate  StdErr t.value", 
+               "(Intercept)  278.936   0.365     765", 
+               "", 
+               "Residual Variance Estimate:", 
+               "              Estimate StdErr", 
+               "Population SD    35.26 0.3756", 
+               "",                                                                
+               "Convergence = Normal exit from bobyqa", 
+               "Iterations = 27", 
+               "LogLike = -70455.32", 
+               "Observations = 16517",
+               "Weighted observations = 16528.91" )  
+
+mmlDsexIntREF <- c("  (Intercept)    dsexFemale Population SD ",
+                   "       278.71          0.45         35.26 ")  
+mmlDsexSumREF <- c("Call:", 
+                   "mml.sdf(formula = algebra ~ 1, data = sdf, weightVar = \"origwt\", ",
+                   "    verbose = TRUE)", 
+                   "Summary Call:", 
+                   "summary.edSurveyMML(object = mmlNAEP)", 
+                   "", 
+                   "Summary:",
+                   "            Estimate  StdErr t.value", 
+                   "(Intercept)  278.936   0.365     765", 
+                   "", 
+                   "Residual Variance Estimate:", 
+                   "              Estimate StdErr", 
+                   "Population SD       35   0.38", 
+                   "", 
+                   "Convergence = Normal exit from bobyqa",
+                   "Iterations = 27", 
+                   "LogLike = -70455.32",
+                   "Observations = 16517", 
+                   "Weighted observations = 16528.91" )  
+

@@ -26,7 +26,7 @@ gap(
   returnSimpleN = FALSE,
   returnNumberOfPSU = FALSE,
   noCov = FALSE,
-  pctMethod = c("unbiased", "simple"),
+  pctMethod = c("unbiased", "symmetric", "simple"),
   includeLinkingError = FALSE
 )
 }

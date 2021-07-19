@@ -30,7 +30,7 @@
 #'
 #' @details
 #' Reads in the unzipped .csv files downloaded from the PIAAC dataset using
-#' the OECD repository (\url{http://www.oecd.org/skills/piaac/}). Users can use
+#' the OECD repository (\url{https://www.oecd.org/skills/piaac/}). Users can use
 #' \code{\link{downloadPIAAC}} to download all required files automatically. 
 #' 
 #' @return
@@ -41,15 +41,15 @@
 #' 
 #' @example man/examples/readPIAAC.R
 #' @references
-#'  Organisation for Economic Co-operation and Development. (2016). \emph{Technical report of the survey of adult skills (PIAAC)} (2nd ed.). Paris, France: Author. Retrieved from \emph{\url{http://www.oecd.org/skills/piaac/PIAAC_Technical_Report_2nd_Edition_Full_Report.pdf}}
+#'  Organisation for Economic Co-operation and Development. (2016). \emph{Technical report of the survey of adult skills (PIAAC)} (2nd ed.). Paris, France: Author. Retrieved from \emph{\url{https://www.oecd.org/skills/piaac/PIAAC_Technical_Report_2nd_Edition_Full_Report.pdf}}
 #' @importFrom readxl read_excel
 #' @export
 readPIAAC <- function(path, 
                       countries, 
                       forceReread = FALSE,
                       verbose = TRUE,
-                      usaOption = c("12_14", "17")) {
-  usaOption <- match.arg(usaOption)
+                      usaOption = "12_14") {
+  
   #temporarily adjust any necessary option settings; revert back when done
   userOp <- options(OutDec = ".")
   userOp2 <- options(scipen = 999)
@@ -58,30 +58,18 @@ readPIAAC <- function(path,
   
   filepath <- normalizePath(path, winslash = "/") # to match IEA read-in function
   forceRead <- forceReread # to match IEA read-in function
+  filepath <- ifelse(grepl("[.][a-zA-Z]{1,4}$", filepath, perl=TRUE, ignore.case=TRUE), dirname(filepath), filepath)
   
   csvfiles <- list.files(filepath, pattern = "^prg.*\\.csv$", full.names=FALSE, ignore.case=TRUE)
   
-  # read in all valid countries 
   all_countries <- unique(tolower(substr(csvfiles, 4,6)))
-  
-  # adjust for US case 
-  all_countries <- all_countries[!all_countries %in% "usa"] 
-  all_countries <- c(all_countries, "usa12_14", "usa17") 
-  
-  # check to see if all run and adjust for usaOption
   if (unlist(countries)[1] == "*") {
+    all <- TRUE # keeping track of a "*" for usaOption
     countries <- all_countries
-    if(usaOption == "12_14") {
-      countries <- countries[!countries %in% "usa17"]
-    } else {
-      countries <- countries[!countries %in% "usa12_14"]
-    }
   } else {
+    all <- FALSE
     countries <- tolower(unlist(countries))
   }
-
-  # check if valid ISO code 
-  countries <- match.arg(countries, all_countries, several.ok = TRUE)
   
   # Process file formats from excel codebook
   ffname <- file.path(filepath,"processed-codebook.meta")
@@ -129,15 +117,30 @@ readPIAAC <- function(path,
   # Process data for each country
   sdf <- list()
   for (cntry in countries) {
-  
+    
+    # check usaOption if star is used 
+    if(cntry == "usa" &  all){
+      if(usaOption == "17"){
+        cntry <- paste0(cntry,"17")
+      } 
+      else {
+        if(usaOption == "12_14"){
+          cntry <- paste0(cntry,"12_14")
+        } else {
+          stop(paste0(dQuote("usaOption") , " must either be ", sQuote("12_14"), ", or ", sQuote("17"), " not: ", sQuote(usaOption)))
+        }
+      }
+
+    }
+    
     # process 
-    processedData <- processCountryPIAAC(filepath, cntry, ff, forceRead, verbose)
+    processedData <- processCountryPIAAC(filepath, cntry,ff,forceRead, verbose)
     processedData$userConditions <- list()
     processedData$defaultConditions <- NULL
     processedData$data <- processedData$dataList$student
     
     # Set up weights ===================================================================
-    uklz <- processedData$cacheFile$reps
+    uklz = processedData$cacheFile$reps
     weights <- list(spfwt0 = list(jkbase = "spfwt", jksuffixes = as.character(1:uklz)))
     attr(weights, "default") <- "spfwt0"
     
@@ -188,24 +191,8 @@ readPIAAC <- function(path,
 # 1. dataList
 # 2. cacheFile: jkSumMultiplier, reps, and jk method
 processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
-  # check for cached files 
-  # check if it's US country code 
-  if(grepl("usa",countryCode)){
-    # using 12_14 code 
-    if(grepl("usa12_14",countryCode)){
-      txtCacheFile <- list.files(filepath, pattern = paste0("usa",".*1\\.txt$"), full.names = FALSE, ignore.case = TRUE)
-      metaCacheFile <- list.files(filepath, pattern = paste0("usa","12_14\\.meta$"), full.names = FALSE, ignore.case = TRUE)
-    }
-    # or 17 code 
-    if(grepl("usa17",countryCode)){
-      txtCacheFile <- list.files(filepath, pattern = paste0("usa",".*17\\.txt$"), full.names = FALSE, ignore.case = TRUE)
-      metaCacheFile <- list.files(filepath, pattern = paste0("usa","17\\.meta$"), full.names = FALSE, ignore.case = TRUE)
-    }
-  } else {
-    # other countries only have one year option, we use general case 
-    txtCacheFile <- list.files(filepath, pattern = paste0(countryCode,".*\\.txt$"), full.names = FALSE, ignore.case = TRUE)
-    metaCacheFile <- list.files(filepath, pattern = paste0(countryCode,"\\.meta$"), full.names = FALSE, ignore.case = TRUE)
-  }
+  txtCacheFile <- list.files(filepath, pattern = paste0(countryCode,".*\\.txt$"), full.names = FALSE, ignore.case = TRUE)
+  metaCacheFile <- list.files(filepath, pattern = paste0(countryCode,"\\.meta$"), full.names = FALSE, ignore.case = TRUE)
   if (length(txtCacheFile) == 0 || length(metaCacheFile) == 0) {
     forceRead <- TRUE
   } else {
@@ -223,53 +210,54 @@ processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
   
   if(!forceRead) {
     if (verbose) {
-      cat(paste0("Found cached data for country code ", dQuote(countryCode), ".\n"))
+      cat(paste0("Found cached data for country code ", dQuote(countryCode),".\n"))
     }
-    dataList$student <- getCSVLaFConnection(file.path(filepath, txtCacheFile), ff)
-    cacheFile <- readRDS(file.path(filepath, metaCacheFile[1]))
+    dataList$student <- getCSVLaFConnection(file.path(filepath,txtCacheFile),ff)
+    cacheFile <- readRDS(file.path(filepath,metaCacheFile[1]))
     return(list(dataList = dataList,
                 cacheFile = cacheFile))
   }
-  # Regular Case, no cached files 
   if (verbose) {
     cat("Processing data for country code ", dQuote(countryCode),".\n")
   }
   # Reading country csv file 
   # If Country code is USA, special processing, else regular 
   if(grepl("usa",countryCode)) {
+    origCC <- countryCode
+    date <- gsub("usa(.*)","\\1", countryCode)
+    countryCode <- "usa"
     # Is it US 17 or 2012 
-    if(grepl("usa17",countryCode)) {
+    if(grepl("17", date)) {
       # usa 17
-      fname <- list.files(filepath, pattern = paste0("usa", ".*2017\\.csv"), full.names = FALSE, ignore.case = TRUE)
+      fname = list.files(filepath,pattern = paste0(countryCode,".*2017\\.csv"), full.names = FALSE, ignore.case = TRUE)
       if(length(fname) > 1) {
-        stop(paste0(sQuote(countryCode), ": there is more than one csv files."))
+        stop(paste0(sQuote(countryCode),": there is more than one csv files."))
       }
       fname <- fname[1]
       # 17 is "|" delimited
-      dat <- read.csv(file.path(filepath, fname), header = TRUE, sep = ,"|",colClasses = "character", na.strings="", stringsAsFactors = FALSE)
+      dat <- read.csv(file.path(filepath,fname), header = TRUE, sep = ,"|",colClasses = "character", na.strings="", stringsAsFactors = FALSE)
+      
     } else {
-      # usa 12
-      if(grepl("usa12_14",countryCode)){
+      if(grepl("12_14", date)){
         # usa 12
-        fname <- list.files(filepath, pattern = paste0("usa", ".*1\\.csv"), full.names = FALSE, ignore.case = TRUE)
+        fname = list.files(filepath,pattern = paste0(countryCode,".*1\\.csv"), full.names = FALSE, ignore.case = TRUE)
         if(length(fname) > 1) {
-          stop(paste0(countryCode, ": there is more than one csv files."))
+          stop(paste0(countryCode,": there is more than one csv files."))
         } 
         fname <- fname[1]
         dat <- read.csv(file.path(filepath,fname), header = TRUE, colClasses = "character", na.strings="", stringsAsFactors = FALSE)
       } else {
-        # error for incorrect US option 
-        stop(paste0(dQuote("usaOption") , " must either be ", sQuote("12_14"), ", or ", sQuote("17"), " not: ", sQuote(countryCode)))
+        stop(paste0(dQuote("usaOption") , " must either be ", sQuote("12_14"), ", or ", sQuote("17"), " not: ", sQuote(origCC)))
       } # end US cases 
     } 
   } else {
     # non-US cases 
-    fname <- list.files(filepath, pattern = paste0(countryCode,".*\\.csv"), full.names = FALSE, ignore.case = TRUE)
+    fname = list.files(filepath,pattern = paste0(countryCode,".*\\.csv"), full.names = FALSE, ignore.case = TRUE)
     if(length(fname) > 1) {
-      stop(paste0(countryCode, ": there is more than one csv files."))
+      stop(paste0(countryCode,": there is more than one csv files."))
     }
     fname <- fname[1]
-    dat <- read.csv(file.path(filepath, fname), header = TRUE, colClasses = "character", na.strings="", stringsAsFactors = FALSE)
+    dat <- read.csv(file.path(filepath,fname), header = TRUE, colClasses = "character", na.strings="", stringsAsFactors = FALSE)
   } # end reading country csv file 
   
   colnames(dat) <- toupper(colnames(dat))
@@ -297,6 +285,7 @@ processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
       }
     }
     
+    
     # there are some typos in csv files
     if(ff$dataType[ci] != "character") {
       temp <- dat[[ci]]
@@ -306,10 +295,10 @@ processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
     }
   }
   # write out processed csv files, must use write.table as write.csv ALWAYS includes col.names even if col.names=FALSE is set
-  write.table(dat, file.path(filepath,gsub("\\.csv$", ".txt", fname)), sep = ",", col.names = FALSE, na = "", row.names = FALSE)
+  write.table(dat, file.path(filepath,gsub("\\.csv$",".txt",fname)), sep = ",", col.names = FALSE, na = "", row.names = FALSE)
   
   # return output
-  dataList$student <- getCSVLaFConnection(file.path(filepath,gsub("\\.csv", ".txt", fname)),
+  dataList$student <- getCSVLaFConnection(file.path(filepath,gsub("\\.csv",".txt",fname)),
                                           ff)
   dataListFF$student <- ff
   
@@ -324,23 +313,20 @@ processCountryPIAAC <- function(filepath, countryCode, ff, forceRead, verbose) {
   if(vemethodn == 2) {
     jkSumMultiplier <- 1.0
   } else if (vemethodn == 1) {
-    jkSumMultiplier <- 79/80 
+    jkSumMultiplier <- 79/80 # IDB uses reps = 80 for all countries
   }
-  # Identify number of weights 
-  wgtNumber <- unique(dat[,"VENREPS"])
-  # put together cacheFile 
   cacheFile <- list(jkSumMultiplier = jkSumMultiplier,
-                    method = vemethodn,
-                    reps = wgtNumber)
-  saveRDS(cacheFile, file.path(filepath, paste0("jk", tolower(countryCode), ".meta")))
+                   method = vemethodn,
+                   reps = 80)
+  saveRDS(cacheFile,file.path(filepath,paste0("jk",tolower(countryCode),".meta")))
   return(list(dataList = dataList,
               cacheFile = cacheFile))
 }
 
 # Reads in excel codebook to return a data.frame fileFormat
 processFileFormatReturnFF <- function(filepath) {
-  ffname <- list.files(filepath, pattern = "codebook.*\\.xls", ignore.case = TRUE, full.names = FALSE)
-  ffname <- file.path(filepath, ffname)
+  ffname <- list.files(filepath,pattern = "codebook.*\\.xls", ignore.case = TRUE, full.names = FALSE)
+  ffname <- file.path(filepath,ffname)
   if (!file.exists(ffname) || length(ffname) == 0) {
     stop(paste0("The codebook Excel file does not exist. It is recommended that users use downloadPIAAC to get all necessary files for the database."))
   }
@@ -354,9 +340,9 @@ processFileFormatReturnFF <- function(filepath) {
                    Width = codebook$variable$Width,
                    Decimal = codebook$variable$Decimals,
                    dataType = tolower(codebook$variable$Type), stringsAsFactors = FALSE)
-  ff$dataType <- ifelse(grepl("^i", ff$dataType), "integer",
+  ff$dataType <- ifelse(grepl("^i",ff$dataType),"integer",
                         ifelse(grepl("^n", ff$dataType), "numeric",
-                               ifelse(grepl("^s", ff$dataType), "character", NA)))
+                               ifelse(grepl("^s",ff$dataType),"character",NA)))
   # retrieve value labels
   codebook$value$`Variable Name` <- toupper(codebook$value$`Variable Name`)
   codebook$value$`Value (SAS)` <- gsub("^\\.", "", codebook$value$`Value (SAS)`)
@@ -431,8 +417,9 @@ countryDictPIAAC <- function(countryCode) {
   dict <- readRDS(system.file("extdata", "PIAACDict.rds", package="EdSurvey"))
   ussr <- c("arm", "aze", "blr", "est", "geo", "kaz", "kgz", "ltu", "lva", "mda", "tjk", "ukr", "uzb")
   if(countryCode %in% c("usa12_14", "usa17")){
-    date <- ifelse(countryCode == "usa12_14", "'12/14","'17")
-    return(paste(dict$Country[dict$CODE == toupper("usa")][1], date))
+    date <- ifelse(countryCode == "usa12_14", "'12","'17")
+    countryCode <- "usa"
+    return(paste(dict$Country[dict$CODE == toupper(countryCode)][1], date))
   } 
   else {
     if(countryCode %in% ussr){

@@ -49,11 +49,14 @@
 #'                           of covariances between estimates.
 #' @param returnNumberOfPSU a logical value set to \code{TRUE} to return the number of 
 #'                          primary sampling units (PSUs)                         
-#' @param pctMethod one of \dQuote{unbiased} or \dQuote{simple};
+#' @param pctMethod one of \dQuote{unbiased}, \dQuote{symmetric}, \dQuote{simple};
 #'                  unbiased produces a weighted median unbiased percentile estimate,
 #'                  whereas simple uses a basic formula that matches previously
-#'                  published results.
+#'                  published results. Symmetric uses a more basic formula
+#'                  but requires that the percentile is symetric to multiplying
+#'                  the quantity by negative one.
 #' @param confInt a Boolean indicating if the confidence interval should be returned
+#' @param dofMethod passed to \code{\link{DoFCorrection}} as the \code{method} argument
 #' @details
 #' Percentiles, their standard errors, and confidence intervals
 #' are calculated according to the vignette titled
@@ -122,15 +125,16 @@ percentile <- function(variable, percentiles, data,
                 recode=NULL,
                 returnVarEstInputs=FALSE,
                 returnNumberOfPSU=FALSE,
-                pctMethod=c("unbiased", "simple"),
-                confInt=TRUE
+                pctMethod=c("symmetric", "unbiased", "simple"),
+                confInt=TRUE,
+                dofMethod=c("JR", "WS")
                 ) {
   # check incoming variables
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
   varMethod <- substr(tolower(varMethod[[1]]), 0,1)
   call <- match.call()
   pctMethod <- match.arg(pctMethod)
-  
+  dofMethod <- match.arg(dofMethod)
   # check percentiles arguments
   if (any(percentiles < 0 | percentiles > 100)) {
     message(sQuote("percentiles"), " must be between 0 and 100. Values out of range are omitted.")
@@ -226,11 +230,11 @@ percentile <- function(variable, percentiles, data,
     # 1) get data for this variable and weight
     taylorVars <- NULL
     if(varMethod=="t") {
-      taylorVars <- c(getPSUVar(data, weightVar), getStratumVar(data, weightVar))
+      taylorVars <- c(getPSUVar(data, wgt), getStratumVar(data, wgt))
     }
     getDataVarNames <- c(variable, wgt, taylorVars)
     
-    if (returnNumberOfPSU){
+    if (returnNumberOfPSU | confInt){
       # Get stratum and PSU variable
       stratumVar <- getAttributes(data,"stratumVar")
       psuVar <- getAttributes(data,"psuVar")
@@ -276,129 +280,367 @@ percentile <- function(variable, percentiles, data,
       edf[,variable] <- as.numeric(edf[,variable])
     }
 
+    # is this a NAEP linking error formula case
+    linkingError <- "NAEP" %in% getAttributes(data, "survey") & any(grepl("_linking", variables, fixed=TRUE))
+    # jrrIMax
     jrrIMax <- min(jrrIMax, length(variables))
-
-    # 2) setup the (x,y,w) data.frame
-    resdf <- data.frame(inst=1:length(variables))
-    for(i in 1:length(percentiles)) {
-      resdf[paste0("P",percentiles[i])] <- 0
-    }
     
     # get the jackknife replicate weights for this sdf
     jkw <- getWeightJkReplicates(wgt, data)
-    # varm: JRR contributions
-    # nsmall: minimum (smaller value) of n above or below percentile
-    varm <- nsmall <- r <- matrix(NA, nrow=length(variables), ncol=length(percentiles))
-    for(vari in 1:length(variables)) {
-      # calculate the percentiles for this variable (now vv).
-      vv <- variables[vari]
-      # make a data frame with x and w on it
-      xpw <- data.frame(x=edf[[vv]],
-                        w=edf[[wgt]])
-      # remove missings
-      xpw <- xpw[!is.na(xpw$x),]
-      # order the results by x
-      xpw <- xpw[ord <- order(xpw$x),]  # keep order as ord for use in sapply later
-      # WW is the total weight
-      WW <- sum(xpw$w)
-      # number of interior points, note extras not added yet
-      nn <- nrow(xpw)
-      # the percentile of each point,
-      # using percentile method recomended by Hyndman and Fan (1996)
-      # see percentile vignette for details.
-      # xpwc is condensed (duplicate values of x are merged, summing the weight)
-      # this is then used for pcpt, while xpw is used for all other pruposes
-      xpwc <- pctp(nn, WW, xpw$w, pctMethod, xpw)
-      # 3) identify requested points
-      # pctf finds the points. the sapply does it for each value in percentiles
-      r[vari, ] <- sapply(1:length(percentiles), function(peri) {
-                    pctf(percentiles[peri], xpwc, pctMethod) 
-                  })
-      # get the smaller of n above the cutoff or n below
-      # subtract one to account for edge data at the end.
-      # max with 0 incase a discrete variable has no cases more extreme
-      nsmall[vari, ] <- sapply(1:length(percentiles), function(peri) {
-                          # based on xpw, number of observed students
-                          max(0, -1 + min( sum(xpw$x < r[vari,peri]), sum(xpw$x > r[vari,peri])  ))
-                        })
-
-      # now, estimate the variance of this statistic
-      if(vari <= jrrIMax) {
-        # get statistic with jackknife weights, this PV
-        rprs <- sapply(1:length(percentiles), function(peri) {
-                        p <- percentiles[peri]
-                        rp <- r[vari, peri]
-                        # for all jackknife replicates, find the percentile
-                        jkrp <- sapply(1:length(jkw), function(jki) {
-                          # xpw has been reordered, so have to reorder
-                          # edf in the same way to use it here
-                          # set the bottom and top weight to 0 so the sum is still correct 
-                          xpw$w <- edf[ord,jkw[jki]]
-                          WW <- sum(xpw$w)
-                          nn <- nrow(xpw) - 2
-                          xpwc <- pctp(nn, WW, xpw$w, pctMethod, xpw)
-                          # estimate the percentile with the new weights
-                          pctf(p, xpwc, pctMethod)
-                        })
-                        rpr <- jkrp - rp
-                        #if difference rpr is very small round to 0 for DOF correctness 
-                        rpr[which(abs(rpr) < (sqrt(.Machine$double.eps)*sqrt(length(jkrp))))] <- 0 
-                      
-                        rpr
-                      })
-        
-        varm[vari, ] <- apply(rprs^2, 2, sum)
-        # get varEstInputs to get dof at end
-        varEstInputsJKi <- as.data.frame(rprs)
-        varEstInputsJKi$JKreplicate <- 1:nrow(varEstInputsJKi)
-        # varEstInputs is supposed to be long, so make it that way.
-        varEstInputsJKi <- reshape(varEstInputsJKi, direction="long", varying=1:(ncol(varEstInputsJKi)-1),
-                                   v.names="value")
-        varEstInputsJKi$PV <- vari
-        for(i in 1:length(percentiles)) {
-          varEstInputsJKi$variable[varEstInputsJKi$time == i] <- paste0("P", percentiles[i]) 
-        }
-        varEstInputsJKi$id <- varEstInputsJKi$time <- NULL
-        # reorder columns to agree with outer varEstInputs
-        varEstInputsJKi <- varEstInputsJKi[,c("PV", "JKreplicate", "variable", "value")]
-        if(vari == 1) {
-          varEstInputsJK <- varEstInputsJKi
+    # for each variable to find percentiles in
+    percentileGen <- function(thesePercentiles, pctMethod) {
+      # make sure these are not out of bounds
+      fnp <- function(pv, w) {
+        # data frame with x and w on it. It will eventually get the percentile for that point
+        xpw <- data.frame(x=pv[w>0],
+                          w=w[w>0])
+        # remove missings
+        xpw <- xpw[!is.na(xpw$x),]
+        # order the results by x
+        xpw <- xpw[order(xpw$x),]
+        # WW is the total weight
+        WW <- sum(xpw$w)
+        # number of interior points, note extras not added yet
+        nn <- nrow(xpw)
+        # the percentile of each point,
+        # using percentile method recomended by Hyndman and Fan (1996)
+        # see percentile vignette for details.
+        # xpwc is condensed (duplicate values of x are merged, summing the weight)
+        # this is then used for pcpt, while xpw is used for all other pruposes
+        if(pctMethod == "simple") {
+          # result vector
+          resv <- rep(NA, length(thesePercentiles))
+          resp <- 100 * cumsum(xpw$w)/WW
+          xpw$p <- resp
+          for(ri in 1:length(thesePercentiles)) {
+            # k + 1 (or, in short hand kp1)
+            # which.max returns the index of the first value of TRUE
+            kp1 <- which.max(xpw$p >= thesePercentiles[ri]) 
+            resv[ri] <- xpw$x[kp1]
+            names(resv)[ri] <- paste0("P", thesePercentiles[ri])
+          }
+          resv[thesePercentiles > xpw$p[nrow(xpw)]] <- xpw$x[nrow(xpw)]
+          return(resv)
+        } else if (pctMethod == "unbiased") {
+          if (is.matrix(thesePercentiles)) {
+            # for lower and upper latent_ci
+            len <- nrow(thesePercentiles)
+          } else {
+            len <- length(thesePercentiles)
+          }
+          xpwdt <- data.table(xpw)
+          xpw <- as.data.frame(xpwdt[, w:=mean(w), by="x"])
+          # see Stats vignette or Hyndman & Fan
+          kp <- 1 + (nn-1)/(WW-1) * ((cumsum(c(0,xpw$w[-nrow(xpw)]))+ (xpw$w-1)/2))
+          # do not let kp go below 1 nor above nn-1, moves nothing when all weights >= 1
+          kp <- pmax(1,pmin(nn-1,kp))
+          resp <- 100 * (kp - 1/3) / (nn + 1/3)
+          # this does not cover the entire 0 to 100 interval, so add points on the end.
+          xpwc <- rbind(xpw[1,], xpw, xpw[nrow(xpw),])
+          xpwc$w[1] <- xpwc$w[nrow(xpwc)] <- 0
+          xpwc$p <- c(0,resp,100)
+          # could be larger than max, handle that
+          resv <- sapply(1:len, function(ri) {
+            if (is.matrix(thesePercentiles)) {
+              # for lower and upper latent_ci
+              n <- 2
+              p <- thesePercentiles[ri, ]
+            } else {
+              n <- 1
+              p <- thesePercentiles[ri]
+            }
+            
+            sapply(1:n, function(r_i) {
+              p <- p[r_i]
+              p <- min( max(p,0) , 100) # enforce 0 to 100 range
+              # k + 1 (or, in short hand kp1)
+              # which.max returns the index of the first value of TRUE
+              xpwc <- xpwc[!duplicated(xpwc$p),]
+              # kp1 stands for k + 1
+              kp1 <- which.max(xpwc$p >= p)
+              if(kp1==1) {
+                xpwc$x[1]
+              } else {
+                # k = (k+1) - 1
+                k <- kp1 - 1
+                pk <- xpwc$p[k]
+                pkp1 <- xpwc$p[kp1]
+                gamma <- (p-pk)/(pkp1 - pk)
+                #interpolate between k and k+1
+                (1-gamma) * xpwc$x[k] + gamma * xpwc$x[kp1]
+              }
+            })
+          })
+          for(i in 1:len) {
+            names(resv)[i] <- paste0("P",thesePercentiles[i])
+          }
+          return(resv)
         } else {
-          varEstInputsJK <- rbind(varEstInputsJK, varEstInputsJKi)
+          # pctMethod == 'symmetric'
+          # result vector
+          resv <- rep(NA, length(thesePercentiles))
+          xpwdt <- data.table(xpw)
+          xpw <- as.data.frame(xpwdt[, w:=mean(w), by="x"])
+          # see Stats vignette or Hyndman & Fan
+          kp <- 1/2 + (nn-1)/(WW-1) * ((cumsum(c(0, xpw$w[-nrow(xpw)])) + (xpw$w-1)/2))
+          # do not let kp go below 1 nor above nn-1, moves nothing when all weights >= 1
+          kp <- pmax(1, pmin(nn-1, kp))	        
+          resp <- 100 * kp / nn	        
+          xpw$p <- resp
+          # could be larger than max, handle that
+          for(ri in 1:length(thesePercentiles)) {
+            thisPercentile <- thesePercentiles[ri]
+            names(resv)[ri] <- paste0("P", thisPercentile)
+            if(thisPercentile > xpw$p[nrow(xpw)]) {
+              resv[ri] <- xpw$x[nrow(xpw)]
+            } else {
+              # kp1 stands for k + 1
+              kp1 <- which.max(xpw$p >= thisPercentile)
+              # less than min, so return min
+              if(kp1==1) {
+                resv[ri] <- xpw$x[1]
+              } else {
+                # interior cases:
+                # k = (k+1) - 1	
+                k <- kp1 - 1	
+                pk <- xpw$p[k]	
+                pkp1 <- xpw$p[kp1]	
+                gamma <- (thisPercentile-pk)/(pkp1 - pk)	
+                #interpolate between k and k+1	
+                resv[ri] <- (1-gamma) * xpw$x[k] + gamma * xpw$x[kp1]	
+              }
+            }
+          }
+          return(resv)
         }
-      } #ends if(vari <= jrrIMax)
-    } #ends  for(vari in 1:length(variables))
-    M <- length(variables)
-    # imputaiton variance / variance due to uncertaintly about PVs
-    Vimp <- rep(0, ncol(r))
-    if(nrow(r) > 1) {
-      # imputation variance with M correction (see stats vignette)
-      # [r - mean(r)]^2
-      Vimp <- (M+1)/(M * (M-1)) * apply( (t(t(r) - apply(r, 2, mean)))^2, 2, sum) # will be 0 when there are no PVs
+      }
+      return(fnp)
     }
-    r0 <- apply(r, 2, mean)
-    nsmall0 <- apply(nsmall, 2, mean)
-    # variance due to sampling
-    Vjrr <- getAttributes(data, "jkSumMultiplier") * apply(varm[1:jrrIMax, , drop=FALSE], 2, mean)
-    V <- Vimp + Vjrr
-    # again, build varEstInputs for dof calculation
-    varEstInputsPV <- r
-    varEstInputsPV <- as.data.frame(t( t(varEstInputsPV) - apply(varEstInputsPV, 2, mean)))
-    varEstInputsPV$PV <- 1:nrow(varEstInputsPV)
-    varEstInputsPV <- reshape(varEstInputsPV, direction="long", varying=1:(ncol(varEstInputsPV)-1),
-                  v.names="value")
-    for(i in 1:length(percentiles)) {
-      varEstInputsPV$variable[varEstInputsPV$time == i] <- paste0("P", percentiles[i]) 
-    }
-    varEstInputsPV$id <- varEstInputsPV$time <- NULL
-    # reorder columns to agree with outer varEstInputs
-    varEstInputsPV <- varEstInputsPV[,c("PV", "variable", "value")]
 
-    varEstInputs <- list(JK=varEstInputsJK,
-                         PV=varEstInputsPV)
+    # check for unusable jrrIMax for linking error
+    if(linkingError & jrrIMax != 1) {
+      warning("The linking error variance estimator only supports ", dQuote("jrrIMax=1"), ". Resetting to 1.")
+      jrrIMax <- 1
+    }
+    if(linkingError){
+      # 2) setup the (x,y,w) data.frame
+      resdf <- data.frame(inst=1:length(variables))
+      for(i in 1:length(percentiles)) {
+        resdf[paste0("P",percentiles[i])] <- 0
+      }
+      
+      # get the jackknife replicate weights for this sdf
+      # varm: JRR contributions
+      # nsmall: minimum (smaller value) of n above or below percentile
+      #varm <- nsmall <- r <- matrix(NA, nrow=length(variables), ncol=length(percentiles))
+      # for each variable to find percentiles in
+      jkSumMult <- getAttributes(data, "jkSumMultiplier")
+      pctfi <- percentileGen(percentiles, pctMethod)
+      estVars <- variables[!(grepl("_imp_",variables) | grepl("_samp_",variables))]
+      esti <- getLinkingEst(edf, estVars, stat=pctfi, wgt=wgt)
+      # build imputation variance inputs
+      varEstInputsPV <- data.frame(PV=rep(1:nrow(esti$coef), length(percentiles)),
+                                   variable=rep(paste0("P",percentiles), each=nrow(esti$coef)),
+                                   value=rep(NA,nrow(esti$coef) * length(percentiles)))
+      for(pcti in 1:length(percentiles)) {
+        for(pctj in 1:length(estVars)) {
+          varEstInputsPV$value[varEstInputsPV$PV == pctj & varEstInputsPV$variable==names(esti$est)[pcti]] <- esti$coef[pctj, pcti] - mean(esti$coef[ , pcti])
+        }
+      }
+      
+      # get sampling var
+      Vjrr <-  getLinkingSampVar(edf,
+                                 pvSamp=variables[grep("_samp", variables)],
+                                 stat = pctfi,
+                                 rwgt = jkw,
+                                 T0 = esti$est,
+                                 T0Centered = FALSE)
+      # now finalize imputation vairance
+      M <- length(variables)
+      # imputaiton variance / variance due to uncertaintly about PVs
+      Vimp <- getLinkingImpVar(data=edf,
+                               pvImp = variables[grep("_imp", variables)],
+                               ramCols = ncol(getRAM()),
+                               stat = pctfi,
+                               wgt = wgt,
+                               T0 = esti$est,
+                               T0Centered = FALSE)
+      varEstInputsJK <- Vjrr$veiJK
+      varEstInputsJK$value <- -1 * varEstInputsJK$value
+      # total variance
+      V <- Vimp$V + Vjrr$V
+    } else {
+      # NOT linkingerror
+
+      jkSumMult <- getAttributes(data, "jkSumMultiplier")
+      pctfi <- percentileGen(percentiles, pctMethod)
+      esti <- getEst(edf, variables, stat=pctfi, wgt=wgt)
+      names(esti$est) <- paste0("P",percentiles)
+      colnames(esti$coef) <- paste0("P",percentiles)
+
+      # build imputation variance inputs
+      varEstInputsPV <- data.frame(PV=rep(1:nrow(esti$coef), length(percentiles)),
+                                   variable=rep(paste0("P",percentiles), each=nrow(esti$coef)),
+                                   value=rep(NA,nrow(esti$coef) * length(percentiles)))
+      for(pcti in 1:length(percentiles)) {
+        for(pctj in 1:length(variables)) {
+          varEstInputsPV$value[varEstInputsPV$PV == pctj & varEstInputsPV$variable==names(esti$est)[pcti]] <- esti$coef[pctj, pcti] - mean(esti$coef[ , pcti])
+        }
+      }
+      if (! pctMethod %in% 'unbiased') {
+        # pctMethod is "simple" or "symmetric"
+        # build jackkinve
+        vsi <- matrix(0, nrow=jrrIMax, ncol=length(percentiles))
+        for(j in 1:jrrIMax) {
+          # based on jth PV, so use co0 from jth PV
+          vestj <- getVarEstJK(stat=pctfi, yvar=edf[ , variables[j]], wgtM=edf[ , jkw], co0=esti$coef[j,], jkSumMult=jkSumMult, pvName=j)
+          if(j == 1) {
+            varEstInputsJK <- vestj$veiJK
+          } else {
+            varEstInputsJK <- rbind(varEstInputsJK, vestj$veiJK)
+          }
+          vsi[j,] <- vestj$VsampInp
+        }
+        # sampling variance is then the mean
+        Vjrr <- apply(vsi, 2, mean)
+        
+      } else {
+        # pctMethod is 'unbiased'
+        percentileGen2 <- function(thesePercentiles) {
+          # make sure these are not out of bounds
+          thesePercentiles <- pmin( pmax(thesePercentiles, 0) , 100) # enforce 0 to 100 range
+          fnp <- function(pv, w, jkws, rv, jmax) {
+            # result vector
+            jkwc <- colnames(jkws)
+            rprs <- matrix(0, nrow=length(jkwc), ncol=length(percentiles))
+            nsmall <- rep(NA, length(thesePercentiles))
+            # data frame with x and w on it. It will eventually get the percentile for that point
+            xpw <- data.frame(x=pv,
+                              w=w)
+            xpw <- cbind(xpw, jkws)
+            xpw <- xpw[xpw$w>0, ]
+            # remove missings
+            xpw <- xpw[!is.na(xpw$x),]
+            # order the results by x
+            xpw <- xpw[ord <- order(xpw$x),]  # keep order as ord for use in sapply later
+            
+            WW <- sum(xpw$w)
+            nn <- nrow(xpw)
+            xpwdt <- data.table(xpw)
+            xpwc <- as.data.frame(xpwdt[, w:=mean(w), by="x"])
+            w <- xpw$w
+            # see Stats vignette or Hyndman & Fan
+            kp <- 1 + (nn-1)/(WW-1) * ((cumsum(c(0,w[-length(w)]))+ (w-1)/2))
+            # do not let kp go below 1 nor above nn-1, moves nothing when all weights >= 1
+            kp <- pmax(1,pmin(nn-1,kp))
+            resp <- 100 * (kp - 1/3) / (nn + 1/3)
+            # this does not cover the entire 0 to 100 interval, so add points on the end.
+            xpwc <- rbind(xpwc[1,], xpwc, xpwc[nrow(xpwc),])
+            xpwc$w[1] <- xpwc$w[nrow(xpwc)] <- 0
+            xpwc$p <- c(0,resp,100)
+            
+            for(ri in 1:length(thesePercentiles)) {
+              p <- thesePercentiles[ri]
+              rp <- rv[ri]
+              nsmall[ri] <- max(0, -1 + min( sum(xpw$x < rv[ri]), sum(xpw$x > rv[ri])))
+              
+              if (jmax) {
+                # k + 1 (or, in short hand kp1)
+                # which.max returns the index of the first value of TRUE
+                jkrp <- sapply(1:length(jkwc), function(jki) {
+                  # xpw has been reordered, so have to reorder
+                  # edf in the same way to use it here
+                  # set the bottom and top weight to 0 so the sum is still correct 
+                  xpw$w <- edf[ord,jkw[jki]]
+                  WW <- sum(xpw$w)
+                  nn <- nrow(xpw) - 2
+                  xpwdt <- data.table(xpw)
+                  xpw <- as.data.frame(xpwdt[, w:=mean(w), by="x"])
+                  w <- xpw$w
+                  # see Stats vignette or Hyndman & Fan
+                  kp <- 1 + (nn-1)/(WW-1) * ((cumsum(c(0,w[-length(w)]))+ (w-1)/2))
+                  # do not let kp go below 1 nor above nn-1, moves nothing when all weights >= 1
+                  kp <- pmax(1,pmin(nn-1,kp))
+                  resp <- 100 * (kp - 1/3) / (nn + 1/3)
+                  xpwc <- rbind(xpw[1,], xpw, xpw[nrow(xpw),])
+                  xpwc$w[1] <- xpwc$w[nrow(xpwc)] <- 0
+                  xpwc$p <- c(0,resp,100)
+                  xpwc <- xpwc[!duplicated(xpwc$p),]
+                  
+                  # estimate the percentile with the new weights
+                  kp1 <- which.max(xpwc$p >= p)
+                  if(kp1==1) {
+                    xpwc$x[1]
+                  } else {
+                    # k = (k+1) - 1
+                    k <- kp1 - 1
+                    pk <- xpwc$p[k]
+                    pkp1 <- xpwc$p[kp1]
+                    gamma <- (p-pk)/(pkp1 - pk)
+                    #interpolate between k and k+1
+                    (1-gamma) * xpwc$x[k] + gamma * xpwc$x[kp1]
+                  }
+                })
+                
+                rpr <- jkrp - rp
+                #if difference rpr is very small round to 0 for DOF correctness 
+                rpr[which(abs(rpr) < (sqrt(.Machine$double.eps)*sqrt(length(jkrp))))] <- 0 
+                rprs[ , ri] <- rpr
+              }
+            }
+            nsmall[is.na(nsmall)] <- 0
+            return (list(rprs = rprs, nsmall = nsmall))
+          }
+          return(fnp)
+        }
+        
+        pctfi2 <- percentileGen2(percentiles)
+        # build jackkinve
+        vestj <- getVarEstJKPercentile(data=edf, pvEst=variables, stat=pctfi2, wgt=wgt, jkw=jkw, rvs=esti$coef, jmaxN=jrrIMax)
+        # reshape
+        vestj <- as.data.frame(vestj$rprs)
+        cols <- paste0('P',percentiles)
+        colnames(vestj) <- cols
+        vestj$JKreplicate <- rep(1:length(jkw), jrrIMax)
+        vestj$PV <- rep(1:jrrIMax, each=length(jkw))
+        varEstInputsJK <- reshape(vestj, direction = 'long', idvar=c('JKreplicate','PV'), varying=cols, times=cols, timevar='variable', v.names='value')
+        rownames(varEstInputsJK) <- paste0(rep(1:length(jkw),length(percentiles)),'.',rep(1:length(percentiles),each=length(jkw)))
+        varEstInputsJK$vs <- varEstInputsJK$value^2
+        varm2 <- aggregate(vs ~ PV + variable, varEstInputsJK, sum)
+        varEstInputsJK$vs <- NULL
+        varEstInputsJK <- varEstInputsJK[,c('PV', 'JKreplicate', 'variable', 'value')]
+        # sampling variance is then the mean
+        a <- aggregate(vs ~ variable, varm2, mean)
+        a$variable <- as.numeric(gsub('P','',a$variable))
+        a <- a[order(a$variable),]
+        Vjrr <- getAttributes(data, "jkSumMultiplier") * a$vs
+      }
+      
+      # now finalize imputation vairance
+      M <- length(variables)
+      # imputaiton variance / variance due to uncertaintly about PVs
+      Vimp <- rep(0, ncol(esti$coef))
+      if(M > 1) {
+        # imputation variance with M correction (see stats vignette)
+        # [r - mean(r)]^2
+        Vimp <- (M+1)/(M * (M-1)) * apply( (t(t(esti$coef) - apply(esti$coef, 2, mean)))^2, 2, sum) # will be 0 when there are no PVs
+      }
+      # total variance
+      V <- Vimp + Vjrr
+    } # end else for if(linkingError)
+
+    varEstInputs <- list(JK=varEstInputsJK, PV=varEstInputsPV)
+
+    # get dof, used in confidence inverval too
+    dof <- 0*percentiles
+    for(i in 1:length(dof)) {
+      dof[i] <- DoFCorrection(varEstA=varEstInputs, varA=paste0("P", percentiles[i]), method=dofMethod)
+    }
+
     # find confidence interval
     # first, find the variance of the fraction that are above/below this
     # percentile
+
     if(confInt){
       if(varMethod=="j") {
         #Jackknife method for estimating the variance of the percent below P
@@ -409,62 +651,43 @@ percentile <- function(variable, percentiles, data,
         # while the section, "Estimation of the standard error of weighted
         # percentages when plausible values are present, using the jackknife
         # method" is implemented when they are present.
-
-        mu0 <- sapply(1:length(percentiles), function(i) {
-          # get the mean of the estimates across pvs
-          mean(sapply(1:length(variables), function(vari) {
-            # for an individual PV, get the estimated fraction below r0[i]
-            vv <- variables[vari]
-            xpw <- data.frame(x=edf[[vv]],
-                              w=edf[[wgt]])
-            xpw <- xpw[!is.na(xpw$x),]
-            xpw$below <- (xpw$x <= r0[i])
-            s0 <- sum(xpw$w[xpw$below]) / sum(xpw$w) 
-          }))
-        })
-
-        pVjrr <- pVimp <- matrix(NA, nrow=length(variables), ncol=length(r0))
-        # for each PV
-        for(vari in 1:length(variables)) {
-          # estimate the percentile
-          vv <- variables[vari]
-          xpw <- data.frame(x=edf[[vv]],
-                            w=edf[[wgt]])
-          xpw <- xpw[!is.na(xpw$x),]
-          # This is one PVs sampling variance, see stats vignette
-          if(vari <= jrrIMax) {
-            pVjrr[vari,] <- sapply(1:length(r0), function(ri) {
-              xpw$below <- (xpw$x < r0[ri])
-              # find the proportion of values below this percentile
-              s0 <- sum(xpw$w[xpw$below]) / sum(xpw$w) 
-              sum(sapply(1:length(jkw), function(jki) {
-                xpw$w <- edf[[jkw[jki]]]
-                s1 <- sum(xpw$w[xpw$below]) / sum(xpw$w) 
-                (s1 - s0)^2
-              }))
-            })
+        belowGen <- function(cutoffs) {
+          f <- function(pv, w) {
+            res <- rep(NA, length(cutoffs))
+            for(i in 1:length(cutoffs)) {
+              below <- pv < cutoffs[i]
+              res[i] <- sum(w[below]) / sum(w)
+            }
+            names(res) <- names(esti$est)
+            return(res)
           }
-          if(length(variables) > 1) {
-            pVimp[vari,] <- sapply(1:length(r0), function(ri) {
-              xpw$below <- (xpw$x < r0[ri])
-              # find the values below this percentile
-              s0 <- mu0[ri]
-              s1 <- sum(xpw$w[xpw$below]) / sum(xpw$w)
-              (s1 - s0)^2
-            })
-          }
+          return(f)
         }
-        M <- length(variables)
+        belowf <- belowGen(esti$est)
+        belowf(edf[,variables[1]], edf$origwt)
+        # estb[elow] that percentile
+        pEst <- getEst(edf, variables, stat=belowf, wgt=wgt)
+        # imputation variance 
+        pVimp <- rep(0, ncol(pEst$coef))
         if(M > 1) {
-          # imputation variance estimator, see stats vignette
-          pVimp <- (M+1)/(M * (M-1)) * apply(pVimp, 2, sum) # will be 0 when there are no PVs
-        } else {
-          pVimp <- 0
+          # imputation variance with M correction (see stats vignette)
+          # [r - mean(r)]^2
+          pVimp <- (M+1)/(M * (M-1)) * apply( (t(t(pEst$coef) - apply(pEst$coef, 2, mean)))^2, 2, sum) # will be 0 when there are no PVs
+        } # else, Vimp is 0, no change needed
+        # sampling variance for below
+        pVsi <- matrix(0, nrow=jrrIMax, ncol=length(percentiles))
+        for(j in 1:jrrIMax) {
+          vestj <- getVarEstJK(stat=belowf, yvar=edf[ , variables[j]], wgtM=edf[ , jkw], co0=pEst$coef[j,], jkSumMult=jkSumMult, pvName=j)
+          pVsi[j,] <- vestj$VsampInp
         }
-        pVjrr <- getAttributes(data, "jkSumMultiplier") * apply(pVjrr, 2, mean, na.rm=TRUE)
+        # sampling variance is then the mean across PVs up to jrrIMax
+        pVjrr <- apply(pVsi, 2, mean)
         pV <- pVimp + pVjrr
+        
       } else { # end if(varMethod=="j")
+        
         # Taylor series method for confidence intervals
+        r0 <- esti$est
         # We need the pi value, the proportion under the Pth percentile
         mu0 <- sapply(1:length(percentiles), function(i) {
           # get the mean of the estimates across pvs
@@ -478,117 +701,78 @@ percentile <- function(variable, percentiles, data,
             s0 <- sum(xpw$w[xpw$below]) / sum(xpw$w) 
           }))
         })
-
-        pVjrr <- sapply(1:length(r0), function(ri) {
-          # there are two states here, above and below the percentile
-          # so the D matrix and Z matrix are 1x1s
-          # first calculate D
-          # get the sum of weights
-          # all xs will have the same missing values, so we can just use the first
-          # x because we are just using the missingness
-          vv <- variables[1]
-          xpw <- data.frame(x=edf[[vv]],
-                            w=edf[[wgt]])
-          xpw <- xpw[!is.na(xpw$x),]
-          sw <- sum(xpw$w)
-          D <- 1/sw
-
-          # Now calculate the Z matrix
-          sapply(1:length(variables), function(vari) {
-            vv <- variables[vari]
-            xpw <- data.frame(x=edf[[vv]],
-                              w=edf[[wgt]],
-                              psuV=edf[,getPSUVar(data, weightVar)],
-                              stratV=edf[,getStratumVar(data, weightVar)])
-            xpw <- xpw[!is.na(xpw$x),]
-            # filter to just stratra that have more than one active PSU
-            lengthunique <- function(x) { length(unique(x)) }
-            psustrat0 <- aggregate(psuV ~ stratV, data=xpw, FUN=lengthunique)
-            # subset to just those units in strata that have more than one active
-            # PSU
-            names(psustrat0)[names(psustrat0) == "psuV"] <- "psuV_n"
-            xpw <- merge(xpw, psustrat0, by="stratV", all.x=TRUE)
-            xpw <- xpw[xpw$psuV_n > 1,]
-            # now get the mean deviates, S in the statistics vignette
-            xpw$below <- (xpw$x <= r0[i])
-            xpw$S <- xpw$w * (xpw$below - mu0[ri])
-
-            psustrat <- aggregate(S ~ stratV + psuV, data=xpw, FUN=sum)
-            meanna <- function(x) { mean(x, na.rm=TRUE) }
-            psustrat$stratum_mu <- ave(psustrat$S, psustrat$stratV, FUN=meanna)
-            psustrat$U_sk <- psustrat$S - psustrat$stratum_mu
-            psustrat$U_sk2 <- psustrat$U_sk^2
-            Z <- sum(psustrat$U_sk2, na.rm=TRUE)
-            D*Z*D
-          }) #end of sapply(1:length(variables))
-        }) #end of sapply pVjrr <- sapply(1:length(r0), function(ri)
-        # now calculate Vimp
-        pVimp <- matrix(NA, nrow=length(variables), ncol=length(r0))
-        if(length(variables) > 1) {
-          for(vari in 1:length(variables)) {
-            vv <- variables[vari]
-            xpw <- data.frame(x=edf[[vv]],
-                              w=edf[[wgt]])
-            xpw <- xpw[!is.na(xpw$x),]
-            # This is one PVs sampling variance
-            pVimp[vari,] <- sapply(1:length(r0), function(ri) {
-              # find the values below this percentile
-              xpw$below <- (xpw$x < r0[ri])
-              s1 <- sum(xpw$w[xpw$below]) / sum(xpw$w) 
-              s0 <- mu0[ri]
-              return((s1 - s0)^2)
-            })
-          }
-        }
+        
+        # there are two states here, above and below the percentile
+        # so the D matrix and Z matrix are 1x1s
+        # first calculate D
+        # get the sum of weights
+        # all xs will have the same missing values, so we can just use the first
+        # x because we are just using the missingness
+        vv <- variables[1]
+        Ws <- edf[!is.na(edf[[vv]]), wgt]
+        D <- 1/sum(Ws)
+        
+        # calculate the pVjrr (Z) and pVimp together
+        pV <- sapply(1:length(percentiles), function(ri) {
+          est <- getEstPcTy(data = edf,
+                            pvEst = variables,
+                            stat = getPcTy,
+                            wgt = wgt,
+                            D = D,
+                            r0_ri = r0[ri],
+                            s0 = mu0[ri],
+                            psuV=edf[ , getPSUVar(data, wgt)], 
+                            stratV=edf[ , getStratumVar(data, wgt)])
+        }) 
+        
+        pVjrr <- do.call(cbind, pV['pVjrrs',])
+        pVimp <- do.call(cbind, pV['pVimps',])
+        
         pVjrr <- apply(pVjrr,2,mean, na.rm=TRUE)
         pVimp <- (M+1)/(M * (M-1)) * apply(pVimp, 2, sum) # will be 0 when there are no PVs
         pV <- pVimp + pVjrr
+
       } # end else for if(varMethod=="j")
-      latent_ci_min <- percentiles + 100 * sqrt(pV) * qt(alpha/2,df=62)
-      latent_ci_max <- percentiles + 100 * sqrt(pV) * qt(1-alpha/2,df=62)
-      latent_ci <- matrix(c(latent_ci_min, latent_ci_max), ncol=2)
-
-      # map back to the variable space
-      ci_ <- list()
-      for(vari in 1:length(variables)) {
-        vv <- variables[vari]
-        xpw <- data.frame(x=edf[[vv]],
-                          w=edf[[wgt]])
-        xpw <- xpw[!is.na(xpw$x),]
-        xpw <- xpw[ord <- order(xpw$x),]  # keep order as ord for use in sapply later
-        WW <- sum(xpw$w)
-        nn <- nrow(xpw) # do not yet account for the first and last row we added
-        xpwc <- pctp(nn, WW, xpw$w, pctMethod, xpw)
-
-        ci <- sapply(1:length(percentiles), function(peri) {
-                c(pctf(latent_ci[peri,1],xpwc, pctMethod),
-                  pctf(latent_ci[peri,2],xpwc, pctMethod))
-        })
-        ci_ <- c(ci_, list(t(ci)))
+      
+      if (! pctMethod %in% 'unbiased') {
+        latent_ci_min <- percentiles + 100 * sqrt(pV) * qt(alpha/2,df=pmax(dof, 1))
+        latent_ci_max <- percentiles + 100 * sqrt(pV) * qt(1-alpha/2,df=pmax(dof, 1))
+      } else {
+        latent_ci_min <- percentiles + 100 * sqrt(pV) * qt(alpha/2,df=62)
+        latent_ci_max <- percentiles + 100 * sqrt(pV) * qt(1-alpha/2,df=62)
       }
-      ci <- matrix(NA, nrow=length(r0), ncol=2, dimnames=list(percentiles,c("ci_lower", "ci_upper")))
-      for(i in 1:length(r0)) {
-        ci[i,1] <- mean(unlist(lapply(ci_, function(mat) { mat[i,1]})))
-        ci[i,2] <- mean(unlist(lapply(ci_, function(mat) { mat[i,2]})))
+      
+      names(latent_ci_min) <- paste0('P',percentiles)
+      names(latent_ci_max) <- paste0('P',percentiles)
+      latent_ci <- matrix(c(latent_ci_min, latent_ci_max), ncol=2) 
+      
+      if (! pctMethod %in% 'unbiased') {
+        # map back to the variable space
+        pctfiCIL <- percentileGen(latent_ci[,1], pctMethod)
+        ciL <- getEst(edf, variables, stat=pctfiCIL, wgt=wgt)$est
+        pctfiCIU <- percentileGen(latent_ci[,2], pctMethod)
+        ciU <- getEst(edf, variables, stat=pctfiCIU, wgt=wgt)$est
+        ci <- data.frame(ci_lower=ciL, ci_upper=ciU)
+      } else {
+        # map back to the variable space
+        pctfiCIL <- percentileGen(latent_ci, pctMethod)
+        ciL <- getEst(edf, variables, stat=pctfiCIL, wgt=wgt)
+        ci <- matrix(ciL$est, nrow = length(percentiles), byrow = TRUE)
+        colnames(ci) <- c("ci_lower", "ci_upper")
+        rownames(ci) <- percentiles
       }
+
     } # end if(confInt)
-
-    dof <- 0*percentiles
-    for(i in 1:length(dof)) {
-      dof[i] <- DoFCorrection(varEstA=varEstInputs, varA=paste0("P", percentiles[i]))
-    }
     # 4) Calculate final results
     if(confInt) {
       res <- data.frame(stringsAsFactors=FALSE,
-                        percentile=percentiles, estimate=r0, se=sqrt(V),
+                        percentile=percentiles, estimate=unname(esti$est), se=sqrt(V),
                         df=dof,
-                        confInt=ci,
-                        nsmall=nsmall0)
+                        confInt=ci)
     } else {
       res <- data.frame(stringsAsFactors=FALSE,
-                        percentile=percentiles, estimate=r0, se=sqrt(V),
-                        df=dof,
-                        nsmall=nsmall0)
+                        percentile=percentiles, estimate=unname(esti$est), se=sqrt(V),
+                        df=dof)
     }
     if(returnVarEstInputs) {
       attr(res, "varEstInputs") <- varEstInputs
@@ -608,55 +792,6 @@ percentile <- function(variable, percentiles, data,
   } # end else for if(inherits(data, "edsurvey.data.frame.list")) {
 }
 
-# helper function that gets percentiles from interpolated values
-# p the desired percentile
-# NOT EXPORTED
-pctf <- function(p, xpw, pctMethod) {
-  p <- min( max(p,0) , 100) # enforce 0 to 100 range
-  # k + 1 (or, in short hand kp1)
-  # which.max returns the index of the first value of TRUE
-  xpw <- xpw[!duplicated(xpw$p),]
-  # kp1 stands for k + 1
-  kp1 <- which.max(xpw$p >= p)
-  if(kp1==1) {
-    return(xpw$x[1])
-  }
-  if(pctMethod == "simple") {
-    return(xpw$x[kp1])
-  }
-  # k = (k+1) - 1
-  k <- kp1 - 1
-  pk <- xpw$p[k]
-  pkp1 <- xpw$p[kp1]
-  gamma <- (p-pk)/(pkp1 - pk)
-  #interpolate between k and k+1
-  return((1-gamma) * xpw$x[k] + gamma * xpw$x[kp1])
-}
-
-# return the percentile of each point
-pctp <- function(nn, WW, w, pctMethod, xpw) {
-  if(pctMethod == "unbiased") {
-    # use average weight within value of x
-    # this commented out line does the same as the next two lines
-    # xpw$w <- ave(xpw$w, xpw$x, FUN=mean)
-    xpwdt <- data.table(xpw)
-    xpw <- as.data.frame(xpwdt[, w:=mean(w), by="x"])
-    w <- xpw$w
-    # see Stats vignette or Hyndman & Fan
-    kp <- 1 + (nn-1)/(WW-1) * ((cumsum(c(0,w[-length(w)]))+ (w-1)/2))
-    # do not let kp go below 1 nor above nn-1, moves nothing when all weights >= 1
-    kp <- pmax(1,pmin(nn-1,kp))
-    resp <- 100 * (kp - 1/3) / (nn + 1/3)
-  } else {
-    resp <- 100 * cumsum(w)/WW
-  }
-  # this does not cover the entire 0 to 100 interval, so add points on the end.
-  xpwc <- rbind(xpw[1,], xpw, xpw[nrow(xpw),])
-  xpwc$w[1] <- xpwc$w[nrow(xpwc)] <- 0
-  xpwc$p <- c(0,resp,100)
-  return(xpwc)
-}
-
 #' @method print percentile
 #' @export
 print.percentile <- function(x, ...) {
@@ -672,6 +807,7 @@ print.percentile <- function(x, ...) {
   if(min(x$df) <=2) {
     warning("Some degrees of freedom less than or equal to 2, indicating non-finite variance. These estimates should be treated with caution.")
   }
+  x$nsmall <- NULL
   print(x, row.names=FALSE, ...)
 }
 
@@ -683,4 +819,83 @@ print.percentileList <- function(x, ...) {
   cat("\n")
   class(x) <- "data.frame"
   print(x, row.names=FALSE, ...)
+}
+
+
+
+# @description          calculate pVjrr and pVimp for a percentile and outcome variable
+# @param    xpw         dataframe with an outcome variable, weight, psuvar, stratumvar
+#           D           1 over sum of weights
+#           r0_ri       r0 (esti$est) for i'th percentile
+#           s0          mu0 for i'th percentile
+#           pVimp       boolean, if false (only one outcome in entire data) pVimp is 0
+# @return               a list with the following elements
+#           pVjrr       pVjrr for the percentile and outcome   
+#           pVimp       pVimp for the percentile and outcome
+getPcTy <- function(xpw, D, r0_ri, s0, pVimp=TRUE) {
+  # pVjrr
+  lengthunique <- function(x) { length(unique(x)) }
+  psustrat0 <- aggregate(psuV ~ stratV, data=xpw, FUN=lengthunique)
+  # subset to just those units in strata that have more than one active PSU
+  names(psustrat0)[names(psustrat0) == "psuV"] <- "psuV_n"
+  xpw <- merge(xpw, psustrat0, by="stratV", all.x=TRUE)
+  xpw <- xpw[xpw$psuV_n > 1,]
+  if (nrow(xpw) > 1) {
+    # now get the mean deviates, S in the statistics vignette
+    xpw$below <- (xpw$x <= r0_ri) 
+    xpw$S <- xpw$w * (xpw$below - s0)
+    psustrat <- aggregate(S ~ stratV + psuV, data=xpw, FUN=sum)
+    meanna <- function(x) { mean(x, na.rm=TRUE) }
+    psustrat$stratum_mu <- ave(psustrat$S, psustrat$stratV, FUN=meanna)
+    psustrat$U_sk <- psustrat$S - psustrat$stratum_mu
+    psustrat$U_sk2 <- psustrat$U_sk^2
+    Z <- sum(psustrat$U_sk2, na.rm=TRUE)
+    pVjrr_ri_vari <- D*Z*D
+  } else {
+    pVjrr_ri_vari <- NA
+  }
+  
+  # pVimp
+  if (pVimp) {
+    # only calculate if more than one outcome in sdf
+    s1 <- sum(xpw$w[xpw$below]) / sum(xpw$w) 
+    pVimp_ri_vari <- (s1 - s0)^2
+  } else {
+    pVimp_ri_vari <- 0
+  }
+  return(list(pVjrr=pVjrr_ri_vari, pVimp=pVimp_ri_vari))
+}
+
+
+# @description          calculate vector of pVjrrs and pVimps (for each outcome var) for a percentile
+# @param    data        dataframe 
+#           pvEst       vector of outcome vars
+#           stat        statistic to calculate
+#           wgt         weight var
+#           D           1 over sum of weights
+#           r0_ri       r0 (esti$est) for i'th percentile
+#           s0          mu0 for i'th percentile
+#           psuV        psu var
+#           stratV      stratum var
+# @return               a list with the following elements
+#           pVjrrs      vector of pVjrr for all the outcome vars for a percentile    
+#           pVimps      vector of pVimp for all the outcome vars for a percentile
+getEstPcTy <- function(data, pvEst, stat, wgt, D, r0_ri, s0, psuV, stratV) {
+  pVjrrs <- c()
+  pVimps <- c()
+  for (n in 1:length(pvEst)) {
+    xpw <- data.frame(x=data[ , pvEst[n]],
+                      w=data[ , wgt],
+                      psuV=psuV,
+                      stratV=stratV)
+    xpw <- xpw[!is.na(xpw$x),]
+    if (length(pvEst)==1) {
+      res <- stat(xpw=xpw, D=D, r0_ri=r0_ri, s0=s0, pVimp=FALSE)
+    } else {
+      res <- stat(xpw=xpw, D=D, r0_ri=r0_ri, s0=s0, pVimp=TRUE)
+    }
+    pVjrrs <- c(pVjrrs, res$pVjrr)
+    pVimps <- c(pVimps, res$pVimp) 
+  }
+  return(list(pVjrrs=pVjrrs, pVimps=pVimps))
 }

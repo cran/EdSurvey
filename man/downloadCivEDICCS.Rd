@@ -4,10 +4,10 @@
 \alias{downloadCivEDICCS}
 \title{Instructions for Downloading and Unzipping CivED or ICCS Files}
 \usage{
-downloadCivEDICCS(years = c(1999, 2009))
+downloadCivEDICCS(years = c(1999, 2009, 2016))
 }
 \arguments{
-\item{years}{an integer vector indicating the study year. Valid years are 1999 and 2009.}
+\item{years}{an integer vector indicating the study year. Valid years are 1999, 2009, and 2016.}
 }
 \description{
 Provides instructions to download CivED or ICCS data to be processed in \code{readCivEDICCS}.

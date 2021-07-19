@@ -56,7 +56,7 @@ readBPS_2001 <- function(path = getwd(),
     attr(weights, "default") <- "wta000"
   }
   
-  pvs <- list() #no plausible values or achievement levels
+  pvs <- list() #no plausible values or achievement levels?
   
   omittedLevels <- getOmittedLevels(fileFormat) #defined in BPS 2014 R file
   
@@ -149,4 +149,38 @@ buildBPSDataList_2001 <- function(lafObj, fileFormat){
                                      isDimLevel = TRUE)
   
   return(dataList)
+}
+
+#in the metadata.txt file, it doesn't include all missing/omitted levels that get applied in the 'makeFile' scripts.  this emulates that functionality
+validateFileFormat_BPS2001 <- function(lafObj, fileFormat){
+  
+  ff <- fileFormat
+  #defines the values and labels that are defined in the 'makeFile' script that define the 'missing' values in the output files
+  missingDef <- list(val=c(-1, -2, -3, -4, -5, -6, -7, -8, -9, -14),
+                     lbl=c("{-1 Undefined}",
+                           "{-2 Undefined}",
+                           "{-3 Legitimate Skip}",
+                           "{-4 Undefined}",
+                           "{-5 Undefined}",
+                           "{-6 Out of Range}",
+                           "{-7 Resp never saw Question}",
+                           "{-8 Undefined}",
+                           "{-9 Missing}",
+                           "{-14 Multiple values possible}"))
+  
+  loopFF <- subset(fileFormat, nchar(fileFormat$labelValues)==0)
+  
+  dat <- lafObj[,loopFF$variableName] #just do one read call here to get it in memory for speed
+  
+  for(varName in loopFF$variableName){
+    
+    xVal <- dat[,varName]
+    
+    if(any(missingDef$val %in% xVal)){
+      idx <- which(missingDef$val %in% xVal, arr.ind = TRUE)
+      ff[ff$variableName==varName,"labelValues"] <- paste(missingDef$val[idx], missingDef$lbl[idx], collapse = "^", sep = "=") #make the updates
+    }
+  }
+  
+  return(ff)
 }

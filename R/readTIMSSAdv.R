@@ -66,6 +66,7 @@ readTIMSSAdv <- function(path,
   on.exit(options(userOp), add = TRUE)
   
   path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
+  path <- ifelse(grepl("[.][a-zA-Z]{1,4}$", path, perl=TRUE, ignore.case=TRUE), dirname(path), path)
   subject <- tolower(subject)
   subject <- match.arg(subject)
   
@@ -520,16 +521,22 @@ processTIMSSAdv <- function(dataFolderPath, countryCode, fnames, fileYrs, subjec
 
       schoolLAF <- getFWFLaFConnection(schoolFP, ffsch)
       studentLAF <- getFWFLaFConnection(stuFP, ffstu)
-
+      teacherLAF <- NULL
+      ffTeach <- NULL
+      
       #build data list and file format list=========================
       dataList <- list(student = studentLAF, school = schoolLAF) #ensure dataList and dataListFF are associated in same index positions
       dataListFF <- list(student = ffstu, school = ffsch)
     }
     #===============================================================
 
-    #calculate the dim0 to store in the .meta file for fast retreival
+    #calculate the dim0 to store in the .meta file for fast retrieval
     nrow0 <- nrow(mm)
-    ncol0 <- length(unique(c(ffsch$variableName, ffstu$variableName, ffTeach$variableName)))
+    
+    vNames <- c(ffsch$variableName, ffstu$variableName)
+    if (!is.null(ffTeach)){vNames <- c(vNames, ffTeach$variableName)} #1995 teacher data may not be available
+    
+    ncol0 <- length(unique(vNames))
     dim0 <- c(nrow0, ncol0)
 
     #save the cachefile to be read-in for the next call

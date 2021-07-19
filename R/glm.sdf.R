@@ -301,6 +301,7 @@ calc.glm.sdf <- function(formula,
   if(!family$family %in% c("binomial", "quasibinomial")) {
     stop("Only fits binomial models.")
   }
+
   #############################
   ######### Outline:  #########
   #############################
@@ -456,12 +457,30 @@ calc.glm.sdf <- function(formula,
   # 4) yvar and plausible values
   pvy <- hasPlausibleValue(yvar, data) # pvy is the plausible values of the y variable
   yvars <- yvar
+  linkingError <- ifelse("NAEP" %in% getAttributes(data, "survey") & any(grepl("_linking", yvars, fixed=TRUE)), TRUE, FALSE)
+  if(linkingError){
+    if(varMethod == "t") {
+      stop("Taylor series variance estimation not supported with NAEP linking error.")
+	}
+    if(jrrIMax != 1) {
+      warning("The linking error variance estimator only supports ", dQuote("jrrIMax=1"), ". Resetting to 1.")
+      jrrIMax <- 1
+    }
+  }
+
   lyv <- length(yvars)
   if(any(pvy)) {
-    yvars <- paste0("outcome",1:length(getPlausibleValue(yvars[max(pvy)], data)))
+    if(linkingError) {
+	  pp <- getPlausibleValue(yvars[max(pvy)], data)
+	  suffix <- ifelse(grepl("_imp_", pp, fixed=TRUE), "_imp_", "_est_")
+	  suffix <- ifelse(grepl("_samp_", pp, fixed=TRUE), "_samp_", suffix)
+      yvars <- paste0("outcome",suffix,1:length(pp))
+    } else {
+      yvars <- paste0("outcome",1:length(getPlausibleValue(yvars[max(pvy)], data)))
+    }
   } else {
     # if not, make sure that this variable is numeric
-    edf[,"yvar"] <- as.numeric(eval(formula[[2]],edf))
+    edf[ , "yvar"] <- as.numeric(eval(formula[[2]], edf))
     formula <- update(formula, new=substitute( yvar ~ ., list(yvar=as.name(yvar))))
     yvars <- "yvar"
   } # End of if statment: any(pvy)
@@ -478,16 +497,16 @@ calc.glm.sdf <- function(formula,
         # PV, so we have not evaluated the I() yet (if any)
         for(yvi in 1:length(pvy)) {
           if(pvy[yvi]) {
-            edf[,yvar[yvi]] <- edf[,getPlausibleValue(yvar[yvi], data)[i]]
+            edf[ , yvar[yvi]] <- edf[ , getPlausibleValue(yvar[yvi], data)[i]]
           }
         }
-        edf[,yvars[i]] <- as.numeric(eval(formula[[2]],edf))
+        edf[ , yvars[i]] <- as.numeric(eval(formula[[2]], edf))
       }
-      oneDef <- max(edf[,yvars], na.rm=TRUE)
+      oneDef <- max(edf[ , yvars], na.rm=TRUE)
       for(i in yvars) {
-        edf[,i] <- ifelse(edf[,i] %in% oneDef, 1, 0)
+        edf[ , i] <- ifelse(edf[ , i] %in% oneDef, 1, 0)
       }
-      edf$yvar0 <- edf[,yvar0]
+      edf$yvar0 <- edf[ , yvar0]
     } else {
       # for non-PV, I() has been evaluated
       oneDef <- max(edf[,yvars], na.rm=TRUE)
@@ -515,96 +534,114 @@ calc.glm.sdf <- function(formula,
   # note we have not made the B matrix
   madeB <- FALSE
   # there is now a very long set of conditionals
+  
+  # regression with each yvar
+  stat_reg_glm <- function(fam=FALSE) {
+    ref <- function(pv, wg) {
+      if(family$family %in% c("binomial", "quasibinomial") & (fam)) {
+        # do this for each yvar, but not for each jk weight (in parent function)
+        edf$yvar0 <- ifelse(pv %in% oneDef, 1, 0)
+      }
+      edf$w <- wg
+      suppressWarnings(lmi <- glm2(frm, data=edf, weights=w, family=family, mustart=c2, epsilon=1e-14))
+      return(coef(lmi))
+    }
+  }
+
   # 6) form the inputs for variance estimation
   if(any(pvy)) { # the y variable is a plausible value
     # this if condition estimates both  Taylor series method and jackknife method
     # for equations, see the statistics vignette
-    jrrIMax <- min(jrrIMax, length(yvars))
-    if(varMethod=="t") {
+    if(varMethod == "t") {
       jrrIMax <- length(yvars)
+    } else {
+      jrrIMax <- min(jrrIMax, length(yvars))
     }
     
-    # varm is the variance matrix by coefficient and PV (for V_jrr)
-    varm <- matrix(NA, nrow=jrrIMax, ncol=length(coef(lm0)))
+    # initialize: varm is the variance matrix by coefficient and PV (for V_jrr)
     varM <- list()
-    # coefficients by PV
-    coefm <- matrix(NA, nrow=length(yvars), ncol=length(coef(lm0)))
+    varm <- matrix(NA, nrow=jrrIMax, ncol=length(coef(lm0)))
+
     if(varMethod == "j") {
-      # y is a variable with plausible values and we are using the jackknife approach
-      for(pvi in 1:jrrIMax) {
-        coefa <- matrix(NA, nrow=length(wgtl$jksuffixes), ncol=length(coef(lm0)))
-        edf$yvar0 <- as.numeric(edf[,yvars[pvi]])
-        if(family$family %in% c("binomial", "quasibinomial")) {
-          edf$yvar0 <- ifelse(edf$yvar0 %in% oneDef, 1, 0)
-        }
-        edf$w <- edf[,wgt]
-        suppressWarnings(lmi <- glm2(frm, data=edf, weights=w, family=family, mustart=c2, epsilon=1e-14))
-        co0 <- coef(lmi)
-        coefm[pvi,] <- co0
-        
-        for(jki in 1:length(wgtl$jksuffixes)) {
-          edf$w_lmi <- edf[,paste0(wgtl$jkbase, wgtl$jksuffixes[jki])]
-          suppressWarnings(lmi <- glm2(frm, data=edf, weights=w_lmi, family=family, mustart=c2, epsilon=1e-14))
-          coefa[jki,] <- coef(lmi)
-        } # End of for loop: jki in 1:length(wgtl$jksuffixes)
-        # subtract the full sample weights coefficients from the jackknife replicate coefficients
-        # as a first step to estimating the covariance
-        coefa <- t( (t(coefa) - co0))
-        if(any(!is.na(coefa))==0 || sum(coefa,na.rm=TRUE) == 0) {
-          stop("No variance across strata. This could be due to only one stratum being included in the sample.")
-        }
-        
-        if(pvi == 1) {
-          dfl <- lapply(1:ncol(coefa), function(coli) {
-            data.frame(PV=rep(pvi, nrow(coefa)),
-                       JKreplicate=1:nrow(coefa),
-                       variable=names(coef(lmi))[coli],
-                       value=coefa[,coli])
-          })
-          veiJK <- do.call(rbind, dfl)
-        } else {
-          dfl <- lapply(1:ncol(coefa), function(coli) {
-            data.frame(PV=rep(pvi, nrow(coefa)),
-                       JKreplicate=1:nrow(coefa),
-                       variable=names(coef(lmi))[coli],
-                       value=coefa[,coli])
-          })
-          veiJK <- rbind(veiJK, do.call(rbind, dfl))
-        } #ends if(pvi == 1) 
-        
-        # varm is now the diagonal of this. Notice that this only uses first 
-        # jrrIMax PVs
-        varM[[pvi]] <- getAttributes(data, "jkSumMultiplier") * 
-          Reduce("+",
-                 lapply(1:nrow(coefa), function(jki) {
-                   cc <- coefa[jki,]
-                   cc[is.na(cc)] <- 0
-                   outer(cc, cc)
-                 }))
-        coefa <- coefa^2
-        varm[pvi,] <- getAttributes(data, "jkSumMultiplier") * apply(coefa, 2, sum)
-      } # End of for loop: (pvi in 1:jrrIMax)
-      varEstInputs[["JK"]] <- veiJK
-      
-      while(pvi < length(yvars)) {
-        pvi <- pvi + 1
-        edf$yvar0 <- as.numeric(edf[,yvars[pvi]])
-        if(family$family %in% c("binomial", "quasibinomial")) {
-          edf$yvar0 <- ifelse(edf$yvar0 %in% oneDef, 1, 0)
-        }
-        edf$w <- edf[,wgt]
-        suppressWarnings(co0 <- coef(lmi <- glm2(frm, data=edf, weights=w, family=family, mustart=c2, epsilon=1e-14)))
-        coefm[pvi,] <- co0
-      } # End while loop: pvi < length(yvars)
+      if(linkingError) {
+        repWeights <- paste0(wgtl$jkbase, wgtl$jksuffixes)
+        # get the mean estimate
+        est <- getLinkingEst(data = edf,
+                             pvEst = yvars[grep("_est", yvars)],
+                             stat = stat_reg_glm(fam=TRUE),
+                             wgt = wgt)
+        # coefficients matrix, r-squared vector
+        coefm <- est$coef
+        coef <- apply(coefm, 2, mean)
+        coefm0 <- t(t(coefm) - coef)
+        # get imputation variance
+        impVar <- getLinkingImpVar(data=edf,
+                                   pvImp = yvars[grep("_imp", yvars)],
+                                   ramCols = ncol(getRAM()),
+                                   stat = stat_reg_glm(fam=TRUE),
+                                   wgt = wgt,
+                                   T0 = est$est,
+                                   T0Centered = FALSE)
+        # get sampling variance
+        sampVar <- getLinkingSampVar(edf,
+                                     pvSamp=yvars[grep("_samp", yvars)],
+                                     stat = stat_reg_glm(fam=TRUE),
+                                     rwgt = repWeights,
+                                     T0 = est$est,
+                                     T0Centered = FALSE)
+        varM[[1]] <- sampVar$Bi
+        varEstInputs[["JK"]] <- sampVar$veiJK
+        varEstInputs[["PV"]] <- impVar$veiImp
+        # drop r.squared term
+        varm[1, ] <- sampVar$V
+        M <- length(yvars[grep("_est", yvars)])
+        Vimp <- impVar$V
+      } else {
+        # coefficients by PV (getEst in lm.sdf)
+        res <- getEst(data = edf,
+                      pvEst = yvars,
+                      stat = stat_reg_glm(fam=TRUE),
+                      wgt = wgt)
+        coefm <- res$coef
+        varEstInputs[["JK"]] <- data.frame()
+        jkSumMult <- getAttributes(data, "jkSumMultiplier")
+        for(pvi in 1:jrrIMax) { # for each PV (up to jrrIMax)
+          res <- getVarEstJK(stat = stat_reg_glm(fam=FALSE),
+                             yvar = edf[ ,yvars[pvi]],
+                             wgtM = edf[ ,paste0(wgtl$jkbase, wgtl$jksuffixes)],
+                             co0 = coefm[pvi, ],
+                             jkSumMult = jkSumMult,
+                             pvName = pvi)
+          varM[[pvi]] <- res$Bi
+          varEstInputs[["JK"]] <- rbind(varEstInputs[["JK"]], res$veiJK)
+          varm[pvi, ] <- res$VsampInp
+        } # end for(pvi in 1:jrrIMax)
+        # number of PVs
+        M <- length(yvars)
+        # imputaiton variance / variance due to uncertaintly about PVs
+        coef <- apply(coefm, 2, mean)
+        coefm0 <- t(t(coefm) - coef)
+        coefmPVByRow <- lapply(1:ncol(coefm0), function(coli) {
+          data.frame(stringsAsFactors=FALSE,
+                     PV=1:nrow(coefm0),
+                     variable=rep(names(coef(lm0))[coli], nrow(coefm0)),
+                     value=coefm0[ , coli])
+        })
+        coefmPV <- do.call(rbind, coefmPVByRow)
+        varEstInputs[["PV"]] <- coefmPV
+        Vimp <- (M+1)/M * apply(coefm, 2, var)
+      } # end else for if(linkingError)
     } else { # End of if statment: varMethod == "j"
       # Taylor series variance esimation, no Plausible Values
-      X <- sparse.model.matrix(frm, edf)
-      # sampling weights
-      Wsamp <- Diagonal(n=nrow(edf),edf[,wgt,drop=TRUE])
       dofNum <- matrix(0, nrow=length(coef(lm0)), ncol=length(yvars))
       dofDenom <- matrix(0, nrow=length(coef(lm0)), ncol=length(yvars))
       # variances are calculated iteratively for all each y variable
-      lms <- lapply(1:length(yvars), function(mm) {
+      est <- getEst(data = edf,
+                    pvEst = yvars,
+                    stat = stat_reg_glm(fam=TRUE),
+                    wgt = wgt)
+      coefm <- est$coef
+      for (mm in 1:length(yvars)) {
         edf$yvar0 <- as.numeric(edf[,yvars[mm]])
         y <- edf[,yvars[mm]]
         suppressWarnings(lmi <- glm2(frm, data=edf, weights=w, family=family, mustart=c2, epsilon=1e-14))
@@ -616,92 +653,36 @@ calc.glm.sdf <- function(formula,
         # in the notation of McCullagh and Nelder, this is d(mu)/d(eta)
         # evaluated at the (latent) predicted values (eta)
         mu.eta <- family$mu.eta(eta)
-        Wprec <- Diagonal(n=nrow(edf), mu.eta^2 /((1-pred)*pred))
-        D2 <- solve(t(X) %*% Wsamp %*% Wprec %*% X)
         # this is the partial of the likelihood at the unit level
+        X <- sparse.model.matrix(frm, edf)
         uhij <- (y-pred)/(pred*(1-pred)) * as.matrix(X) * mu.eta
-        for(bi in 1:length(b)) { # for each coefficient
-          coln <- colnames(uhij)[bi]
-          # get the stratum/PSU based sum
-          edf$bb <- uhij[,bi] * edf[,wgt]
-          resi <- aggregate(formula(paste0("bb ~ ", psuVar, " + ", stratumVar)), edf, sum)
-          # and the average of the same across strata
-          resj <- aggregate(formula(paste0("bb ~ ", stratumVar)),resi,function(x) { mean(x)})
-          # fix the names up for merges
-          names(resi)[3] <- coln
-          names(resj)[2] <- paste0("uh_",coln)
-          if(bi==1) { # initiate uhi
-            uhi <- resi
-          } else{
-            uhi <- merge(uhi,resi, by=c(psuVar, stratumVar), all=TRUE)
-          }
-          uhi <- merge(uhi, resj, by=c(stratumVar), all=TRUE)
-          uhi[,paste0("dx",bi)] <- uhi[,coln] - uhi[,paste0("uh_",coln)]
-        } # End of for loop: bi in 1:length(b)
-        # this will be the variance-covariance matrix for this plausible value
-        vv <- matrix(0,nrow=length(b), ncol=length(b))
-        # this, roughly, calculates the z vectors and Z matrix
-        sa <-  lapply(unique(uhi[,stratumVar]), function(ii) {
-          vvj <- matrix(0,nrow=length(b), ncol=length(b))
-          # get the number of PSUs in this stratum
-          unkj <- unique(uhi[uhi[,stratumVar] == ii, psuVar, drop=TRUE])
-          if(length(unkj)>1) { # cannot estimate variance of single unit
-            sb <- lapply(unkj, function(jj) {
-              v <- as.numeric(t(uhi[uhi[,stratumVar]==ii & uhi[,psuVar]==jj, paste0("dx",1:length(b)), drop=FALSE]))
-              vvj <<- vvj + v %*% t(v)
-            })
-            vvj <- vvj * ( (length(unkj)) / ( length(unkj) - 1) )
-            # see statistics vignette, this is (D %*% Z_j %*% D)_ii, the diagonal vector
-            num <- diag(D %*% vvj %*% D) 
-            dofNum[,mm] <<- dofNum[,mm] + num
-            dofDenom[,mm] <<- dofDenom[,mm] + num^2
-            vv <<- vv + vvj
-          } # End of if statment:  if(length(unkj)>1)
-        }) # End of Lappy Loop: lapply(unique(uhi$repgrp1), function(ii)
-        M <- vv
-        vc <- D %*% M %*% D
-        varM[[mm]] <<- as.matrix(vc)
-        varm[mm,] <<- as.numeric(diag(vc))
-        coefm[mm,] <<- as.numeric(b)
-      })
+        
+        # vals by stratum (singleton PSUs removed in function)
+        res <- getVarTaylor(uhij, edf, D, wgt, psuVar, stratumVar)
+        vc <- D %*% res$vv %*% D
+        
+        # collect
+        dofNum[, mm] <- res$nums
+        dofDenom[, mm] <- res$nums2
+        varM[[mm]] <- as.matrix(vc)
+        varm[mm, ] <- as.numeric(diag(vc))
+      }
+      # number of PVs
       M <- length(yvars)
       # imputaiton variance / variance due to uncertaintly about PVs
-      
-      coefm0 <- t(t(coefm) - apply(coefm, 2, mean))
-      # calculate van Buuren B
-      B <- (1/(M-1))* Reduce("+", # add up the matrix results of the sapply
-                             sapply(1:nrow(coefm), function(q) {
-                               # within each PV set, calculate the outer product
-                               # (2.19 of Van Buuren)
-                               outer(coefm0[q,],coefm0[q,])
-                             }, simplify=FALSE)
-                            )
-      madeB <- TRUE
-      # \bar{U} from 2.18 in var Buuren 
-      Ubar <- (1/length(varM)) * Reduce("+", varM)
-
-      Vimp <- (M+1)/M * apply(coefm, 2, var)
-
       coef <- apply(coefm, 2, mean)
-      # variance due to sampling
-      Vjrr <- apply(varm[1:jrrIMax,,drop=FALSE], 2, mean)
-      V <- Vimp + Vjrr
-      coefmPV <- t( t(coefm) - apply(coefm, 2, mean))
-      #reshape coefmPV so it is like varEstInputs expects it
-      dfl <- lapply(1:ncol(coefmPV), function(coli) {
-        data.frame(PV=1:nrow(coefmPV),
-                   variable=rep(names(coef(lm0))[coli], nrow(coefmPV)),
-                   value=coefmPV[,coli])
+      coefm0 <- t(t(coefm) - coef)
+      coefmPVByRow <- lapply(1:ncol(coefm0), function(coli) {
+        data.frame(stringsAsFactors=FALSE,
+                   PV=1:nrow(coefm0),
+                   variable=rep(names(coef(lm0))[coli], nrow(coefm0)),
+                   value=coefm0[ , coli])
       })
-      coefmPV <- do.call(rbind, dfl)
+      coefmPV <- do.call(rbind, coefmPVByRow)
+      varEstInputs[["PV"]] <- coefmPV
+      Vimp <- (M+1)/M * apply(coefm, 2, var)
     } # End of if/else statment: varMethod == "j"
-    
-    # number of PVs
-    M <- length(yvars)
-    # imputaiton variance / variance due to uncertaintly about PVs
-    
-    # get the deviation of the coefficients from the mean.
-    coefm0 <- t(t(coefm) - apply(coefm, 2, mean))
+    # calculate van Buuren B
     B <- (1/(M-1))* Reduce("+", # add up the matrix results of the sapply
                            sapply(1:nrow(coefm), function(q) {
                              # within each PV set, calculate the outer product
@@ -710,136 +691,60 @@ calc.glm.sdf <- function(formula,
                            }, simplify=FALSE)
     )
     madeB <- TRUE
+    
     # 2.18 in var Buuren
     Ubar <- (1/length(varM)) * Reduce("+", varM)
-    
-    Vimp <- (M+1)/M * apply(coefm, 2, var)
-    coef <- apply(coefm, 2, mean)
-    
     # variance due to sampling
     Vjrr <- apply(varm[1:jrrIMax,,drop=FALSE], 2, mean)
-    V <- Vimp + Vjrr
-    coefmPV <- t( t(coefm) - apply(coefm, 2, mean))
-    # make varEstInputs PV matrix
-    dfl <- lapply(1:ncol(coefmPV), function(coli) {
-      data.frame(PV=1:nrow(coefmPV),
-                 variable=rep(names(coef(lm0))[coli], nrow(coefmPV)),
-                 value=coefmPV[,coli])
-    })
-    coefmPV <- do.call(rbind, dfl)
-    varEstInputs[["PV"]] <- coefmPV
+    
   } else { # end if(any(pvy))
     # the y variable is not a plausible value
     # this section handles jackknife and Taylor series estimation
     if(varMethod == "j") {
-      # jackknife variance estimation
-      coefa <- matrix(NA, nrow=length(wgtl$jksuffixes), ncol=length(coef(lm0)))
-      co0 <- coef(lm0)
-      # run with the JK weights
-      for(jki in 1:length(wgtl$jksuffixes)) {
-        edf$w_lmi <- edf[,paste0(wgtl$jkbase, wgtl$jksuffixes[jki])]
-        suppressWarnings(lmi <- glm2(frm, data=edf, weights=w_lmi, family=family, mustart=c2, epsilon=1e-14))
-        coefa[jki,] <- coef(lmi)
-      }
-      # get coefficiet deviations from the full wegith model
-      coefa <- t( (t(coefa) - co0)) # conservative JK estimator
-      # form varEstInputs$JK
-      dfl <- lapply(1:ncol(coefa), function(coli) {
-        data.frame(PV=rep(1, nrow(coefa)),
-                   JKreplicate=1:nrow(coefa),
-                   variable=names(coef(lmi))[coli],
-                   value=coefa[,coli])
-      })
-      veiJK <- do.call(rbind, dfl)
-      varEstInputs[["JK"]] <- veiJK 
-      # for VC
-      Ubar <- getAttributes(data, "jkSumMultiplier") * 
-              Reduce("+",
-                lapply(1:nrow(coefa), function(jki) {
-                  cc <- coefa[jki,]
-                  cc[is.na(cc)] <- 0
-                  outer(cc, cc)
-                }))
-      B <- 0 * Ubar
-
-      njk <- length(wgtl$jksuffixes)
-      coefa <- coefa^2 # this is JK-2
-      Vjrr <- getAttributes(data, "jkSumMultiplier") * apply(coefa, 2, sum)
-      coef <- co0 # coefficients come from full sample weights run
-      Vimp <- 0 # no imputation variance when there are no PVs
-      M <- 1 # only on replicate when there are no PVs
-      varm <- NULL # no variance by PV
-      coefm <- NULL # no coefficients matrix by PV
-
+      jkSumMult <- getAttributes(data, "jkSumMultiplier")
+      coef <- coef(lm0)
+      res <- getVarEstJK(stat = stat_reg_glm(fam=FALSE),
+                         yvar = edf[ ,yvars[1]],
+                         wgtM = edf[ ,paste0(wgtl$jkbase, wgtl$jksuffixes)],
+                         co0 = coef,
+                         jkSumMult = jkSumMult,
+                         pvName = 1)
+      Ubar <- res$Bi
+      Vjrr <- res$VsampInp
+      varEstInputs[["JK"]] <- res$veiJK
     } else { # end if(varMethod == "j")
       # Taylor series variance esimation, no PVs
+      X <- sparse.model.matrix(frm, edf)
+      y <- edf$yvar0
       coef <- b <- co0 <- coef(lm0)
       D <- vcov(lm0)
       eta <- predict(lm0, type="link")
       pred <- predict(lm0, type="response")
-      y <- edf$yvar0
-      X <- sparse.model.matrix(frm, edf)
-      # sampling weights
-      Wsamp <- Diagonal(n=nrow(edf),edf[,wgt,drop=TRUE])
       # precision weights
       # in the notation of McCullagh and Nelder, this is d(mu)/d(eta)
       # evaluated at the (latent) predicted values (eta)
       mu.eta <- family$mu.eta(eta)
-      Wprec <- Diagonal(n=nrow(edf), mu.eta^2 /((1-pred)*pred))
-      D2 <- solve(t(X) %*% Wsamp %*% Wprec %*% X)
       # this is the partial of the likelihood at the unit level
       uhij <- (y-pred)/(pred*(1-pred)) * as.matrix(X) * mu.eta
-      for(bi in 1:length(b)) { # for each coefficient
-        coln <- colnames(uhij)[bi]
-        # get the stratum/PSU based sum
-        edf$bb <- uhij[,bi] * edf[,wgt]
-        resi <- aggregate(formula(paste0("bb ~ ", psuVar, " + ", stratumVar)), edf, sum)
-        # and the average of the same across strata
-        resj <- aggregate(formula(paste0("bb ~ ", stratumVar)),resi,function(x) { mean(x)})
-        names(resi)[3] <- coln
-        names(resj)[2] <- paste0("uh_",coln)
-        if(bi==1) {
-          uhi <- resi
-        } else{
-          uhi <- merge(uhi,resi, by=c(psuVar, stratumVar), all=TRUE)
-        }
-        uhi <- merge(uhi, resj, by=c(stratumVar), all=TRUE)
-        uhi[,paste0("dx",bi)] <- uhi[,coln] - uhi[,paste0("uh_",coln)]
-      } # End of for loop: bi in 1:length(b)
-      # this will be the variance-covariance matrix for this plausible value
-      vv <- matrix(0,nrow=length(b), ncol=length(b))
-      dofNum <- rep(0,length(b))
-      dofDenom <- rep(0,length(b))
-      # this, roughly, calculates the z vectors and Z matrix
-      sa <-  lapply(unique(uhi[,stratumVar]), function(ii) {
-        vvj <- matrix(0,nrow=length(b), ncol=length(b))
-            unkj <- unique(uhi[uhi[,stratumVar] == ii, psuVar, drop=TRUE])
-        if(length(unkj)>1) { # cannot estimate variance of single unit
-          sb <- lapply(unkj, function(jj) {
-            # sum of z vectors within stratum for various PSUs
-            v <- as.numeric(t(uhi[uhi[,stratumVar]==ii & uhi[,psuVar]==jj, paste0("dx",1:length(b)), drop=FALSE]))
-            vvj <<- vvj + v %*% t(v)
-          })
-          vvj <- vvj * ( (length(unkj)) / ( length(unkj) - 1) )
-          # for DoF calculation, this is (D Z_j D)_ii, hence the diag
-          num <- diag(D %*% vvj %*% D)
-          dofNum <<- dofNum + num
-          dofDenom <<- dofDenom + num^2
-          vv <<- vv + vvj
-        } # End of if statment:  if(length(unkj)>1)
-      }) # End of Lappy Loop: lapply(unique(uhi$repgrp1), function(ii)
-      M <- vv
-      vc <- D %*% M %*% D
-      # get R-squared
+      
+      # vals by stratum (singleton PSUs removed in function)
+      res <- getVarTaylor(uhij, edf, D, wgt, psuVar, stratumVar)
+      vc <- D %*% res$vv %*% D
+      
+      # collect
+      dofNum <- res$nums
+      dofDenom <- res$nums2
       Vjrr <- as.numeric(diag(vc))
-      M <- 1
-      Vimp <- 0
-      varm <- NULL
-      coefm <- NULL
       # this is the VC matrix, store it for vcov to recover
       Ubar <- as.matrix(vc)
-      B <- 0 * Ubar # no PVs
     } # end else for if(varMethod == "j")
+    
+    # not pvy common 
+    M <- 1 # only on replicate when there are no PVs
+    Vimp <- 0 # no imputation variance when there are no PVs
+    varm <- NULL # no variance by PV
+    coefm <- NULL # no coefficients matrix by PV  
+    B <- 0 * Ubar # no PVs
   } # end else for if(any(pvy))
   
   # 7) form output, including final variance estimation
@@ -852,11 +757,20 @@ calc.glm.sdf <- function(formula,
   X <- model.matrix(frm, edf) 
   fittedLatent <- as.vector(X%*%coef)
   fitted1 <- family$linkinv(fittedLatent)
-  Y <- sapply(1:length(yvars), function(yi) {
-    as.vector(edf[,yvars[yi]])
-  }, simplify=TRUE)
-  resid1 <- Y - fitted1
-  colnames(resid1) <- yvars
+  if(linkingError) {
+    ye <- grep("_est_", yvars)
+    Y <- sapply(ye, function(yi) {
+      as.vector(edf[,yvars[yi]])
+    }, simplify=TRUE)
+    resid1 <- Y - fitted1
+    colnames(resid1) <- yvars[ye]
+  } else {
+    Y <- sapply(1:length(yvars), function(yi) {
+      as.vector(edf[,yvars[yi]])
+    }, simplify=TRUE)
+    resid1 <- Y - fitted1
+    colnames(resid1) <- yvars
+  }
   
   # residual df calculation
   nobs <- nrow(edf)

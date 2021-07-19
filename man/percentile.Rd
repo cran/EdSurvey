@@ -17,8 +17,9 @@ percentile(
   recode = NULL,
   returnVarEstInputs = FALSE,
   returnNumberOfPSU = FALSE,
-  pctMethod = c("unbiased", "simple"),
-  confInt = TRUE
+  pctMethod = c("symmetric", "unbiased", "simple"),
+  confInt = TRUE,
+  dofMethod = c("JR", "WS")
 )
 }
 \arguments{
@@ -79,12 +80,16 @@ of covariances between estimates.}
 \item{returnNumberOfPSU}{a logical value set to \code{TRUE} to return the number of 
 primary sampling units (PSUs)}
 
-\item{pctMethod}{one of \dQuote{unbiased} or \dQuote{simple};
+\item{pctMethod}{one of \dQuote{unbiased}, \dQuote{symmetric}, \dQuote{simple};
 unbiased produces a weighted median unbiased percentile estimate,
 whereas simple uses a basic formula that matches previously
-published results.}
+published results. Symmetric uses a more basic formula
+but requires that the percentile is symetric to multiplying
+the quantity by negative one.}
 
 \item{confInt}{a Boolean indicating if the confidence interval should be returned}
+
+\item{dofMethod}{passed to \code{\link{DoFCorrection}} as the \code{method} argument}
 }
 \value{
 The return type depends on whether the class of the \code{data} argument is an

@@ -79,7 +79,7 @@ parseSPSSFileFormat <- function (inSPSSyntax){
   
   #prep for processing
   controlFile <- gsub("[^[:print:]]","", controlFile) #remove unprintable characters
-  controlFile <- trimws(controlFile,which = "both") #remove leading or ending whitespace
+  controlFile <- trimws(controlFile, which = "both") #remove leading or ending whitespace
   controlFile <- controlFile[controlFile != ""] #remove blank rows
   
   
@@ -87,11 +87,11 @@ parseSPSSFileFormat <- function (inSPSSyntax){
   # Some syntax files uses single quote instead of double quote
   # Because later code use quote as a pattern to get labelValues, it's necessary
   # to replace relevant single quotes with double quotes
-  controlFile <- gsub(" \'"," \"", controlFile) #replace single quote with double quote for later use
-  controlFile <- gsub("\' ","\" ", controlFile)
-  controlFile <- gsub("^\'|\'$","\"", controlFile)
-  controlFile <- gsub("\'/","\"/", controlFile)
-  controlFile <- gsub("\'\\.","\"\\.", controlFile)
+  controlFile <- gsub(" \'", " \"", controlFile) #replace single quote with double quote for later use
+  controlFile <- gsub("\' ", "\" ", controlFile)
+  controlFile <- gsub("^\'|\'$", "\"", controlFile)
+  controlFile <- gsub("\'/", "\"/", controlFile)
+  controlFile <- gsub("\'\\.", "\"\\.", controlFile)
   
   # GET VARIABLE LIST, FWF POSITIONS, and DATA TYPE
   i <- 1
@@ -741,7 +741,6 @@ writeDF_FWF <- function(df, fileFormat, savePath, verbose){
   
   #======
   for(coli in 1:nrow(fileFormat)){
-    
     if(verbose){
       if(((coli %% 2500)==0) || coli==1){
         if(coli==1){
@@ -760,6 +759,11 @@ writeDF_FWF <- function(df, fileFormat, savePath, verbose){
       decTestLen <- num.decimals(colData) #get the decimal precision (not base function, included in readUTILS.R)
       decTestLen[is.na(decTestLen)] <- 0 #convert NAs to 0 for testing
       
+      #nsmall param for format has max limit of 20 decimal places!!
+      if(any(decTestLen > 20)){
+        decTestLen[decTestLen > 20] <- 20
+      }
+      
       charTest <- nchar(format(colData, trim=TRUE, scientific = FALSE, nsmall=max(decTestLen)),keepNA = TRUE)
       charTest[is.na(colData)] <- 0 #this sets the NaN and NA values to nchar of 0
       
@@ -768,7 +772,7 @@ writeDF_FWF <- function(df, fileFormat, savePath, verbose){
       fileFormat$Decimal[coli] <- max(decTestLen)
       fileFormat$dataType[coli] <- "numeric"
       
-    }else{ #test there is enough width for character strings too
+    } else { #test there is enough width for character strings too
       
       charTest <- nchar(format(colData, trim=TRUE, scientific = FALSE), keepNA = TRUE)
       charTest[is.na(colData)] <- 0 #this sets the NaN and NA values to nchar of 0
@@ -798,7 +802,7 @@ writeDF_FWF <- function(df, fileFormat, savePath, verbose){
       colData[grepl('\\\\', colData)] <- format(colData[grepl('\\\\', colData)], scientific = FALSE, width = width+1, justify = "right")
     }
     
-    omat[,coli] <- colData
+    omat[ , coli] <- colData
   }#end for(coli in 1:nrow(fileFormat))
   
   #write the file out to the cache location

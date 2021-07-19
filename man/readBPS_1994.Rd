@@ -19,7 +19,7 @@ readBPS_1994(
 \item{forceReread}{a logical value to force rereading of all processed data.
 The default value of \code{FALSE} will speed up the read function by using existing read-in data already processed.}
 
-\item{verbose}{a logical value that will determine if you want verbose output while the \code{readBPS_1994} function is running to indicate processing progress.
+\item{verbose}{a logical value that will determine if you want verbose output while the \code{readHSB_Sophomore} function is running to indicate processing progress.
 The default value is \code{TRUE}.}
 }
 \value{

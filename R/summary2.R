@@ -84,6 +84,11 @@ summary2 <- function(data, variable,
     class(ret) <- "summary2"
     return(ret)
   } # end if (is.null(weightVar) || !weightVar %in% colnames(data))
+
+  linkingError <- "NAEP" %in% getAttributes(data, "survey") & any(grepl("_linking", variable, fixed=TRUE))
+  if(linkingError) {
+    stop("summary2 does not support linking error.")
+  }
   
   callc$weightVar <- weightVar
   data <- getData(data, c(variable, weightVar), omittedLevels = omittedLevels,
@@ -106,8 +111,9 @@ summary2 <- function(data, variable,
     # build a data.frame, robust to vector "variable"
     ret <- do.call(rbind, lapply(variable, function(v) {
       as.data.frame(suppressWarnings(percentile(v, data=data,
-                                                percentiles=c(0,25,50,75,100),
-                                                weightVar = weightVar)))$estimate
+                                                percentiles=c(0, 25, 50, 75, 100),
+                                                weightVar = weightVar,
+                                                confInt = FALSE)))$estimate
     }))
     # turn plausible value variables into their member parts
     ret0 <- lapply(1:length(variable), function(vi) {
@@ -115,18 +121,18 @@ summary2 <- function(data, variable,
       if (hasPlausibleValue(v,data)) {
         v <- getPlausibleValue(v,data)
       }
-      lm0 <- fast.sd(data[,v], data[,weightVar])
+      lm0 <- fast.sd(data[ , v], data[ , weightVar])
       meanVar <- lm0$mean
       sdVar <- lm0$std
       n <- nrow(data)
-      wN <- sum(data[,weightVar],na.rm = TRUE)
-      nNA <- sum(rowSums(is.na(data[,v,drop=FALSE])) > 0 | is.na(data[,weightVar]))
+      wN <- sum(data[ , weightVar], na.rm = TRUE)
+      nNA <- sum(rowSums(is.na(data[ , v, drop=FALSE])) > 0 | is.na(data[ , weightVar]))
       return(c(n, wN, ret[vi, 1:3], meanVar, ret[vi, 4:5], sdVar, nNA,
-               sum(data[,weightVar] == 0, na.rm = TRUE)))
+               sum(data[ , weightVar] == 0, na.rm = TRUE)))
     })
     ret <- do.call(rbind, ret0)
     colnames(ret) <- c("N","Weighted N","Min.", "1st Qu.", "Median", "Mean", "3rd Qu.", 
-                    "Max.", "SD","NA's", "Zero-weights")
+                    "Max.", "SD", "NA's", "Zero-weights")
     ret <- cbind("Variable" = variableR, as.data.frame(ret))
   } # end else for if(typeOfVariable(variable,data) == "discrete")
   ret <- list(summary=ret)
@@ -159,10 +165,10 @@ fast.sd <- function(variables, weight) {
   y <- as.matrix(variables) # need to abstract PVs
   variance <- mu <- rep(NA, ncol(y))
   for(i in 1:ncol(y)) {
-    y0 <- y[!is.na(y[,i]) & !is.na(weight) & weight != 0,i]
-    w0 <- weight[!is.na(y[,i]) & !is.na(weight) & weight !=0]
+    y0 <- y[!is.na(y[ , i]) & !is.na(weight) & weight != 0,i]
+    w0 <- weight[!is.na(y[ , i]) & !is.na(weight) & weight !=0]
     mu[i] <- sum(w0 * y0)/sum(w0)
-    N <- length(w0[w0>0])
+    N <- length(w0[w0 > 0])
     variance[i] <- sum(w0 * (y0 - mu[i])^2)/( (N-1)/N * sum(w0))
   }
   return(list(mean=mean(mu), std=sqrt(mean(variance))))

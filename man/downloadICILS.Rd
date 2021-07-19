@@ -4,10 +4,10 @@
 \alias{downloadICILS}
 \title{Instructions for Downloading and Unzipping ICILS Files}
 \usage{
-downloadICILS(years = c(2013, 2018))
+downloadICILS(years = c(2013))
 }
 \arguments{
-\item{years}{an integer vector indicating the study year. Valid years are 2013 and 2018.}
+\item{years}{an integer vector indicating the study year. Valid year is 2013 only.}
 }
 \description{
 Provides instructions to download ICILS data to be processed in \code{readICILS}.

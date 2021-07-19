@@ -34,7 +34,7 @@
 #'                Defaults to \code{TRUE}.
 #' @details
 #' Reads in the unzipped files downloaded from the PISA database using the
-#' OECD Repository (\url{http://www.oecd.org/pisa/}). Users can use
+#' OECD Repository (\url{https://www.oecd.org/pisa/}). Users can use
 #' \code{\link{downloadPISA}} to download all required files.
 #' Student questionnaire files (with weights and plausible values) are used as
 #' main files, which are then
@@ -65,7 +65,7 @@
 #' @example man/examples/readPISA.R
 #'
 #' @references
-#' Organisation for Economic Co-operation and Development. (2017). \emph{PISA 2015 technical report}. Paris, France: OECD Publishing. Retrieved from \emph{\url{http://www.oecd.org/pisa/data/2015-technical-report/}}
+#' Organisation for Economic Co-operation and Development. (2017). \emph{PISA 2015 technical report}. Paris, France: OECD Publishing. Retrieved from \emph{\url{https://www.oecd.org/pisa/data/2015-technical-report/}}
 #'
 #' @export
 readPISA <- function(path,
@@ -74,11 +74,11 @@ readPISA <- function(path,
                      cognitive = c("score", "response", "none"),
                      forceReread = FALSE,
                      verbose = TRUE) {
-
+  
   #temporarily adjust any necessary option settings; revert back when done
   userOp <- options(OutDec = ".")
   on.exit(options(userOp), add = TRUE)
-
+  
   # Check that the arguments path, database, cognitive, forceReread, and verbose are valid  ======
   # database must be length one and upper, so force that
   database <- toupper(database)
@@ -102,12 +102,13 @@ readPISA <- function(path,
   if (!is.logical(forceReread)) {
     stop("The argument ",sQuote("forceReread")," must be a logical value.")
   }
-
+  
   path <- normalizePath(path, winslash = "/") # to match IEA read-in function
+  path <- ifelse(grepl("[.][a-zA-Z]{1,4}$", path, perl=TRUE, ignore.case=TRUE), dirname(path), path)
   if(!all(dir.exists(path))){
     stop(paste0("The argument ", sQuote("path"), " cannot be located ", pasteItems(path[!dir.exists(path)]),"."))
   }
-
+  
   # Gather file names to be read in ====
   databasecode <- ifelse(database == "INT", "", paste0(database,"_"))
   sdf <- list() # list to contain all edsurvey.data.frame elements
@@ -120,7 +121,7 @@ readPISA <- function(path,
         warning("Seperate CBA data is only available in 2012, switching to INT database.")
         database <- "INT"
       }
-
+      
       # check for meta file
       runProcessing <- FALSE
       metaCacheFile <- list.files(filepath, pattern=paste0("^", database, ".*\\.meta$"), ignore.case = TRUE)
@@ -157,7 +158,7 @@ readPISA <- function(path,
           stop("Only INT and FIN databases are supported for year 2018.")
         }
       }#end if (runProcessing)
-
+      
       ff <- list(fileFormat = cacheFile$dict)
       all_countries <- cacheFile$countryDict$cnt[cacheFile$countryDict$available]
       if (any(countries == "*")) {
@@ -182,7 +183,7 @@ readPISA <- function(path,
       if( "FIN" %in% database ) {
         warning("FIN data is not available in 2015.")
       }
-
+      
       database <- "INT" # in PISA 2015, financial literacy and problem solving can be merged back to the overall population
       # check for meta file
       runProcessing <- FALSE
@@ -219,7 +220,7 @@ readPISA <- function(path,
       countries <- tolower(countries)
       processedValue <- list(datbasename = "M_DAT_CY6_MS_CMB_STU",
                              countries = countries)
-
+      
     } else { # end if (length(list.files(filepath, pattern="cy6.*\\.sav", ignore.case=TRUE, full.names=FALSE)) > 0)
       # not 2015
       if (database == "INT") {
@@ -230,18 +231,18 @@ readPISA <- function(path,
       if (length(controlFilenames) == 0) {
         stop("Missing PISA Datafile(s) (",database," database) in the path ",sQuote(path))
       }
-
+      
       year <- unique(as.numeric(gsub("PISA","",strsplit(controlFilenames,"_")[[1]][1])))
-
+      
       if( "CBA" %in% database & !2012 %in% year ) {
         warning("Seperate CBA data is only available in 2012.")
       }
-
+      
       # validate data
       if (length(year) == 0) {
         stop("Please make sure to download SPSS syntax files on the OECD website. You can use ",sQuote('downloadPISA')," to download and organize data.")
       }
-
+      
       if (length(year) > 1) {
         stop("Found more than 2 years of data in the folder. Please separate different years of data in different folders.")
       }
@@ -258,7 +259,7 @@ readPISA <- function(path,
       } else {
         stop(sQuote(year)," is not a valid year. Valid years for PISA are 2000, 2003, 2006, 2009, 2012, and 2015.")
       }
-
+      
       # controlFilenames is a vector of all SPSS syntax files
       # now we need to attach each SPSS syntax file to its right label (one of `filebasenames` above)
       labelFiles <- c()
@@ -279,7 +280,6 @@ readPISA <- function(path,
       # rearrange to make sure student files are the main ones
       #must ensure it matches the exact ordering defined in the 'filebasenames' to ensure proper merge ordering!!!
       labelFiles <- labelFiles[order(match(labelFiles, filebasenames))]
-
       # filter out some unnecessary files
       if (cognitive == "none") {
         labelFiles <- labelFiles[!labelFiles %in% c("score","cognitive")]
@@ -302,7 +302,7 @@ readPISA <- function(path,
       # Process control files for each database ======================================
       # Return a list of name of data file and dict table
       metaCacheFile <- gsub("\\.txt","\\.meta",controlFilenames)
-
+      
       masterData <- lapply(controlFilenames, function(x) {
         metaCacheFile <- gsub("\\.txt","\\.meta",x)
         if(!file.exists(metaCacheFile) || forceReread) {
@@ -333,20 +333,20 @@ readPISA <- function(path,
           return(cacheFile)
         }
       })
-
+      
       names(masterData) <- labelFiles
       # Setting key variables for linkage with student data
       masterData <- lapply(masterData, function(l) {
         l$linkid <- intersect(c("cnt", "schoolid", "stidstd"), tolower(l$dict$variableName))
         return(l)
       })
-
+      
       # Reading the merged FF format file
       # ff is a list with: FFname = name of the FF file (to be used for base file name)
       #                    fileFormat = dataframe with all merged variables
       LafDictList <- masterData
       masterData <- NULL
-
+      
       mergeFFmeta <- list.files(filepath, pattern = paste0("^M_FF_.*",database,".*",cognitive,".*\\.meta"), full.names = FALSE, ignore.case = TRUE)
       if (length(mergeFFmeta) == 0 || forceReread) {
         # Write merged files
@@ -386,15 +386,15 @@ readPISA <- function(path,
       } # end else for if (length(mergeFFmeta) == 0 || forceReread)
       # Process merge txt data file ====================================
       processedValue <- processMergeTxt(filepath, LafDictList, countries, ff, database, forceReread, verbose)
-
+      
     } # end else for if(length(list.files(filepath, pattern="cy6.*\\.sav", ignore.case=TRUE, full.names=FALSE)) > 0)
-
+    
     # From this step, requires:
     # (1) ff: a data.frame of all merged variables
     # (2) year
     # (3) database
     # (4) processedValue: (a) datbasename and (b) countries
-
+    
     # Set up weights =================================================================
     jksuffix <- gsub("[^0-9]", "",ff$fileFormat$variableName[grepl("w_.*[0-9]$", ff$fileFormat$variableName,
                                                                    ignore.case = TRUE)])
@@ -410,10 +410,10 @@ readPISA <- function(path,
       }
     }
     attr(weights, "default") <- names(weights)[1]
-
+    
     # achievementLevels
     suppressWarnings(achievement <- pisaAchievementHelp(year, database[1]))
-
+    
     # Set up PVS ======================================================================
     pvs = list()
     pv_subset <- subset(ff$fileFormat, select = c('Type', 'variableName'),
@@ -436,13 +436,13 @@ readPISA <- function(path,
       }
       pvs[[i]] <- temp_list
     } #end for (i in uniquePvTypes)
-
+    
     if (length(default_list) > 0) {
       attr(pvs, "default") <- default_list[1]
     } else {
       attr(pvs, "default") <- names(pvs)[1]
     }
-
+    
     # Read text files and return output ===========================
     if (!(year %in% c(2015, 2018))) {
       countryDict <- read.csv(file.path(filepath,paste0(database,"_all-countries.txt")),stringsAsFactors = FALSE)
@@ -461,11 +461,11 @@ readPISA <- function(path,
       }
       datLaf <- catchCountryTxt(filepath, datname = paste0(processedValue$datbasename, "_",cntry,".txt"),ff)
       icntry <- icntry + 1
-
+      
       #specify the PSU/Stratum for the year dataset (defaults below, modify based on year)
       psuVar <- "var_unit"
       stratumVar <- "wvarstrr"
-
+      
       if(year %in% c(2003,2015, 2018)) {
         psuVar <- "unit"
       }
@@ -477,24 +477,24 @@ readPISA <- function(path,
       }
       
       sdf[[icntry]] <- edsurvey.data.frame(userConditions = list(),
-                                          defaultConditions = NULL,
-                                          dataList = buildPISA_dataList(datLaf, ff$fileFormat),
-                                          weights = weights,
-                                          pvvars = pvs,
-                                          subject = achievement$subjects,
-                                          year = as.character(year),
-                                          assessmentCode = "International",
-                                          dataType = "Student Data",
-                                          gradeLevel = "15 years old or above",
-                                          achievementLevels = achievement$achievementLevels,
-                                          omittedLevels = c("Invalid","N/A","Missing","Miss",NA,"(Missing)","NO RESPONSE","INVALID","VALID SKIP","NOT APPLICABLE","MISSING","NOT REACHED"),
-                                          survey = "PISA",
-                                          psuVar = psuVar,
-                                          stratumVar = stratumVar,
-                                          jkSumMultiplier = 0.05, # this number is from PISA 2015 Technical Report Chapter 8 (in reference)
-                                          country = convertCountryName(countryDict,cntry),
-                                          validateFactorLabels = TRUE,
-                                          reqDecimalConversion = FALSE)
+                                           defaultConditions = NULL,
+                                           dataList = buildPISA_dataList(datLaf, ff$fileFormat),
+                                           weights = weights,
+                                           pvvars = pvs,
+                                           subject = achievement$subjects,
+                                           year = as.character(year),
+                                           assessmentCode = "International",
+                                           dataType = "Student Data",
+                                           gradeLevel = "15 years old or above",
+                                           achievementLevels = achievement$achievementLevels,
+                                           omittedLevels = c("Invalid","N/A","Missing","Miss",NA,"(Missing)","NO RESPONSE","INVALID","VALID SKIP","NOT APPLICABLE","MISSING","NOT REACHED"),
+                                           survey = "PISA",
+                                           psuVar = psuVar,
+                                           stratumVar = stratumVar,
+                                           jkSumMultiplier = 0.05, # this number is from PISA 2015 Technical Report Chapter 8 (in reference)
+                                           country = convertCountryName(countryDict,cntry),
+                                           validateFactorLabels = TRUE,
+                                           reqDecimalConversion = FALSE)
     }
   } # end for(filepath in path)
   # Return output
@@ -541,7 +541,7 @@ readDict <- function(filename) {
   controlFile <- gsub("\'/", "\"/", controlFile)
   controlFile <- gsub("\'\\.", "\"\\.", controlFile)
   # end Note
-
+  
   if (grepl("2003", filename)) {
     controlFile <- gsub(" / "," /\n ", controlFile)
     controlFile <- unlist(strsplit(controlFile, "\n "))
@@ -556,7 +556,7 @@ readDict <- function(filename) {
   # Some syntax files uses single quote instead of double quote. For the sake of convenience,
   # change all of them to double quote
   controlFile[i] <- gsub("\'", "\"", controlFile[i])
-
+  
   # Find the name of the corresponding flat file given the SPSS syntax file
   datFname <- gsub("\"","",strsplit(regmatches(controlFile[i],regexpr('(?<=").*?(?=")"',controlFile[i], perl = TRUE))[[1]], split = "\\\\")[[1]][3])
   # Some error in SPSS control file in 2009
@@ -581,7 +581,7 @@ readDict <- function(filename) {
       tempDict <- data.frame("variableName" = toupper(tempSplit[1]),
                              "Start" = as.integer(temp[1]),
                              "End" = as.integer(temp[2]), stringsAsFactors = FALSE)
-
+      
       if(length(tempSplit) == 2) {
         tempDict$Decimal <- 0
         tempDict$dataType <- "numeric"
@@ -594,7 +594,7 @@ readDict <- function(filename) {
                              "Start" = as.integer(tempSplit[2]),
                              "End" = as.integer(tempSplit[4]), stringsAsFactors = FALSE)
       tempType <- gsub("\\(|\\)", "",tempSplit[5])
-
+      
       if (grepl("^a", tempType,ignore.case = TRUE)) {
         tempDict$Decimal <- NA
         tempDict$dataType <- "character"
@@ -612,7 +612,7 @@ readDict <- function(filename) {
   } # end while (grepl("-", controlFile[i]))
   dict$Decimal[is.na(dict$Decimal)] <- 0
   # --- End getting variable names, fixed width and data types
-
+  
   # Get variable formats
   j <- 1
   while(!grepl("^format",controlFile[j], ignore.case = TRUE) && j <= length(controlFile)) {
@@ -652,13 +652,13 @@ readDict <- function(filename) {
     j <- j+1
   } # end loop for reading format
   dict$dataType[is.na(dict$dataType)] <- "numeric"
-
+  
   # --- End checking formats
   # This column 'multiplier' is created to be consistent with the columns in fileFormat for other datasets.
   # It is not used for PISA because PISA is written out to csv, not fwf.
   dict$multiplier <- as.integer(ifelse(is.na(dict$Decimal), 1, 10^dict$Decimal))
-
-
+  
+  
   # Get variable labels
   # In syntax file of 2009 and earlier, there are formats. Need to skip
   while(!grepl("(variable label|var lab)", controlFile[i], ignore.case = TRUE)) {
@@ -672,7 +672,7 @@ readDict <- function(filename) {
     i <- i+1
   }
   # --- End getting variable labels
-
+  
   # Get labelValues
   j <- i
   while(!grepl("(value label|val lab)", controlFile[j], ignore.case = TRUE)) { j <- j+1}
@@ -697,7 +697,7 @@ readDict <- function(filename) {
       }
       tempValues <- ""
       varnamelist <- c()
-
+      
       if (grepl("exe.*\\.$|^miss|^format|^\\.", controlFile[j], ignore.case = TRUE) || controlFile[j] == "") {
         while(!grepl("(value label|val lab)", controlFile[j], ignore.case = TRUE) && j <= length(controlFile)) { j <- j+1}
         next
@@ -706,7 +706,7 @@ readDict <- function(filename) {
       testLine <- strsplit(gsub("^/","",controlFile[j])," |\t")[[1]]
       varnamelist <- intersect(toupper(testLine), c(toupper(dict$variableName),"TO"))
     }
-
+    
     if (grepl("\"", controlFile[j])) {
       tempLine <- unlist(strsplit(controlFile[j]," |\t"))
       tempLine <- tempLine[tempLine != ""]
@@ -754,14 +754,14 @@ readDict <- function(filename) {
   } # end while (j <= length(controlFile))
   dict$labelValues[is.na(dict$labelValues)] <- ""
   # --- End getting labelValues
-
+  
   # missing and labels
   dict$labelled <- logical(nrow(dict))
   dict$missing <- ""
   missing_rules <- c(9, 99, 999, 9999, 99999, 999999,
                      8, 98, 998, 9998, 99998, 999998,
                      7, 97, 997, 9997, 99997, 999997,
-                        96, 996, 9996, 99996, 999996)
+                     96, 996, 9996, 99996, 999996)
   for (ri in 1:nrow(dict)) {
     lv <- dict$labelValues[ri]
     keysTemp <- strsplit(unlist(strsplit(lv, "^", fixed = TRUE)), "=")
@@ -774,7 +774,7 @@ readDict <- function(filename) {
     }
   }
   # --- End getting missing values and labels
-
+  
   # Get Type (which PV)
   dict$Type <- sapply(dict$variableName, function(zzz){
     if(grepl("pv[1-9]", zzz, ignore.case = TRUE)){
@@ -783,7 +783,7 @@ readDict <- function(filename) {
       return ("")
     }
   })
-
+  
   # Get pvWt and weights
   dict$pvWt <- ""
   # This if finds the first line that define value label for each variable
@@ -799,7 +799,7 @@ readDict <- function(filename) {
   dict$pvWt[grepl("W_.*[0-9]$", dict$variableName, ignore.case = TRUE)] <- gsub("[^0-9]","",dict$variableName[grepl("W_.*[0-9]$", dict$variableName,ignore.case = TRUE)])
   dict$pvWt[is.na(dict$pvWt)] <- ""
   dict$weights <- grepl("^w_.*[^0-9]$", dict$variableName, ignore.case = TRUE)
-
+  
   # For PISA 2000, weights for reading, math, and science are re-adjusted
   if(grepl("2000_SPSS_student_math", filename)) {
     dict$variableName <- gsub("W_FSTR","W_FSTR_MATH",dict$variableName)
@@ -813,18 +813,18 @@ readDict <- function(filename) {
     dict$variableName <- gsub("W_FSTR","W_FSTR_SCIE",dict$variableName)
     dict$variableName <- gsub("W_FSTUWT","W_FSTUWT_SCIE", dict$variableName)
   }
-
+  
   # Return a data.frame that stores data variable information (width, start, end, labels, etc.)
   dict$variableName <- trimws(dict$variableName, which = "right")
   # fix to valid names in R
   dict$variableName <- make.names(dict$variableName)
-
+  
   #validates the file format by scanning the data from the source Fixed-Width data file before caching it
   #to the RDS .meta cache file.  super important step to ensure analysis is correctly identifying value type
   #see: "typeOfVarible" function in edsurveyTable.R file
   dict <- fixDict_FWF_Spacing(dict) #fixes any FWF spacing issues as LaF works only set 'widths'
   dict <- validateFileFormat_PISA(file.path(dirname(filename), datFname), dict)
-
+  
   # create meta files
   cacheFile <- list(datFile = datFname,
                     dict = dict,
@@ -861,7 +861,7 @@ mergeFF <- function(filepath, LafDictList, by, mergeSuffixes) {
     index_of_by <- which(newnames %in% by[i-1])
     junkvars <- setdiff(intersect(oldnames,newnames),by[i-1])
     index_of_junk <- which(newnames %in% junkvars)
-
+    
     # Rewrite labelsfile
     index_of_removed <- c(index_of_by, index_of_junk)
     newLabelsFile <- newLabelsFile[-index_of_removed,]
@@ -871,7 +871,7 @@ mergeFF <- function(filepath, LafDictList, by, mergeSuffixes) {
     }
     newLabelsFile$End <- newLabelsFile$Start + newLabelsFile$Width - 1
     mainLabelsFile <- rbind(mainLabelsFile, newLabelsFile)
-
+    
     # Finish up before continue with the loop
     mainLabelsFile <- mainLabelsFile[order(mainLabelsFile$Start),]
     oldnames <- mainLabelsFile$variableName
@@ -934,7 +934,7 @@ processMergeTxt <- function(filepath, LafDictList, countries, ff, database, forc
     write.csv(countryDict, paste0(filepath,"/",database,"_all-countries.txt"), row.names = FALSE)
     processDT <- TRUE
   }
-
+  
   # get the list of countries to be processed
   if ( any(countries == "*")) {
     countries <- all_countries
@@ -956,7 +956,7 @@ processMergeTxt <- function(filepath, LafDictList, countries, ff, database, forc
     processed <- gsub("\\.txt","", processed)
     unprocessed <- setdiff(countries, processed)
   }
-
+  
   if (length(unprocessed) == 0) {
     return(list(datbasename = datbasename, countries = countries, fileFormat = ff))
   }
@@ -966,7 +966,7 @@ processMergeTxt <- function(filepath, LafDictList, countries, ff, database, forc
     names(masterDTlist) <- names(LafDictList)
   }
   masterDTlist <- NULL
-
+  
   for (cntry in unprocessed) {
     if(verbose) {
       cat(paste0("Processing data for country code ", dQuote(cntry), "\n"))
@@ -974,10 +974,10 @@ processMergeTxt <- function(filepath, LafDictList, countries, ff, database, forc
     for(li in 1:length(LafDictList)) {
       x <- LafDictList[[li]]
       dict <- x$dict
-
+      
       fname <- file.path(filepath, x$datFile)
       fname <- fixPath(fname)
-
+      
       lafD <- LaF::laf_open_fwf(filename = fname,
                                 column_types = dict$dataType,
                                 column_widths = dict$Width,
@@ -1022,26 +1022,26 @@ processMergeTxt <- function(filepath, LafDictList, countries, ff, database, forc
     }
     mainDat <- as.data.frame(lapply(mainDat, maybeTrim), stringsAsFactors = FALSE)
     mainDat <- mainDat[,tolower(ff$fileFormat$variableName)]
-
+    
     # write out to CSV file
     write.table(mainDat, file=paste0(filepath,"/",datbasename,"_",cntry,".txt"),
                 sep=",", col.names=FALSE, na="", row.names=FALSE,
                 quote=FALSE) # all numeric
   }
-
+  
   return(list(datbasename = datbasename, countries = countries, fileFormat = ff))
 }
 
 fixDict_FWF_Spacing <- function(dict) {
   #this gets fixed prior
   dict$dt <- ifelse(dict$dataType == "integer", "numeric", dict$dataType)
-
+  
   # this is the width calculated base on column end points, if it
   # does not line up, then the widths are wrong
   dict$Width2 <- c(dict$End[1], dict$End[-1] - dict$End[-nrow(dict)])
   # in these cases the width did not line up, fix these
   issues <- (1:nrow(dict))[dict$Width != dict$Width2]
-
+  
   # reverse issue order so that order stay correct
   for(issue in rev(issues)) {
     # issue is a row index with a problem
@@ -1049,7 +1049,7 @@ fixDict_FWF_Spacing <- function(dict) {
     newrow <- dict[issue,]
     # set the width to fill the gap
     newrow$Width <- newrow$Width2 - newrow$Width # fill the gap
-
+    
     newrow$variableName <- "zzz_Filler"
     newrow$dataType <- newrow$dt <- "character" # make sure it can be read in
     newrow$Labels <- "Column Filler for Read-in"
@@ -1059,23 +1059,22 @@ fixDict_FWF_Spacing <- function(dict) {
     newrow$Type <- ""
     newrow$pvWt <- ""
     newrow$weights <- FALSE
-
     dict[issue:nrow(dict) + 1,] <- dict[issue:nrow(dict),]
     dict[issue,] <- newrow
   }
-
+  
   #recalibrate the start/end positions after placing in the filler columns
   dict$Start <- c(1,1 + cumsum(dict$Width))[1:nrow(dict)]
   dict$End <- cumsum(dict$Width)
-
+  
   dict$variableName <- tolower(make.names(dict$variableName, unique = TRUE))
-
+  
   return(dict)
 }
 
 # Used to serialize an existing csv files
 catchCountryTxt <- function(filepath, datname, ff) {
-
+  
   lafFile <- list.files(filepath, pattern=datname, ignore.case=TRUE)
   lafFile <- file.path(filepath, lafFile)
   if (length(lafFile) > 1) {
@@ -1089,15 +1088,15 @@ catchCountryTxt <- function(filepath, datname, ff) {
   columnTypes <- ifelse(ff$fileFormat$dataType=="numeric","double",
                         ifelse(ff$fileFormat$dataType=="character","string",
                                ff$fileFormat$dataType))
-
+  
   ret <- LaF::laf_open_csv(lafFile, column_types = columnTypes,
-               column_names = tolower(ff$fileFormat$variableName))
+                           column_names = tolower(ff$fileFormat$variableName))
   return(ret)
 }
 
 # Used to look up achievement levels for each year, database, and subject
 pisaAchievementHelp <- function(year, database) {
-
+  
   achievementDict <- readRDS(system.file("extdata", "PISAal.rds", package="EdSurvey"))
   achievementDict$level <- paste0("Proficiency ", achievementDict$level)
   temp_subset <- achievementDict[achievementDict$year == year & achievementDict$database == database,]
@@ -1137,7 +1136,7 @@ processPISA2015 <- function(filepath, verbose, countries, year) {
   }
   studentSavFileList <- list.files(filepath, pattern = "stu.*\\.sav$", ignore.case=TRUE)
   schoolSavFileList <- list.files(filepath, pattern = "sch.*\\.sav$", ignore.case=TRUE)
-
+  
   # Read in data
   mainFile <- grep("qqq", studentSavFileList, ignore.case=TRUE)
   if (length(mainFile) == 0) {
@@ -1205,13 +1204,13 @@ processPISA2015 <- function(filepath, verbose, countries, year) {
     }
     return(NULL)
   })
-
+  
   idlinkage <- list(stu_qqq = "", stu_qq2 = tolower("CNTSTUID"),
                     stu_cog = tolower("CNTSTUID"), stu_qtm = tolower("CNTSTUID"),
                     stu_flt = tolower("CNTSTUID"), stu_cps = tolower("CNTSTUID"),
                     stu_tim = tolower("CNTSTUID"),
                     sch_qqq = tolower("CNTSCHID"))
-
+  
   idlinkage <- idlinkage[names(idlinkage) %in% names(savFileList)]
   # Merge file formats
   mainLabelsFile <- studentFFlist[[1]]
@@ -1310,25 +1309,25 @@ processPISA2015 <- function(filepath, verbose, countries, year) {
         mm[[i]] <- ifelse(is.na(mm[[i]]), "", format(mm[[i]], scientific = FALSE))
       }
     }
-
+    
     if(year==2015){
       outf <- file.path(filepath,paste0("M_DAT_CY6_MS_CMB_STU_",cntry,".txt"))
     }else if(year==2018){
       outf <- file.path(filepath,paste0("M_DAT_CY7_MS_CMB_STU_",cntry,".txt"))
     }
-
+    
     if(file.exists(outf)) {
       unlink(outf)
     }
-
+    
     #validate the file format against the full dataset (for each country) before it's cached in the .meta file
     ff <- validateFileFormat_PISA_2015(mm, ff)
     write.table(mm, file = outf, col.names = FALSE, row.names=FALSE, sep = ",", na="")
-
+    
   }
   ff$variableName <- gsub("^REPEAT\\.$","REPEATGRADE", ff$variableName, ignore.case = TRUE)
   ff$variableName <- gsub("^REPEAT$","REPEATGRADE", ff$variableName, ignore.case = TRUE)
-
+  
   # Produce country dictionary
   countryLabels <- unlist(strsplit(ff$labelValues[toupper(ff$variableName) == toupper("cnt")], "\\^"))
   countryDict <- do.call("rbind", strsplit(countryLabels, "="))
@@ -1355,7 +1354,7 @@ readDict2015 <- function(l, year) {
   colInfo$format <- sapply(colInfo$variableName, function(z) {
     attributes(l[[z]])$format.spss
   })
-
+  
   colInfo$Decimal <- as.numeric(ifelse(substr(colInfo$format,1,1) == "F", sapply(strsplit(colInfo$format,"\\."), function(x) { tail(x,1) } ), rep(NA, nrow(colInfo)) ))
   colInfo$Decimal[is.na(colInfo$Decimal) && !(tolower(colInfo$class) %in% "date")] <- 0 #dates are omitted based on SPSS class type so they are characters
   colInfo$multiplier <- as.integer(ifelse(is.na(colInfo$Decimal), 1, 10^colInfo$Decimal))
@@ -1369,7 +1368,7 @@ readDict2015 <- function(l, year) {
   colInfo$format <- NULL
   colInfo$Start <-  c(1,1 + cumsum(colInfo$Width))[1:nrow(colInfo)]
   colInfo$End <- cumsum(colInfo$Width)
-
+  
   # missing and labels
   colInfo$labelled <- logical(nrow(colInfo))
   colInfo$missing <- ""
@@ -1390,7 +1389,7 @@ readDict2015 <- function(l, year) {
     }
   }
   # --- End getting missing values and labels
-
+  
   # Get Type (which PV)
   colInfo$Type <- sapply(colInfo$variableName, function(zzz){
     if(grepl("pv[1-9]", zzz, ignore.case = TRUE)){
@@ -1399,7 +1398,7 @@ readDict2015 <- function(l, year) {
       return ("")
     }
   })
-
+  
   # Get pvWt and weights
   colInfo$pvWt <- ""
   colInfo$pvWt <- mapply(function(v,t) {
@@ -1411,13 +1410,13 @@ readDict2015 <- function(l, year) {
   }, colInfo$variableName, colInfo$Type)
   colInfo$pvWt[grepl("W_.*[0-9]$", colInfo$variableName, ignore.case = TRUE)] <- gsub("[^0-9]", "", colInfo$variableName[grepl("W_.*[0-9]$", colInfo$variableName, ignore.case = TRUE)])
   colInfo$pvWt[is.na(colInfo$pvWt)] <- ""
-
+  
   #exclude cases that end with the 'sum' keyword (e.g., 'w_fstuwt_sch_sum' as that's not a usable weight)
   colInfo$weights <- grepl("^w_.*[^0-9]$", colInfo$variableName, ignore.case = TRUE) & !grepl("sum$", colInfo$variableName, ignore.case = TRUE)
   ##characters will have an N/A for their decimal value
   colInfo$dataType <- ifelse(colInfo$Decimal %in% 1:32 | (colInfo$Width > 9 & colInfo$Decimal %in% 0), rep("numeric", nrow(colInfo)),
-                        ifelse(colInfo$Decimal %in% 0, rep("integer", nrow(colInfo)),
-                               rep("character", nrow(colInfo))))
+                             ifelse(colInfo$Decimal %in% 0, rep("integer", nrow(colInfo)),
+                                    rep("character", nrow(colInfo))))
   return(colInfo)
 }
 
@@ -1425,19 +1424,19 @@ validateFileFormat_PISA_2015 <- function(df, fileFormat){
   
   idx <- which(tolower(fileFormat$dataType)=="integer", arr.ind = TRUE) #only scan integers to see if they are numeric (i.e., have a decimal period)
   tempDF <- df[,idx]
-
+  
   res <- unlist(lapply(tempDF, valid.integer))
   
   if(!all(res, na.rm = TRUE)){
     fileFormat$dataType[tolower(fileFormat$variableName) %in% tolower(colnames(tempDF)[!res])] <- "numeric"
   }
-
+  
   return(fileFormat) #return updated fileFormat
 }
 
 #TRUE if the vector is a valid integer (no decimal, and less than a length of 9 (indicating large numeric))
 valid.integer <- function(x){
-
+  
   n <- suppressWarnings(as.numeric(x))
   test1 <- n%%1==0 #test for decimals
   test2 <- nchar(x)<=8 #test for out of bounds
@@ -1450,9 +1449,9 @@ valid.integer <- function(x){
 
 #builds the NAEP dataList object
 buildPISA_dataList <- function(LaF, FF){
-
+  
   dataList <- list()
-
+  
   #build the list hierarchical based on the order in which the data levels would be merged in getData
   dataList[["Student"]] <- dataListItem(lafObject = LaF,
                                         fileFormat = FF,
@@ -1463,7 +1462,7 @@ buildPISA_dataList <- function(LaF, FF){
                                         mergeVars = NULL,
                                         ignoreVars = NULL,
                                         isDimLevel = TRUE)
-
+  
   return(dataList)
 }
 
@@ -1500,35 +1499,35 @@ getMasterDTList <- function(filepath, x, countryDict) {
 #correctly identifies the data types based on the source data file (being read-in as characters)
 #this is needed since we cannot rely on formats specified in the SPSS syntax file correctly
 validateFileFormat_PISA <- function(dataFilePath, fileFormat){
-
+  
   #test that the ending position matches the number of characters in the first row
   #special case for 2000 reading FWF data file as it's specified out of bounds
   testLen <- nchar(readLines(dataFilePath, n=1))
-
+  
   if(fileFormat[nrow(fileFormat), "End"]>testLen){
     #calc the diff of the offage and adjust the End position and the Width positions
     d <- fileFormat[nrow(fileFormat), "End"] - testLen
     fileFormat[nrow(fileFormat), "End"] <- testLen
     fileFormat[nrow(fileFormat), "Width"] <- fileFormat[nrow(fileFormat), "Width"] - d
   }
-
+  
   sourceData_LaFObj <- laf_open_fwf(filename = dataFilePath,
                                     column_types = fileFormat$dataType,
                                     column_widths = fileFormat$Width,
                                     column_names = fileFormat$variableName)
   on.exit(close(sourceData_LaFObj))
-
+  
   sourceData <- sourceData_LaFObj[] #get the full dataset for validation analysis
-
+  
   colsToScan <- which(tolower(fileFormat$dataType) %in% c("integer", "numeric"), arr.ind = TRUE) #only scan numeric or integer columns
-
+  
   #======
   for(coli in colsToScan){
-
+    
     #test specifically if a numeric value has a decimal or is an integer by analyzing raw column data
     colData <- sourceData[[coli]]
     isDecimal <- any(grepl(".", colData, fixed = TRUE), na.rm = TRUE)
-
+    
     if(isDecimal){
       #update all the format and decimal values for these numerics regardless of what the SPSS formatting says
       fileFormat$dataType[coli] <- "numeric"
@@ -1541,7 +1540,7 @@ validateFileFormat_PISA <- function(dataFilePath, fileFormat){
       }
     }#end else if(isDecimal)
   }#end for(coli in 1:nrow(fileFormat))
-
+  
   return(fileFormat)
 }
 

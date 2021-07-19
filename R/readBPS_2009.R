@@ -26,6 +26,7 @@ readBPS_2009 <- function(path = getwd(),
   on.exit(options(userOp), add = TRUE)
   
   path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
+  path <- ifelse(grepl("[.][a-zA-Z]{1,4}$", path, perl=TRUE, ignore.case=TRUE), dirname(path), path)
   
   if(!dir.exists(path)){
     stop(paste0("Cannot find specified folder path ", sQuote(path), "."))
@@ -75,19 +76,20 @@ readBPS_2009 <- function(path = getwd(),
                       omittedLevels = omittedLevels,
                       survey = "BPS",
                       country = "USA",
-                      psuVar = NA, #documentation states these values should be psu/stratum, but cannot be found in data: psuVar==bps09psu; stratumVar==bps09str 
+                      psuVar = NA, #psuVar==bps09psu; stratumVar==bps09str; IT SHOULD BE THESE VARIABLES ACCORDING TO DOCUMENTATION FOR TAYLOR; BUT NOT IN DERIVED FILE?  
                       stratumVar = NA, 
                       jkSumMultiplier = 1/200, #1/200 BRR replicates
-                      validateFactorLabels = FALSE,
+                      validateFactorLabels = FALSE, #the validateFactorLabels will check in `getData` if all values have a defined label, any missing labels will be automatically added.
                       reqDecimalConversion = FALSE) #decimal conversion is not needed
 }
+
 
 #identified the ELS weights based on the file format data.frame and marks them as weights TRUE/FALSE in the fileFormat
 identifyBPSWeights_2009 <- function(fileFormat){
   
   varNames <- fileFormat$variableName
   
-  #weight vars all begin with wt, then a, b, c, or d (e.g., wta, wtb, wtc, wtd)
+  #weight vars all begin with wta
   wgtVars <- grep("^wt(a|b|c|d)000$", varNames, value=TRUE, ignore.case = TRUE)
   
   #TRUE/FALSE on if the variable is a weight at all

@@ -24,18 +24,23 @@ showPlausibleValues <- function(data, verbose = FALSE) {
   pvNames <- names(pvvars)
   txt <- paste0("There are ", length(pvNames), " subject scale(s) or subscale(s) in this edsurvey.data.frame:\n")
   eout(txt)
-
+  if(is.null(attributes(pvvars)$default))
+  attributes(pvvars)$default <- "" # should not resolve to a test
   if (length(pvNames) == 0) {
     return(invisible(NULL))
   }
   for (i in 1:length(pvNames)) {
     pvi <- pvvars[[i]]
+	pvn <- lapply(names(pvi)[grep("[Vv]arnames", names(pvi))], function(name) {
+	  length(pvi[[name]])
+	})
+	npv <- sum(unlist(pvn))
     txt <- paste0("  ", sQuote(names(pvvars)[i]),
                " subject scale or subscale with ",
-               length(pvi$varnames), 
+               npv, 
                " plausible values")
     if (attributes(pvvars)$default == pvNames[i]) {
-        # if there is a default plausible value, return with paste ' (the default)'
+      # if there is a default plausible value, return with paste ' (the default)'
       txt <- paste0(txt, " (the default).")
     } else {
       txt <- paste0(txt, ".")
@@ -84,16 +89,23 @@ getPlausibleValue <- function(var, data) {
   # get the list of attributes about PV variables
   pv <- getAttributes(data, "pvvars")
   # extract just the variable names (on the data) for the variables in question
-  pvi <- lapply(var, function(vn) { pv[[vn]]$varnames } )
+  pvi <- lapply(var, function(vn) {
+    if(grepl("_linking", vn, fixed=TRUE)) {
+	  c(pv[[vn]]$estVarnames, pv[[vn]]$impVarnames, pv[[vn]]$sampVarnames)
+    } else {
+      pv[[vn]]$varnames
+	}
+  } )
+  
   # turn them into a single vector and return; return a NULL warning if any of the pvs are NULL (they shouldn't ever be though)
   if(any(is.null(pvi))) {
     surveyPaste <- getAttributes(data, "survey")
     yearPaste <- getAttributes(data, "year")
     warning(paste(surveyPaste, yearPaste, "returns a NULL plausible value."))
     return(unname(unlist(pvi)))
-    } else {
+  } else {
     return(unname(unlist(pvi)))
-    }
+  }
 }
 
 #' @title Update Plausible Value Variable Names

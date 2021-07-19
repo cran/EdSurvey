@@ -4,7 +4,14 @@
 \alias{varEstToCov}
 \title{Covariance Estimation}
 \usage{
-varEstToCov(varEstA, varEstB = varEstA, varA, varB = varA, jkSumMultiplier)
+varEstToCov(
+  varEstA,
+  varEstB = varEstA,
+  varA,
+  varB = varA,
+  jkSumMultiplier,
+  returnComponents = FALSE
+)
 }
 \arguments{
 \item{varEstA}{a list of two \code{data.frame}s returned by a function after 
@@ -32,9 +39,12 @@ For an \code{edsurvey.data.frame} or
 a \code{light.edsurvey.data.frame},
 the recommended value can be recovered with
 \code{EdSurvey::getAttributes(}\code{myData,} \code{"jkSumMultiplier")}.}
+
+\item{returnComponents}{set to \code{TRUE} to return the imputation variance seperate from the sampling variance}
 }
 \value{
-a numeric value; the jackknife covariance estimate
+a numeric value; the jackknife covariance estimate. If \code{returnComponents} is \code{TRUE}, returns a vector of
+length three, \code{V} is the variance estimate, \code{Vsamp} is the sampling component of the variance, and \code{Vimp} is the imputation component of the variance
 }
 \description{
 When the variance of a derived statistic (e.g., a difference) is 

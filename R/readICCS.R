@@ -1,6 +1,6 @@
 #' @title Connect to ICCS and CivED Data
 #'
-#' @description Opens a connection to an ICCS or CivEd (1999) data file and
+#' @description Opens a connection to an ICCS (2009, 2016) or CivEd (1999) data file and
 #'              returns an \code{edsurvey.data.frame} with 
 #'              information about the file and data.
 #'
@@ -67,6 +67,7 @@ readCivEDICCS <- function(path,
   on.exit(options(userOp), add = TRUE)
   
   path <- suppressWarnings(normalizePath(unique(path), winslash = "/"))
+  path <- ifelse(grepl("[.][a-zA-Z]{1,4}$", path, perl=TRUE, ignore.case=TRUE), dirname(path), path)
   
   if(!all(dir.exists(path))){
     stop(paste0("The argument ", sQuote("path"), " cannot be located: ", pasteItems(dQuote(path[!dir.exists(path)])), "."))
@@ -124,18 +125,9 @@ readCivEDICCS <- function(path,
   
   
   if(length(filenames) == 0) {
-    
-    unsupportedFiles <- list.files(path,
-                                   pattern=paste0("i.....c3", "\\.sav$"), full.names=TRUE, ignore.case = TRUE)
-    
-    if(sum(nchar(unsupportedFiles))>0){
-      stop(paste0("The ", sQuote("readCivEDICCS()"), " function does not support the ICCS 2016 study. Check NEWS in future versions of EdSurvey for updates."))
-    }else{
       countries <- ifelse(length(countries)==0,"*", countries)
       stop(paste0("Could not find any CivED/ICCS datafiles for countries ", paste(countries, collapse=", "),
                   " in the following folder(s) ", pasteItems(dQuote(path)), "."))
-    }
-    
   }
   
   fSubPart <- tolower(substring(basename(filenames), 1, 8)) #includes grade level code, country code, and year code
@@ -308,8 +300,17 @@ readCivEDICCS <- function(path,
                                     })
         }
         
-        processedData$achievementLevels <- c("395", "479", "563")
-        names(processedData$achievementLevels) <- c("Level 1", "Level 2", "Level 3")
+        #ICCS student level achievement levels
+        if(convertICCSYearCode(yrCode)=="2009"){
+          processedData$achievementLevels <- c("395", "479", "563")
+          names(processedData$achievementLevels) <- c("Level 1", "Level 2", "Level 3")
+        }else if(convertICCSYearCode(yrCode)=="2016"){
+          processedData$achievementLevels <- c(310.9999, 394.9999, 478.9999, 562.9999)
+          names(processedData$achievementLevels) <- c("Level D", "Level C", "Level B", "Level A")
+        }else{
+          warning(paste0("ICCS Student achievement levels undefined for year code: ", sQuote(yrCode), ", and will not be available for analysis."))
+        }
+        
         
         testJKprefix <- c("JK") #have any jk prefix values here that are applicable for this dataset
         weights <- NULL #default value
@@ -515,9 +516,9 @@ readCivEDICCS <- function(path,
       
       processedData$gradeLevel <- paste("Grade", gradeLvl) 
       
-      processedData$omittedLevels <- c('Multiple', NA, 'OMITTED', 'OMITTED OR INVALID', 
-                                       'LOGICALLY NOT APPLICABLE', 'MISSING', 'INVALID', 
-                                       'NOT ADMIN', 'NOT ADMIN.', 'NOT REACHED', '(Missing)')
+      processedData$omittedLevels <- c("Multiple", NA, "OMITTED", "OMITTED OR INVALID", 
+                                       "LOGICALLY NOT APPLICABLE", "MISSING", "INVALID", 
+                                       "NOT ADMIN", "NOT ADMIN.", "NOT ADMINISTERED", "NOT REACHED", "(Missing)")
       
       
       processedData$survey <- ifelse(hasICCSData, "ICCS", "CivED")
@@ -569,6 +570,7 @@ convertICCSYearCode <- function(yrCode){
   yrTest <- tolower(sort(unique(yrCode)))
   yrTest[yrTest %in% c("f2")] <- 1999
   yrTest[yrTest %in% c("c2")] <- 2009
+  yrTest[yrTest %in% c("c3")] <- 2016
   
   return(yrTest)
 }
@@ -576,8 +578,8 @@ convertICCSYearCode <- function(yrCode){
 getICCSYearCodes <- function(){
   #retrieve the TIMMS years based on their filenaming structure
   
-  yrVals = c("f2","c2")
-  names(yrVals) = c(1999, 2009)
+  yrVals = c("f2","c2", "c3")
+  names(yrVals) = c(1999, 2009, 2016)
   
   return(yrVals)
 }
@@ -1334,17 +1336,17 @@ getICCSCountryName <- function(countryCode){
     cntryCode = c("aus", "aut",
                   "bfl", "bfr", "bgr",
                   "che", "chl", "col", "cyp", "cze",
-                  "deu", "dnk", "dom",
+                  "deu", "dnk", "dom", "dnw",
                   "eng", "esp", "est",
                   "fin",
                   "grc", "gtm",
-                  "hkg", "hun",
+                  "hkg", "hun", "hrv",
                   "idn", "irl", "isr", "ita",
                   "kor",
                   "lie", "ltu", "lux", "lva",
                   "mex", "mlt", 
                   "nld", "nor", "nzl",
-                  "pol", "prt", "pry",
+                  "pol", "prt", "pry", "per",
                   "rom", "rus",
                   "svk", "svn", "swe",
                   "tha", "twn",
@@ -1352,17 +1354,17 @@ getICCSCountryName <- function(countryCode){
     cntryName = c("Australia", "Austria",
                   "Belgium (Flemish)", "Belgium (French)", "Bulgaria",
                   "Switzerland", "Chile", "Colombia", "Cyprus", "Czech Republic",
-                  "Germany", "Denmark", "Dominican Republic",
+                  "Germany", "Denmark", "Dominican Republic", "North Rhine-Westphalia (Germany)",
                   "England", "Spain", "Estonia",
                   "Finland",
                   "Greece", "Guatemala",
-                  "Hong Kong (SAR)", "Hungary",
+                  "Hong Kong (SAR)", "Hungary", "Croatia",
                   "Indonesia", "Ireland", "Israel", "Italy",
                   "Korea, Republic of",
                   "Liechtenstein", "Lithuania", "Luxembourg", "Latvia",
                   "Mexico", "Malta", 
                   "Netherlands", "Norway", "New Zealand",
-                  "Poland", "Portugal", "Paraguay",
+                  "Poland", "Portugal", "Paraguay", "Peru",
                   "Romania", "Russian Federation",
                   "Slovak Republic", "Slovenia", "Sweden",
                   "Thailand", "Chinese Taipei",

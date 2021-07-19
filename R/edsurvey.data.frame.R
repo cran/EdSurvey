@@ -177,7 +177,8 @@ edsurvey.data.frame <- function(userConditions,
   
   if (is.list(achievementLevels)) {
     achievementLevels <- lapply(achievementLevels, function(l) {
-      sort(l)})
+      sort(l)
+    })
   } else {
     # In the international assessment TALIS, there is no achievement level, account for that here
     if(!is.null(achievementLevels)) {
@@ -193,7 +194,6 @@ edsurvey.data.frame <- function(userConditions,
         pvvars[[names(pvvars)[pvi]]] <- temp
       }
     }
-    
   } #closes else statment following if (is.list(achievementLevels))
   
   hasDim0 <- all(is.numeric(dim0)) #logical to indicate if dim0 was user provided in constructor
@@ -291,7 +291,7 @@ edsurvey.data.frame <- function(userConditions,
     return(x[[i]])
   }
   
-  success <- tryCatch({z <- getData(x, varnames=i,dropUnusedLevels=FALSE, omittedLevels=FALSE,drop=TRUE)
+  success <- tryCatch({z <- getData(x, varnames=i,dropUnusedLevels=FALSE, omittedLevels=FALSE, drop=TRUE, returnJKreplicates=FALSE)
                         TRUE
                       },error = function(e){
                         warning(paste0("No object or data variable found named ", sQuote(i)))
@@ -472,7 +472,7 @@ subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
   }
   x[["userConditions"]] <- c(x[["userConditions"]], list(condition_call))
   # test filter
-  tryCatch(getData(x, colnames(x)[1], returnJKreplicates=FALSE),
+  gg <- tryCatch(getData(x, c("ROWID", colnames(x)[1]), returnJKreplicates=FALSE),
            error=function(e) {
              subsetVars <- all.vars(condition_call)
              for (v in subsetVars) {
@@ -482,6 +482,7 @@ subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
              }
            },
            warning=function(w) {} )
+  x$cache$DEFAULT <- ifelse( x$cache$ROWID %in% gg$ROWID, TRUE, FALSE)
   x
 } # end of fuction subset.edsurvey.data.frame
 
@@ -506,6 +507,59 @@ subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
   z[j, ]
 }
 
+#' @method [<- edsurvey.data.frame
+#' @export
+"[<-.edsurvey.data.frame" <- function(x, i, j, ..., value) {
+  value <- eval(value)
+  if(!missing(i)) {
+    i <- eval(i)
+  }
+  if(missing(j)) {
+    stop("Assignmeht by row is not allowed on an edsurvey.data.frame. Try assigning a single column at a time.")
+  }
+  j <- eval(j)
+  if(is.numeric(j)) {
+    name <- colnames(x)[j]
+  } else {
+    name <- j
+  }
+  
+  if(name %in% c("ROWID", "DEFAULT")) {
+    stop("Colum names must not be reserved words (ROWID or DEFAULT).")
+  }
+  cl0 <- class(x)
+  class(x) <- "list"
+  if(is.null(value)) {
+    x$cache[i , name] <- NULL
+    class(x) <- cl0
+    return(invisible(x))
+  }
+  # because of "mySDF$name[subset] <-" it is possible for a new factor to be valid
+  # but for the below assignment to appear invalid, this clears the cache and
+  # overwrite, which always works
+  if(name %in% colnames(x$cache) && inherits(x$cache[,name], "factor")) {
+    x$cache[ , name] <- NULL
+  }
+  # cannot subset assign non-primative lfactors, so do not try
+  if(inherits(value, "lfactor")) {
+    value <- as.factor(value)
+  }
+  if(!missing(i)) {
+    if(name %in% colnames(x$cache)) {
+      # name already on the cache, we can directly assign a subset
+      x$cache[x$cache$DEFAULT, name][i] <- value
+    } else {
+      # name not on the cache, we must assign the entire column
+      DefaultInds <- (1:nrow(x$cache))[x$cache$DEFAULT]
+      x$cache[DefaultInds[i], name] <- value
+    }
+  } else {
+    x$cache[x$cache$DEFAULT, name] <- value
+  }
+  class(x) <- cl0
+  invisible(x)
+}
+
 #' @method [ edsurvey.data.frame
 #' @export
 "[.edsurvey.data.frame" <- function(x, i, j, ...) {
@@ -526,6 +580,7 @@ subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
     )
   z[i, ]
 }
+
 
 #' @rdname edsurvey-class
 #' @method $<- edsurvey.data.frame
