@@ -135,8 +135,8 @@ levelsSDF <- function(varnames, data, showOmitted=TRUE, showN=TRUE) {
   lnames <- names(levelsData)
   levelsData <- lapply(levelsData, function(x) {
     labs <- strsplit(x, split="=", fixed=TRUE)
-    levels <- unlist(lapply(labs, function(z) { z[[1]] }))
-    labels <- unlist(lapply(labs, function(z) { z[[2]] }))
+    levels <- unlist(lapply(labs, function(z) { z[1] }))
+    labels <- unlist(lapply(labs, function(z) { paste0(z[-1], sep = "", collapse = "=") })) #be sure to handle special cases where a label has a '=' in the label itself
     return(data.frame(level=levels, labels=labels))
   })
 
@@ -213,7 +213,7 @@ print.levelsSDF <- function(x, ...) {
             cat(xi$omitted[ii])
           }
           if("n" %in% colnames(xi)) {
-            cat(paste0(" (n=", xi$n[ii], ")"))
+            cat(paste0(" (n = ", xi$n[ii], ")"))
           }
           cat("\n")
         }

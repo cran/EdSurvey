@@ -185,11 +185,7 @@ calc.mvrlm.sdf <- function(formula,
   checkDataClass(data, c("edsurvey.data.frame", "light.edsurvey.data.frame", "edsurvey.data.frame.list"))
   sdf <- data # short for survey data.frame
   
-  if(is.null(weightVar)) {
-    wgt <- attributes(getAttributes(sdf, "weights"))$default
-  } else {
-    wgt <- weightVar
-  } # End of if/else: is.null(weightVar)
+  wgt <- checkWeightVar(data, weightVar)
   
   # checking for linking error and stop
   if(any(grepl("_linking", all.vars(formula), fixed=TRUE))) {
@@ -321,7 +317,7 @@ calc.mvrlm.sdf <- function(formula,
   # Coefficient estimation function accounting for weights
   coefEstWtd <- function(X,Y,W){
     bHat <- try(solve((t(X) %*% W) %*% X) %*% (t(X) %*% W %*% Y), silent = TRUE)
-    if(class(bHat) == "try-error"){# deals with the case where there's a singularity by using lm.wfit instead
+    if(inherits(bHat, "try-error")) {# deals with the case where there's a singularity by using lm.wfit instead
       #print("singularity case hit")
       bHat <- lm.wfit(x = X, y = Y, w = diag(W))$coefficients
     }

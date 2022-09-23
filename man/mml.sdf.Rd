@@ -2,6 +2,8 @@
 % Please edit documentation in R/mml.sdf.R
 \name{mml.sdf}
 \alias{mml.sdf}
+\alias{defaultNAEPScoreCard}
+\alias{defaultTIMSSScoreDict}
 \title{EdSurvey Direct Estimation}
 \usage{
 mml.sdf(
@@ -10,15 +12,14 @@ mml.sdf(
   weightVar = NULL,
   omittedLevels = TRUE,
   composite = TRUE,
-  dctPath = NULL,
-  verbose = FALSE,
+  verbose = 0,
   multiCore = FALSE,
   numberOfCores = NULL,
   minNode = -4,
   maxNode = 4,
   Q = 34,
-  scoreDict = defaultNAEPScoreCard(),
-  idVar = NULL
+  idVar = NULL,
+  returnMmlCall = FALSE
 )
 }
 \arguments{
@@ -26,32 +27,30 @@ mml.sdf(
 model.}
 
 \item{data}{an \code{edsurvey.data.frame} for the National Assessment of Educational Progress (NAEP) 
-and the Trends in International Mathematics and Science Study (TIMSS).}
+and the Trends in International Mathematics and Science Study (TIMSS). 
+The attributes \code{dichotParamTab}, \code{polyParamTab}, \code{testData},
+\code{scoreCard} (for NAEP), and \code{scoreDict} (for TIMSS) must not be \code{NULL}.
+Use the function \code{setNAEPScoreCard} or \code{setAttributes} to set attributes.}
 
 \item{weightVar}{a character indicating the weight variable to use.
 The \code{weightVar} must be one of the weights for the
 \code{edsurvey.data.frame}. If \code{NULL}, it  uses the default
 for the \code{edsurvey.data.frame}.}
 
-\item{omittedLevels}{a logical value. When set to the default value of \code{TRUE}, drops
+\item{omittedLevels}{a logical value. When set to the value of \code{TRUE}, drops
 the levels of all factor variables that are specified
 in an \code{edsurvey.data.frame}. Use \code{print} on an
-\code{edsurvey.data.frame} to see the omitted levels.}
+\code{edsurvey.data.frame} to see the omitted levels.
+To draw plausible values for the full dataset, the user must set this to \code{FALSE}.}
 
 \item{composite}{logical; for a NAEP composite, setting to \code{FALSE} fits the model to all items at once,
 in a single construct, whereas setting to \code{TRUE} fits the model as a NAEP composite
-(i.e., a weighted average of the subscales). This argument is not applicable for TIMSS.}
-
-\item{dctPath}{a connection that points to the location of a NAEP dct file. A dct file can be used to input custom item response theory (IRT)
-parameters and subscale/subtest weights for NAEP assessments compared with those provided in the \code{NAEPirtparams} package. Otherwise,
-the argument defaults to NULL and IRT parameters and subscale weights from \code{NAEPirtparams} are used.
-IRT parameters for TIMSS cannot be supplied through a \code{dctPath} and are downloaded by using the \code{\link{downloadTIMSS}} function.}
+(i.e., a weighted average of the subscales). This argument is not applicable for TIMSS which is always
+fit as an overall (non-composite).}
 
 \item{verbose}{logical; indicates whether a detailed printout should display during execution, only for NAEP data.}
 
-\item{multiCore}{allows the \code{foreach} package to be used. You should
-                 have already set up
-\ifelse{latex}{the \code{registerDoParallel} function in the \code{doParallel} package}{\code{\link[doParallel]{registerDoParallel}}}.}
+\item{multiCore}{allows the \code{foreach} package to be used. This function will setup and take down the cluster.}
 
 \item{numberOfCores}{the number of cores to be used when using \code{multiCore}. Defaults to 75\% of available cores. Users 
 can check available cores with \code{detectCores()}.}
@@ -62,17 +61,14 @@ can check available cores with \code{detectCores()}.}
 
 \item{Q}{integer; number of integration points per student used when integrating over the levels of the latent outcome construct.}
 
-\item{scoreDict}{a \code{data.frame} that includes guidelines for scoring the provided NAEP data. 
-Here, \emph{scoring} refers to turning item responses into scores on each item.
-To see the default scoring guidelines, call the function \code{defaultNAEPScoreCard()}, or see the Examples section.
-See Details for more information on possible scores.}
-
 \item{idVar}{a variable that is used to explicitly define the name of the student identifier 
 variable to be used from \code{data}. Defaults to \code{NULL}, and \code{sid} is used 
 as the student identifier.}
+
+\item{returnMmlCall}{logical; when \code{TRUE}, do not process the mml call but instead return it for the user to edit before calling}
 }
 \value{
-An \code{edSurveyMML} object, which is the outcome from \code{mml.sdf}, with the following elements:
+An \code{mml.sdf} object, which is the outcome from \code{mml.sdf}, with the following elements:
    \item{mml}{an object containing information from the \code{mml} procedure. 
    \code{?mml} can be used for further information.}
    \item{scoreDict}{the scoring used in the \code{mml} procedure}.

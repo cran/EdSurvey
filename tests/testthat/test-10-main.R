@@ -6,6 +6,8 @@ options(digits=7)
 
 sdf <- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
 source("REF-0-main.R") # has REF output in it
+# ideally this wouldn't trip up any of the scope fixes below
+dsex <- "should not be used"
 
 context("wd is set correctly") #When this fails all regression tests are invalid.
 test_that("wd is set correctly",{
@@ -16,8 +18,8 @@ test_that("wd is set correctly",{
 context("Primer reads in correctly")
 test_that("Primer reads in correctly", {
   expect_is(sdf, "edsurvey.data.frame")
-  expect_equal(dim(sdf), c(17606, 302))
-  expect_equal(c(nrow(sdf), ncol(sdf)), c(17606, 302))
+  expect_equal(dim(sdf), c(17606, 303))
+  expect_equal(c(nrow(sdf), ncol(sdf)), c(17606, 303))
 })
 
 context("$ assign")
@@ -80,27 +82,25 @@ test_that("showPlausibleValues and showWeights verbose output agrees",{
 context("searchSDF")
 test_that("searchSDF",{
   search1 <- searchSDF(string=c("home","book"), data=sdf)
-  searchSDFVector <- readRDS(file="searchSDFVector.rds")
-  expect_equal(search1, searchSDFVector)
-  skip_on_cran()
-
   search2 <- searchSDF(string=c("home|book"), data=sdf)
-  searchSDFOR <- readRDS(file="searchSDFOr.rds")
-  expect_equal(search2, searchSDFOR)
-
   search3 <- searchSDF(string="value", data=sdf, levels=TRUE)
+
+  searchSDFVector <- readRDS(file="searchSDFVector.rds")
+  searchSDFOR <- readRDS(file="searchSDFOr.rds")
   searchSDFLevels <- readRDS(file="searchSDFLevels.rds")
+
+  expect_equal(search1, searchSDFVector)
+  expect_equal(search2, searchSDFOR)
   expect_equal(search3, searchSDFLevels)
 })
 
 context("showCodebook")
 test_that("showCodebook",{
-  skip_on_cran()
   cb <- showCodebook(sdf, "school")
-  expect_known_value(cb, file="showCodebook.rds", update=FALSE)
   sdfRecode <- recode.sdf(sdf, recode = list(dsex = list(from = c("Male"), to = c("MALE"))))
   cb2 <- showCodebook(sdfRecode, c("student","school"), labelLevels = FALSE, includeRecodes = TRUE)
 
+  expect_known_value(cb, file="showCodebook.rds", update=FALSE)
   expect_known_value(cb2, file="showCodebookRecodes.rds", update=FALSE)
 })
 
@@ -121,6 +121,13 @@ test_that("getData", {
   attributes(gddat)$dataList$Student$lafObject <- NULL
   attributes(gddat)$dataList$School$lafObject <- NULL
   attributes(gddat)$fr2Path <- NULL
+  attributes(gddat)$scoreCard <- NULL
+  attributes(gddat)$dichotParamTab <- NULL
+  attributes(gddat)$polyParamTab <- NULL
+  attributes(gddat)$adjustedData <- NULL
+  attributes(gddat)$scoreFunction <- NULL
+  attributes(gddat)$testData <- NULL
+  attributes(gddat)$scoreDict <- NULL
   expect_known_value(gddat, file="gddat.rds", update=FALSE)
 
   expect_known_value(gd7 <- getData(sdf, c("dsex", "b017451")), file="gd7.rds", update=FALSE)
@@ -165,10 +172,10 @@ test_that("getData", {
   expect_equal(df2, df3) # recode by label and numeric agree
 
   sdf_males <- EdSurvey:::subset(sdf, dsex == "Male", verbose=FALSE)
-  expect_equal(dim(sdf_males), c(8905, 302))
+  expect_equal(dim(sdf_males), c(8905, 303))
 
   sdf_males <- EdSurvey:::subset(sdf, dsex %in% "Male", verbose=FALSE)
-  expect_equal(dim(sdf_males), c(8905, 302))
+  expect_equal(dim(sdf_males), c(8905, 303))
 
   # test bad subset, a$bb does not exist
   expect_error(EdSurvey:::subset(sdf, dsex %in% a$bb, verbose=FALSE))
@@ -182,7 +189,7 @@ test_that("getData", {
     env <- new.env(hash = TRUE, parent = .GlobalEnv, size = 1L)
     assign("a", list(b="Male"), envir = env)
     sdf_males <- with(env, EdSurvey:::subset(sdf, dsex %in% a$b, verbose=FALSE))
-    expect_equal(dim(sdf_males), c(8905, 302))
+    expect_equal(dim(sdf_males), c(8905, 303))
   }
 })
 
@@ -257,6 +264,17 @@ test_that("lm.sdf",{
                       slm1Scoef <- capture.output(summary(lm1S, src=TRUE)$coefmat)
                      )
   expect_equal(slm1Scoef, stdCoefREF)
+
+  lm10  <- lm.sdf(composite ~ dsex + b017451, sdf)
+  lm10B <- lm.sdf(composite ~ dsex + b017451, sdf, weightVar="origwt")
+  lm10C <- lm.sdf(composite ~ dsex + b017451, sdf, weightVar=origwt)
+  lm10D <- lm.sdf(composite ~ dsex + b017451, sdf, weightVar=c("origwt"))
+  expect_equal(coef(lm10), coef(lm10B))
+  expect_equal(coef(lm10), coef(lm10C))
+  expect_equal(coef(lm10), coef(lm10D))
+
+  fe <- file.exists("lm10.rds")
+  skip_if_not(fe, message="Skipping test with large file unallowed by CRAN")
   lm10 <- lm.sdf(composite ~ dsex + b017451, sdf)
   lm10$data <- NULL
   lm10$residuals <- head(lm10$residuals)
@@ -295,6 +313,13 @@ test_that("lm.sdf Taylor series",{
                                  varMethod = "Taylor",
                                  jrrIMax=Inf),
             "edsurveyLm")
+  sdf_taylorWV <- lm.sdf(composite ~ sdracem + dsex + pared,
+                                 data=subset(sdf, pared == 1 | pared == 2, verbose=FALSE),
+                                 weightVar=origwt,
+                                 varMethod = "Taylor",
+                                 jrrIMax=Inf)
+  sdf_taylorWV$call <- sdf_taylor$call <- NULL
+  expect_equal(sdf_taylor, sdf_taylorWV) 
   lm1t <- lm.sdf(composite ~ dsex + b017451, sdf, varMethod="Taylor")
   lm1t$data <- NULL
   lm1t$residuals <- head(lm1t$residuals)
@@ -472,7 +497,6 @@ test_that("edsurveyTable Taylor",{
 })
 
 test_that("variable label stored as attributes", {
-  skip_on_cran()
   est1 <- edsurveyTable(composite ~ dsex + b017451, sdf, jrrIMax=1)
   expect_equal(attr(est1$data$dsex, "label"), "Gender")
   expect_equal(attr(est1$data$b017451, "label"), "Talk about studies at home")
@@ -549,12 +573,12 @@ context("gap")
 test_that("gap", {
   # gap SD
   expect_known_value(g0 <- gap("composite", sdf, dsex=="Male", dsex=="Female", returnSimpleDoF=TRUE, stDev=TRUE), "gap_main_SD.rds", update=FALSE)
-  skip_on_cran()
   # gap means
   expect_known_value(g1 <- gap("composite", sdf, dsex=="Male", dsex=="Female", returnSimpleDoF=TRUE), "gap_main_mean.rds", update=FALSE)
   g1q <- gap("composite", sdf, "dsex==\"Male\"", "dsex==\"Female\"", returnSimpleDoF=TRUE)
   g1q$call <- g1$call # the call is different, so fix that
   expect_known_value(g1q, "gap_main_mean.rds", update=FALSE)
+  skip_on_cran()
   # gap percentile
   expect_known_value(g2p <- gap("composite", sdf, dsex=="Male", dsex=="Female", percentile=c(0,50, 98), returnSimpleDoF=TRUE), "gap_main_percentile.rds", update=FALSE)
   g2pq <- gap("composite", sdf, "dsex==\"Male\"", "dsex==\"Female\"", percentile=c(0,50, 98), returnSimpleDoF=TRUE)
@@ -605,9 +629,15 @@ test_that("achievementLevel basic", {
 
 context("achievementLevel, aggregated")
 test_that("achievementLevel, aggregated", {
-  skip_on_cran()
+
   expect_known_value(test2 <- achievementLevels(aggregateBy = "dsex", returnCumulative = TRUE, data=sdf), file="aLevels_test2.rds", update=FALSE)
-  expect_known_value(test3 <- achievementLevels(aggregateBy = "sdracem", returnCumulative = TRUE, data=sdf), file="aLevels_test3.rds", update=FALSE)
+  # test dynamic vars
+  expect_known_value(test2 <- achievementLevels(aggregateBy = dsex, returnCumulative = TRUE, data=sdf), file="aLevels_test2.rds", update=FALSE)
+  dsexVar <- "dsex"
+  expect_known_value(test2 <- achievementLevels(aggregateBy = dsexVar, returnCumulative = TRUE, data=sdf), file="aLevels_test2.rds", update=FALSE)
+  skip_on_cran()
+  # return to achievementLevels
+  expect_known_value(test3 <- achievementLevels(aggregateBy = c("sdracem"), returnCumulative = TRUE, data=sdf), file="aLevels_test3.rds", update=FALSE)
   expect_known_value(test4 <- achievementLevels("sdracem", aggregateBy = c("composite"), data=sdf, returnCumulative = TRUE), file="aLevels_test4.rds", update=FALSE)
   expect_known_value(test5 <- achievementLevels("dsex", aggregateBy = c("composite"), data=sdf, returnCumulative = TRUE), file="aLevels_test5.rds", update=FALSE)
   # Use recode to change values for specified variables:
@@ -625,6 +655,14 @@ context("achievementLevel many interactions")
 test_that("achievementLevel many interactions", {
   skip_on_cran()
   expect_known_value(test7 <- achievementLevels(c("composite", "ell3", "lep", "pared", "b017451"), data=sdf, returnCumulative = TRUE), file="aLevels_test7.rds", update=FALSE)
+  
+  #iparse tests for passing different variable names
+  xCols <- c("lep", "pared", "b017451")
+  test7a <- achievementLevels(c("composite", "ell3", xCols), data=sdf, returnCumulative = TRUE)
+  test7b <- achievementLevels(c(composite, ell3, xCols), data=sdf, returnCumulative = TRUE)
+  expect_equal(test7, test7a)
+  expect_equal(test7, test7b)
+  expect_equal(test7a, test7b)
 })
 
 context("achievementLevel with result of zero")
@@ -827,7 +865,17 @@ test_that("Wald test", {
   wt_lm <- waldTest(model = fit, coefficients = "b017451")
   wt2 <- capture.output(wt_lm)
   expect_equal(wt2, wt2REF)
-
+  
+  #test weightVar with iparse (remove call as they won't match, but numbers will)
+  fita <- lm.sdf(composite ~ dsex + b017451, data = sdf, weightVar = "origwt", returnNumberOfPSU=TRUE)
+  fitb <- lm.sdf(composite ~ dsex + b017451, data = sdf, weightVar = origwt, returnNumberOfPSU=TRUE)
+  fit$call <- NULL
+  fita$call <- NULL
+  fitb$call <- NULL
+  expect_equal(fit, fita) #compare to original
+  expect_equal(fit, fitb)
+  expect_equal(fita, fitb) #compare to each other
+  
   # lm example with Taylor
   fit <- lm.sdf(composite ~ dsex + b017451, data = sdf, varMethod="Taylor", returnNumberOfPSU=TRUE)
   wt_lm <- waldTest(model = fit, coefficients = "b017451")
@@ -872,7 +920,6 @@ test_that("edsurvey with $ method",{
 
 context('levelsSDF n')
 test_that("levelsSDF n",{
-  skip_on_cran()
   levelRes <-  levelsSDF(varnames="pared", data=sdf)
   sum2Res <- summary2(sdf, "pared")
   mergeRes <- merge(sum2Res$summary, levelRes$pared, by.x="pared", by.y="labels")
@@ -887,7 +934,6 @@ test_that("levelsSDF n",{
 
 context('levelsSDF with multiple recodes')
 test_that("levelsSDF with multiple recodes",{
-  skip_on_cran()
   # $ method work for existing attributes
   df <- recode.sdf(sdf, recode = list(t088301=list(from=c("Yes, available","Yes, I have access"),
                                                    to=c("Yes")),
@@ -897,10 +943,10 @@ test_that("levelsSDF with multiple recodes",{
                                                 to=c("Graduated High School"))))
 
   levelsSDFoutput <- c("Levels for Variable 't088301' (Lowest level first):",
-                       "    8. Omitted* (n=84)", 
-                       "    0. Multiple* (n=1)",
-                       "    9. Yes (n=14683)",
-                       "    10. No (n=323)",  
+                       "    8. Omitted* (n = 84)", 
+                       "    0. Multiple* (n = 1)",
+                       "    9. Yes (n = 14683)",
+                       "    10. No (n = 323)",  
                        "    NOTE: * indicates an omitted level.")
   colsdf <- capture.output(levelsSDF("t088301",df))
   expect_equal(levelsSDFoutput, colsdf)
@@ -969,14 +1015,11 @@ test_that("rq.sdf", {
 
 context("mml.sdf")
 test_that("mml.sdf", {
-  skip_on_cran()
   # run subtest 
   invisible(withr::with_options(list(digits=4),
                                 capture.output(
-                                  mmlNAEP <- suppressWarnings(mml.sdf(algebra~1, sdf, weightVar='origwt', verbose=TRUE))
-                                )
-  )
-  ) 
+                                  mmlNAEP <- suppressWarnings(mml.sdf(algebra~1, subset(sdf, dsex=="Female"), weightVar='origwt', verbose=TRUE))
+                                ))) 
   # capture output 
   # intercept 
   coInt <- withr::with_options(list(digits=4),capture.output(mmlNAEP)) 
@@ -986,29 +1029,44 @@ test_that("mml.sdf", {
                                capture.output(summary(mmlNAEP))
   ) 
   expect_equal(coSum, mmlSumREF)
+  
+  #ensure all test names match pvvar names and vis-versa
+  testNames <- c(sdf$testData$subtest, sdf$testData$test)
+  pvs <- names(sdf$pvvars)
+  expect_true(all(pvs %in% testNames) && all(testNames %in% pvs))
+  skip_on_cran()
+
+  #test with a fixed up pvvar name
+  invisible(withr::with_options(list(digits=4),
+                                co <- capture.output(
+                                  suppressWarnings(
+                                    mml.sdf(data_anal_prob ~ 1, sdf, weightVar='origwt', verbose=TRUE)
+                                  )
+                                )))
+  
+  coREF <- c("  (Intercept) Population SD ", 
+             "       279.84         40.98 ")
+  expect_equal(co, coREF)
+  
   # run with regressor 
   invisible(withr::with_options(list(digits=4),
                                 capture.output(
                                   mmlDsexNaep <- suppressWarnings(mml.sdf(algebra~dsex, sdf, weightVar='origwt', verbose=TRUE))
-                                )
-  )
-  ) 
+                                ))) 
   # capture output 
   # intercept 
   coDsexInt <- withr::with_options(list(digits=2), 
-                                   capture.output(mmlDsexNaep)
-  )
+                                   capture.output(mmlDsexNaep))
+
   expect_equal(coDsexInt, mmlDsexIntREF)
   # summary 
   coDsexSum <- withr::with_options(list(digits=2), 
-                                   capture.output(summary(mmlNAEP))
-  )
+                                   capture.output(summary(mmlNAEP)))
   expect_equal(coDsexSum, mmlDsexSumREF)
 })
 
 context("no PSU var error and warnings")
 test_that("no PSU var error and warnings", {
-  skip_on_cran()
   # these warnings relatete to missing PSU so the count of PSUs will not be returned or
   # errors about how Taylor series is not possible without a PSU var
   expect_warning(

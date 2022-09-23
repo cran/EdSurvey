@@ -1,5 +1,23 @@
 \name{NEWS}
 \title{NEWS for EdSurvey}
+\section{Changes in version 3.0.0}{
+  \subsection{UPDATES}{
+    \itemize{
+      \item add \code{mml.sdf} to allow direct estimation using the \code{Dire} package.
+      \item add \code{drawPVs} to enable users to draw plausible values using \code{Dire} after running \code{mml.sdf}.
+      \item \code{suggestWeights} function assists researchers in deciding which weight to use for analyses with ECLS-K:2011 data. See the \code{suggestWeights} documentation and vignette for more information.
+      \item \code{summary2} output now shows zero weights without a colon.
+      \item it is now possible to subset an \code{edsurvey.data.frame} to just one row with square braces.
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item \code{readELS} would sometimes re-cache files when they did not need to be. This has now been corrected.
+      \item \code{readPIAAC} is now set to validate variables with missing value labels undefined in the codebook. For missing label values it will now return the numeric value as the label instead of an NA value. Thanks to GitHub user webervienna for identifying and reporting this bug.
+    }
+  }
+}
+
 \section{Changes in version 2.7.1}{
   \subsection{DATA UPDATES}{
     \itemize{
@@ -14,6 +32,7 @@
       \item updated warnings and errors when an \code{edsurvey.data.frame} is passed to a vareity of functions that requires use of PSU or stratum variables but they are not on the data.
       \item \code{cor.sdf} now allows dynamic variables for the variables being correlated (\code{x} and \code{y})
       \item \code{searchSDF} now generates a tabled output when passed an \code{edsurvey.data.frame.list}.
+      \item \code{readTIMSS} verbose output (\code{verbose=TRUE}) prints file merge details during data processing to the console. Additionally, \code{readTIMSS} will print \code{dataLevel} details for both processed and cached data for the \code{edsurvey.data.frame}.
     }
   }
   \subsection{STATISTICS}{
@@ -25,6 +44,8 @@
     \itemize{
       \item \code{SD} used to set \code{jkSumMultiplier} to 1 by default and now uses the value from the \code{edusrvey.data.frame}. While this was the documented behavior, it was counterintuitive since all other \code{EdSurvey} functions use the value directly from the \code{edusrvey.data.frame}.
       \item when calling \code{achievementLevels} with both \code{returnDiscrete = FALSE} and \code{returnCumulative = TRUE} it would return an error. It now properly returns.
+      
+      \item \code{levelsSDF} updated for handling value labels containing a \code{=} character in the label. The full label is now properly returned. This corrects erroneous warning messages related to recodes where \code{=} character is present. Thank you to Nicole Guarino for identifying this bug.
     }
   }
 }

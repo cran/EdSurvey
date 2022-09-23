@@ -4,6 +4,9 @@ options(width = 500)
 options(useFancyQuotes=FALSE)
 source("REF-2-esdfl.R") # has REF output in it
 
+# ideally this wouldn't trip up any of the scope fixes below
+dsex <- "should not be used"
+
 test_that("read ESDFL",{
   sdf <<- readNAEP(system.file("extdata/data", "M36NT2PM.dat", package = "NAEPprimer"))
   sdfA <<- subset(sdf, scrpsu %in% c(5,45,56))
@@ -104,7 +107,7 @@ test_that("ESDFL error handling",{
                  "E locations")
   
   suppressWarnings(et2 <- edsurveyTable(composite ~ b017451, sdfl_error, returnMeans=FALSE, returnSepct=FALSE))
-  withr::with_options(list(digits=0),
+  withr::with_options(list(digits=1),
                         et2c <- capture.output(et2)
                      )
 

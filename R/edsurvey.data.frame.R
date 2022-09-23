@@ -98,6 +98,14 @@
 #'    \item{\code{assessmentCode}}{the assessment code}
 #'    \item{\code{dataType}}{the type of data (e.g., \code{student} or \code{school})}
 #'    \item{\code{gradeLevel}}{the grade of the dataset contained in the \code{edsurvey.data.frame}}
+#' \emph{Elements used in \code{mml.sdf}}
+#'    \item{\code{dichotParamTab}}{IRT item parameters for dichotomous items in a data frame}
+#'    \item{\code{polyParamTab}}{IRT item parameters for polytomous items in a data frame}
+#'    \item{\code{adjustedData}}{IRT item parameter adjustment information in a data frame}
+#'    \item{\code{testData}}{IRT transformation constants in a data frame}
+#'    \item{\code{scoreCard}}{item scoring information in a data frame}
+#'    \item{\code{scoreDict}}{generic scoring information in a data frame}
+#'    \item{\code{scoreFunction}}{a function that turns the variables with items in them into numeric scores}
 #' @section EdSurvey Classes:
 #' \code{edsurvey.data.frame} is an object that stores connection to data on the
 #' disk along with important survey sample design information.
@@ -235,7 +243,16 @@ edsurvey.data.frame <- function(userConditions,
               dim0=dim0, #update after it's reclassed to an edsurvey.data.frame (if not user supplied)
               validateFactorLabels=validateFactorLabels,
               reqDecimalConversion=reqDecimalConversion,
-              fr2Path=fr2Path)
+              fr2Path=fr2Path,
+              dichotParamTab=NULL, #IRT Param
+              polyParamTab=NULL, #IRT Param
+              adjustedData=NULL, #IRT Param
+              testData=NULL, #IRT Param
+              scoreCard=NULL, #IRT Param
+              scoreDict=NULL, #IRT Param
+              scoreFunction=NULL #IRT scoring
+              )
+  
   # form cache, first grab dim
   ROWID <- 1
   # make cache
@@ -287,7 +304,7 @@ edsurvey.data.frame <- function(userConditions,
       warning("Cannot find both PSU and Stratum variables on data. Taylor series variance estimation will not be possible.")
     }
   }
-
+  
   return(res)
 }
 
@@ -339,7 +356,7 @@ dataListItem <- function(lafObject,
                          ignoreVars=NULL,
                          isDimLevel=FALSE) {
 
-  if(class(lafObject)!="laf"){
+  if(!inherits(lafObject,"laf")){
     stop(paste0("The ", dQuote("lafObject"), " must be a LaF object utilizing the LaF Package."))
   }
 
@@ -399,8 +416,6 @@ dataListItem <- function(lafObject,
 #' @method subset edsurvey.data.frame
 #' @export
 subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
-  subsetEnv <- parent.frame(n=2)
-  
   if(!inherits(x, c("edsurvey.data.frame"))) {
     stop(paste0("The argument ", sQuote("x"), " must be an edsurvey.data.frame."))
   }
@@ -412,58 +427,6 @@ subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
   # when they called subset and the condition will not change as that
   # variable is updated.
   # add it to the user conditions
-
-  # parse the condition
-  iparse <- function(iparseCall, subsetEnv, iparseDepth=1) {
-    # for each element
-    for(iparseind in 1:length(iparseCall)) {
-      # if it is a name
-      if(inherits(iparseCall[[iparseind]], "name")) {
-        iparseCall_c <- as.character(iparseCall[[iparseind]])
-        # if it is not in the data and is in the parent.frame, then substitue it now.
-        if(! iparseCall_c %in% colnames(x)) {
-          if(length(find(iparseCall_c)) > 0) {
-            if (iparseCall[[iparseind]] == "%in%" || is.function(iparseCall[[iparseind]]) || is.function(get(iparseCall_c, find(iparseCall_c)))) {
-              iparseEval <- eval(substitute(iparseCall[[iparseind]]), parent.frame())
-            } else {
-              # get the variable
-              iparseEval <- eval(iparseCall[[iparseind]], parent.frame())
-            }
-            iparseCall[[iparseind]] <- iparseEval
-          } #end if length(find(ccall_c)) > 0)
-          # but, if dynGet returns, use that instead
-          iparsedg <- dynGet(iparseCall_c, ifnotfound="", minframe=1L)
-          # if dynGet found something
-          if(any(iparsedg != "")) {
-            iparseCall[[iparseind]] <- iparsedg
-          }
-        } # end if(!call_c)
-      } # end if(inherits(iparseCall[[iparseind]], "name"))
-      if(inherits(iparseCall[[iparseind]], "call")) {
-        # if this is a call, recursively parse that
-        iparseCall[[iparseind]] <- iparse(iparseCall[[iparseind]], subsetEnv, iparseDepth=iparseDepth+1)
-        # if no vars are in colnames(x), evaluate the call right now
-        if( any(!all.vars(iparseCall[[iparseind]]) %in% colnames(x)) ) {
-          # unclear if this tryCatch does anything, but it seems wise to keep it
-          tryCatch(iparseTryResult <- eval(iparseCall[[iparseind]]),
-                   error=function(e) {
-                     co <- capture.output(print(iparseCall[[iparseind]]))
-                     stop(paste0("The condition ", dQuote(co), " cannot be evaluated."))
-                   })
-          # the condition resolves to NULL if, for example, it references
-          # a list element that is not on the list. But the list itself is
-          # on the parent.frame.
-          if(is.null(iparseTryResult)) {
-            co <- capture.output(print(iparseCall[[iparseind]]))
-            stop(paste0("Condition ", dQuote(co), " cannot be evaluated."))
-          }
-          iparseCall[[iparseind]] <- iparseTryResult
-        }
-      } #end of if statment: if inherits(iparseCall[[i]], "call")
-    } # end of for loop: i in 1:length(iparseCall)
-    iparseCall
-  } # End of fucntion: iparse
-
   if(inside) {
     if(inherits(subset, "character")) {
       subset <- parse(text=subset)[[1]]
@@ -471,13 +434,11 @@ subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
     condition_call <- subset
   } else {
     # substitute in variables that are available in the current subsetEnvironment
-    condition_call <- substitute(subset)
-    condition_call <- iparse(condition_call, subsetEnv)
-    #condition_call <- iparse(condition_call, parent.frame())
+    condition_call <- iparse(substitute(subset), x=x)
   } # Enf of if esle statmet: if imside is true 
   # apply filter
   if(!all(all.vars(substitute(condition_call)) %in% colnames(x))) {
-    condition_call <- iparse(condition_call, subsetEnv)
+    condition_call <- iparse(condition_call, x=x)
   }
   x[["userConditions"]] <- c(x[["userConditions"]], list(condition_call))
   # test filter
@@ -573,6 +534,9 @@ subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
 #' @export
 "[.edsurvey.data.frame" <- function(x, i, j, ...) {
   # check for $ calls to list elements
+  if(missing(j)) {
+    j <- colnames(x)
+  }
   if(length(j) == 1) {
     if(j %in% names(x)) {
       class(x) <- "list"
@@ -618,7 +582,7 @@ subset.edsurvey.data.frame <- function(x, subset, ..., inside=FALSE) {
     # but for the below assignment to appear invalid, this clears the cache and
     # overwrite, which always works
     if(name %in% colnames(x$cache) && inherits(x$cache[,name], "factor")) {
-      x$cache[,name] <- NULL
+      x$cache[ , name] <- NULL
     }
     # cannot subset assign non-primative lfactors, so do not try
     if(inherits(value, "lfactor")) {

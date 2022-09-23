@@ -1,4 +1,63 @@
 # utilities functions
+setupMulticore <- function(multiCore, numberOfCores, verbose) {
+  if(multiCore == TRUE){
+    if(verbose>0) {
+      message("Starting parallel processing.")
+    }
+    # check doParallel 
+    if(requireNamespace("doParallel")){
+      detCores <- parallel::detectCores()
+      # set numberOfCores default if not provided 
+      if(is.null(numberOfCores)){
+        numberOfCores <- detCores * .75
+      }
+      # check that they aren't using too many cores 
+      if(numberOfCores > detCores){
+        defaultCores <- detCores * .75
+        warning(paste0(sQuote(numberOfCores), " is greater than number of avaliable cores,",
+                       sQuote(detCores)," setting number of cores to default of ",
+                       sQuote(defaultCores)))
+        numberOfCores <- defaultCores
+      }
+    } else {
+      multiCore <- FALSE
+      message(paste0("Unable to find package doParallel, setting multiCore to FALSE. Install the ", dQuote("doParallel"), " package to use multiCore option."))
+    }
+    # https://bugs.r-project.org/bugzilla/show_bug.cgi?id=18119
+    # R on OS X bug that prevents parallel
+    if (grepl("Darwin", Sys.info()[1]) &&
+        getRversion() <= "4.1.0") {
+      multiCore <- FALSE
+      message("Upgrade to R 4.1.1 or higher to use multiCore on Mac OS.")
+    }
+  }
+  return(list(multiCore=multiCore, numberOfCores=numberOfCores))
+}
+
+# multiCoreSetup is the result of a call to setupMulticore
+# verbose allows this function to use message to print the number of cores to the screen
+# ExitDepth says what depth of parent.frame should this clean up the cluster when it exits.
+#           numbers less than 1 lead to no cluster stop being called. Numbers over 1 increase the parent depth
+startMulticore <- function(multiCoreSetup, verbose=FALSE, ExitDepth=2) {
+  if(multiCoreSetup$multiCore){
+    # check if cluster is already running 
+    if(nrow(showConnections()) == 0) {
+      cores <- round(multiCoreSetup$numberOfCores, 0) # use 75 percent of cores 
+      cl <- parallel::makeCluster(cores)
+      if(verbose >= 1) {
+        message(paste0("Starting cluster with ", cl, " cores"))
+      }
+      doParallel::registerDoParallel(cl, cores=cores)
+      # stop cluster before any exit
+      if(ExitDepth > 0) {
+        pf <- parent.frame(n=ExitDepth)
+        assign("cl", cl, envir=pf)
+        do.call( "on.exit", alist( parallel::stopCluster(cl) ), pf)
+      }
+    }
+  } # end if(multiCore)
+  return(NULL)
+}
 
 getAllTaylorVars <- function(data) {
   res <- c(getAttributes(data, "psuVar"), getAttributes(data, "stratumVar"))
@@ -24,7 +83,6 @@ getPSUVar <- function(data, weightVar = attributes(getAttributes(data, "weights"
   defaultWeight <- attributes(getAttributes(data, "weights"))[["default"]]
   allWeights <- getAttributes(data, "weights")
   psuVar <- getAttributes(data, "psuVar")
-
 
   if(is.null(allWeights)) {
     return(NULL)
@@ -238,4 +296,124 @@ checkTaylorVars <- function(psuVar, stratumVar, wgt, varMethod="t", returnNumber
     warning("Cannot use Taylor series estimation on a one-stage simple random sample.")
   }
   return(list(psuVar=psuVar, stratumVar=stratumVar, varMethod=varMethod, returnNumberOfPSU=returnNumberOfPSU))
+}
+
+# parse a condition
+# @argument iparseCall a substituted call
+# @argument iparseDepth start at 1, used by iparse to know the current depth
+# @argument x the data set, must return colnames with the names of valid columns
+# 
+# functions can be called with column names in quotes, unquoted, or as dynamic variables
+# iparse resolves dynamic variables from a call and returns the variables in a unified format
+#
+# example calls that iparse helps all resolve to the same solution
+# cor.sdf("b017451", "b003501", sdf)
+# cor.sdf(b017451, b003501, sdf)
+# b17 <- "b017451"
+# b35 <- "b003501"
+# cor.sdf(b17, b35, sdf)
+#
+# it is also helpful in resolving variables passed to function calls in the subset functions
+#
+
+
+#>   lm10D <- lm.sdf(composite ~ dsex + b017451, sdf, weightVar=c("origwt"))
+#Error in if (as.character(iparseCall) %in% unlist(colnames(x))) { : 
+#  the condition has length > 1
+
+iparse <- function(iparseCall, iparseDepth=1, x) {
+  # if this is just a character (before substitute was called) return it
+  if(iparseDepth == 1 && length(iparseCall) == 1 ) {
+    skip <- tryCatch(inherits(eval(iparseCall), "character"),
+                    error=function(e) { FALSE },
+                    warning=function(w) { FALSE })
+    if(skip) {
+      if(as.character(iparseCall) %in% unlist(colnames(x))) {
+        return(iparseCall)
+      } else {
+        return(eval(iparseCall))
+      }
+    }
+  }
+  # if it is still a character, return it
+  if(iparseDepth == 1 && length(iparseCall) == 1 && inherits(iparseCall, "character")) {
+    return(iparseCall)
+  }
+  # for each element
+  for(iparseind in 1:length(iparseCall)) {
+    # if it is a name
+    unlistOnExit <- FALSE
+    if(inherits(iparseCall, "name")) {
+      unlistOnExit <- TRUE
+      iparseCall <- list(iparseCall)
+    }
+    if(inherits(iparseCall[[iparseind]], "name")) {
+      iparseCall_c <- as.character(iparseCall[[iparseind]])
+      # if it is not in the data and is in the parent.frame, then substitue it now.
+      # unlist on colnames makes it general to 
+      if(! iparseCall_c %in% unlist(colnames(x))) {
+        if(length(find(iparseCall_c)) > 0) {
+          if (iparseCall[[iparseind]] == "%in%" || is.function(iparseCall[[iparseind]]) || is.function(get(iparseCall_c, find(iparseCall_c)))) {
+            iparseEval <- eval(substitute(iparseCall[[iparseind]]), parent.frame())
+            if(iparseCall_c == "c") {
+              idx <- 2:length(iparseCall) #omit the first 'c' argument
+              res <- character(0) #character result
+              #we want to omit evaluating the 'c', but evaluate all of the internal items
+              for(ii in idx){
+                res <- c(res, iparse(iparseCall[[ii]], iparseDepth =  iparseDepth + 1, x)) #use c here in case of multiple nested levels since we don't have known lengths
+              }
+              return(res)
+            }
+          } else {
+            # get the variable
+            iparseEval <- eval(iparseCall[[iparseind]], parent.frame())
+          }
+          iparseCall[[iparseind]] <- iparseEval
+        } #end if length(find(ccall_c)) > 0)
+        # but, if dynGet returns, use that instead
+        iparsedg <- dynGet(iparseCall_c, ifnotfound="", minframe=1L)
+        # if dynGet found something
+        if(any(iparsedg != "")) {
+          iparseCall[[iparseind]] <- iparsedg
+        }
+      } # end if(!call_c)
+    } # end if(inherits(iparseCall[[iparseind]], "name"))
+    if(inherits(iparseCall[[iparseind]], "call")) {
+      # if this is a call, recursively parse that
+      iparseCall[[iparseind]] <- iparse(iparseCall[[iparseind]], iparseDepth=iparseDepth+1, x=x)
+      # if no vars are in colnames(x), evaluate the call right now
+      if( any(!all.vars(iparseCall[[iparseind]]) %in% unlist(colnames(x))) ) {
+        # unclear if this tryCatch does anything, but it seems wise to keep it
+        tryCatch(iparseTryResult <- eval(iparseCall[[iparseind]]),
+                 error=function(e) {
+                   co <- capture.output(print(iparseCall[[iparseind]]))
+                   stop(paste0("The condition ", dQuote(co), " cannot be evaluated."))
+                 })
+        # the condition resolves to NULL if, for example, it references
+        # a list element that is not on the list. But the list itself is
+        # on the parent.frame.
+        if(is.null(iparseTryResult)) {
+          co <- capture.output(print(iparseCall[[iparseind]]))
+          stop(paste0("Condition ", dQuote(co), " cannot be evaluated."))
+        }
+        iparseCall[[iparseind]] <- iparseTryResult
+      }
+    } #end of if statment: if inherits(iparseCall[[i]], "call")
+  } # end of for loop: i in 1:length(iparseCall)
+  if(unlistOnExit) {
+    iparseCall <- as.character(iparseCall[[1]])
+  }
+  iparseCall
+} # End of fucntion: iparse
+
+
+checkWeightVar <- function(data, weightVar) {
+  if(is.null(weightVar)) {
+    weightVar <- attributes(getAttributes(data, "weights"))$default
+    if(min(nchar(weightVar)) == 0) {
+      # no weight
+      stop(paste0("There is no default weight variable for ",getAttributes(data,"survey")," data, so the argument ",sQuote("weightVar"), " must be specified."))
+    }
+  }
+  return(weightVar)
 }
