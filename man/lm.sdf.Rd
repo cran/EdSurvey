@@ -9,7 +9,7 @@ lm.sdf(formula, data, weightVar = NULL, relevels = list(),
               varMethod = c("jackknife", "Taylor"), jrrIMax = 1,
               omittedLevels = TRUE, defaultConditions = TRUE, recode = NULL,
               returnVarEstInputs = FALSE, returnNumberOfPSU = FALSE,
-              standardizeWithSamplingVar = FALSE)
+              standardizeWithSamplingVar = FALSE, verbose=TRUE)
 }
 \arguments{
 \item{formula}{a \ifelse{latex}{\code{formula}}{\code{\link[stats]{formula}}} for the
@@ -69,6 +69,8 @@ primary sampling units (PSUs)}
 \item{standardizeWithSamplingVar}{a logical value indicating if the standardized coefficients
 should have the variance of the regressors and outcome measured
 with sampling variance. Defaults to \code{FALSE}.}
+
+\item{verbose}{logical; indicates whether a detailed printout should display during execution}
 }
 \value{
 An \code{edsurvey.lm} with the following elements:
