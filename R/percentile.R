@@ -225,18 +225,14 @@ percentile <- function(variable, percentiles, data,
       taylorVars <- c(getPSUVar(data, wgt), getStratumVar(data, wgt))
     }
     getDataVarNames <- c(variable, wgt, taylorVars)
-    
-    if (returnNumberOfPSU | confInt){
-      # Get stratum and PSU variable
-      stratumVar <- getAttributes(data,"stratumVar")
-      psuVar <- getAttributes(data,"psuVar")
-      if (all(c(stratumVar, psuVar) %in% names(data)) | all(c(stratumVar, psuVar) %in% colnames(data))) { #names(data$data) changed to colnames(data)::Tom
-        getDataVarNames <- unique(c(getDataVarNames, stratumVar, psuVar))
-      } else {
-        warning("Warning: Stratum and PSU variable are required for this call and are not on the incoming data. Ignoring returnNumberOfPSU=TRUE.")
-        returnNumberOfPSU <- FALSE
-      }
-    }
+    tryCatch(getDataVarNames <- c(getDataVarNames, PSUStratumNeeded(returnNumberOfPSU | confInt, data)),
+             error=function(e) {
+               if(returnNumberOfPSU) {
+                 warning(paste0("Stratum and PSU variables are required for this call and are not on the incoming data. Ignoring ", dQuote("returnNumberOfPSU=TRUE"),"."))
+               }
+               returnNumberOfPSU <<- FALSE
+             })
+
     getDataArgs <- list(data=data,
                         varnames=getDataVarNames,
                         returnJKreplicates=TRUE,
@@ -774,10 +770,16 @@ percentile <- function(variable, percentiles, data,
     attr(res, "n0") <- nrow2.edsurvey.data.frame(data)
     attr(res, "nUsed") <- nrow(edf)
     if (returnNumberOfPSU) {
-      if(sum(is.na(edf[,c(stratumVar, psuVar)])) == 0) {
-        attr(res, "nPSU") <- nrow(unique(edf[,c(stratumVar,psuVar)]))
+      stratumVar <- getAttributes(data, "stratumVar")
+      psuVar <- getAttributes(data, "psuVar")
+      if(stratumVar %in% "JK1") {
+        attr(res, "nPSU") <- attr(res, "nUsed")
       } else {
-        warning("Cannot return number of PSUs because the stratum or PSU variables contain NA values.")
+        if(sum(is.na(edf[,c(stratumVar, psuVar)])) == 0) {
+          attr(res, "nPSU") <- nrow(unique(edf[,c(stratumVar,psuVar)]))
+        } else {
+          warning("Cannot return number of PSUs because the stratum or PSU variables contain NA values.")
+        }
       }
     }
     attr(res, "call") <- call

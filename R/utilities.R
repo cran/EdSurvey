@@ -1,3 +1,24 @@
+# if returNumberOfPSU is TRUE, returns the psu and stratum vars, after checking they're on the data
+PSUStratumNeeded <- function(returnNumberOfPSU, data) {
+  if (returnNumberOfPSU){
+    # Get stratum and PSU variable
+    stratumVar <- getAttributes(data, "stratumVar")
+    psuVar <- getAttributes(data, "psuVar")
+    if (all(c(stratumVar, psuVar) %in% c(names(data))) | all(c(stratumVar, psuVar) %in% colnames(data))) {
+      assign("stratumVar", stratumVar, -1)
+      assign("psuVar", psuVar, -1)
+      return(c(stratumVar, psuVar))
+    } else {
+      if("JK1" %in% c(stratumVar, psuVar)) {
+        # no PSU and stratum variables
+        return(NULL)
+      }
+      stop("could not find needed vars.")
+    } 
+  }
+  return(NULL)
+}
+
 # utilities functions
 setupMulticore <- function(multiCore, numberOfCores, verbose) {
   if(multiCore == TRUE){
