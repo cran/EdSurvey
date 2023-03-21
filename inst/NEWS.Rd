@@ -1,16 +1,18 @@
 \name{NEWS}
 \title{NEWS for EdSurvey}
 
-\section{Changes in version 3.0.9002}{
+\section{Changes in version 3.1.0}{
   \subsection{UPDATES}{
     \itemize{
-      \item \code{mml.sdf} now returns the scored data.
-      \item \code{readNAEP} now will attempt to read IRT parameters from the AM folder's \code{.dct} file if not found in NAEPirtparams package.  
+      \item fix an issue where \code{lm} and \code{glm} were marked as generic functions to fix CRAN checks.
+      \item \code{readNAEP} can now read in the NAEP metadata from an xml file or an fr2 file (the former is new). This change should be transparent to the user, but users wishing to specify the use of the XML file can use the \code{xmlPath} argument (see \code{?readNAEP}). 
     }
   }
   \subsection{BUG FIXES}{
-    \itemize{
-      \item \code{gap} now returns results (and does not give an error) when the standard deviation of a continuous variable (that does not have plausible values) is requested. Thanks to Christian Christrup Kjeldsen for identifying and documenting this bug.
+    \itemize{      
+      \item \code{achivementLevels} now returns number of rows on the data as \code{nPSU} when there are not PSU/stratum vars (e.g., for Germany in the PIACC data). 
+      \item \code{achivementLevels} now raise an error if any aggregation variable is continuous. 
+      \item fixed multicore in \code{mml.sdf}.
     }
   }
 }
@@ -18,8 +20,16 @@
 \section{Changes in version 3.0.2}{
   \subsection{UPDATES}{
     \itemize{
+      \item \code{readNAEP} now will attempt to read IRT parameters from the AM folder's \code{.dct} file if not found in NAEPirtparams package.  
+      \item \code{mml.sdf} now returns the scored data.
       \item \code{edsurveyTable} now returns when a line has n=1 respondents on it
       \item \code{cor.sdf} now works with logical variables.
+      \item \code{readNAEP} can now utilize the NAEPEX .XML layout file as an alternative method to the .FR2 layout file by explicitly specifying the \code{xmlPath} argument.
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item \code{gap} now returns results (and does not give an error) when the standard deviation of a continuous variable (that does not have plausible values) is requested. Thanks to Christian Christrup Kjeldsen for identifying and documenting this bug.
     }
   }
 }
