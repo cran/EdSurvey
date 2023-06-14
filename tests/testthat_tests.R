@@ -1,3 +1,4 @@
 library(testthat)
 library(EdSurvey)
-test_check('EdSurvey')
+forceCacheUpdate <- FALSE
+test_check("EdSurvey")

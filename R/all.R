@@ -1,4 +1,5 @@
 #' @importFrom LaF laf_open_fwf laf_open_csv close ncol nrow
+#' @importFrom lifecycle deprecated
 #' @import Matrix
 #' @import methods
 #' @import lfactors
@@ -21,7 +22,7 @@ setOldClass("edsurveyGlm")
 setOldClass("edsurveyGlmList")
 
 # stub
-writeNAEP_XML <- function(fileContents){
+writeNAEP_XML <- function(fileContents) {
   stop("remove writeNAEP_XML from all.R")
 }
 

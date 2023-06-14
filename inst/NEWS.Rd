@@ -1,6 +1,18 @@
 \name{NEWS}
 \title{NEWS for EdSurvey}
 
+\section{Changes in version 4.0.0}{
+  \subsection{UPDATES}{
+    \itemize{
+      \item the argument \code{omittedLevels} has been deprecated and replaced with \code{dropOmittedLevels} for clarity.
+      \item \code{mml.sdf} now allows users to select \code{composite=TRUE} for TIMSS after recoding the \code{testData} to indicate the test.
+      \item \code{mml.sdf} now gives clearer warnings when there are no records with assessment data or no students with valid covariate data.
+      \item when 2019 TIMSS data was used with \code{mml.sdf} only the digital items were included. EdSurvey reads in the eTIMSS data for eTIMSS countries and the paper data for countries that took only paper TIMSS. With this fix \code{mml.sdf} can be used in countries that used paper TIMSS in 2019.
+      \item fixed a bug which made it impossible to do analysis on a \code{light.edsurvey.data.frame} after calling \code{rebindAttributes} when using TALIS (and any other data with no plausible values) thanks to Anders Astrup Christensen for documenting the bug.
+    }
+  }
+}
+
 \section{Changes in version 3.1.0}{
   \subsection{UPDATES}{
     \itemize{
