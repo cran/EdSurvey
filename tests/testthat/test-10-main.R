@@ -450,7 +450,7 @@ test_that("edsurveyTable", {
   es2 <- edsurveyTable(composite ~ dsex + b017451, sdfm, jrrIMax = Inf)
   es2c <- capture.output(es2)
   expect_equal(es2c, es2REF)
-  # test omittedLevels
+  # test dropOmittedLevels
   es2b <- edsurveyTable(composite ~ dsex + b017451, sdfm, jrrIMax = 1, dropOmittedLevels = FALSE)
   es2bc <- capture.output(es2b)
   expect_equal(es2bc, es2bREF)
@@ -525,15 +525,15 @@ context("edsurveyTable2pdf")
 test_that("edsurveyTable2pdf", {
   skip_on_cran()
   est1 <- edsurveyTable(composite ~ dsex + b017451, sdf)
-  expect_known_value(
-    evaluate_promise(edsurveyTable2pdf(
+  expect_equal(
+    capture.output(edsurveyTable2pdf(
       data = est1,
       formula = b017451 ~ dsex,
       toCSV = "",
       filename = "CONSOLE",
       returnMeans = FALSE
     )),
-    file = "es_2pdf.rds", update = FALSE
+    pdf_estREF
   )
 })
 

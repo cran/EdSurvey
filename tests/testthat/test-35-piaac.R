@@ -6,13 +6,6 @@ options(width = 500)
 options(useFancyQuotes = FALSE)
 source("REF-5-piaac.R") # has REF output in it
 
-if (!exists("edsurveyHome")) {
-  if (Sys.info()[["sysname"]] == "Windows") {
-    edsurveyHome <- "C:/EdSurveyData/"
-  } else {
-    edsurveyHome <- "~/EdSurveyData/"
-  }
-}
 
 if (!dir.exists(edsurveyHome)) {
   dir.create(edsurveyHome)
@@ -35,7 +28,7 @@ context("PIAAC $ assign")
 test_that("PIAAC $ assign", {
   nor$skip <- ifelse(nor$c_q04d %in% "VALID SKIP", TRUE, FALSE)
   tab1 <- table(nor$skip, nor$c_q04d)
-  gd <- getData(nor, c("skip", "c_q04d"), omittedLevels = FALSE)
+  gd <- getData(nor, c("skip", "c_q04d"), dropOmittedLevels = FALSE)
   tab0 <- table(gd$skip, gd$c_q04d)
   expect_equal(tab0, tab1[, colnames(tab0)])
 })

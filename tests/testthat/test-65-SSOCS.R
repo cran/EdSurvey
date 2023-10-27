@@ -7,13 +7,6 @@ options(useFancyQuotes = FALSE)
 
 
 source("REF-12-SSOCS.R") # has REF output in it
-if (!exists("edsurveyHome")) {
-  if (Sys.info()[["sysname"]] == "Windows") {
-    edsurveyHome <- "C:/EdSurveyData/"
-  } else {
-    edsurveyHome <- "~/EdSurveyData/"
-  }
-}
 
 if (!dir.exists(edsurveyHome)) {
   dir.create(edsurveyHome)
@@ -103,7 +96,7 @@ test_that("SSOCS correlation", {
     data = ssocs16,
     varMethod = "jackknife",
     weightVar = "finalwgt",
-    omittedLevels = FALSE
+    dropOmittedLevels = FALSE
   ))
 
   withr::with_options(list(digits = 7), co <- capture.output(l1))

@@ -6,14 +6,6 @@ options(width = 500)
 options(useFancyQuotes = FALSE)
 source("REF-3-TIMSS.R") # has REF output in it
 
-if (!exists("edsurveyHome")) {
-  if (Sys.info()[["sysname"]] == "Windows") {
-    edsurveyHome <- "C:/EdSurveyData/"
-  } else {
-    edsurveyHome <- "~/EdSurveyData/"
-  }
-}
-
 # able to toggle 'forceReread' for recaching the data if necessary
 if (!exists("forceCacheUpdate")) {
   forceCacheUpdate <- FALSE
@@ -433,13 +425,13 @@ test_that("mml.sdf", {
   otherVars <- c("ROWID", "asbg05a")
 
   withr::with_options(list(digits = 4, scipen = 0), {
-    lesdf <- suppressWarnings(getData(usa4.15, varnames = c(pv, pvi, psustr, wgt, otherVars), omittedLevels = FALSE, addAttributes = TRUE, returnJKreplicates = TRUE))
+    lesdf <- suppressWarnings(getData(usa4.15, varnames = c(pv, pvi, psustr, wgt, otherVars), dropOmittedLevels = FALSE, addAttributes = TRUE, returnJKreplicates = TRUE))
     # run mml
     mml1 <- suppressWarnings(mml.sdf(mmat ~ 1, usa4.15, weightVar = "totwgt", verbose = TRUE))
     mml2 <- suppressWarnings(mml.sdf(mmat ~ 1, lesdf, weightVar = "totwgt", verbose = TRUE)) # test with light.edsurvey.data.frame
 
-    mml3 <- suppressWarnings(mml.sdf(mmat ~ asbg05a, usa4.15, weightVar = "totwgt", omittedLevels = FALSE, verbose = TRUE)) # 86 rows removed from analysis message
-    mml4 <- suppressWarnings(mml.sdf(mmat ~ asbg05a, lesdf, weightVar = "totwgt", omittedLevels = FALSE, verbose = TRUE))
+    mml3 <- suppressWarnings(mml.sdf(mmat ~ asbg05a, usa4.15, weightVar = "totwgt", dropOmittedLevels = FALSE, verbose = TRUE)) # 86 rows removed from analysis message
+    mml4 <- suppressWarnings(mml.sdf(mmat ~ asbg05a, lesdf, weightVar = "totwgt", dropOmittedLevels = FALSE, verbose = TRUE))
 
     # intercept
     coInt1 <- capture.output(mml1)
