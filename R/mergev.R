@@ -183,7 +183,7 @@ mergev <- function(x, y,
     stop(paste0("Not all by variables in ", y.arg.name, ", the following are missing:", paste(by.y[!by.y %in% names(y)], collapse = ", ")))
   }
 
-  for (i in 1:length(by.x)) {
+  for (i in seq_along(by.x)) {
     nx <- sum(is.na(x[ , by.x[i]]))
     ny <- sum(is.na(y[ , by.y[i]]))
     if (showWarnings && (nx >= 1 || ny >= 1)) {
@@ -402,7 +402,7 @@ mergev <- function(x, y,
 
   # add back column attributes, X will take precedence over Y in the event of duplicate variables with attributes
   cols <- names(mg)
-  for (i in 1:length(cols)) {
+  for (i in seq_along(cols)) {
     coli <- cols[i]
     mgcoli <- mg[[coli]]
     if (coli %in% names(x) | coli %in% names(y)) {
@@ -415,7 +415,7 @@ mergev <- function(x, y,
       oldAnames <- names(attributes(mgcoli))
       transname <- names(newAtrs)
       transname <- transname[!transname %in% oldAnames]
-      for (tri in 1:length(transname)) {
+      for (tri in seq_along(transname)) {
         if ((!is.null(transname[tri])) && (!is.na(transname[tri])) && (length(transname[tri]) > 0)) {
           attr(mgcoli, transname[tri]) <- newAtrs[[transname[tri]]]
         }
