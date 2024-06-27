@@ -1,5 +1,5 @@
-97d31c3d2cc90ab5aaab1883002ed705 *DESCRIPTION
-ba5bf7f93a88a94e2d01d3c4cc465b22 *NAMESPACE
+3513ce86ea8dfd2aa184a6214c470765 *DESCRIPTION
+deb9077acc73fd9a725fc99eef2f2059 *NAMESPACE
 ff753bdecc26f936005ad2c97fb74f3f *R/DoFCorrection.R
 edf1d1aec7d7086a15761dd153e303da *R/achievementLevels.R
 68442c574bc0cf00a8218cbfe2ff333a *R/all.R
@@ -17,7 +17,7 @@ fa382bc6386328709b9d3aa3b14a858e *R/dim.edsurvey.data.frame.R
 863fb1f92c72e9af7938509034691091 *R/downloadHSLS.R
 448d2f20666c32682c254ea736d484f7 *R/downloadICCS.R
 64b3af8d2fe1391ba2cd49a25f783298 *R/downloadICILS.R
-3cdbe83d1c2d97db6e99a477b5ca2928 *R/downloadNHES.R
+0b989e127f65438442094ea76a253be3 *R/downloadNHES.R
 e5bd416f0f0182901cbf8e4901f4faab *R/downloadPIAAC.R
 d74dbe3bacd7f50c03a4b334ecb3f7ca *R/downloadPIRLS.R
 5af170f8bf8b5524908fb7df292f24ac *R/downloadPISA.R
@@ -29,7 +29,7 @@ a798b2e55d076c12e3f6793d3744cc67 *R/downloadTIMSSAdv.R
 9f99d9962df07ecda77ab6939f7c34c2 *R/download_ePIRLS.R
 4e275ddc28d4388ef31a0eb44342b1ab *R/drawPVs.sdf.R
 fe2748d1c3cca5f52d3372f1b5dcacdb *R/edsurvey-package.R
-3c13d14aec2fb71d2d3bd9865b7fa487 *R/edsurvey.data.frame.R
+d47c59d08c1ee8ec299d9b87ca750507 *R/edsurvey.data.frame.R
 25c28f7f8ffd1285fd43c04eced69b4c *R/edsurvey.data.frame.list.R
 152ced8b8aa8f0f382c98bd05ddb680d *R/edsurveyTable.R
 d8de0934a2458f046fa077385c7c4ac2 *R/edsurveyTable2pdf.R
@@ -71,7 +71,7 @@ f681958b9a9d822913b493d51bcbaddd *R/readHSB_SR.R
 04f6b891025d0abd779d1ece7225b06a *R/readICILS.R
 d0957275e0fb68229692442e4702ae26 *R/readNAEP.r
 bdada40cb6d238bd60e5bf34ca663a43 *R/readNAEP_XML.R
-f1165e4a678a0686c4782f9ac1f69f8f *R/readNHES.R
+841db509ea2952bb1ccfeec665b9efac *R/readNHES.R
 547f9876e85cf29aa21891c790135ce8 *R/readPIAAC.R
 c60fd6149d68cf01b039d012aefa527a *R/readPIRLS.R
 9838e978412628135bd0c251a146b597 *R/readPISA.R
@@ -94,7 +94,7 @@ c84e4fa60fc3a257d6cdb35866040d16 *R/setAttributes.R
 c6001ab456349dd7c95d9d4ca37b7818 *R/showCutPoints.R
 19a684266e49405ce848815afb44c1ad *R/showPlausibleValues.R
 e02a79bf33b6397b2baeeabba162e1f5 *R/showWeights.R
-5dcf7303d271b2bdaa38b882b0a97c77 *R/subset.edsurvey.data.frame.list.R
+6b2d957318c0c6ea34159460055bfa8e *R/subset.edsurvey.data.frame.list.R
 a602fcfca9f5872efc242af0ee186e5b *R/subset.light.edsurvey.data.frame.R
 f34cdbe673922ac3d14e43fe6ce9d60d *R/suggestWeights.R
 72823b8560a77def867b1fcecc8ec1ed *R/summary2.R
@@ -103,10 +103,10 @@ f34cdbe673922ac3d14e43fe6ce9d60d *R/suggestWeights.R
 a5a2ae6a345e1f779012e8cf56f530ff *R/varEstToCov.R
 a77e20b6f7e99fc54ae7cc32eb966013 *R/waldTest.R
 57ff910cf779630be1bf4e80ca6a39c7 *R/zzz.R
-8e32ae8e995cd0252aafcb6d7930f227 *build/vignette.rds
-2c29478baf24b0b43e6be24dd39462fb *inst/NEWS.Rd
+1ff59b9edbc6401ee08f41f1aad64602 *build/vignette.rds
+3bf2212aa99b6da35ae49126d4033e3a *inst/NEWS.Rd
 108fbf8250c8aa7ca2c923e55cf7427d *inst/doc/introduction.Rmd
-035b97894c402d4e945c3354b84aca04 *inst/doc/introduction.html
+c4bd1f0cae713163917a7dd40357c37f *inst/doc/introduction.html
 0ff5c03e372f300605d62bb3ac5d248f *inst/extdata/NAEP_AL.rds
 36ce0f7f33845011fc6a220c64b15918 *inst/extdata/NHES_FileLookup.rds
 8e31a8f085d6308897d0feabcdf05c3d *inst/extdata/PIAACAL.rds
@@ -135,7 +135,7 @@ a411a81c08be4219fc9eb610a646d0fd *man/downloadCivEDICCS.Rd
 aa2ee21f422e6ef8b24daf293f060451 *man/downloadELS.Rd
 22f8058834ef9338a5ae618539bb7056 *man/downloadHSLS.Rd
 a6d4b3b10e0497681a9e615b422319fd *man/downloadICILS.Rd
-ac0c8cdfdfad2ca4284126d9706b08f6 *man/downloadNHES.Rd
+dac4d58b509df2a3e02b32f2c2c9b240 *man/downloadNHES.Rd
 459fa3dd17ad7f540fa351d909a97512 *man/downloadPIAAC.Rd
 9a9377138074720c38f905483a087869 *man/downloadPIRLS.Rd
 630de34082c46150972fcf4fa10c9a02 *man/downloadPISA.Rd
@@ -266,7 +266,7 @@ e7500472b31cd028b08b9b65a75063ae *man/readHSB_Senior.Rd
 1a42bf8fb011f30e2808f0a7e1e20d5b *man/readHSTS.Rd
 71f05b4c259c34a0a90b4894afaf1b13 *man/readICILS.Rd
 5113c11f2bb3c72e939cb5bfe0df5a55 *man/readNAEP.Rd
-ca502db0544b1933477444bad0a7130c *man/readNHES.Rd
+fca78d609fd972585cb3ea297361b0b9 *man/readNHES.Rd
 0c1d1503be053d13ebf68a905c98b61a *man/readPIAAC.Rd
 904f3216fbc4aea087724bee9e41d5b0 *man/readPIRLS.Rd
 2b644ddbaf06b9495e2c52968fdca890 *man/readPISA.Rd
@@ -371,7 +371,7 @@ dcd93eb20c535b00686f5e80ec6e624d *tests/testthat/pct_varest.rds
 7b0ef704403677ee7c1ca68db036ba06 *tests/testthat/showCodebookRecodes.rds
 bef64fa3ad38d4529e85107eec23d422 *tests/testthat/test-05-mergev.R
 7a0f834505b035f50a20332da5766011 *tests/testthat/test-07-merge.R
-ed35ceed7f5659ade678e8db5674b35d *tests/testthat/test-10-main.R
+3292246dd79dba981cdee4ccdf0ef9fc *tests/testthat/test-10-main.R
 3de1d75a289b1386103831c58bec201a *tests/testthat/test-12-Dire.R
 fe1ffae40be4ea708a9ebdc1f6f2ba14 *tests/testthat/test-15-lesdf.R
 9af0c744b5c11bda625a4413886b0bb4 *tests/testthat/test-17-merge.R
